@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ssp_read_traces.py
 #
-# Read traces for source_spectrum
+# Read traces for source_spec
 # All the functions whose name is between "__" are intended to be private
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 from __future__ import division

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Parameter file fof source_spec.py
+# Parameter file for source_spec.py
 # This file has to be valid Python code and can contain scripting
 
 

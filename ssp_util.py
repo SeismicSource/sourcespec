@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ssp_util.py
 #
-# Utility functions for source_spectrum
+# Utility functions for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 from __future__ import division
 import math

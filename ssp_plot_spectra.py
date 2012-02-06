@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ssp_plot_spectra.py
 #
-# Spectral plotting for source_spectrum
+# Spectral plotting for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 from __future__ import division
 import math

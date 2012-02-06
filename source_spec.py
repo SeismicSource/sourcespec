@@ -5,7 +5,9 @@
 # Python code to invert S-wave displacement spectra
 # Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
 # 
-# v 0.1 - 2012-01-17 - Claudio Satriano <satriano@ipgp.fr>
+# (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
+# v 0.2 - 2012-02-06 - Extended and generalized for the CRL application 
+# v 0.1 - 2012-01-17 - Initial Python port
 
 # Computes the S-wave displacement spectra from stations recording a single event. 
 #
