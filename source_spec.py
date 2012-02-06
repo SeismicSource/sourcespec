@@ -103,7 +103,7 @@ def main():
 	spec_st = Stream()
 	for trace in st.traces:
 		# Remove instrument response
-		if remove_instr_response(trace, just_sensitivity=False) == None:
+		if remove_instr_response(trace, config.correct_sensitivity_only) == None:
 			dprint('Undefined instrument response: continue')
 			continue
 

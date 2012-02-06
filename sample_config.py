@@ -8,6 +8,12 @@
 DEBUG=False # True: print debug information
 DOPLOTS=True
 #DOPLOTS=False
+
+# If true, traces are not fully deconvolved
+# for the isntrumental response: only the
+# sensitivity is corrected (faster, especially
+# on a large number of traces).
+correct_sensitivity_only = False
 # -------------------
 
 
