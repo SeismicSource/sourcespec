@@ -301,15 +301,43 @@ def __build_filelist__(path, filelist, tmpdir):
 # -----------------------------------------------------------------------------
 
 
+# PATH DISCOVERY --------------------------------------------------------------
+# We try to guess the path of the hypo and pick file from the data dir
+# This applies (for the moment) only to the Corinth format
+def __get_hypo_file_path__(args, options):
+	if options.hypo_file != None: return options.hypo_file
+	# try with the basename of the datadir
+	if os.path.isdir(args[0]):
+		hypo_file = args[0] + '.phs.h'
+		try:
+			open(hypo_file)
+			return hypo_file
+		except: pass
+	return None
+
+def __get_pick_file_path__(args, options):
+	if options.pick_file != None: return options.pick_file
+	# try with the basename of the datadir
+	if os.path.isdir(args[0]):
+		pick_file = args[0] + '.phs'
+		try:
+			open(pick_file)
+			return pick_file
+		except: pass
+	return None
+# -----------------------------------------------------------------------------
+
 
 # Public interface:
 def read_traces(args, options):
 	# read dataless	
 	dataless = __read_dataless__(options.dataless)
 	# parse hypocenter file
-	hypo = __parse_hypocenter__(options.hypo_file)
+	hypo_file = __get_hypo_file_path__(args, options)
+	hypo = __parse_hypocenter__(hypo_file)
 	# parse pick file
-	picks = __parse_picks__(options.pick_file)
+	pick_file = __get_pick_file_path__(args, options)
+	picks = __parse_picks__(pick_file)
 
 	# finally, read traces
 	sys.stdout.write('Reading traces...')
