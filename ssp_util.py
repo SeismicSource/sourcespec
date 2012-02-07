@@ -71,15 +71,10 @@ def smooth(x, window_len=11, window='hanning'):
 	yy[nanindexes] = x[nanindexes]
 	return yy
 
-def remove_instr_response(trace, just_sensitivity=False):
+def remove_instr_response(trace, just_sensitivity=False, pre_filt=(0.5, 0.6, 40., 45.)):
 	paz = trace.stats.paz
 	if paz == None: return None
 
-	# pre-filtering frequencies:
-	fl1 = 0.5
-	fl2 = 0.6
-	fl3 = 40.
-	fl4 = 45.
 	# remove the mean...
 	trace.detrend(type='constant')
 	# ...and the linear trend
@@ -99,7 +94,7 @@ def remove_instr_response(trace, just_sensitivity=False):
 		# TODO: fill up a bug on obspy.org
 		trace.simulate(paz_remove=paz, paz_simulate=None,
 			remove_sensitivity=True, simulate_sensitivity=None,
-			pre_filt=(fl1, fl2, fl3, fl4), sacsim=False)
+			pre_filt=pre_filt, sacsim=False)
 	return trace
 # -----------------------------------------------------------------------------
 

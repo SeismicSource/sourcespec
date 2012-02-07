@@ -10,10 +10,15 @@ DOPLOTS=True
 #DOPLOTS=False
 
 # If true, traces are not fully deconvolved
-# for the isntrumental response: only the
+# for the instrumental response: only the
 # sensitivity is corrected (faster, especially
 # on a large number of traces).
 correct_sensitivity_only = False
+# Pre-filtering frequencies for instrument correction
+# Specify the four corner frequencies (f1,f2,f3,f4)
+# of a cosine taper which is one between f2 and f3
+# and tapers to zero for f1 < f < f2 and f3 < f < f4.
+pre_filt = (0.1, 0.2, 55., 60.)
 # -------------------
 
 
