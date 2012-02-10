@@ -6,6 +6,7 @@
 # Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
 # 
 # (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
+# v 0.3 - 2012-??-?? - Several improvements
 # v 0.2 - 2012-02-06 - Extended and generalized for the CRL application 
 # v 0.1 - 2012-01-17 - Initial Python port
 
@@ -153,7 +154,8 @@ def main():
 			# cut frequencies:
 			freq1 = config.freq1_acc
 			freq2 = config.freq2_acc
-		elif instrtype == 'vel':
+		elif instrtype == 'shortp' or instrtype == 'broadb':
+			#TODO: implement different strategies for 'shortp' and 'broadb'
 			nint = 1 #number of intergrations to perform
 			# band-pass frequencies:
 			# TODO: calculate from sampling rate?

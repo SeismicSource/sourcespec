@@ -115,10 +115,15 @@ def __add_instrtype__(trace):
 
 	# First, try to get the instrtype from channel name
 	chan = trace.stats.channel
+	try: band_code = chan[0]
+	except IndexError: band_code = None
 	try: instr_code = chan[1]
 	except IndexError: instr_code = None
-	if instr_code == 'H': instrtype = 'vel'
-	if instr_code == 'L': instrtype = 'vel'
+	if instr_code == 'H' or instr_code == 'L':
+		if band_code == 'E': 
+			instrtype = 'shortp'
+		if band_code == 'H': 
+			instrtype = 'broadb'
 	if instr_code == 'N': instrtype = 'acc'
 
 	# If, not possible, let's see if there is an instrument
