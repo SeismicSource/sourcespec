@@ -105,6 +105,16 @@ def main():
 	# Loop on stations for building spectra and the spec_st object 
 	spec_st = Stream()
 	for trace in st.traces:
+		#print trace.getId()
+
+		# check if the trace has (significant) signal
+		# since the count value is generally huge, we need to demean twice
+		# to take into account for the rounding error
+		trace.detrend(type='constant')
+		trace.detrend(type='constant')
+		rms2 = np.power(trace.data, 2).sum()
+		if rms2 <= 1e-10: continue #TODO: parametrize?
+
 		# Remove instrument response
 		if remove_instr_response(trace,
 				config.correct_sensitivity_only, config.pre_filt) == None:
