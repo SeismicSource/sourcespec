@@ -4,12 +4,40 @@
 # Spectral plotting for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 from __future__ import division
+import sys
 import math
-import matplotlib.pyplot as plt
 #from matplotlib.ticker import MaxNLocator
 from ssp_util import spec_minmax
 
-def plotspectra(spec_st):
+def plotspectra(spec_st, options, config):
+	# Unload matplotlib modules (which have been presumably loaded by
+	# ObsPy.
+	# Source:
+	#   http://stackoverflow.com/questions/3285193/how-to-switch-backends-in-matplotlib-python
+	modules = []
+	for module in sys.modules:
+		if module.startswith('matplotlib'):
+			modules.append(module)
+	for module in modules:
+		sys.modules.pop(module)
+
+	# Check config, if we need to plot at all
+	if config.PLOT_SHOW == False and config.PLOT_SAVE == False:
+		return
+
+	# Re-import matplotlib
+	import matplotlib
+	matplotlib.rcParams['pdf.fonttype'] = 42 #to edit text in Illustrator
+
+	# If we do not need to show the plot, we use the 'agg' backend
+	if config.PLOT_SHOW == False:
+		matplotlib.use('agg')
+
+	# Finally we load the pyplot module
+	import matplotlib.pyplot as plt
+
+
+	# OK, now we can plot!
 	fig = plt.figure(figsize=(16,9))
 	amp_minmax  = None
 	freq_minmax = None
@@ -65,6 +93,12 @@ def plotspectra(spec_st):
 		except IndexError: continue
 		plt.setp(ax.get_yticklabels(), visible=True)
 		ax.set_ylabel('Magnitude')
-	plt.show()
-
+	
+	if config.PLOT_SHOW:
+		plt.show()
+	if config.PLOT_SAVE:
+		figurefile = options.outdir + '/spectra.' +\
+			config.PLOT_SAVE_FORMAT
+		fig.savefig(figurefile, bbox_inches='tight')
+		print 'Spectral plots saved to: ' + figurefile
 

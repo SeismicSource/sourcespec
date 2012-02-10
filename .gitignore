@@ -1,3 +1,5 @@
 profiling
 *.pyc
 *.swp
+
+sspec_out

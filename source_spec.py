@@ -39,6 +39,7 @@ import sys
 import os
 from optparse import OptionParser
 from imp import load_source
+from datetime import datetime
 import math
 import numpy as np
 from scipy.optimize import curve_fit
@@ -69,16 +70,16 @@ def main():
 	usage = "usage: %prog [options] trace_file(s) | trace_dir"
 
 	parser = OptionParser(usage=usage);
-	parser.add_option("-c", "--configfile", dest="config_file", action="store", default=None,
-                  help="Load configuration from FILE", metavar="DIR | FILE")
+	parser.add_option("-c", "--configfile", dest="config_file", action="store", default='config.py',
+			help="Load configuration from FILE (default: config.py)", metavar="DIR | FILE")
 	parser.add_option("-d", "--dataless", dest="dataless", action="store", default=None,
                   help="Search for dataless in DIR or in FILE", metavar="DIR | FILE")
 	parser.add_option("-H", "--hypocenter", dest="hypo_file", action="store", default=None,
                   help="Get hypocenter information from FILE", metavar="FILE")
 	parser.add_option("-p", "--pickfile", dest="pick_file", action="store", default=None,
                   help="Get picks from FILE", metavar="FILE")
-	parser.add_option("-o", "--outdir", dest="outdir", action="store", default=None,
-                  help="Save output to OUTDIR", metavar="OUTDIR")
+	parser.add_option("-o", "--outdir", dest="outdir", action="store", default='sspec_out',
+			help="Save output to OUTDIR (default: sspec_out)", metavar="OUTDIR")
 
 	(options, args) = parser.parse_args();
 	if len(args) < 1:
@@ -91,13 +92,11 @@ def main():
 	#	print trace.getId(), trace.stats.paz
 	#sys.exit()
 
-	if options.config_file == None:
-		options.config_file = 'config.py'
 	try:
-		config=load_source("config", options.config_file)
-		DEBUG = config.DEBUG
+		config = load_source('config', options.config_file)
+		DEBUG  = config.DEBUG
         except:
-                sys.stderr.write("Unable to open file: %s\n" % options.config_file)
+                sys.stderr.write('Unable to open file: %s\n' % options.config_file)
                 sys.exit(1)
 	
 	# Loop on stations for building spectra and the spec_st object 
@@ -309,7 +308,7 @@ def main():
 			spec_synth.data = spectral_model(xdata, *params_opt)
 			spec_st.append(spec_synth)
 
-
+	warnings=''
 	# Filter stations with negative t_star
 	# or with anomalous corner frequencies
 	f1 = config.min_corner_freq
@@ -318,60 +317,87 @@ def main():
 		par = sourcepar[statId]
 		t_star = par['t_star']
 		if t_star < 0:
-			print 'Ignoring station: %s t_star: %f' % (statId, t_star)
+			warnings += 'Ignoring station: %s t_star: %f\n' % (statId, t_star)
 			sourcepar.pop(statId, None)
 		fc = par['fc']
 		if fc < f1 or fc > f2:
-			print 'Ignoring station: %s fc: %f' % (statId, fc)
+			warnings += 'Ignoring station: %s fc: %f\n' % (statId, fc)
 			sourcepar.pop(statId, None)
 
 	if len(sourcepar) == 0: sys.exit()
-	# Print source parameters
-	print '*** Source parameters ***'
+
+
+	# Write results to the output dir
+	if not os.path.exists(options.outdir):
+		os.makedirs(options.outdir)
+	parfilename = options.outdir + '/source_spec.out'
+	parfile = open(parfilename, 'w')
+
+	# write timestamp
+	d = datetime.now()
+	timestamp = d.strftime('%Y-%d-%mT%H:%M:%S')
+	parfile.write('*** Run completed at ***\n')
+	parfile.write(timestamp + '\n')
+	parfile.write('\n')
+
+	# write running arguments
+	parfile.write('*** Running arguments ***\n')
+	parfile.write(' '.join(sys.argv) + '\n')
+	parfile.write('\n')
+
+	# warnings
+	if warnings != '':
+		parfile.write('*** Warnings ***\n')
+		parfile.write(warnings)
+		parfile.write('\n')
+
+	# Write source parameters
+	parfile.write('*** Source parameters ***\n')
 	for statId in sorted(sourcepar.keys()):
 		par = sourcepar[statId]
-		sys.stdout.write('%s ' % statId)
+		parfile.write('%s ' % statId)
 		for key in par:
-			sys.stdout.write('  %s %6.3f ' % (key, par[key]))
-		sys.stdout.write('\n')
+			parfile.write('  %s %6.3f ' % (key, par[key]))
+		parfile.write('\n')
+	parfile.write('\n')
 
-
-	## Compute average source parameters
-	print '*** Average source parameters ***'
+	## Compute and write average source parameters
+	parfile.write('*** Average source parameters ***\n')
 	# Mw
 	Mw_array = np.array(list(x['Mw'] for x in sourcepar.values()))
 	Mw_mean  = Mw_array.mean()
 	Mw_std   = Mw_array.std()
-	print 'Mw: %.2f +/- %.2f' % (Mw_mean, Mw_std)
+	parfile.write('Mw: %.2f +/- %.2f\n' % (Mw_mean, Mw_std))
 
 	# Mo (N.m)
 	Mo_array = np.power(10, Mw_array*1.5 + 9.1)
 	Mo_mean  = Mo_array.mean()
 	Mo_std   = Mo_array.std()
-	print 'Mo: %.3e +/- %.3e N.m' % (Mo_mean, Mo_std)
+	parfile.write('Mo: %.3e +/- %.3e N.m\n' % (Mo_mean, Mo_std))
 
 	# fc , hertz
 	fc_array = np.array(list(x['fc'] for x in sourcepar.values()))
 	fc_mean  = fc_array.mean()
 	fc_std   = fc_array.std()
-	print 'fc: %.3f +/- %.3f Hz' % (fc_mean, fc_std)
+	parfile.write('fc: %.3f +/- %.3f Hz\n' % (fc_mean, fc_std))
 
 	# ra, radius (meters)
 	ra_array = 0.37 * vs_m / fc_array
 	ra_mean  = ra_array.mean()
 	ra_std   = ra_array.std()
-	print 'Source radius: %.3f +/- %.3f m' % (ra_mean, ra_std)
+	parfile.write('Source radius: %.3f +/- %.3f m\n' % (ra_mean, ra_std))
 
 	# bds, Brune stress drop (MPa)
 	bsd_array = 0.4375 * Mo_array / np.power(ra_array, 3) * 1e-6
 	bsd_mean  = bsd_array.mean()
 	bsd_std   = bsd_array.std()
-	print 'Brune stress drop: %.3f +/- %.3f MPa' % (bsd_mean, bsd_std)
+	parfile.write('Brune stress drop: %.3f +/- %.3f MPa\n' % (bsd_mean, bsd_std))
 
+	parfile.close()
+	print 'Output written to: ' + parfilename
 
-	# (Optional) Plotting
-	if config.DOPLOTS:
-		plotspectra(spec_st)
+	# Plotting
+	plotspectra(spec_st, options, config)
 
         # Remove the bytecoded version of the config file,
         # generated by "load_source"

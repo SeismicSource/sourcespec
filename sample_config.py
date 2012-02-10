@@ -6,8 +6,10 @@
 # GENERAL PARAMETERS
 #DEBUG=True # True: print debug information
 DEBUG=False # True: print debug information
-DOPLOTS=True
-#DOPLOTS=False
+PLOT_SHOW = False
+PLOT_SAVE = True
+#PLOT_SAVE_FORMAT = 'pdf' #slower
+PLOT_SAVE_FORMAT = 'png'
 
 # If true, traces are not fully deconvolved
 # for the instrumental response: only the
