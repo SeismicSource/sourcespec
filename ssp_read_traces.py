@@ -44,7 +44,19 @@ __correct_traceid_dict__={
 	'CL.PYR  00..Z' : 'CL.PYR.00.EHZ',
 	'CL.TEM  00..E' : 'CL.TEM.00.EHE',
 	'CL.TEM  00..N' : 'CL.TEM.00.EHN',
-	'CL.TEM  00..Z' : 'CL.TEM.00.EHZ'
+	'CL.TEM  00..Z' : 'CL.TEM.00.EHZ',
+	'.ROD..HHE'     : 'CL.ROD.00.HHE',
+	'.ROD..HHN'     : 'CL.ROD.00.HHN',
+	'.ROD..HHZ'     : 'CL.ROD.00.HHZ',
+	'.TRIZ..HHZ'    : 'CL.TRIZ.00.HHZ',
+	'.TRIZ..HHN'    : 'CL.TRIZ.00.HHN',
+	'.TRIZ..HHE'    : 'CL.TRIZ.00.HHE',
+	'.KALI..HHZ'    : 'HA.KALE.00.HHZ',
+	'.KALI..HHN'    : 'HA.KALE.00.HHN',
+	'.KALI..HHE'    : 'HA.KALE.00.HHE',
+	'.LAKK..HHZ'    : 'HA.LAKA.00.HHZ',
+	'.LAKK..HHN'    : 'HA.LAKA.00.HHN',
+	'.LAKK..HHE'    : 'HA.LAKA.00.HHE'
 }
 
 def __correct_traceid__(trace):
