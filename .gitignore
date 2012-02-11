@@ -1,5 +1,8 @@
-profiling
+#Extensions
 *.pyc
 *.swp
 
+#Directories
+profiling
 sspec_out
+testdata/CRL/PZ.new_20120211
