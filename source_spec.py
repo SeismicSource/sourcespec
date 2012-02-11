@@ -368,7 +368,7 @@ def main():
 	parfile.write('*** Source parameters ***\n')
 	for statId in sorted(sourcepar.keys()):
 		par = sourcepar[statId]
-		parfile.write('%s ' % statId)
+		parfile.write('%s\t' % statId)
 		for key in par:
 			parfile.write('  %s %6.3f ' % (key, par[key]))
 		parfile.write('\n')
