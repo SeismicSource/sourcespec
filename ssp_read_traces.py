@@ -145,8 +145,10 @@ def __add_instrtype__(trace):
 			instr = trace.stats.sac.kinst
 			if 'CMG-5T' in instr:
 				instrtype = 'acc'
-			if 'TRILLIUM' in instr or 'S13J' in instr:
-				instrtype = 'vel'
+			if 'TRILLIUM' in instr:
+				instrtype = 'broadb'
+			if 'S13J' in instr:
+				instrtype = 'shortp'
 		except AttributeError:
 			pass
 	trace.stats.instrtype = instrtype
