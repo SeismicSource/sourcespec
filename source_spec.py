@@ -166,16 +166,22 @@ def main():
 			# cut frequencies:
 			freq1 = config.freq1_acc
 			freq2 = config.freq2_acc
-		elif instrtype == 'shortp' or instrtype == 'broadb':
-			#TODO: implement different strategies for 'shortp' and 'broadb'
+		elif instrtype == 'shortp':
 			nint = 1 #number of intergrations to perform
 			# band-pass frequencies:
 			# TODO: calculate from sampling rate?
-			bp_freqmin = config.bp_freqmin_vel
-			bp_freqmax = config.bp_freqmax_vel
+			bp_freqmin = config.bp_freqmin_shortp
+			bp_freqmax = config.bp_freqmax_shortp
 			# cut frequencies:
-			freq1 = config.freq1_vel
-			freq2 = config.freq2_vel
+			freq1 = config.freq1_shortp
+			freq2 = config.freq2_shortp
+		elif instrtype == 'broadb':
+			nint = 1
+			bp_freqmin = config.bp_freqmin_broadb
+			bp_freqmax = config.bp_freqmax_broadb
+			# cut frequencies:
+                        freq1 = config.freq1_broadb
+                        freq2 = config.freq2_broadb
 		else: continue
 
 		# remove the mean...

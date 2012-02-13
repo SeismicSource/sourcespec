@@ -4,8 +4,8 @@
 
 
 # GENERAL PARAMETERS
-#DEBUG=True # True: print debug information
-DEBUG=False # True: print debug information
+DEBUG=True # True: print debug information
+#DEBUG=False # True: print debug information
 PLOT_SHOW = False
 PLOT_SAVE = True
 #PLOT_SAVE_FORMAT = 'pdf' #slower
@@ -45,18 +45,18 @@ s_win_length = 5 #sec
 # TODO: calculate from sampling rate?
 bp_freqmin_acc    =  1.0
 bp_freqmax_acc    = 50.0
-bp_freqmin_shortp = 0.25
-bp_freqmax_shortp = 50.0
-bp_freqmin_broadb = 0.25
-bp_freqmax_broadb = 50.0
+bp_freqmin_shortp =  1.0
+bp_freqmax_shortp = 40.0
+bp_freqmin_broadb =  0.5
+bp_freqmax_broadb = 40.0
 
 # Filter cut frequencies for accelerometers and velocimeters
-freq1_acc    =  1.0
-freq2_acc    = 30.0
-freq1_shortp =  0.5
-freq2_shortp = 50.0
-freq1_broadb =  0.5
-freq2_broadb = 50.0
+freq1_acc     =  1.0
+freq2_acc     = 30.0
+freq1_shortp  =  1.0
+freq2_shortp  = 30.0
+freq1_broadb  =  0.5
+freq2_broadb  = 30.0
 # -------------------
 
 
@@ -65,9 +65,9 @@ freq2_broadb = 50.0
 #   weight for f<=f_weight
 #   1      for f> f_weight
 f_weight = 7. #Hz
-weight = 5.
+weight = 10.
 # Initial values for fc (optional)
-fc_0 = 8.
+fc_0 = 5.
 # initial value for t_star
 t_star_0 = 0.045
 # -------------------
@@ -75,5 +75,5 @@ t_star_0 = 0.045
 
 # POST-PROCESSING PARAMETERS
 # Min and max acceptable corner frequencies
-min_corner_freq = 2
-max_corner_freq = 50
+min_corner_freq = 0.5
+max_corner_freq = 40

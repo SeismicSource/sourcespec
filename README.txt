@@ -1,9 +1,9 @@
 source_spec
-(c) 2010-2011 Claudio Satriano <satriano@ipgp.fr>
+(c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
 
 To run the CRL test:
 
-./source_spec.py testdata/CRL/2010.01.20-08.10.27 -c sample_config.py -d testdata/CRL/PZ.crl -H testdata/CRL/2010.01.20-08.10.27.phs.h -p testdata/CRL/2010.01.20-08.10.27.phs 
+./source_spec.py testdata/CRL/2010.01.20-08.10.27 -c config_CRL.py -d testdata/CRL/PZ.crl -H testdata/CRL/2010.01.20-08.10.27.phs.h -p testdata/CRL/2010.01.20-08.10.27.phs 
 
 
 To run the ISNet test:
