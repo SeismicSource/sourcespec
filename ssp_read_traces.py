@@ -17,84 +17,10 @@ from obspy.xseed import Parser
 from obspy.xseed.utils import SEEDParserException
 
 # TRACE MANIPULATION ----------------------------------------------------------
-__correct_traceid_dict__={
-	'CL.AGE  00..E' : 'CL.AGE.00.EHE',
-	'CL.AGE  00..N' : 'CL.AGE.00.EHN',
-	'CL.AGE  00..Z' : 'CL.AGE.00.EHZ',
-        '.AGE..EHZ'     : 'CL.AGE.00.EHE',
-        '.AGE..EHN'     : 'CL.AGE.00.EHN',
-        '.AGE..EHE'     : 'CL.AGE.00.EHZ',
-	'CL.TRZ  00..Z' : 'CL.TRZ.00.EHZ',
-	'CL.TRZ  00..N' : 'CL.TRZ.00.EHN',
-	'CL.TRZ  00..E' : 'CL.TRZ.00.EHE',
-	'CL.AIO  00..E' : 'CL.AIO.00.EHE',
-	'CL.AIO  00..N' : 'CL.AIO.00.EHN',
-	'CL.AIO  00..Z' : 'CL.AIO.00.EHZ',
-	'.AIO..EHZ'     : 'CL.AIO.00.EHE',
-        '.AIO..EHN'     : 'CL.AIO.00.EHN',
-        '.AIO..EHE'     : 'CL.AIO.00.EHZ',
-	'CL.ALI  00..E' : 'CL.ALI.00.EHE',
-	'CL.ALI  00..N' : 'CL.ALI.00.EHN',
-	'CL.ALI  00..Z' : 'CL.ALI.00.EHZ',
-	'.ALI..EHZ'     : 'CL.ALI.00.EHE',
-        '.ALI..EHN'     : 'CL.ALI.00.EHN',
-        '.ALI..EHE'     : 'CL.ALI.00.EHZ',
-	'CL.DIM  00..E' : 'CL.DIM.00.EHE',
-	'CL.DIM  00..N' : 'CL.DIM.00.EHN',
-	'CL.DIM  00..Z' : 'CL.DIM.00.EHZ',
-	'.DIM..EHZ'     : 'CL.DIM.00.EHE',
-        '.DIM..EHN'     : 'CL.DIM.00.EHN',
-        '.DIM..EHE'     : 'CL.DIM.00.EHZ',
-	'CL.KOU  00..E' : 'CL.KOU.00.EHE',
-	'CL.KOU  00..N' : 'CL.KOU.00.EHN',
-	'CL.KOU  00..Z' : 'CL.KOU.00.EHZ',
-	'.KOU..EHZ'     : 'CL.KOU.00.EHE',
-        '.KOU..EHN'     : 'CL.KOU.00.EHN',
-        '.KOU..EHE'     : 'CL.KOU.00.EHZ',
-	'CL.PAN  00..E' : 'CL.PAN.00.EHE',
-	'CL.PAN  00..N' : 'CL.PAN.00.EHN',
-	'CL.PAN  00..Z' : 'CL.PAN.00.EHZ',
-	'.PAN..EHZ'     : 'CL.PAN.00.EHE',
-        '.PAN..EHN'     : 'CL.PAN.00.EHN',
-        '.PAN..EHE'     : 'CL.PAN.00.EHZ',
-	'CL.PSA  00..E' : 'CL.PSA.00.EHE',
-	'CL.PSA  00..N' : 'CL.PSA.00.EHN',
-	'CL.PSA  00..Z' : 'CL.PSA.00.EHZ',
-	'.PSA..EHZ'     : 'CL.PSA.00.EHE',
-        '.PSA..EHN'     : 'CL.PSA.00.EHN',
-        '.PSA..EHE'     : 'CL.PSA.00.EHZ',
-	'CL.PYR  00..E' : 'CL.PYR.00.EHE',
-	'CL.PYR  00..N' : 'CL.PYR.00.EHN',
-	'CL.PYR  00..Z' : 'CL.PYR.00.EHZ',
-	'.PYR..EHZ'     : 'CL.PYR.00.EHE',
-        '.PYR..EHN'     : 'CL.PYR.00.EHN',
-        '.PYR..EHE'     : 'CL.PYR.00.EHZ',
-	'CL.TEM  00..E' : 'CL.TEM.00.EHE',
-	'CL.TEM  00..N' : 'CL.TEM.00.EHN',
-	'CL.TEM  00..Z' : 'CL.TEM.00.EHZ',
-	'.TEM..EHZ'     : 'CL.TEM.00.EHE',
-        '.TEM..EHN'     : 'CL.TEM.00.EHN',
-        '.TEM..EHE'     : 'CL.TEM.00.EHZ',
-        '.ROD..HHE'     : 'CL.ROD.00.HHE',
-        '.ROD..HHN'     : 'CL.ROD.00.HHN',
-        '.ROD..HHZ'     : 'CL.ROD.00.HHZ',
-        '.TRIZ..HHZ'    : 'CL.TRIZ.00.HHZ',
-        '.TRIZ..HHN'    : 'CL.TRIZ.00.HHN',
-        '.TRIZ..HHE'    : 'CL.TRIZ.00.HHE',
-        '.KALI..HHZ'    : 'HA.KALE.00.HHZ',
-        '.KALI..HHN'    : 'HA.KALE.00.HHN',
-        '.KALI..HHE'    : 'HA.KALE.00.HHE',
-        '.LAKK..HHZ'    : 'HA.LAKA.00.HHZ',
-        '.LAKK..HHN'    : 'HA.LAKA.00.HHN',
-        '.LAKK..HHE'    : 'HA.LAKA.00.HHE',
-	'HA.LAKA..HHE'  : 'HA.LAKA.00.HHE',
-	'HA.LAKA..HHN'  : 'HA.LAKA.00.HHN',
-	'HA.LAKA..HHZ'  : 'HA.LAKA.00.HHZ'
-}
-
 def __correct_traceid__(trace):
 	try:
-		traceid = __correct_traceid_dict__[trace.getId()]
+		import traceids
+		traceid = traceids.__correct_traceid_dict__[trace.getId()]
 		net, sta, loc, chan = traceid.split('.')
 		trace.stats.network = net
 		trace.stats.station = sta
@@ -258,16 +184,24 @@ def __parse_hypocenter__(hypo_file):
 	# Corinth hypocenter file format:
 	# TODO: check file format
 	line = fp.readline()
+	# Skip the first line if it contains characters:
+	if line.replace(' ','').replace('\n','').isalpha():
+		line = fp.readline()
 	fp.close()
 	timestr = line[0:17]
-	dt = datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
+	# There are two possible formats for the timestring.
+	# We try both of them
+	try:
+		dt = datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
+	except ValueError:
+		dt = datetime.strptime(timestr, '%y%m%d %H%M %S.%f')
 	hypo.origin_time = UTCDateTime(dt)
 
 	lat = float(line[17:20])
-	lat_deg = float(line[20:26])
+	lat_deg = float(line[21:26])
 	hypo.latitude = lat + lat_deg/60
 	lon = float(line[26:30])
-	lon_deg = float(line[30:36])
+	lon_deg = float(line[31:36])
 	hypo.longitude = lon + lon_deg/60
 	hypo.depth = float(line[36:42])
 	hypo.evid = line[72:82]
@@ -324,7 +258,6 @@ def __parse_picks__(pick_file):
 		pick2.polarity = line[38:39]
 		pick2.quality  = int(line[39:40])
 		pick2.time     = pick.time + float(stime)
-		#print 'aa' + stime + 'aa'
 
 		picks.append(pick2)
 
