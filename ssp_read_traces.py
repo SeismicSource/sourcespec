@@ -7,6 +7,7 @@
 from __future__ import division
 import sys
 import os
+import logging
 import shutil
 import tarfile
 import tempfile
@@ -15,6 +16,7 @@ from obspy.core import Stream, read, UTCDateTime
 from obspy.core.util import AttribDict
 from obspy.xseed import Parser
 from obspy.xseed.utils import SEEDParserException
+from ssp_setup import ssp_exit
 
 # TRACE MANIPULATION ----------------------------------------------------------
 def __correct_traceid__(trace):
@@ -130,7 +132,7 @@ def __add_hypocenter__(trace, hypo):
 			hypo.longitude = evlo
 			hypo.depth = evdp
 			hypo.origin_time = trace.stats.starttime + tori - begin
-			hypo.evid = None
+			hypo.evid = hypo.origin_time.strftime("%Y%m%d_%H%M%S")
 		except AttributeError:
 			pass
 	trace.stats.hypo = hypo
@@ -155,7 +157,7 @@ def __add_picks__(trace, picks):
 def __read_dataless__(path):
 	if path == None: return None
 
-	sys.stdout.write('Reading dataless...')
+	logging.info('Reading dataless...')
 	dataless=dict()
 	if os.path.isdir(path):
 		listing = os.listdir(path)
@@ -165,7 +167,7 @@ def __read_dataless__(path):
 				sp = Parser(fullpath)
 				dataless[filename] = sp
 			except IOError: continue
-	sys.stdout.write(' done.\n')
+	logging.info('Reading dataless: done')
 	return dataless
 
 def __parse_hypocenter__(hypo_file):
@@ -325,7 +327,7 @@ def read_traces(args, options):
 	picks = __parse_picks__(pick_file)
 
 	# finally, read traces
-	sys.stdout.write('Reading traces...')
+	logging.info('Reading traces...')
 	# phase 1: build a file list
 	# ph 1.1: create a temporary dir and run '_build_filelist()'
 	#         to move files to it and extract all tar archives
@@ -346,7 +348,7 @@ def read_traces(args, options):
 		try:
 			tmpst = read(filename)
 		except:
-			sys.stderr.write('%s: Unable to read file as a trace: skipping\n' % filename)
+			logging.error('%s: Unable to read file as a trace: skipping\n' % filename)
 			continue
 		for trace in tmpst.traces:
 			st.append(trace)
@@ -357,5 +359,8 @@ def read_traces(args, options):
 			__add_picks__(trace, picks)
 
 	shutil.rmtree(tmpdir)
-	sys.stdout.write(' done.\n')
+	logging.info('Reading traces: done')
+	if len(st.traces) == 0:
+		logging.info('No trace loaded') 
+		ssp_exit()
 	return st

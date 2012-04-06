@@ -6,6 +6,7 @@
 from __future__ import division
 import sys
 import math
+import logging
 #from matplotlib.ticker import MaxNLocator
 from ssp_util import spec_minmax
 
@@ -97,8 +98,10 @@ def plotspectra(spec_st, options, config):
 	if config.PLOT_SHOW:
 		plt.show()
 	if config.PLOT_SAVE:
-		figurefile = options.outdir + '/spectra.' +\
+		#TODO: improve this:
+		evid = spec_st.traces[0].stats.hypo.evid
+		figurefile = options.outdir + '/' + evid + '.ssp.' +\
 			config.PLOT_SAVE_FORMAT
 		fig.savefig(figurefile, bbox_inches='tight')
-		print 'Spectral plots saved to: ' + figurefile
+		logging.info('Spectral plots saved to: ' + figurefile)
 

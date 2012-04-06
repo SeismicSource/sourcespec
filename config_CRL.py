@@ -4,8 +4,8 @@
 
 
 # GENERAL PARAMETERS
-DEBUG=True # True: print debug information
-#DEBUG=False # True: print debug information
+#DEBUG=True # True: print debug information
+DEBUG=False # True: print debug information
 PLOT_SHOW = False
 PLOT_SAVE = True
 #PLOT_SAVE_FORMAT = 'pdf' #slower
