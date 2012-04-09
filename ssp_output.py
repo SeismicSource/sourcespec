@@ -64,3 +64,19 @@ def write_output(config, evid, sourcepar):
 
 	parfile.close()
 	logging.info('Output written to: ' + parfilename)
+
+
+	if config.options.hypo_file:
+		fp = open(config.options.hypo_file, 'r')
+		line = list(fp.readline())
+		fp.close()
+		mag='%03.2f' % Mw_mean
+		for i in range(0,4):
+			line[49+i] = mag[0+i]
+		outline = ''.join(line)
+		bname = os.path.basename(config.options.hypo_file)
+		hypo_file_out = '%s/%s' % (config.options.outdir, bname)
+		fp = open(hypo_file_out, 'w')
+		fp.write(outline)
+		fp.close()
+		logging.info('Hypo file written to: ' + hypo_file_out)
