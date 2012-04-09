@@ -10,7 +10,7 @@ import logging
 #from matplotlib.ticker import MaxNLocator
 from ssp_util import spec_minmax
 
-def plotspectra(config, spec_st):
+def plot_spectra(config, spec_st):
 	# Unload matplotlib modules (which have been presumably loaded by
 	# ObsPy.
 	# Source:

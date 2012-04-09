@@ -308,7 +308,7 @@ def main():
 	write_output(config, evid, sourcepar)
 
 	# Plotting
-	plotspectra(config, spec_st)
+	plot_spectra(config, spec_st)
 
 	ssp_exit()
 
