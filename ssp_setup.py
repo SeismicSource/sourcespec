@@ -69,20 +69,22 @@ def setup_logging(options, basename=None):
 	if not os.path.exists(options.outdir):
 		os.makedirs(options.outdir)
 
-	log=logging.getLogger()
 	if basename:
-		hdlrs = log.handlers[:]
-		for hdlr in hdlrs:
-			log.removeHandler(hdlr)
 		logfile = '%s/%s.ssp.log' % (options.outdir, basename)
-		if oldlogfile:
-			os.rename(oldlogfile, logfile)
-			filemode = 'a'
 	else:
 		datestring = datetime.now().strftime('%Y%m%d_%H%M%S')
 		logfile = '%s/%s.ssp.log' % (options.outdir, datestring)
+
+	log=logging.getLogger()
+	if oldlogfile:
+		hdlrs = log.handlers[:]
+		for hdlr in hdlrs:
+			log.removeHandler(hdlr)
+		os.rename(oldlogfile, logfile)
+		filemode = 'a'
+	else:
 		filemode = 'w'
-		oldlogfile = logfile
+	oldlogfile = logfile
 
 	#logging.basicConfig(
 	#		level=logging.DEBUG,

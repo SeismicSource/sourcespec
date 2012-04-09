@@ -58,6 +58,8 @@ def main():
 	setup_logging(options)
 	st = read_traces(args, options)
 
+	# Now that we (hopefully) have the evid
+	# we rename the logfile to use the evid
 	#TODO: improve this:
 	evid = st.traces[0].stats.hypo.evid
 	setup_logging(options, evid)
