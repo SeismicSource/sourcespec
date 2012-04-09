@@ -291,40 +291,44 @@ def __build_filelist__(path, filelist, tmpdir):
 # PATH DISCOVERY --------------------------------------------------------------
 # We try to guess the path of the hypo and pick file from the data dir
 # This applies (for the moment) only to the Corinth format
-def __get_hypo_file_path__(args, options):
-	if options.hypo_file != None: return options.hypo_file
+def __set_hypo_file_path__(config):
+	if config.options.hypo_file != None:
+		return
 	# try with the basename of the datadir
-	if os.path.isdir(args[0]):
-		hypo_file = args[0] + '.phs.h'
+	if os.path.isdir(config.args[0]):
+		hypo_file = config.args[0] + '.phs.h'
 		try:
 			open(hypo_file)
-			return hypo_file
-		except: pass
-	return None
+			config.options.hypo_file = hypo_file
+		except:
+			pass
+	return
 
-def __get_pick_file_path__(args, options):
-	if options.pick_file != None: return options.pick_file
+def __set_pick_file_path__(config):
+	if config.options.pick_file != None:
+		return 
 	# try with the basename of the datadir
-	if os.path.isdir(args[0]):
-		pick_file = args[0] + '.phs'
+	if os.path.isdir(config.args[0]):
+		pick_file = config.args[0] + '.phs'
 		try:
 			open(pick_file)
-			return pick_file
-		except: pass
-	return None
+			config.options.pick_file = pick_file
+		except:
+			pass
+	return
 # -----------------------------------------------------------------------------
 
 
 # Public interface:
-def read_traces(args, options):
+def read_traces(config):
 	# read dataless	
-	dataless = __read_dataless__(options.dataless)
+	dataless = __read_dataless__(config.options.dataless)
 	# parse hypocenter file
-	hypo_file = __get_hypo_file_path__(args, options)
-	hypo = __parse_hypocenter__(hypo_file)
+	__set_hypo_file_path__(config)
+	hypo = __parse_hypocenter__(config.options.hypo_file)
 	# parse pick file
-	pick_file = __get_pick_file_path__(args, options)
-	picks = __parse_picks__(pick_file)
+	__set_pick_file_path__(config)
+	picks = __parse_picks__(config.options.pick_file)
 
 	# finally, read traces
 	logging.info('Reading traces...')
@@ -333,7 +337,7 @@ def read_traces(args, options):
 	#         to move files to it and extract all tar archives
 	tmpdir = tempfile.mkdtemp()
 	filelist = []
-	for arg in args:
+	for arg in config.args:
 		__build_filelist__(arg, filelist, tmpdir)
 	# ph 1.2: rerun '_build_filelist()' in tmpdir to add to the
 	#         filelist all the extraceted files

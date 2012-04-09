@@ -10,7 +10,7 @@ import logging
 #from matplotlib.ticker import MaxNLocator
 from ssp_util import spec_minmax
 
-def plotspectra(spec_st, options, config):
+def plotspectra(config, spec_st):
 	# Unload matplotlib modules (which have been presumably loaded by
 	# ObsPy.
 	# Source:
@@ -100,7 +100,7 @@ def plotspectra(spec_st, options, config):
 	if config.PLOT_SAVE:
 		#TODO: improve this:
 		evid = spec_st.traces[0].stats.hypo.evid
-		figurefile = options.outdir + '/' + evid + '.ssp.' +\
+		figurefile = config.options.outdir + '/' + evid + '.ssp.' +\
 			config.PLOT_SAVE_FORMAT
 		fig.savefig(figurefile, bbox_inches='tight')
 		logging.info('Spectral plots saved to: ' + figurefile)

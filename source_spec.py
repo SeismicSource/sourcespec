@@ -48,21 +48,21 @@ from ssp_setup import *
 from ssp_read_traces import read_traces
 from ssp_util import *
 from ssp_plot_spectra import *
+from ssp_output import *
 import spectrum
 
 
 def main():
 	# Setup stage
-	options, args = parse_args()
-	config = read_config(options.config_file)
-	setup_logging(options)
-	st = read_traces(args, options)
+	config = configure()
+	setup_logging(config)
+	st = read_traces(config)
 
 	# Now that we (hopefully) have the evid
 	# we rename the logfile to use the evid
 	#TODO: improve this:
 	evid = st.traces[0].stats.hypo.evid
-	setup_logging(options, evid)
+	setup_logging(config, evid)
 
 	# Loop on stations for building spectra and the spec_st object 
 	spec_st = Stream()
@@ -304,63 +304,11 @@ def main():
 			logging.warning('Ignoring station: %s fc: %f' % (statId, fc))
 			sourcepar.pop(statId, None)
 
-	if len(sourcepar) == 0:
-		logging.info('No source parameter calculated') 
-		ssp_exit()
-
-	# Write results to the output dir
-	if not os.path.exists(options.outdir):
-		os.makedirs(options.outdir)
-	parfilename = '%s/%s.ssp.out' % (options.outdir, evid)
-	parfile = open(parfilename, 'w')
-
-	# Write source parameters
-	parfile.write('*** Source parameters ***\n')
-	for statId in sorted(sourcepar.keys()):
-		par = sourcepar[statId]
-		parfile.write('%s\t' % statId)
-		for key in par:
-			parfile.write('  %s %6.3f ' % (key, par[key]))
-		parfile.write('\n')
-	parfile.write('\n')
-
-	## Compute and write average source parameters
-	parfile.write('*** Average source parameters ***\n')
-	# Mw
-	Mw_array = np.array(list(x['Mw'] for x in sourcepar.values()))
-	Mw_mean  = Mw_array.mean()
-	Mw_std   = Mw_array.std()
-	parfile.write('Mw: %.2f +/- %.2f\n' % (Mw_mean, Mw_std))
-
-	# Mo (N.m)
-	Mo_array = np.power(10, Mw_array*1.5 + 9.1)
-	Mo_mean  = Mo_array.mean()
-	Mo_std   = Mo_array.std()
-	parfile.write('Mo: %.3e +/- %.3e N.m\n' % (Mo_mean, Mo_std))
-
-	# fc , hertz
-	fc_array = np.array(list(x['fc'] for x in sourcepar.values()))
-	fc_mean  = fc_array.mean()
-	fc_std   = fc_array.std()
-	parfile.write('fc: %.3f +/- %.3f Hz\n' % (fc_mean, fc_std))
-
-	# ra, radius (meters)
-	ra_array = 0.37 * vs_m / fc_array
-	ra_mean  = ra_array.mean()
-	ra_std   = ra_array.std()
-	parfile.write('Source radius: %.3f +/- %.3f m\n' % (ra_mean, ra_std))
-
-	# bds, Brune stress drop (MPa)
-	bsd_array = 0.4375 * Mo_array / np.power(ra_array, 3) * 1e-6
-	bsd_mean  = bsd_array.mean()
-	bsd_std   = bsd_array.std()
-	parfile.write('Brune stress drop: %.3f +/- %.3f MPa\n' % (bsd_mean, bsd_std))
-
-	parfile.close()
-	logging.info('Output written to: ' + parfilename)
+	# Save output
+	write_output(config, evid, sourcepar)
 
 	# Plotting
-	plotspectra(spec_st, options, config)
+	plotspectra(config, spec_st)
 
 	ssp_exit()
 
