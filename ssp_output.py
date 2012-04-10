@@ -6,7 +6,7 @@
 import os
 import logging
 import numpy as np
-from ssp_setup import * #ssp_exit
+from ssp_setup import ssp_exit
 
 def write_output(config, evid, sourcepar):
 	if len(sourcepar) == 0:
