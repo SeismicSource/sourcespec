@@ -6,6 +6,9 @@
 # Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
 # 
 # (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
+# v 0.4 - 2012-04-10 - Several improvements:
+#			Logging infastructure
+#			Code reorganization
 # v 0.3 - 2012-02-10 - Several improvements:
 #			Output is no more printed at screen, but on file
 #			The plots can be saved to a file as well.
