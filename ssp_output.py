@@ -74,8 +74,7 @@ def write_output(config, evid, sourcepar):
 		for i in range(0,4):
 			line[49+i] = mag[0+i]
 		outline = ''.join(line)
-		bname = os.path.basename(config.options.hypo_file)
-		hypo_file_out = '%s/%s' % (config.options.outdir, bname)
+		hypo_file_out = '%s/%s.ssp.h' % (config.options.outdir, evid)
 		fp = open(hypo_file_out, 'w')
 		fp.write(outline)
 		fp.close()

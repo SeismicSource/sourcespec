@@ -5,7 +5,6 @@
 # All the functions whose name is between "__" are intended to be private
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 from __future__ import division
-import sys
 import os
 import logging
 import shutil
@@ -206,7 +205,8 @@ def __parse_hypocenter__(hypo_file):
 	lon_deg = float(line[31:36])
 	hypo.longitude = lon + lon_deg/60
 	hypo.depth = float(line[36:42])
-	hypo.evid = line[72:82]
+	evid = os.path.basename(hypo_file)
+	hypo.evid = evid.replace('.phs','').replace('.h','').replace('.hyp','')
 
 	return hypo
 
@@ -277,7 +277,7 @@ def __build_filelist__(path, filelist, tmpdir):
 		try: 
 			open(path)
 		except IOError, message:
-			sys.stderr.write('%s\n' % message)
+			logging.error(message)
 			return
 		if tarfile.is_tarfile(path) and tmpdir!=None:
 			tar = tarfile.open(path)
@@ -352,7 +352,7 @@ def read_traces(config):
 		try:
 			tmpst = read(filename)
 		except:
-			logging.error('%s: Unable to read file as a trace: skipping\n' % filename)
+			logging.error('%s: Unable to read file as a trace: skipping' % filename)
 			continue
 		for trace in tmpst.traces:
 			st.append(trace)
