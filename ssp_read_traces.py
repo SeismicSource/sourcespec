@@ -33,20 +33,27 @@ def __correct_traceid__(trace):
 def __add_paz_and_coords__(trace, dataless):
 	trace.stats.paz = None
 	trace.stats.coords = None
+	traceid = trace.getId()
+	time = trace.stats.starttime
 	# We first look into the dataless dictionary, if available
 	if dataless != None:
 		for sp in dataless.values():
+			# Check first if our traceid is in the dataless file
+			if not traceid in str(sp):
+				continue	
 			try:
-				traceid = trace.getId()
-				time = trace.stats.starttime
 				paz = sp.getPAZ(traceid, time)
 				coords = AttribDict(sp.getCoordinates(traceid, time))
 				# elevation is in meters in the dataless
 				coords.elevation /= 1000
-				trace.stats.paz = paz
-				trace.stats.coords = coords
-			except SEEDParserException:
+			except SEEDParserException, message:
+				logging.error("%s time: %s" % (message, str(time)))
 				pass
+	try:
+		trace.stats.paz = paz
+		trace.stats.coords = coords
+	except:
+		pass
 	# If we couldn't find any PAZ in the dataless dictionary,
 	# we try to build the sensitivity from the
 	# user2 and user3 header fields (ISNet format)

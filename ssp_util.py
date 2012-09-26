@@ -4,6 +4,7 @@
 # Utility functions for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 from __future__ import division
+import logging
 import math
 import numpy as np
 from obspy.signal import cosTaper
@@ -72,8 +73,11 @@ def smooth(x, window_len=11, window='hanning'):
 	return yy
 
 def remove_instr_response(trace, just_sensitivity=False, pre_filt=(0.5, 0.6, 40., 45.)):
+	traceId = trace.getId()
 	paz = trace.stats.paz
-	if paz == None: return None
+	if paz == None:
+		logging.warning('%s: no poles and zeros for trace' % traceId)
+		return None
 
 	# remove the mean...
 	trace.detrend(type='constant')

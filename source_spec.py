@@ -70,7 +70,7 @@ def main():
 	# Loop on stations for building spectra and the spec_st object 
 	spec_st = Stream()
 	for trace in st.traces:
-		#print trace.getId()
+		traceId = trace.getId()
 
 		# check if the trace has (significant) signal
 		# since the count value is generally huge, we need to demean twice
@@ -83,7 +83,7 @@ def main():
 		# Remove instrument response
 		if remove_instr_response(trace,
 				config.correct_sensitivity_only, config.pre_filt) == None:
-			dprint('Undefined instrument response: continue')
+			logging.warning('%s: Unable to remove instrument response: skipping trace' % traceId)
 			continue
 
 		stats = trace.stats
@@ -96,7 +96,9 @@ def main():
 
 		# compute hypocentral distance hd
 		hd = hypo_dist(trace)
-		if hd == None: continue
+		if hd == None:
+			logging.warning('%s: Unable to compute hypocentral distance: skipping trace' % traceId)
+			continue
 		hd_m = hd*1000
 
 		# S time window
@@ -106,7 +108,7 @@ def main():
 		trace_cut = trace.slice(t1, t2)
 		npts = len(trace_cut.data)
 		if npts == 0:
-			dprint('No data for the select cut interval: continue')
+			logging.warning('%s: No data for the select cut interval: skipping trace' % traceId)
 			continue
 		
 		# TODO: parameterize
@@ -147,7 +149,9 @@ def main():
 			# cut frequencies:
                         freq1 = config.freq1_broadb
                         freq2 = config.freq2_broadb
-		else: continue
+		else:
+			dprint('%s: Unknown instrument type: %s: skipping trace' % (traceId, instrtype))
+			continue
 
 		# remove the mean...
 		trace_cut.detrend(type='constant')
@@ -201,7 +205,9 @@ def main():
 		for instrtype in set(x.stats.instrtype for x in spec_st_sel):
 			spec_h = None
 			for spec in spec_st_sel.traces:
-				if spec.stats.instrtype != instrtype: continue
+				# this should never happen:
+				if spec.stats.instrtype != instrtype:
+					continue
 				if spec_h == None:
 					spec_h = spec.copy()
 					spec_h.stats.channel = 'H'
