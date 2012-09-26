@@ -68,14 +68,22 @@ def write_output(config, evid, sourcepar):
 
 	if config.options.hypo_file:
 		fp = open(config.options.hypo_file, 'r')
-		line = list(fp.readline())
+		line = fp.readline()
+		# Check if first 10 digits of the line contain characters
+		if any(c.isalpha() for c in line[0:10]):
+			line1 = line
+			line = fp.readline()
+		line = list(line)
 		fp.close()
 		mag='%03.2f' % Mw_mean
 		for i in range(0,4):
-			line[49+i] = mag[0+i]
+			#line[49+i] = mag[0+i]
+			line[45+i] = mag[0+i]
 		outline = ''.join(line)
 		hypo_file_out = '%s/%s.ssp.h' % (config.options.outdir, evid)
 		fp = open(hypo_file_out, 'w')
+		try: fp.write(line1)
+		except: pass
 		fp.write(outline)
 		fp.close()
 		logging.info('Hypo file written to: ' + hypo_file_out)

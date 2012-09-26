@@ -15,9 +15,13 @@ try:
         from IPython.frontend.terminal.embed import InteractiveShellEmbed
         ipshell = InteractiveShellEmbed()
 except ImportError:
-        # ipython < 0.11
-        from IPython.Shell import IPShellEmbed
-        ipshell = IPShellEmbed()
+	try:
+        	# ipython < 0.11
+	        from IPython.Shell import IPShellEmbed
+       		ipshell = IPShellEmbed()
+	except ImportError:
+		# Give up!
+		ipshell = None
 
 DEBUG=False
 def dprint(string):
@@ -100,7 +104,10 @@ def setup_logging(config, basename=None):
 	#		filename=logfile,
 	#		filemode='w'
 	#		)
-	logging.captureWarnings(True)
+
+	# captureWarnings is not supported in old versions of python
+	try: logging.captureWarnings(True)
+	except: pass
 	log.setLevel(logging.DEBUG)
 	filehand = logging.FileHandler(filename=logfile, mode=filemode)
 	filehand.setLevel(logging.DEBUG)

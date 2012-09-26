@@ -185,8 +185,8 @@ def __parse_hypocenter__(hypo_file):
 	# Corinth hypocenter file format:
 	# TODO: check file format
 	line = fp.readline()
-	# Skip the first line if it contains characters:
-	if line.replace(' ','').replace('\n','').isalpha():
+	# Skip the first line if it contains characters in the first 10 digits:
+	if any(c.isalpha() for c in line[0:10]):
 		line = fp.readline()
 	fp.close()
 	timestr = line[0:17]
