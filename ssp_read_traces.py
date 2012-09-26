@@ -236,6 +236,10 @@ def __parse_picks__(pick_file):
 		# skip separator and empty lines
 		stripped_line = line.replace(' ','')
 		if stripped_line == '10' or stripped_line == '': continue
+		# Check if it is a pick line
+		# 6th character should be alpha (phase name: P or S)
+		if not line[5].isalpha():
+			continue
 
 		pick = __new_pick__()
 		pick.station  = line[0:4]
