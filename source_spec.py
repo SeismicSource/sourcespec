@@ -78,7 +78,10 @@ def main():
 		trace.detrend(type='constant')
 		trace.detrend(type='constant')
 		rms2 = np.power(trace.data, 2).sum()
-		if rms2 <= 1e-10: continue #TODO: parametrize?
+		rms_min = 1e-10 #TODO: parametrize?
+		if rms2 <= rms_min:
+			logging.warning('%s: Trace RMS smaller than %g: skipping trace' % (traceId, rms_min))
+			continue
 
 		# Remove instrument response
 		if remove_instr_response(trace,
