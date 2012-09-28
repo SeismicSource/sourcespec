@@ -53,6 +53,7 @@ from ssp_util import *
 from ssp_plot_spectra import *
 from ssp_output import *
 import spectrum
+from copy import deepcopy, copy
 
 
 def main():
@@ -108,10 +109,18 @@ def main():
 		s_arrival_time = swave_arrival(trace, config.vs)
 		t1 = s_arrival_time - config.pre_s_time
 		t2 = t1 + config.s_win_length
-		trace_cut = trace.slice(t1, t2)
+		#trace_cut = trace.slice(t1, t2)
+		trace_cut = copy(trace)
+		trace_cut.stats = deepcopy(trace.stats)
+		trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+
 		npts = len(trace_cut.data)
 		if npts == 0:
-			logging.warning('%s: No data for the select cut interval: skipping trace' % traceId)
+			logging.warning('%s: No data for the selected cut interval: skipping trace' % traceId)
+			continue
+		nzeros = len(np.where(trace_cut.data==0)[0])
+		if nzeros > npts/4:
+			logging.warning('%s: Too many gaps for the selected cut interval: skipping trace' % traceId)
 			continue
 		
 		# TODO: parameterize
