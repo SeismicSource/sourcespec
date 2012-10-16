@@ -5,6 +5,7 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 from __future__ import division
 import logging
+import warnings
 import math
 import numpy as np
 from obspy.signal import cosTaper
@@ -93,12 +94,16 @@ def remove_instr_response(trace, just_sensitivity=False, pre_filt=(0.5, 0.6, 40.
 		trace.data /= paz.sensitivity
 	# Otherwhise we need to call trace.simulate(), which is quite slow...
 	else:
-		# N.B. using "sacsim=True" makes this two times slower!
-		# (beacuse of "c_sac_taper()")
-		# TODO: fill up a bug on obspy.org
-		trace.simulate(paz_remove=paz, paz_simulate=None,
-			remove_sensitivity=True, simulate_sensitivity=None,
-			pre_filt=pre_filt, sacsim=False)
+		with warnings.catch_warnings(record=True) as w:
+			# N.B. using "sacsim=True" makes this two times slower!
+			# (because of "c_sac_taper()")
+			# TODO: fill up a bug on obspy.org
+			trace.simulate(paz_remove=paz, paz_simulate=None,
+				remove_sensitivity=True, simulate_sensitivity=None,
+				pre_filt=pre_filt, sacsim=False)
+			if len(w)>0:
+				logging.warning('%s: remove_instr_response: %s'
+						% (trace.stats.station, w[-1].message))
 	return trace
 # -----------------------------------------------------------------------------
 
