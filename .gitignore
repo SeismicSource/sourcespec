@@ -11,3 +11,6 @@ testdata/CRL/PZ.new_20120217/
 testdata/CRL/PZ.new_20120221/
 
 *.sqlite
+
+#Temporary files
+*~
