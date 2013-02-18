@@ -54,7 +54,8 @@ from ssp_plot_spectra import *
 from ssp_output import *
 import spectrum
 from copy import deepcopy, copy
-
+from obspy.core.util.geodetics import gps2DistAzimuth
+from obspy.signal import estimateMagnitude
 
 def main():
 	# Setup stage
@@ -68,10 +69,17 @@ def main():
 	evid = st.traces[0].stats.hypo.evid
 	setup_logging(config, evid)
 
+	magnitudes = []
+
 	# Loop on stations for building spectra and the spec_st object 
 	spec_st = Stream()
 	for trace in st.traces:
 		traceId = trace.getId()
+
+		# copy trace for local magnitude estimation
+		trace_cp = copy(trace)
+		trace_cp.stats = deepcopy(trace.stats)
+
 
 		# check if the trace has (significant) signal
 		# since the count value is generally huge, we need to demean twice
@@ -205,10 +213,40 @@ def main():
 
 		# Cut the spectrum between freq1 and freq2
 		spec_cut = spec.slice(freq1, freq2)
-
 		spec_st.append(spec_cut)
 
-	#end of loop on stations for building spectra
+		# use min/max amplitude for local magnitude estimation
+
+		# remove the mean...
+		trace_cp.detrend(type='constant')
+		# ...and the linear trend...
+		trace_cp.detrend(type='linear')
+		# ...filter
+		trace_cp.filter(type='bandpass',  freqmin=0.1, freqmax=20)
+		#trace_cp.filter(type='bandpass',  freqmin=0.5, freqmax=20)
+		# ...and taper
+		cosine_taper(trace_cp.data, width=0.5)
+
+		delta_amp = trace_cp.data.max() - trace_cp.data.min() 
+		#delta_amp = max(abs(trace_cp.data))
+		delta_t = trace_cp.data.argmax() - trace_cp.data.argmin()	
+		delta_t = delta_t / trace_cp.stats.sampling_rate
+
+		#estimate Magnitude 
+		ml = estimateMagnitude(trace_cp.stats.paz, delta_amp, delta_t, hd)
+
+		magnitudes.append(ml)
+		#mlId = '%s %s.%s %.1f' % (evid, station, spec.stats.instrtype, ml)
+		print '%s %s.%s %s %.1f' % (evid, station, spec.stats.instrtype, "Ml", ml)
+
+
+	# end of loop on stations for building spectra 
+
+	# average local magnitude
+	Ml = np.mean(magnitudes)
+	print '\nNetwork Local Magnitude: %.2f' % Ml
+
+
 
 	# Add to spec_st the "horizontal" component, obtained from the
 	# modulus of the N-S and E-W components.
@@ -231,9 +269,6 @@ def main():
 					spec_h.data = data_h
 			spec_st.append(spec_h)
 			
-	# convert the spectral amplitudes to moment magnitude
-	for spec in spec_st.traces:
-		spec.data = (np.log10(spec.data) - 9.1 ) / 1.5 
 
 	# Inversion of displacement spectra
 	loge = math.log10(math.e)
@@ -277,7 +312,16 @@ def main():
 
 			hd   = spec.stats.hypo_dist
 			hd_m = hd*1000
-			az   = 0 #TODO: add azimuth computation
+
+			# azimuth computation
+			coords = spec.stats.coords
+			hypo = spec.stats.hypo
+			stla = coords.latitude
+			stlo = coords.longitude
+			evla = hypo.latitude
+			evlo = hypo.longitude
+			geod = gps2DistAzimuth(evla, evlo, stla, stlo)
+                        az   = geod[1]
 			dprint('%s %s %f %f' % (station, spec.stats.instrtype, hd, az))
 			coeff = math.pi*loge*hd_m/vs_m
 			dprint('coeff= %f' % coeff)
@@ -298,10 +342,15 @@ def main():
 			yerr[xdata<=f_weight] = 1./math.sqrt(weight)
 			# Curve fitting using the Levenburg-Marquardt algorithm
 			params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
+			try:
+        			params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
+			except RuntimeError:
+        			logging.warning('Unable to fit spectral model for station: %s' % station)
 			#print params_opt, params_cov
 			par = dict(zip(params_name, params_opt))
 			par['hyp_dist'] = hd
 			par['az'] = az
+			par['Ml'] = Ml
 			chanId = '%s.%s' % (station, spec.stats.instrtype)
 			sourcepar[chanId] = par
 
