@@ -6,6 +6,13 @@
 # Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
 # 
 # (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
+# (c) 2013-     Claudio Satriano <satriano@ipgp.fr>,
+#               Emanuela Matrullo <matrullo@geologie.ens.fr>
+# v 0.5 - 2013-02-10  Several improvements (Emanuela Matrullo - matrullo@geologie.ens.fr):
+#         Azimuth computation
+#         Construction of a overall database
+#         Local magnitude computation
+#         konnoOhmachiSmoothing
 # v 0.4 - 2012-04-10 - Several improvements:
 #         Logging infastructure
 #         Code reorganization
