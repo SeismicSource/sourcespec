@@ -5,6 +5,7 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 import os
 import logging
+import sqlite3
 import numpy as np
 from ssp_setup import ssp_exit
 
@@ -19,15 +20,36 @@ def write_output(config, evid, sourcepar):
     parfilename = '%s/%s.ssp.out' % (config.options.outdir, evid)
     parfile = open(parfilename, 'w')
 
-    # Write source parameters
+    # Open SQLite database
+    conn = sqlite3.connect(config.database_file)
+    c = conn.cursor()
+    
+    # Init database schema
+    c.execute('create table if not exists Stations (stid, evid, Mo, Mw, fc, t_star, dist, azimuth);')
+    
+    # Write source parameters to file and database
     parfile.write('*** Source parameters ***\n')
     for statId in sorted(sourcepar.keys()):
         par = sourcepar[statId]
+        
+        Mo  = np.power(10, par['Mw']*1.5 + 9.1)
+
+        # Remove existing line, if present
+        t = (statId, evid)
+        c.execute('delete from Stations where stid=? and evid=?;', t)
+        
+        # Insert new line        
+        t = (statId, evid, Mo, par['Mw'], par['fc'], par['t_star'], par['hyp_dist'], par['az'])
+        c.execute('insert into Stations values(?, ?, ?, ?, ?, ?, ?, ?);', t)
+
         parfile.write('%s\t' % statId)
         for key in par:
             parfile.write('  %s %6.3f ' % (key, par[key]))
         parfile.write('\n')
     parfile.write('\n')
+
+    # Commit changes
+    conn.commit()
 
     ## Compute and write average source parameters
     parfile.write('*** Average source parameters ***\n')
@@ -49,6 +71,12 @@ def write_output(config, evid, sourcepar):
     fc_std   = fc_array.std()
     parfile.write('fc: %.3f +/- %.3f Hz\n' % (fc_mean, fc_std))
 
+    # t_star 
+    t_star_array = np.array(list(x['t_star'] for x in sourcepar.values()))
+    t_star_mean  = t_star_array.mean()
+    t_star_std   = t_star_array.std()
+    parfile.write('t_star: %.3f +/- %.3f Hz\n' % (t_star_mean, t_star_std))
+
     # ra, radius (meters)
     vs_m = config.vs*1000
     ra_array = 0.37 * vs_m / fc_array
@@ -56,15 +84,30 @@ def write_output(config, evid, sourcepar):
     ra_std   = ra_array.std()
     parfile.write('Source radius: %.3f +/- %.3f m\n' % (ra_mean, ra_std))
 
-    # bds, Brune stress drop (MPa)
+    # bsd, Brune stress drop (MPa)
     bsd_array = 0.4375 * Mo_array / np.power(ra_array, 3) * 1e-6
     bsd_mean  = bsd_array.mean()
     bsd_std   = bsd_array.std()
     parfile.write('Brune stress drop: %.3f +/- %.3f MPa\n' % (bsd_mean, bsd_std))
 
+    # Ml
+    Ml_array = np.array(list(x['Ml'] for x in sourcepar.values()))
+    Ml_mean  = Ml_array.mean()
+    Ml_std   = Ml_array.std()
+    parfile.write('Ml: %.3f +/- %.3f \n' % (Ml_mean, Ml_std))
+
+    # Write average source parameters to database
+    c.execute('create table if not exists Events (evid, Mw_mean, Mo_mean, fc_mean, t_star_mean, ra_mean, bsd_mean, Ml_mean);')
+    t = (evid, Mw_mean)
+    c.execute('delete from Events where evid=? and Mw_mean=?;', t)
+    t = (evid, Mw_mean, Mo_mean, fc_mean, t_star_mean, ra_mean, bsd_mean, Ml_mean)
+    c.execute('insert into Events values(?, ?, ?, ?, ?, ?, ?, ?);', t)
+    # Commit changes and close database
+    conn.commit()
+    conn.close()
+
     parfile.close()
     logging.info('Output written to: ' + parfilename)
-
 
     if config.options.hypo_file:
         fp = open(config.options.hypo_file, 'r')
