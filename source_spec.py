@@ -63,6 +63,7 @@ import spectrum
 from copy import deepcopy, copy
 from obspy.core.util.geodetics import gps2DistAzimuth
 from obspy.signal import estimateMagnitude
+from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
 
 def main():
     # Setup stage
@@ -202,11 +203,13 @@ def main():
         for i in range(0,nint):
             spec.data /= (2 * math.pi * spec.get_freq())
 
-        # TODO: konno-omachi
         # smooth the abs of fft
-        data_smooth = smooth(spec.data, 6)
+        #data_smooth = smooth(spec.data, 6)
+        #datanoise_smooth = smooth(specnoise.data, 6)
+        data_smooth = konnoOhmachiSmoothing(spec.data, spec.get_freq(),40,normalize=True)
 
         # Uncomment these lines to see the effect of smoothing
+        #import matplotlib.pyplot as plt
         #plt.figure()
         #plt.loglog(spec.get_freq(), spec.data, color='gray')
         #plt.loglog(spec.get_freq(), data_smooth)
