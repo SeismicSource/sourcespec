@@ -335,7 +335,12 @@ def __parse_picks__(pick_file):
             pick.flag     = line[4:5]
             pick.phase    = line[5:6]
             pick.polarity = line[6:7]
-            pick.quality  = int(line[7:8])
+            try:
+                pick.quality = int(line[7:8])
+            except ValueError:
+                # If we cannot read pick quality,
+                # we give the pick the lowest quality
+                pick.quality = 4
             timestr       = line[9:24]
             dt = datetime.strptime(timestr, '%y%m%d%H%M%S.%f')
             pick.time = UTCDateTime(dt)
@@ -351,7 +356,12 @@ def __parse_picks__(pick_file):
             pick2.flag     = line[36:37]
             pick2.phase    = line[37:38]
             pick2.polarity = line[38:39]
-            pick2.quality  = int(line[39:40])
+            try:
+                pick2.quality = int(line[39:40])
+            except ValueError:
+                # If we cannot read pick quality,
+                # we give the pick the lowest quality
+                pick2.quality = 4
             pick2.time     = pick.time + float(stime)
 
             picks.append(pick2)
