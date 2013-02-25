@@ -2,7 +2,7 @@
 # ssp_setup.py
 #
 # Setup functions for source_spec
-# (c) 2012 Claudio Satriano <satriano@ipgp.fr>
+# (c) 2012-2013 Claudio Satriano <satriano@ipgp.fr>
 import sys
 import os
 import logging
@@ -10,18 +10,21 @@ from imp import load_source
 from optparse import OptionParser
 from datetime import datetime
 
-try:
-        # ipython >= 0.11
-        from IPython.frontend.terminal.embed import InteractiveShellEmbed
-        ipshell = InteractiveShellEmbed()
-except ImportError:
+if sys.stdout.isatty():
 	try:
-        	# ipython < 0.11
-	        from IPython.Shell import IPShellEmbed
-       		ipshell = IPShellEmbed()
+	        # ipython >= 0.11
+	        from IPython.frontend.terminal.embed import InteractiveShellEmbed
+	        ipshell = InteractiveShellEmbed()
 	except ImportError:
-		# Give up!
-		ipshell = None
+		try:
+	        	# ipython < 0.11
+		        from IPython.Shell import IPShellEmbed
+	       		ipshell = IPShellEmbed()
+		except ImportError:
+			# Give up!
+			ipshell = None
+else:
+	ipshell = None
 
 DEBUG=False
 def dprint(string):
