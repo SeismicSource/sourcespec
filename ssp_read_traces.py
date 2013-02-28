@@ -30,7 +30,7 @@ def __correct_traceid__(trace):
 	except KeyError:
 		pass
 
-def __add_paz_and_coords__(trace, dataless):
+def __add_paz_and_coords__(trace, dataless, paz_dict=None):
 	trace.stats.paz = None
 	trace.stats.coords = None
 	traceid = trace.getId()
@@ -55,6 +55,16 @@ def __add_paz_and_coords__(trace, dataless):
 	except:
 		pass
 	# If we couldn't find any PAZ in the dataless dictionary,
+	# we try to attach paz from the paz dictionary passed
+        # as argument
+	if trace.stats.paz == None:
+                if paz_dict != None:
+                        try:
+                                paz = paz_dict[trace.id]
+                                trace.stats.paz = paz
+                        except KeyError:
+                                pass
+        # If we're still out of luck,
 	# we try to build the sensitivity from the
 	# user2 and user3 header fields (ISNet format)
 	if trace.stats.paz == None:
@@ -71,7 +81,8 @@ def __add_paz_and_coords__(trace, dataless):
 			trace.stats.paz = paz
 		except AttributeError:
 			pass
-	# Same thing for the station coordinates
+	# If we still don't have trace coordinates,
+        # we try to get them from SAC header
 	if trace.stats.coords == None:
 		try: 
 			stla = trace.stats.sac.stla
@@ -164,7 +175,7 @@ def __read_dataless__(path):
 	if path == None: return None
 
 	logging.info('Reading dataless...')
-	dataless=dict()
+	dataless = dict()
 	if os.path.isdir(path):
 		listing = os.listdir(path)
 		for filename in listing:
@@ -176,6 +187,50 @@ def __read_dataless__(path):
         #TODO: manage the case in which "path" is a file name
 	logging.info('Reading dataless: done')
 	return dataless
+
+def __read_paz__(path):
+        '''
+        Reads a directory with paz files
+        (TODO: read a single file)
+        Limitations:
+        (1) directory must contain *only* paz files
+        (2) all the paz files must have the same prefix (if any)
+        (3) paz file can optionally have th ".pz" suffix
+        (4) paz file name (without prefix and suffix) *has* to be
+            the trace_id (NET.STA.LOC.CHAN) of the corresponding trace 
+        '''
+	if path == None: return None
+
+        from obspy.sac.sacio import attach_paz
+        from obspy.core import Trace
+	logging.info('Reading PAZ...')
+        paz = dict()
+	if os.path.isdir(path):
+		listing = os.listdir(path)
+                #check if files have a common prefix: we will strip it later
+                prefix = os.path.commonprefix(listing)
+		for filename in listing:
+			fullpath='%s/%s' % (path, filename)
+			try:
+                                # This is a horrible hack!
+                                # Since attach_paz needs a trace,
+                                # we create a trace and then, later,
+                                # we just retrieve the paz object
+                                # from the trace ;)
+                                tr = Trace()
+				attach_paz(tr, fullpath)
+                                bname = os.path.basename(filename)
+                                #strip .pz suffix, if there
+                                bname = bname.rstrip('.pz')
+                                #and strip any common prefix
+                                #we assume that the string which remains
+                                #is the trace_id
+                                trace_id = bname.lstrip(prefix)
+				paz[trace_id] = tr.stats.paz.copy()
+			except IOError: continue
+        #TODO: manage the case in which "path" is a file name
+	logging.info('Reading PAZ: done')
+	return paz
 
 def __parse_hypocenter__(hypo_file):
 	hypo = AttribDict()
@@ -362,6 +417,8 @@ def __set_pick_file_path__(config):
 def read_traces(config):
 	# read dataless	
 	dataless = __read_dataless__(config.options.dataless)
+	# read PAZ (normally this is an alternative to dataless)
+	paz = __read_paz__(config.options.paz)
 	# parse hypocenter file
 	__set_hypo_file_path__(config)
 	hypo = __parse_hypocenter__(config.options.hypo_file)
@@ -396,7 +453,7 @@ def read_traces(config):
 		for trace in tmpst.traces:
 			st.append(trace)
 			__correct_traceid__(trace)
-			__add_paz_and_coords__(trace, dataless)
+			__add_paz_and_coords__(trace, dataless, paz)
 			__add_instrtype__(trace)
 			__add_hypocenter__(trace, hypo)
 			__add_picks__(trace, picks)

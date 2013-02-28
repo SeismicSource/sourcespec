@@ -40,6 +40,8 @@ def __parse_args():
 			help="Load configuration from FILE (default: config.py)", metavar="DIR | FILE")
 	parser.add_option("-d", "--dataless", dest="dataless", action="store", default=None,
                   help="Search for dataless in DIR or in FILE", metavar="DIR | FILE")
+	parser.add_option("-z", "--paz", dest="paz", action="store", default=None,
+                  help="Search for poles and zeros (PAZ) in DIR or in FILE", metavar="DIR | FILE")
 	parser.add_option("-H", "--hypocenter", dest="hypo_file", action="store", default=None,
                   help="Get hypocenter information from FILE", metavar="FILE")
 	parser.add_option("-p", "--pickfile", dest="pick_file", action="store", default=None,
