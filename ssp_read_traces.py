@@ -173,6 +173,7 @@ def __read_dataless__(path):
 				sp = Parser(fullpath)
 				dataless[filename] = sp
 			except IOError: continue
+        #TODO: manage the case in which "path" is a file name
 	logging.info('Reading dataless: done')
 	return dataless
 
@@ -227,16 +228,7 @@ def __new_pick__():
 	pick.time     = None
 	return pick
 
-def __parse_picks__(pick_file):
-	if pick_file == None: return None
-
-	try: fp = open(pick_file)
-	except: return None
-
-	picks = []
-
-	# Corinth hypocenter file format:
-	# TODO: check file format
+def __is_hypo_format(fp):
 	for line in fp.readlines():
 		# remove newline
 		line = line.replace('\n','')
@@ -245,37 +237,73 @@ def __parse_picks__(pick_file):
 		if stripped_line == '10' or stripped_line == '': continue
 		# Check if it is a pick line
 		# 6th character should be alpha (phase name: P or S)
-		if not line[5].isalpha():
-			continue
+                # other character should be digits (date/time)
+		if line[5].isalpha() and\
+                   line[9].isdigit() and\
+                   line[20].isdigit():
+                        fp.seek(0) #rewind file
+			return True
+                else:
+                        fp.seek(0) #rewind file
+                        return False
 
-		pick = __new_pick__()
-		pick.station  = line[0:4]
-		pick.flag     = line[4:5]
-		pick.phase    = line[5:6]
-		pick.polarity = line[6:7]
-		pick.quality  = int(line[7:8])
-		timestr       = line[9:24]
-		dt = datetime.strptime(timestr, '%y%m%d%H%M%S.%f')
-		pick.time = UTCDateTime(dt)
+#TODO: def __is_NLL_format(fp):
 
-		picks.append(pick)
+def __parse_picks__(pick_file):
+	if pick_file == None: return None
 
-		try: stime = line[31:36]
-		except: continue
-		if stime.replace(' ','') == '': continue
+	try: fp = open(pick_file)
+	except: return None
 
-		pick2 = __new_pick__()
-		pick2.station  = pick.station
-		pick2.flag     = line[36:37]
-		pick2.phase    = line[37:38]
-		pick2.polarity = line[38:39]
-		pick2.quality  = int(line[39:40])
-		pick2.time     = pick.time + float(stime)
+	picks = []
 
-		picks.append(pick2)
+        if __is_hypo_format(fp):
+	        # Corinth phase file format is hypo
+        	for line in fp.readlines():
+        		# remove newline
+        		line = line.replace('\n','')
+        		# skip separator and empty lines
+        		stripped_line = line.replace(' ','')
+        		if stripped_line == '10' or stripped_line == '': continue
+		        # Check if it is a pick line
+		        # 6th character should be alpha (phase name: P or S)
+                        # other character should be digits (date/time)
+		        if not ( line[5].isalpha() and\
+                                 line[9].isdigit() and\
+                                 line[20].isdigit() ):
+        			continue
+        
+        		pick = __new_pick__()
+        		pick.station  = line[0:4]
+        		pick.flag     = line[4:5]
+        		pick.phase    = line[5:6]
+        		pick.polarity = line[6:7]
+        		pick.quality  = int(line[7:8])
+        		timestr       = line[9:24]
+        		dt = datetime.strptime(timestr, '%y%m%d%H%M%S.%f')
+        		pick.time = UTCDateTime(dt)
+        
+        		picks.append(pick)
+        
+        		try: stime = line[31:36]
+        		except: continue
+        		if stime.replace(' ','') == '': continue
+        
+        		pick2 = __new_pick__()
+        		pick2.station  = pick.station
+        		pick2.flag     = line[36:37]
+        		pick2.phase    = line[37:38]
+        		pick2.polarity = line[38:39]
+        		pick2.quality  = int(line[39:40])
+        		pick2.time     = pick.time + float(stime)
 
-	fp.close()
-	return picks
+        		picks.append(pick2)
+        
+        	fp.close()
+        	return picks
+        else:
+                raise IOError('%s: Not a phase file' % pick_file)
+
 
 
 def __build_filelist__(path, filelist, tmpdir):
