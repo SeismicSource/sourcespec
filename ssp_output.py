@@ -3,6 +3,8 @@
 #
 # Output functions for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
+# (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
+#          Emanuela Matrullo <matrullo@geologie.ens.fr>
 import os
 import logging
 import sqlite3

@@ -4,6 +4,8 @@
 # Read traces for source_spec
 # All the functions whose name is between "__" are intended to be private
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
+# (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
+#          Emanuela Matrullo <matrullo@geologie.ens.fr>
 from __future__ import division
 import os
 import logging
