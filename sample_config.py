@@ -11,6 +11,8 @@ PLOT_SAVE = True
 #PLOT_SAVE_FORMAT = 'pdf' #slower
 PLOT_SAVE_FORMAT = 'png'
 
+database_file = 'sourcepar_sample.sqlite'
+
 # If true, traces are not fully deconvolved
 # for the instrumental response: only the
 # sensitivity is corrected (faster, especially
