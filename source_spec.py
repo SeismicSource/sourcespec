@@ -1,52 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-# source_spec.py
-# Python code to invert S-wave displacement spectra
-# Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
-# 
-# (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
-# (c) 2013-     Claudio Satriano <satriano@ipgp.fr>,
-#               Emanuela Matrullo <matrullo@geologie.ens.fr>
-# v 0.5 - 2013-02-10  Several improvements (Emanuela Matrullo - matrullo@geologie.ens.fr):
-#         Azimuth computation
-#         Construction of a overall database
-#         Local magnitude computation
-#         konnoOhmachiSmoothing
-# v 0.4 - 2012-04-10 - Several improvements:
-#         Logging infastructure
-#         Code reorganization
-# v 0.3 - 2012-02-10 - Several improvements:
-#         Output is no more printed at screen, but on file
-#         The plots can be saved to a file as well.
-#         We differentiate between short periods and broad bands
-# v 0.2 - 2012-02-06 - Extended and generalized for the CRL application 
-# v 0.1 - 2012-01-17 - Initial Python port
-
-# Computes the S-wave displacement spectra from stations recording a single event. 
 #
-# Reads as input a file, a tgz archive or a directory (which can, in turn, contain
-# files and/or tgz archives) with traces in any format supported by ObsPy.
-# Optionally, one can specify:
-# - a file or a dir path containing station dataless
-# - a hypocenter file
-# - a phase file with P and S arrivals
+# Main function for source_spec
+# (c) 2012 Claudio Satriano <satriano@ipgp.fr>
+# (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
+#          Emanuela Matrullo <matrullo@geologie.ens.fr>
 
-# The code computes spectra of the two horizontal components and then modulus as:
-#     sqrt(c1(w)^2+c2(w)^2)
-# It then inverts spectra for a 3-parameter model (Mw,Fc,t*=T/Qs) using initial
-# values for Mw, fc and t*:
-#      log S(w)= log(coeff*Mo) + log((1/(1+(w/wc)^2)) + log (exp (- w *t_star/2)) 
-# Plots all spectra on a single log-log graph (Mw vs log-frequency)
-# Plot obs vs theo spectra for each vectorial component
-# Computes average and st.dev of Mw, Mo, fc, source radius and Brune sd
-#
-# Original csh version by Aldo Zollo <zollo@unina.it>
-# Bash version by Claudio Satriano <satriano@na.infn.it>
-# v 1.0 - 2008-10-29 - Ported to bash
-#                    - Added more handling of exceptions to run safely in
-#                      automatic mode
-# Claudio Satriano <satriano@na.infn.it>
 from __future__ import division
 import os
 import logging

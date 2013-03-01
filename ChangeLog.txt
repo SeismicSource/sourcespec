@@ -1,0 +1,30 @@
+source_spec
+Python code to invert S-wave displacement spectra
+(c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
+(c) 2013-     Claudio Satriano <satriano@ipgp.fr>,
+              Emanuela Matrullo <matrullo@geologie.ens.fr>
+Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
+
+v 0.5 - 2013-02-10  Several improvements:
+        Azimuth computation
+        Construction of a overall database
+        Local magnitude computation
+        konnoOhmachiSmoothing
+v 0.4 - 2012-04-10 - Several improvements:
+        Logging infastructure
+        Code reorganization
+v 0.3 - 2012-02-10 - Several improvements:
+        Output is no more printed at screen, but on file
+        The plots can be saved to a file as well.
+        We differentiate between short periods and broad bands
+v 0.2 - 2012-02-06 - Extended and generalized for the CRL application 
+v 0.1 - 2012-01-17 - Initial Python port
+
+
+Original changelog:
+Original csh version by Aldo Zollo <zollo@unina.it>
+Bash version by Claudio Satriano <satriano@na.infn.it>
+v 1.0 - 2008-10-29 - Ported to bash
+                   - Added more handling of exceptions to run safely in
+                     automatic mode
+                     Claudio Satriano <satriano@na.infn.it>
