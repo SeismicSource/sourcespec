@@ -1,4 +1,4 @@
-## source_spec: a python code to invert S-wave displacement spectra
+## source_spec: a python code for inverting S-wave displacement spectra
 (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>  
 (c) 2013-     Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>  
