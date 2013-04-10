@@ -50,10 +50,10 @@ def plot_spectra(config, spec_st, ncols=4):
     nlines = int(math.ceil(nplots/ncols))
     plotn=1
     axes=[]
-
     for station in sorted(set(x.stats.station for x in spec_st.traces)):
         spec_st_sel = spec_st.select(station=station)
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
+            ax_text = False
             if plotn==1:
                 ax = fig.add_subplot(nlines, ncols, plotn)
             else:
@@ -75,10 +75,12 @@ def plot_spectra(config, spec_st, ncols=4):
                 if orientation == 'H': color='red'
                 if orientation == 'Synth': color='black'
                 ax.semilogx(spec.get_freq(), spec.data, color=color)
-                ax.text(0.05, 0.1, '%s %s' % (spec.stats.station, spec.stats.instrtype),
-                        horizontalalignment='left',
-                    verticalalignment='bottom',
-                    transform = ax.transAxes)
+                if not ax_text:
+                    ax.text(0.05, 0.1, '%s %s' % (spec.stats.station, spec.stats.instrtype),
+                            horizontalalignment='left',
+                            verticalalignment='bottom',
+                            transform = ax.transAxes)
+                    ax_text = True
 
     # Show the x-labels only for the last row
     for ax in axes[-ncols:]:
