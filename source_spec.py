@@ -18,6 +18,7 @@ from lib.ssp_read_traces import read_traces
 from lib.ssp_util import *
 from lib.ssp_plot_spectra import *
 from lib.ssp_output import *
+from lib.ssp_spectral_model import spectral_model
 from lib import spectrum
 from copy import deepcopy, copy
 from obspy.core.util.geodetics import gps2DistAzimuth
@@ -295,11 +296,6 @@ def main():
             dprint('%s %s %f %f' % (station, spec.stats.instrtype, hd, az))
             coeff = math.pi*loge*hd_m/vs_m
             dprint('coeff= %f' % coeff)
-
-            def spectral_model(freq, Mw, fc, t_star):
-                # log S(w)= log(coeff*Mo) + log((1/(1+(w/wc)^2)) + log (exp (- w *t_star/2)) 
-                # attenuation model: exp[-pi t* f] with t*=T /Q
-                return Mw - np.log10(1. + np.power((freq/fc),2) ) - loge*(math.pi*t_star*freq) 
 
             params_name = ('Mw', 'fc', 't_star')
             params_0 = np.array([Mw_0, fc_0, t_star_0])
