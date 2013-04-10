@@ -34,7 +34,7 @@ def dprint(string):
         sys.stderr.write(string)
         sys.stderr.write('\n')
 
-def __parse_args():
+def __parse_args_source_spec():
     usage = 'usage: %prog [options] trace_file(s) | trace_dir'
 
     parser = OptionParser(usage=usage);
@@ -55,9 +55,50 @@ def __parse_args():
 
     return options, args
 
-def configure():
+def __parse_args_source_model():
+    usage = 'usage: %prog [options] trace_file(s) | trace_dir'
+
+    parser = OptionParser(usage=usage);
+    parser.add_option('-c', '--configfile', dest='config_file', action='store', default='config.py',
+            help='Load configuration from FILE (default: config.py)', metavar='DIR | FILE')
+    parser.add_option('-f', '--fmin', dest='fmin', action='store', default='0.01',
+            help='Minimum frequency', metavar='FMIN')
+    parser.add_option('-F', '--fmax', dest='fmax', action='store', default='50.0',
+            help='Maximum frequency', metavar='FMAX')
+    parser.add_option('-k', '--fc', dest='fc', action='store', default='10.0',
+            help='Corner frequency', metavar='FC')
+    parser.add_option('-m', '--mag', dest='mag', action='store', default='2.0',
+            help='Moment magnitude', metavar='Mw')
+    parser.add_option('-t', '--tstar', dest='t_star', action='store', default='0.0',
+            help='T-star (attenuation)', metavar='T')
+
+    (options, args) = parser.parse_args()
+    if len(args) < 0:
+        parser.print_usage(file=sys.stderr)
+        sys.stderr.write("\tUse '-h' for help\n\n")
+        sys.exit(1)
+
+    options.fmin = float(options.fmin)
+    options.fmax = float(options.fmax)
+    options.fc = float(options.fc)
+    options.mag = float(options.mag)
+    options.t_star = float(options.t_star)
+
+    # Add unused options (required by source_spec):
+    options.hypo_file = None
+    options.pick_file = None
+
+    return options, args
+
+def configure(progname='source_spec'):
     global DEBUG
-    options, args = __parse_args()
+    if progname == 'source_spec':
+        options, args = __parse_args_source_spec()
+    elif progname == 'source_model':
+        options, args = __parse_args_source_model()
+    else:
+        sys.stderr.write('Wrong program name: %s\n' % progname)
+        sys.exit(1)
 
     config_file = options.config_file
     try:
