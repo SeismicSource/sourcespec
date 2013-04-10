@@ -32,21 +32,22 @@ def do_spectrum(trace):
     tr = Spectrum()
     # remove DC component (freq=0)
     tr.data = abs(amp)[1:]
-    tr.stats.delta    = 1. / (len(signal) * delta)
-    tr.stats.begin    = tr.stats.delta #the first frrquency is not 0!
+    tr.stats.delta = 1. / (len(signal) * delta)
+    tr.stats.begin = tr.stats.delta #the first frequency is not 0!
+    tr.stats.npts = len(tr.data)
     # copy some relevant header field
-    tr.stats.station  = trace.stats.station
-    tr.stats.network  = trace.stats.network
+    tr.stats.station = trace.stats.station
+    tr.stats.network = trace.stats.network
     tr.stats.location = trace.stats.location
-    tr.stats.channel  = trace.stats.channel
+    tr.stats.channel = trace.stats.channel
 
     return tr
 
 class Spectrum(Trace):
     def get_freq(self):
         fdelta = self.stats.delta
-        freq = np.arange(0, len(self.data)*fdelta, fdelta) 
-        freq = freq[0:len(self.data)]
+        freq = np.arange(0, self.stats.npts*fdelta, fdelta) 
+        freq = freq[0:self.stats.npts]
         freq += self.stats.begin
         return freq
     def plot(self, **kwargs):
