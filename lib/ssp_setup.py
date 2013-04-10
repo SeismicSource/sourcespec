@@ -61,6 +61,8 @@ def __parse_args_source_model():
     parser = OptionParser(usage=usage);
     parser.add_option('-c', '--configfile', dest='config_file', action='store', default='config.py',
             help='Load configuration from FILE (default: config.py)', metavar='DIR | FILE')
+    parser.add_option('-H', '--hypocenter', dest='hypo_file', action='store', default=None,
+            help='Get hypocenter information from FILE', metavar='FILE')
     parser.add_option('-f', '--fmin', dest='fmin', action='store', default='0.01',
             help='Minimum frequency', metavar='FMIN')
     parser.add_option('-F', '--fmax', dest='fmax', action='store', default='50.0',
@@ -85,7 +87,6 @@ def __parse_args_source_model():
     options.t_star = float(options.t_star)
 
     # Add unused options (required by source_spec):
-    options.hypo_file = None
     options.pick_file = None
 
     return options, args
