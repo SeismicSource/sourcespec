@@ -13,12 +13,12 @@ import math
 import numpy as np
 from scipy.optimize import curve_fit
 from obspy.core import Stream
-from ssp_setup import *
-from ssp_read_traces import read_traces
-from ssp_util import *
-from ssp_plot_spectra import *
-from ssp_output import *
-import spectrum
+from lib.ssp_setup import *
+from lib.ssp_read_traces import read_traces
+from lib.ssp_util import *
+from lib.ssp_plot_spectra import *
+from lib.ssp_output import *
+from lib import spectrum
 from copy import deepcopy, copy
 from obspy.core.util.geodetics import gps2DistAzimuth
 from obspy.signal import estimateMagnitude

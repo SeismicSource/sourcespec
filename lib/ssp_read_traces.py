@@ -13,6 +13,7 @@ import shutil
 import tarfile
 import tempfile
 from datetime import datetime
+from imp import load_source
 from obspy.core import Stream, read, UTCDateTime
 from obspy.core.util import AttribDict
 from obspy.xseed import Parser
@@ -20,10 +21,12 @@ from obspy.xseed.utils import SEEDParserException
 from ssp_setup import ssp_exit
 
 # TRACE MANIPULATION ----------------------------------------------------------
-def __correct_traceid__(trace):
+def __correct_traceid__(trace, traceids):
+    if traceids == None:
+        return
     try:
-        import traceids
-        traceid = traceids.__correct_traceid_dict__[trace.getId()]
+        trids = load_source('traceids', traceids)
+        traceid = trids.__correct_traceid_dict__[trace.getId()]
         net, sta, loc, chan = traceid.split('.')
         trace.stats.network = net
         trace.stats.station = sta
@@ -433,6 +436,11 @@ def read_traces(config):
     dataless = __read_dataless__(config.options.dataless)
     # read PAZ (normally this is an alternative to dataless)
     paz = __read_paz__(config.options.paz)
+    # traceid file
+    try:
+        traceids = config.traceids
+    except AttributeError:
+        traceids = None
     # parse hypocenter file
     __set_hypo_file_path__(config)
     hypo = __parse_hypocenter__(config.options.hypo_file)
@@ -466,7 +474,7 @@ def read_traces(config):
             continue
         for trace in tmpst.traces:
             st.append(trace)
-            __correct_traceid__(trace)
+            __correct_traceid__(trace, traceids)
             __add_paz_and_coords__(trace, dataless, paz)
             __add_instrtype__(trace)
             __add_hypocenter__(trace, hypo)
