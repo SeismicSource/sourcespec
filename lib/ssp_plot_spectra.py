@@ -12,7 +12,7 @@ import logging
 #from matplotlib.ticker import MaxNLocator
 from ssp_util import spec_minmax
 
-def plot_spectra(config, spec_st):
+def plot_spectra(config, spec_st, ncols=4):
     # Unload matplotlib modules (which have been presumably loaded by
     # ObsPy).
     # Source:
@@ -47,7 +47,6 @@ def plot_spectra(config, spec_st):
                 spec_minmax(spec.data, spec.get_freq(), amp_minmax, freq_minmax) 
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
             nplots += 1
-    ncols = 4
     nlines = int(math.ceil(nplots/ncols))
     plotn=1
     axes=[]
