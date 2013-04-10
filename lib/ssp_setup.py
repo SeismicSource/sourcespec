@@ -35,23 +35,19 @@ def dprint(string):
         sys.stderr.write('\n')
 
 def __parse_args():
-    usage = "usage: %prog [options] trace_file(s) | trace_dir"
+    usage = 'usage: %prog [options] trace_file(s) | trace_dir'
 
     parser = OptionParser(usage=usage);
-    parser.add_option("-c", "--configfile", dest="config_file", action="store", default='config.py',
-            help="Load configuration from FILE (default: config.py)", metavar="DIR | FILE")
-    parser.add_option("-d", "--dataless", dest="dataless", action="store", default=None,
-            help="Search for dataless in DIR or in FILE", metavar="DIR | FILE")
-    parser.add_option("-z", "--paz", dest="paz", action="store", default=None,
-            help="Search for poles and zeros (PAZ) in DIR or in FILE", metavar="DIR | FILE")
-    parser.add_option("-H", "--hypocenter", dest="hypo_file", action="store", default=None,
-            help="Get hypocenter information from FILE", metavar="FILE")
-    parser.add_option("-p", "--pickfile", dest="pick_file", action="store", default=None,
-            help="Get picks from FILE", metavar="FILE")
-    parser.add_option("-o", "--outdir", dest="outdir", action="store", default='sspec_out',
-            help="Save output to OUTDIR (default: sspec_out)", metavar="OUTDIR")
+    parser.add_option('-c', '--configfile', dest='config_file', action='store', default='config.py',
+            help='Load configuration from FILE (default: config.py)', metavar='DIR | FILE')
+    parser.add_option('-H', '--hypocenter', dest='hypo_file', action='store', default=None,
+            help='Get hypocenter information from FILE', metavar='FILE')
+    parser.add_option('-p', '--pickfile', dest='pick_file', action='store', default=None,
+            help='Get picks from FILE', metavar='FILE')
+    parser.add_option('-o', '--outdir', dest='outdir', action='store', default='sspec_out',
+            help='Save output to OUTDIR (default: sspec_out)', metavar='OUTDIR')
 
-    (options, args) = parser.parse_args();
+    (options, args) = parser.parse_args()
     if len(args) < 1:
         parser.print_usage(file=sys.stderr)
         sys.stderr.write("\tUse '-h' for help\n\n")
@@ -70,6 +66,20 @@ def configure():
     except:
         sys.stderr.write('Unable to open file: %s\n' % config_file)
         sys.exit(1)
+
+    # check if optional parameters are there:
+    try:
+        config.dataless
+    except AttributeError:
+        config.dataless = None
+    try:
+        config.paz
+    except AttributeError:
+        config.paz = None
+    try:
+        config.traceids
+    except AttributeError:
+        config.traceids = None
 
     #add options and args to config:
     config.__dict__['options'] = options

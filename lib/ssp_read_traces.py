@@ -433,14 +433,10 @@ def __set_pick_file_path__(config):
 # Public interface:
 def read_traces(config):
     # read dataless    
-    dataless = __read_dataless__(config.options.dataless)
+    dataless = __read_dataless__(config.dataless)
     # read PAZ (normally this is an alternative to dataless)
-    paz = __read_paz__(config.options.paz)
-    # traceid file
-    try:
-        traceids = config.traceids
-    except AttributeError:
-        traceids = None
+    paz = __read_paz__(config.paz)
+
     # parse hypocenter file
     __set_hypo_file_path__(config)
     hypo = __parse_hypocenter__(config.options.hypo_file)
@@ -474,7 +470,7 @@ def read_traces(config):
             continue
         for trace in tmpst.traces:
             st.append(trace)
-            __correct_traceid__(trace, traceids)
+            __correct_traceid__(trace, config.traceids)
             __add_paz_and_coords__(trace, dataless, paz)
             __add_instrtype__(trace)
             __add_hypocenter__(trace, hypo)
