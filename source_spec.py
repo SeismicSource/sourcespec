@@ -5,25 +5,22 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
-
 from __future__ import division
 import os
 import logging
 import math
 import numpy as np
 from scipy.optimize import curve_fit
-from obspy.core import Stream
+from lib.ssp_util import *
 from lib.ssp_setup import dprint, configure, setup_logging, ssp_exit
 from lib.ssp_read_traces import read_traces
-from lib.ssp_util import *
+from lib.ssp_process_traces import process_traces
+from lib.ssp_build_spectra import build_spectra
+from lib.ssp_local_magnitude import local_magnitude
 from lib.ssp_plot_spectra import *
 from lib.ssp_output import *
 from lib.ssp_spectral_model import spectral_model
-from lib import spectrum
-from copy import deepcopy, copy
 from obspy.core.util.geodetics import gps2DistAzimuth
-from obspy.signal import estimateMagnitude
-from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
 
 def main():
     # Setup stage
@@ -37,211 +34,14 @@ def main():
     evid = st.traces[0].stats.hypo.evid
     setup_logging(config, evid)
 
-    magnitudes = []
+    # Deconvolve, filter, cut traces:
+    proc_st = process_traces(config, st)
+    # Build spectra (amplitude in magnitude units)
+    spec_st = build_spectra(config, proc_st)
 
-    # Loop on stations for building spectra and the spec_st object 
-    spec_st = Stream()
-    for trace in st.traces:
-        traceId = trace.getId()
-
-        # copy trace for local magnitude estimation
-        trace_cp = copy(trace)
-        trace_cp.stats = deepcopy(trace.stats)
-
-
-        # check if the trace has (significant) signal
-        # since the count value is generally huge, we need to demean twice
-        # to take into account for the rounding error
-        trace.detrend(type='constant')
-        trace.detrend(type='constant')
-        rms2 = np.power(trace.data, 2).sum()
-        rms_min = 1e-10 #TODO: parametrize?
-        if rms2 <= rms_min:
-            logging.warning('%s: Trace RMS smaller than %g: skipping trace' % (traceId, rms_min))
-            continue
-
-        # Remove instrument response
-        if remove_instr_response(trace, config.correct_sensitivity_only,
-                                 config.pre_filt) == None:
-            logging.warning('%s: Unable to remove instrument response: skipping trace' % traceId)
-            continue
-
-        stats = trace.stats
-        comp  = stats.channel
-        # skip vertical components
-        if comp[-1] == 'Z':
-            continue
-        station = stats.station
-        dprint('%s %s' % (station, comp))
-
-        # compute hypocentral distance hd
-        hd = hypo_dist(trace)
-        if hd == None:
-            logging.warning('%s: Unable to compute hypocentral distance: skipping trace' % traceId)
-            continue
-        hd_m = hd*1000
-
-        # S time window
-        s_arrival_time = swave_arrival(trace, config.vs)
-        t1 = s_arrival_time - config.pre_s_time
-        t2 = t1 + config.s_win_length
-        #trace_cut = trace.slice(t1, t2)
-        trace_cut = copy(trace)
-        trace_cut.stats = deepcopy(trace.stats)
-        trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
-
-        npts = len(trace_cut.data)
-        if npts == 0:
-            logging.warning('%s: No data for the selected cut interval: skipping trace' % traceId)
-            continue
-        nzeros = len(np.where(trace_cut.data==0)[0])
-        if nzeros > npts/4:
-            logging.warning('%s: Too many gaps for the selected cut interval: skipping trace' % traceId)
-            continue
-        
-        # TODO: parameterize
-        # coefficient for converting displ spectrum
-        # to seismic moment (Aki&Richards,1980)
-        vs_m = config.vs*1000
-        vs3  = pow(vs_m,3) 
-        coeff = 4 * math.pi * vs3 * config.rho /config.rps/2.
-        dprint('coeff= %f' % coeff)
-
-        # compute S-wave (displacement) spectra from
-        # accelerometers and velocimeters, uncorrected for attenuation,
-        # corrected for instrumental constants, normalized by
-        # hypocentral distance
-        instrtype = stats.instrtype
-        if instrtype == 'acc':
-            nint = 2 #number of intergrations to perform
-            # band-pass frequencies:
-            # TODO: calculate from sampling rate?
-            bp_freqmin = config.bp_freqmin_acc
-            bp_freqmax = config.bp_freqmax_acc
-            # cut frequencies:
-            freq1 = config.freq1_acc
-            freq2 = config.freq2_acc
-        elif instrtype == 'shortp':
-            nint = 1 #number of intergrations to perform
-            # band-pass frequencies:
-            # TODO: calculate from sampling rate?
-            bp_freqmin = config.bp_freqmin_shortp
-            bp_freqmax = config.bp_freqmax_shortp
-            # cut frequencies:
-            freq1 = config.freq1_shortp
-            freq2 = config.freq2_shortp
-        elif instrtype == 'broadb':
-            nint = 1
-            bp_freqmin = config.bp_freqmin_broadb
-            bp_freqmax = config.bp_freqmax_broadb
-            # cut frequencies:
-            freq1 = config.freq1_broadb
-            freq2 = config.freq2_broadb
-        else:
-            dprint('%s: Unknown instrument type: %s: skipping trace' % (traceId, instrtype))
-            continue
-
-        # remove the mean...
-        trace_cut.detrend(type='constant')
-        # ...and the linear trend...
-        trace_cut.detrend(type='linear')
-        trace_cut.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
-        # ...and taper
-        cosine_taper(trace_cut.data, width=0.5)
-
-        # normalization for the hypocentral distance
-        trace_cut.data *= hd_m
-
-        # calculate fft
-        spec = spectrum.do_spectrum(trace_cut)
-        spec.stats.instrtype = instrtype
-        spec.stats.coords    = stats.coords
-        spec.stats.hypo      = stats.hypo
-        spec.stats.hypo_dist = stats.hypo_dist
-
-        # Integrate in frequency domain (divide by the pulsation omega)
-        for i in range(0,nint):
-            spec.data /= (2 * math.pi * spec.get_freq())
-
-        # smooth the abs of fft
-        #data_smooth = smooth(spec.data, 6)
-        #datanoise_smooth = smooth(specnoise.data, 6)
-        data_smooth = konnoOhmachiSmoothing(spec.data, spec.get_freq(),40,normalize=True)
-
-        # Uncomment these lines to see the effect of smoothing
-        #import matplotlib.pyplot as plt
-        #plt.figure()
-        #plt.loglog(spec.get_freq(), spec.data, color='gray')
-        #plt.loglog(spec.get_freq(), data_smooth)
-        #plt.grid(True)
-        #plt.show()
-        #ssp_exit()
-
-        spec.data = data_smooth
-        # convert to seismic moment
-        spec.data *= coeff
-
-        # Cut the spectrum between freq1 and freq2
-        spec_cut = spec.slice(freq1, freq2)
-        spec_st.append(spec_cut)
-
-        # use min/max amplitude for local magnitude estimation
-
-        # remove the mean...
-        trace_cp.detrend(type='constant')
-        # ...and the linear trend...
-        trace_cp.detrend(type='linear')
-        # ...filter
-        trace_cp.filter(type='bandpass',  freqmin=0.1, freqmax=20)
-        #trace_cp.filter(type='bandpass',  freqmin=0.5, freqmax=20)
-        # ...and taper
-        cosine_taper(trace_cp.data, width=0.5)
-
-        delta_amp = trace_cp.data.max() - trace_cp.data.min() 
-        #delta_amp = max(abs(trace_cp.data))
-        delta_t = trace_cp.data.argmax() - trace_cp.data.argmin()    
-        delta_t = delta_t / trace_cp.stats.sampling_rate
-
-        #estimate Magnitude 
-        ml = estimateMagnitude(trace_cp.stats.paz, delta_amp, delta_t, hd)
-
-        magnitudes.append(ml)
-        #mlId = '%s %s.%s %.1f' % (evid, station, spec.stats.instrtype, ml)
-        print '%s %s.%s %s %.1f' % (evid, station, spec.stats.instrtype, "Ml", ml)
-    # end of loop on stations for building spectra 
-
-    # average local magnitude
-    Ml = np.mean(magnitudes)
-    print '\nNetwork Local Magnitude: %.2f' % Ml
-
-    # convert the spectral amplitudes to moment magnitude
-    for spec in spec_st.traces:
-        spec.data = (np.log10(spec.data) - 9.1 ) / 1.5
-
-    # Add to spec_st the "horizontal" component, obtained from the
-    # modulus of the N-S and E-W components.
-    for station in set(x.stats.station for x in spec_st.traces):
-        spec_st_sel = spec_st.select(station=station)
-        for instrtype in set(x.stats.instrtype for x in spec_st_sel):
-            spec_h = None
-            for spec in spec_st_sel.traces:
-                # this should never happen:
-                if spec.stats.instrtype != instrtype:
-                    continue
-                if spec_h == None:
-                    spec_h = spec.copy()
-                    spec_h.stats.channel = 'H'
-                else:
-                    data_h = spec_h.data
-                    data   = spec.data
-                    data_h = np.power(data_h, 2) + np.power(data, 2)
-                    data_h = np.sqrt(data_h / 2) #divide by the number of horizontal components
-                    spec_h.data = data_h
-            spec_st.append(spec_h)
-            
+    Ml = local_magnitude(proc_st)
 
     # Inversion of displacement spectra
-    loge = math.log10(math.e)
     # Spectral weighting:
     #   weight for f<=f_weight
     #   1      for f> f_weight
@@ -294,6 +94,8 @@ def main():
             geod = gps2DistAzimuth(evla, evlo, stla, stlo)
             az   = geod[1]
             dprint('%s %s %f %f' % (station, spec.stats.instrtype, hd, az))
+            vs_m = config.vs*1000
+            loge = math.log10(math.e)
             coeff = math.pi*loge*hd_m/vs_m
             dprint('coeff= %f' % coeff)
 
@@ -316,7 +118,7 @@ def main():
             par = dict(zip(params_name, params_opt))
             par['hyp_dist'] = hd
             par['az'] = az
-            par['Ml'] = Ml
+            par['Ml'] = Ml #FIXME: this is the network magnitude!
             chanId = '%s.%s' % (station, spec.stats.instrtype)
             sourcepar[chanId] = par
 
