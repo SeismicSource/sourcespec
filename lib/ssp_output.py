@@ -16,42 +16,51 @@ def write_output(config, evid, sourcepar):
         logging.info('No source parameter calculated') 
         ssp_exit()
 
-    # Write results to the output dir
+    # Optional: write station source parameters to SQLite database
+    try:
+        database_file = config.database_file
+    except AttributeError:
+        database_file = None
+
+    if database_file:
+        # Open SQLite database
+        conn = sqlite3.connect(database_file)
+        c = conn.cursor()
+        
+        # Init database schema
+        c.execute('create table if not exists Stations (stid, evid, Mo, Mw, fc, t_star, dist, azimuth);')
+        
+        # Write station source parameters to database
+        for statId in sorted(sourcepar.keys()):
+            par = sourcepar[statId]
+            Mo  = np.power(10, par['Mw']*1.5 + 9.1)
+
+            # Remove existing line, if present
+            t = (statId, evid)
+            c.execute('delete from Stations where stid=? and evid=?;', t)
+            
+            # Insert new line        
+            t = (statId, evid, Mo, par['Mw'], par['fc'], par['t_star'], par['hyp_dist'], par['az'])
+            c.execute('insert into Stations values(?, ?, ?, ?, ?, ?, ?, ?);', t)
+
+        # Commit changes
+        conn.commit()
+
+    # Write station source parameters to file
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
     parfilename = '%s/%s.ssp.out' % (config.options.outdir, evid)
     parfile = open(parfilename, 'w')
 
-    # Open SQLite database
-    conn = sqlite3.connect(config.database_file)
-    c = conn.cursor()
-    
-    # Init database schema
-    c.execute('create table if not exists Stations (stid, evid, Mo, Mw, fc, t_star, dist, azimuth);')
-    
-    # Write source parameters to file and database
-    parfile.write('*** Source parameters ***\n')
+    parfile.write('*** Station source parameters ***\n')
     for statId in sorted(sourcepar.keys()):
         par = sourcepar[statId]
-        
         Mo  = np.power(10, par['Mw']*1.5 + 9.1)
-
-        # Remove existing line, if present
-        t = (statId, evid)
-        c.execute('delete from Stations where stid=? and evid=?;', t)
-        
-        # Insert new line        
-        t = (statId, evid, Mo, par['Mw'], par['fc'], par['t_star'], par['hyp_dist'], par['az'])
-        c.execute('insert into Stations values(?, ?, ?, ?, ?, ?, ?, ?);', t)
-
         parfile.write('%s\t' % statId)
         for key in par:
             parfile.write('  %s %6.3f ' % (key, par[key]))
         parfile.write('\n')
     parfile.write('\n')
-
-    # Commit changes
-    conn.commit()
 
     ## Compute and write average source parameters
     parfile.write('*** Average source parameters ***\n')
@@ -98,18 +107,20 @@ def write_output(config, evid, sourcepar):
     Ml_std   = Ml_array.std()
     parfile.write('Ml: %.3f +/- %.3f \n' % (Ml_mean, Ml_std))
 
-    # Write average source parameters to database
-    c.execute('create table if not exists Events (evid, Mw_mean, Mo_mean, fc_mean, t_star_mean, ra_mean, bsd_mean, Ml_mean);')
-    t = (evid, Mw_mean)
-    c.execute('delete from Events where evid=? and Mw_mean=?;', t)
-    t = (evid, Mw_mean, Mo_mean, fc_mean, t_star_mean, ra_mean, bsd_mean, Ml_mean)
-    c.execute('insert into Events values(?, ?, ?, ?, ?, ?, ?, ?);', t)
-    # Commit changes and close database
-    conn.commit()
-    conn.close()
-
     parfile.close()
-    logging.info('Output written to: ' + parfilename)
+    logging.info('Output written to file: ' + parfilename)
+
+    # Write average source parameters to database
+    if database_file:
+        c.execute('create table if not exists Events (evid, Mw_mean, Mo_mean, fc_mean, t_star_mean, ra_mean, bsd_mean, Ml_mean);')
+        t = (evid, Mw_mean)
+        c.execute('delete from Events where evid=? and Mw_mean=?;', t)
+        t = (evid, Mw_mean, Mo_mean, fc_mean, t_star_mean, ra_mean, bsd_mean, Ml_mean)
+        c.execute('insert into Events values(?, ?, ?, ?, ?, ?, ?, ?);', t)
+        # Commit changes and close database
+        conn.commit()
+        conn.close()
+        logging.info('Output written to database: ' + database_file)
 
     if config.options.hypo_file:
         fp = open(config.options.hypo_file, 'r')
