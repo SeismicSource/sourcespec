@@ -1,55 +1,57 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*- 
-from optparse import OptionParser
 from obspy.core import Stream
+from copy import deepcopy
+from lib.ssp_setup import configure
+from lib.ssp_read_traces import read_traces
+from lib.ssp_process_traces import process_traces
+from lib.ssp_build_spectra import build_spectra
 from lib.ssp_spectral_model import spectral_model
 from lib.ssp_plot_spectra import *
 from lib.spectrum import Spectrum
 
-def __parse_args():
-    usage = 'usage: %prog [options] trace_file(s) | trace_dir'
-
-    parser = OptionParser(usage=usage);
-    parser.add_option('-f', '--fmin', dest='fmin', action='store', default='0.01',
-            help='Minimum frequency', metavar='FMIN')
-    parser.add_option('-F', '--fmax', dest='fmax', action='store', default='50.0',
-            help='Maximum frequency', metavar='FMAX')
-    parser.add_option('-c', '--fc', dest='fc', action='store', default='10.0',
-            help='Corner frequency', metavar='FC')
-    parser.add_option('-m', '--mag', dest='mag', action='store', default='2.0',
-            help='Moment magnitude', metavar='Mw')
-    parser.add_option('-t', '--tstar', dest='t_star', action='store', default='0.0',
-            help='T-star (attenuation)', metavar='T')
-
-    (options, args) = parser.parse_args()
-    if len(args) < 0:
-        parser.print_usage(file=sys.stderr)
-        sys.stderr.write("\tUse '-h' for help\n\n")
-        sys.exit(1)
-
-    return options, args
-
 def main():
-    (options, args) = __parse_args()
+    config = configure('source_model')
     fdelta = 0.01
-    fmin = float(options.fmin)
-    fmax = float(options.fmax) + fdelta
-    fc = float(options.fc)
-    mag = float(options.mag)
-    t_star = float(options.t_star)
+    fmin = config.options.fmin
+    fmax = config.options.fmax + fdelta
+    fc = config.options.fc
+    mag = config.options.mag
+    t_star = config.options.t_star
+
+    if len(config.args) > 0:
+        st = read_traces(config)
+        # Deconvolve, filter, cut traces:
+        proc_st = process_traces(config, st)
+        # Build spectra (amplitude in magnitude units)
+        spec_st = build_spectra(config, proc_st)
+
+        for tspec in spec_st:
+            orientation = tspec.stats.channel[-1]
+            if orientation != 'H': continue
+
+            spec = Spectrum()
+            spec.stats = deepcopy(tspec.stats)
+            spec.stats.channel = 'Synth'
     
-    spec = Spectrum()
-    spec.stats.begin = fmin
-    spec.stats.delta = fdelta
-    spec.stats.npts = int((fmax-fmin)/fdelta)
-    spec.stats.instrtype = 'Synth'
-    spec.stats.channel = 'Synth'
+            freq = spec.get_freq()
+            spec.data = spectral_model(freq, mag, fc, t_star)
     
-    freq = spec.get_freq()
-    spec.data = spectral_model(freq, mag, fc, t_star)
+            spec_st.append(spec)
+    else:
+        spec_st = Stream()
     
-    spec_st = Stream()
-    spec_st.append(spec)
+        spec = Spectrum()
+        spec.stats.begin = fmin
+        spec.stats.delta = fdelta
+        spec.stats.npts = int((fmax-fmin)/fdelta)
+        spec.stats.instrtype = 'Synth'
+        spec.stats.channel = 'Synth'
+    
+        freq = spec.get_freq()
+        spec.data = spectral_model(freq, mag, fc, t_star)
+    
+        spec_st.append(spec)
     
     class C(): pass
     config = C()
