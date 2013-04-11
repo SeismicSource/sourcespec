@@ -54,11 +54,11 @@ def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
         for spec in spec_st_sel.traces:
             amp_minmax, freq_minmax =\
                 spec_minmax(spec.data, spec.get_freq(), amp_minmax, freq_minmax) 
-            # we add a small margin to max amplitude (in magnitude units):
-            amp_minmax[1] += 0.1
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
             nplots += 1
     nlines = int(math.ceil(nplots/ncols))
+    # we add a small margin to max amplitude (in magnitude units):
+    amp_minmax[1] += 0.1
     # Plot!
     plotn=1
     axes=[]
@@ -99,6 +99,8 @@ def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
                         text_y = 0.1 + (plotn-1) * 0.05
                     else:
                         text_y = 0.1
+                    if not stack_plots:
+                        color = 'black'
                     ax.text(0.05, text_y, '%s %s' % (spec.stats.station, spec.stats.instrtype),
                             horizontalalignment='left',
                             verticalalignment='bottom',
