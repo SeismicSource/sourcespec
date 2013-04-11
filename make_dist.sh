@@ -3,7 +3,13 @@ export LC_ALL=C
 
 timestamp=`date +"%Y%m%d"`
 
-dir=source_spec_${timestamp}
+branch=`git branch | head -n1 | awk '{print $2}'`
+if [ $branch == "master" ]
+then
+    dir=source_spec_${timestamp}
+else
+    dir=source_spec_${branch}_${timestamp}
+fi
 tarfile=${dir}.tgz
 
 mkdir $dir
