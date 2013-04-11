@@ -82,9 +82,20 @@ def __parse_args_source_model():
 
     options.fmin = float(options.fmin)
     options.fmax = float(options.fmax)
-    options.fc = float(options.fc)
-    options.mag = float(options.mag)
-    options.t_star = float(options.t_star)
+    options.fc = map(float, options.fc.rstrip(',').split(','))
+    options.mag = map(float, options.mag.rstrip(',').split(','))
+    options.t_star = map(float, options.t_star.rstrip(',').split(','))
+
+    oplist = [options.fc, options.mag, options.t_star]
+    # Add trailing "None" to shorter lists and zip:
+    oplist = map(None, *oplist)
+    # Unzip and convert tuple to lists:
+    oplist = map(list, zip(*oplist))
+    for l in oplist:
+        for n, x in enumerate(l):
+            if x == None:
+                l[n] = l[n-1]
+    options.fc, options.mag, options.t_star = oplist
 
     # Add unused options (required by source_spec):
     options.pick_file = None
