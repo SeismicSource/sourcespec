@@ -12,7 +12,15 @@ import logging
 #from matplotlib.ticker import MaxNLocator
 from ssp_util import spec_minmax
 
-def plot_spectra(config, spec_st, ncols=4):
+synth_colors = [
+    '#201F1F', 
+    '#94F75B', 
+    '#3EC2AA', 
+    'FECC38',
+    '#FC4384', 
+]
+
+def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
     # Unload matplotlib modules (which have been presumably loaded by
     # ObsPy).
     # Source:
@@ -37,6 +45,7 @@ def plot_spectra(config, spec_st, ncols=4):
 
     # OK, now we can plot!
     fig = plt.figure(figsize=(16,9))
+    # Determine the number of plots and axes min and max:
     amp_minmax  = None
     freq_minmax = None
     nplots=0
@@ -45,9 +54,12 @@ def plot_spectra(config, spec_st, ncols=4):
         for spec in spec_st_sel.traces:
             amp_minmax, freq_minmax =\
                 spec_minmax(spec.data, spec.get_freq(), amp_minmax, freq_minmax) 
+            # we add a small margin to max amplitude (in magnitude units):
+            amp_minmax[1] += 0.1
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
             nplots += 1
     nlines = int(math.ceil(nplots/ncols))
+    # Plot!
     plotn=1
     axes=[]
     for station in sorted(set(x.stats.station for x in spec_st.traces)):
@@ -55,9 +67,13 @@ def plot_spectra(config, spec_st, ncols=4):
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
             ax_text = False
             if plotn==1:
-                ax = fig.add_subplot(nlines, ncols, plotn)
+                if stack_plots:
+                    ax = fig.add_subplot(1, 1, 1)
+                else:
+                    ax = fig.add_subplot(nlines, ncols, plotn)
             else:
-                ax = fig.add_subplot(nlines, ncols, plotn, sharex=axes[0], sharey=axes[0])
+                if not stack_plots:
+                    ax = fig.add_subplot(nlines, ncols, plotn, sharex=axes[0], sharey=axes[0])
             axes.append(ax)
             ax.set_xlim(freq_minmax)
             ax.set_ylim(amp_minmax)
@@ -65,7 +81,6 @@ def plot_spectra(config, spec_st, ncols=4):
             ax.grid(True, which='both')
             plt.setp(ax.get_xticklabels(), visible=False)
             plt.setp(ax.get_yticklabels(), visible=False)
-            plotn+=1
             for spec in spec_st_sel.traces:
                 if spec.stats.instrtype != instrtype: continue
                 if spec.stats.channel == 'Synth': orientation = 'Synth'
@@ -73,14 +88,24 @@ def plot_spectra(config, spec_st, ncols=4):
                 if orientation == 'N': color='green'
                 if orientation == 'E': color='blue'
                 if orientation == 'H': color='red'
-                if orientation == 'Synth': color='black'
+                if orientation == 'Synth':
+                    if stack_plots:
+                        color = synth_colors[(plotn-1)%len(synth_colors)]
+                    else:
+                        color='black'
                 ax.semilogx(spec.get_freq(), spec.data, color=color)
                 if not ax_text:
-                    ax.text(0.05, 0.1, '%s %s' % (spec.stats.station, spec.stats.instrtype),
+                    if stack_plots:
+                        text_y = 0.1 + (plotn-1) * 0.05
+                    else:
+                        text_y = 0.1
+                    ax.text(0.05, text_y, '%s %s' % (spec.stats.station, spec.stats.instrtype),
                             horizontalalignment='left',
                             verticalalignment='bottom',
+                            color = color,
                             transform = ax.transAxes)
                     ax_text = True
+            plotn+=1
 
     # Show the x-labels only for the last row
     for ax in axes[-ncols:]:
