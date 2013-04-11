@@ -11,14 +11,14 @@ import logging
 import math
 import numpy as np
 from scipy.optimize import curve_fit
-from lib.ssp_util import *
+#from lib.ssp_util import *
 from lib.ssp_setup import dprint, configure, setup_logging, ssp_exit
 from lib.ssp_read_traces import read_traces
 from lib.ssp_process_traces import process_traces
 from lib.ssp_build_spectra import build_spectra
 from lib.ssp_local_magnitude import local_magnitude
-from lib.ssp_plot_spectra import *
-from lib.ssp_output import *
+from lib.ssp_plot_spectra import plot_spectra
+from lib.ssp_output import write_output
 from lib.ssp_spectral_model import spectral_model
 from obspy.core.util.geodetics import gps2DistAzimuth
 
@@ -48,6 +48,7 @@ def main():
     f_weight = config.f_weight
     weight   = config.weight
     sourcepar = dict()
+    vs_m = config.vs*1000
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
         for spec in spec_st_sel.traces:
@@ -94,7 +95,6 @@ def main():
             geod = gps2DistAzimuth(evla, evlo, stla, stlo)
             az   = geod[1]
             dprint('%s %s %f %f' % (station, spec.stats.instrtype, hd, az))
-            vs_m = config.vs*1000
             loge = math.log10(math.e)
             coeff = math.pi*loge*hd_m/vs_m
             dprint('coeff= %f' % coeff)
