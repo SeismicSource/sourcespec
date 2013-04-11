@@ -1,4 +1,4 @@
-## source_spec: a python code for inverting S-wave displacement spectra
+## source\_spec: a python code for modelling S-wave displacement spectra and inverting source parameters 
 (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>  
 (c) 2013-     Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>  
@@ -9,6 +9,7 @@ source_spec computes the S-wave displacement spectra from stations recording a s
 
 It reads as input a file, a tgz archive or a directory (which can, in turn, contain
 files and/or tgz archives) with traces in any format supported by ObsPy.
+
 Optionally, one can specify:  
  - a file or a dir path containing station dataless  
  - a hypocenter file  
@@ -30,7 +31,8 @@ Computes average and st.dev of Mw, Mo, fc, source radius and Brune sd.
 ### Sample runs:
 To run the CRL test:
 
-     ./source_spec.py testdata/CRL/2010.01.20-08.10.27 -c testconfig/config_CRL.py -H testdata/CRL/2010.01.20-08.10.27.phs.h -p testdata/CRL/2010.01.20-08.10.27.phs 
+     ./source_spec.py testdata/CRL/2010.01.20-08.10.27 -c testconfig/config_CRL.py\
+         -H testdata/CRL/2010.01.20-08.10.27.phs.h -p testdata/CRL/2010.01.20-08.10.27.phs 
 
 To run the ISNet test:
 
@@ -39,3 +41,8 @@ To run the ISNet test:
 To get help:
 
      ./source_spec.py -h
+
+To run source\_model test on CRL:
+
+     ./source_model.py -c testconfig/config_CRL.py testdata/CRL/2010.01.20-08.10.27/2010.01.20-08.10.27.TRIZ.HHE.SAC\
+          -H testdata/CRL/2010.01.20-08.10.27.phs.h --mag=2.6 --fc=8,12 --tstar=0.02,0.03   
