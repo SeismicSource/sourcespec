@@ -7,11 +7,13 @@
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
 from __future__ import division
+import sys
 import os
 import logging
 import shutil
 import tarfile
 import tempfile
+import cPickle as pickle
 from datetime import datetime
 from imp import load_source
 from obspy.core import Stream, read, UTCDateTime
@@ -86,6 +88,14 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
             trace.stats.paz = paz
         except AttributeError:
             pass
+    # Still no paz? Antilles format!
+    if trace.stats.paz == None and trace.stats.format == 'Antilles':
+        paz = AttribDict()
+        paz.sensitivity = 1
+        paz.poles = []
+        paz.zeros = []
+        paz.gain = 1
+        trace.stats.paz = paz
     # If we still don't have trace coordinates,
         # we try to get them from SAC header
     if trace.stats.coords == None:
@@ -248,34 +258,43 @@ def __parse_hypocenter__(hypo_file):
 
     if hypo_file == None: return None
 
-    try: fp = open(hypo_file)
-    except: return None
+    if isinstance(hypo_file, str):
+        try: fp = open(hypo_file)
+        except: return None
 
-    # Corinth hypocenter file format:
-    # TODO: check file format
-    line = fp.readline()
-    # Skip the first line if it contains characters in the first 10 digits:
-    if any(c.isalpha() for c in line[0:10]):
+        # Corinth hypocenter file format:
+        # TODO: check file format
         line = fp.readline()
-    fp.close()
-    timestr = line[0:17]
-    # There are two possible formats for the timestring.
-    # We try both of them
-    try:
-        dt = datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
-    except ValueError:
-        dt = datetime.strptime(timestr, '%y%m%d %H%M %S.%f')
-    hypo.origin_time = UTCDateTime(dt)
+        # Skip the first line if it contains characters in the first 10 digits:
+        if any(c.isalpha() for c in line[0:10]):
+            line = fp.readline()
+        fp.close()
+        timestr = line[0:17]
+        # There are two possible formats for the timestring.
+        # We try both of them
+        try:
+            dt = datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
+        except ValueError:
+            dt = datetime.strptime(timestr, '%y%m%d %H%M %S.%f')
+        hypo.origin_time = UTCDateTime(dt)
 
-    lat = float(line[17:20])
-    lat_deg = float(line[21:26])
-    hypo.latitude = lat + lat_deg/60
-    lon = float(line[26:30])
-    lon_deg = float(line[31:36])
-    hypo.longitude = lon + lon_deg/60
-    hypo.depth = float(line[36:42])
-    evid = os.path.basename(hypo_file)
-    hypo.evid = evid.replace('.phs','').replace('.h','').replace('.hyp','')
+        lat = float(line[17:20])
+        lat_deg = float(line[21:26])
+        hypo.latitude = lat + lat_deg/60
+        lon = float(line[26:30])
+        lon_deg = float(line[31:36])
+        hypo.longitude = lon + lon_deg/60
+        hypo.depth = float(line[36:42])
+        evid = os.path.basename(hypo_file)
+        hypo.evid = evid.replace('.phs','').replace('.h','').replace('.hyp','')
+    
+    else: #FIXME: put a condition here!
+        ev = hypo_file #FIXME: improve this!
+        hypo.latitude = ev.latitude
+        hypo.longitude = ev.longitude
+        hypo.depth = ev.depth
+        hypo.origin_time = ev.utcdate
+        hypo.evid = ev.event_id
 
     return hypo
 
@@ -445,38 +464,65 @@ def read_traces(config):
     picks = __parse_picks__(config.options.pick_file)
 
     # finally, read traces
-    logging.info('Reading traces...')
-    # phase 1: build a file list
-    # ph 1.1: create a temporary dir and run '_build_filelist()'
-    #         to move files to it and extract all tar archives
-    tmpdir = tempfile.mkdtemp()
-    filelist = []
-    for arg in config.args:
-        __build_filelist__(arg, filelist, tmpdir)
-    # ph 1.2: rerun '_build_filelist()' in tmpdir to add to the
-    #         filelist all the extraceted files
-    listing = os.listdir(tmpdir)
-    for filename in listing:
-        fullpath='%s/%s' % (tmpdir, filename)
-        __build_filelist__(fullpath, filelist, None)
+    # traces can be defined in a pickle catalog (Antilles format)...
+    if config.pickle_catalog:
+        sys.path.append(config.pickle_classpath)
+        fp = open(config.pickle_catalog, 'rb')
+        catalog = pickle.load(fp)
+        fp.close()
+        event = [ ev for ev in catalog if ev.event_id == config.options.evid ][0]
+        hypo = __parse_hypocenter__(event)
+        st = Stream()
+        for trace in event.traces:
+            try:
+                tmpst = read(trace.trace_file)
+            except Exception, error:
+                print error
+                continue
+            for trace in tmpst.traces:
+                st.append(trace)
+                trace.stats.format = 'Antilles'
+                __add_paz_and_coords__(trace, dataless, paz)
+                __add_hypocenter__(trace, hypo)
+                __add_picks__(trace, picks) #FIXME: actually add picks!
+                #__add_instrtype__(trace)
+                trace.stats.instrtype = 'acc' #FIXME
+        #ssp_exit()
+    # ...or in standard files (CRL and ISNet)
+    else:
+        logging.info('Reading traces...')
+        # phase 1: build a file list
+        # ph 1.1: create a temporary dir and run '_build_filelist()'
+        #         to move files to it and extract all tar archives
+        tmpdir = tempfile.mkdtemp()
+        filelist = []
+        for arg in config.args:
+            __build_filelist__(arg, filelist, tmpdir)
+        # ph 1.2: rerun '_build_filelist()' in tmpdir to add to the
+        #         filelist all the extraceted files
+        listing = os.listdir(tmpdir)
+        for filename in listing:
+            fullpath='%s/%s' % (tmpdir, filename)
+            __build_filelist__(fullpath, filelist, None)
 
-    # phase 2: build a stream object from the file list
-    st = Stream()
-    for filename in filelist:
-        try:
-            tmpst = read(filename)
-        except:
-            logging.error('%s: Unable to read file as a trace: skipping' % filename)
-            continue
-        for trace in tmpst.traces:
-            st.append(trace)
-            __correct_traceid__(trace, config.traceids)
-            __add_paz_and_coords__(trace, dataless, paz)
-            __add_instrtype__(trace)
-            __add_hypocenter__(trace, hypo)
-            __add_picks__(trace, picks)
+        # phase 2: build a stream object from the file list
+        st = Stream()
+        for filename in filelist:
+            try:
+                tmpst = read(filename)
+            except:
+                logging.error('%s: Unable to read file as a trace: skipping' % filename)
+                continue
+            for trace in tmpst.traces:
+                st.append(trace)
+                __correct_traceid__(trace, config.traceids)
+                __add_paz_and_coords__(trace, dataless, paz)
+                __add_instrtype__(trace)
+                __add_hypocenter__(trace, hypo)
+                __add_picks__(trace, picks)
 
-    shutil.rmtree(tmpdir)
+        shutil.rmtree(tmpdir)
+        
     logging.info('Reading traces: done')
     if len(st.traces) == 0:
         logging.info('No trace loaded') 

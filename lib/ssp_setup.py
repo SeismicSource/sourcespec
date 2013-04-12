@@ -44,6 +44,8 @@ def __parse_args_source_spec():
             help='Get hypocenter information from FILE', metavar='FILE')
     parser.add_option('-p', '--pickfile', dest='pick_file', action='store', default=None,
             help='Get picks from FILE', metavar='FILE')
+    parser.add_option('-e', '--evid', dest='evid', action='store', default=None,
+            help='Get evid from catalog', metavar='EVID')
     parser.add_option('-o', '--outdir', dest='outdir', action='store', default='sspec_out',
             help='Save output to OUTDIR (default: sspec_out)', metavar='OUTDIR')
 
@@ -63,6 +65,8 @@ def __parse_args_source_model():
             help='Load configuration from FILE (default: config.py)', metavar='DIR | FILE')
     parser.add_option('-H', '--hypocenter', dest='hypo_file', action='store', default=None,
             help='Get hypocenter information from FILE', metavar='FILE')
+    parser.add_option('-e', '--evid', dest='evid', action='store', default=None,
+            help='Get evid from catalog', metavar='EVID')
     parser.add_option('-f', '--fmin', dest='fmin', action='store', default='0.01',
             help='Minimum frequency', metavar='FMIN')
     parser.add_option('-F', '--fmax', dest='fmax', action='store', default='50.0',
@@ -133,6 +137,15 @@ def configure(progname='source_spec'):
         config.traceids
     except AttributeError:
         config.traceids = None
+    try:
+        config.pickle_catalog
+    except AttributeError:
+        config.pickle_catalog = None
+    try:
+        config.pickle_classpath
+    except AttributeError:
+        config.pickle_classpath = None
+
 
     #add options and args to config:
     config.__dict__['options'] = options
