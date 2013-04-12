@@ -14,10 +14,8 @@ def make_synth(config, spec_st, trace_spec=None):
     fdelta = 0.01
     fmin = config.options.fmin
     fmax = config.options.fmax + fdelta
-    for n, fc in enumerate(config.options.fc):
-        mag = config.options.mag[n]
-        t_star = config.options.t_star[n]
 
+    for fc, mag, t_star in zip(config.options.fc, config.options.mag, config.options.t_star):
         spec = Spectrum()
         if trace_spec:
             spec.stats = deepcopy(trace_spec.stats)
