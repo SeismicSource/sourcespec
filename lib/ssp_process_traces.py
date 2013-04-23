@@ -35,7 +35,7 @@ def process_traces(config, st, skip_vertical=True):
         trace.detrend(type='constant')
         trace.detrend(type='constant')
         rms2 = np.power(trace.data, 2).sum()
-        rms_min = 1e-10 #TODO: parametrize?
+        rms_min = config.rmsmin
         if rms2 <= rms_min:
             logging.warning('%s: Trace RMS smaller than %g: skipping trace' % (traceId, rms_min))
             continue
