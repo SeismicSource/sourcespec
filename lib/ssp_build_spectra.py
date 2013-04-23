@@ -40,14 +40,6 @@ def build_spectra(config, st):
             logging.warning('%s: Too many gaps for the selected cut interval: skipping trace' % traceId)
             continue
         
-        # TODO: parameterize
-        # coefficient for converting displ spectrum
-        # to seismic moment (Aki&Richards,1980)
-        vs_m = config.vs*1000
-        vs3  = pow(vs_m,3) 
-        coeff = 4 * math.pi * vs3 * config.rho /config.rps/2.
-        dprint('coeff= %f' % coeff)
-
         # compute S-wave (displacement) spectra from
         # accelerometers and velocimeters, uncorrected for attenuation,
         # corrected for instrumental constants, normalized by
@@ -119,6 +111,15 @@ def build_spectra(config, st):
         #ssp_exit()
 
         spec.data = data_smooth
+
+        # TODO: parameterize
+        # coefficient for converting displ spectrum
+        # to seismic moment (Aki&Richards,1980)
+        vs_m = config.vs*1000
+        vs3  = pow(vs_m,3) 
+        coeff = 4 * math.pi * vs3 * config.rho /config.rps/2.
+        dprint('coeff= %f' % coeff)
+
         # convert to seismic moment
         spec.data *= coeff
 
