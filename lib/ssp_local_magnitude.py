@@ -39,16 +39,12 @@ def local_magnitude(st, deconvolve=False):
         delta_t = delta_t / trace_cp.stats.sampling_rate
 
         #estimate Magnitude 
-        #instrtype = trace_cp.stats.instrtype
-        #FIXME: do we need to integrate to displacement?
-        #if instrtype == 'acc':
-        #    poles = [0.0j, 0.0j] #integration to displacement 
-        #elif (instrtype == 'shortp' or instrtype == 'broadb'):
-        #    poles = [0.0j] #integration to displacement
-        #print 'poles:', trace.stats.paz.poles
-        #print 'zeros:', trace.stats.paz.zeros
-        #paz = {'poles': poles,
-        paz = {'poles': [],
+        instrtype = trace_cp.stats.instrtype
+        if instrtype == 'acc':
+            poles = [0.0j] #integration to velocity 
+        else:
+            poles = []
+        paz = {'poles': poles,
                'zeros': [],
                'gain': 1.0, 'sensitivity': 1.0}
         if deconvolve:
