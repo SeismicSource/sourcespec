@@ -39,7 +39,7 @@ def main():
     # Deconvolve, filter, cut traces:
     proc_st, noise_st = process_traces(config, st)
     # Build spectra (amplitude in magnitude units)
-    spec_st, specnoise_st, specratio_st = build_spectra(config, proc_st, noise_st)
+    spec_st, specnoise_st, weight_st = build_spectra(config, proc_st, noise_st)
 
     #Ml = local_magnitude(config, proc_st)
     Ml = local_magnitude(config, st, deconvolve=True)
@@ -48,8 +48,8 @@ def main():
     # Spectral weighting:
     #   weight for f<=f_weight
     #   1      for f> f_weight
-    f_weight = config.f_weight
-    weight   = config.weight
+    #f_weight = config.f_weight
+    #weight   = config.weight
     sourcepar = dict()
     vs_m = config.vs*1000
     for station in set(x.stats.station for x in spec_st.traces):
@@ -57,6 +57,10 @@ def main():
         for spec in spec_st_sel.traces:
             if spec.stats.channel != 'H': continue
             dprint(station)
+
+            spec_id = spec.id 
+            #print spec_id, weight_st.select(id=spec_id)
+            weight = weight_st.select(id=spec_id)[0] 
 
             # spectral amplitude is in Mw units
             amp = spec.data_mag
@@ -107,10 +111,11 @@ def main():
 
             xdata = spec.get_freq()
             ydata = amp
-            yerr = np.ones(len(ydata))
+            #yerr = np.ones(len(ydata))
             # 'curve_fit' interprets 'yerr' as standard deviation vector and calculates
             # weights as 1/yerr^2 . Therefore we build yerr as:
-            yerr[xdata<=f_weight] = 1./math.sqrt(weight)
+            #yerr[xdata<=f_weight] = 1./math.sqrt(weight)
+            yerr = 1./np.sqrt(weight)
             # Curve fitting using the Levenburg-Marquardt algorithm
             try:
                     params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
@@ -151,7 +156,7 @@ def main():
     # Plotting
     plot_spectra(config, spec_st)
     plot_spectranoise(config, specnoise_st)
-    plot_weight(config, specratio_st)
+    plot_weight(config, weight_st)
 
     ssp_exit()
 
