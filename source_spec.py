@@ -154,7 +154,7 @@ def main():
     write_output(config, evid, sourcepar)
 
     # Plotting
-    plot_spectra(config, spec_st)
+    plot_spectra(config, spec_st, specnoise_st=specnoise_st)
     plot_spectranoise(config, specnoise_st)
     plot_weight(config, weight_st)
 

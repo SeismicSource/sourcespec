@@ -20,7 +20,7 @@ synth_colors = [
     '#FC4384', 
 ]
 
-def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
+def plot_spectra(config, spec_st, specnoise_st=None, ncols=4, stack_plots=False):
     # Unload matplotlib modules (which have been presumably loaded by
     # ObsPy).
     # Source:
@@ -54,6 +54,9 @@ def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
     freq_minmax = None
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
+        if specnoise_st:
+            spec_noise_sel = specnoise_st.select(station=station)
+            spec_st_sel += spec_noise_sel
         for spec in spec_st_sel.traces:
             moment_minmax, freq_minmax =\
                 spec_minmax(spec.data, spec.get_freq(),
@@ -115,6 +118,22 @@ def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
                         color='black'
                 ax.loglog(spec.get_freq(), spec.data, color=color)
                 #ax2.semilogx(spec.get_freq(), spec.data_mag, color=color)
+                #leg = ax.legend(('N', 'E', 'H'),
+                #    'lower right')
+
+                if specnoise_st:
+                    if (spec.stats.channel == 'Synth' or
+                            spec.stats.channel == 'H'):
+                        continue
+                    specid = spec.getId()
+                    print specid
+                    sp_noise = specnoise_st.select(id=specid)[0]
+                    orientation = sp_noise.stats.channel[-1]
+                    if orientation == 'Z': color='purple'
+                    if orientation == 'N': color='green'
+                    if orientation == 'E': color='blue'
+                    ax.loglog(sp_noise.get_freq(), sp_noise.data, '--', color=color)
+
                 if not ax_text:
                     if stack_plots:
                         text_y = 0.1 + (plotn-1) * 0.05
@@ -133,7 +152,7 @@ def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
                     ax.text(0.05, text_y, '%g' % (amp),
                             horizontalalignment='left',
                             verticalalignment='bottom',
-                            color = color,
+                            color = 'black',
                             transform = ax.transAxes)
             plotn+=1
 
