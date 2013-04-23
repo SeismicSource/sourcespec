@@ -7,14 +7,19 @@
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
 import logging
 import numpy as np
+from copy import deepcopy, copy
 from obspy.core import Stream
 from ssp_setup import dprint
 from ssp_util import remove_instr_response, hypo_dist
 
 def process_traces(config, st, skip_vertical=True):
-    ''' Deconvolves and cuts traces, and removes unwanted components '''
+    ''' Removes mean, deconvolves, and ignores unwanted components '''
     out_st = Stream()
-    for trace in st.traces:
+    for orig_trace in st.traces:
+        # copy trace for manipulation
+        trace = copy(orig_trace)
+        trace.stats = deepcopy(orig_trace.stats)
+
         traceId = trace.getId()
         stats = trace.stats
         comp  = stats.channel
@@ -46,6 +51,7 @@ def process_traces(config, st, skip_vertical=True):
             logging.warning('%s: Unable to compute hypocentral distance: skipping trace' % traceId)
             continue
         trace.stats.hypo_dist = hd
+        orig_trace.stats.hypo_dist = hd
 
         out_st.append(trace)
 

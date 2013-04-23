@@ -10,7 +10,7 @@ from copy import deepcopy, copy
 from obspy.signal import estimateMagnitude
 from ssp_util import cosine_taper
 
-def local_magnitude(st):
+def local_magnitude(st, deconvolve=False):
     magnitudes = []
     for trace in st.traces:
         traceId = trace.getId()
@@ -39,17 +39,24 @@ def local_magnitude(st):
         delta_t = delta_t / trace_cp.stats.sampling_rate
 
         #estimate Magnitude 
-        instrtype = trace_cp.stats.instrtype
+        #instrtype = trace_cp.stats.instrtype
         #FIXME: do we need to integrate to displacement?
-        if instrtype == 'acc':
-            poles = [0.0j, 0.0j] #integration to displacement 
-        elif (instrtype == 'shortp' or instrtype == 'broadb'):
-            poles = [0.0j] #integration to displacement
+        #if instrtype == 'acc':
+        #    poles = [0.0j, 0.0j] #integration to displacement 
+        #elif (instrtype == 'shortp' or instrtype == 'broadb'):
+        #    poles = [0.0j] #integration to displacement
         #print 'poles:', trace.stats.paz.poles
         #print 'zeros:', trace.stats.paz.zeros
-        paz = {'poles': poles,
+        #paz = {'poles': poles,
+        paz = {'poles': [],
                'zeros': [],
                'gain': 1.0, 'sensitivity': 1.0}
+        if deconvolve:
+            paz = trace_cp.stats.paz
+            try:
+                trace_cp.stats.hypo_dist
+            except KeyError:
+                continue
         ml = estimateMagnitude(paz, delta_amp, delta_t, trace_cp.stats.hypo_dist)
 
         magnitudes.append(ml)
