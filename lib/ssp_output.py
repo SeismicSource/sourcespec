@@ -9,7 +9,13 @@ import os
 import logging
 import sqlite3
 import numpy as np
+from scipy.stats.mstats import gmean
 from ssp_setup import ssp_exit
+
+def gstd(array):
+    mean  = gmean(array)
+    arg = np.power(np.log(array/mean),2).sum() / len(array)
+    return np.exp(np.sqrt(arg))
 
 def write_output(config, evid, sourcepar):
     if len(sourcepar) == 0:
@@ -66,8 +72,9 @@ def write_output(config, evid, sourcepar):
     parfile.write('*** Average source parameters ***\n')
     # Mw
     Mw_array = np.array(list(x['Mw'] for x in sourcepar.values()))
-    Mw_mean  = Mw_array.mean()
-    Mw_std   = Mw_array.std()
+    Mw_mean  = gmean(Mw_array)
+    #Mw_std   = Mw_array.std()
+    Mw_std   = gstd(Mw_array)
     parfile.write('Mw: %.2f +/- %.2f\n' % (Mw_mean, Mw_std))
 
     # Mo (N.m)
