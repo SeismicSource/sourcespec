@@ -207,4 +207,7 @@ def build_spectra(config, st, noise_st=None):
         for specnoise in specnoise_st:
             specnoise.data_mag = moment_to_mag(specnoise.data)
 
-    return spec_st
+    if noise_st:
+        return spec_st, specnoise_st, specratio_st
+    else:
+        return spec_st
