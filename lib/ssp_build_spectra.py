@@ -16,7 +16,7 @@ from ssp_util import swave_arrival, cosine_taper, moment_to_mag
 from lib import spectrum
 from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
 
-def build_spectra(config, st):
+def build_spectra(config, st, noise_st=None):
     ''' 
     Builds spectra and the spec_st object.
     Computes S-wave (displacement) spectra from
@@ -25,6 +25,8 @@ def build_spectra(config, st):
     hypocentral distance
     '''
     spec_st = Stream()
+    specnoise_st = Stream()
+    specratio_st = Stream()
     for trace in st.traces:
         traceId = trace.getId()
         stats = trace.stats
@@ -94,20 +96,32 @@ def build_spectra(config, st):
                 # integrate
                 trace_cut.data = cumtrapz(trace_cut.data) * trace_cut.stats.delta
                 trace_cut.stats.npts -= 1
+                if noise_st:
+                    trace_noise = noise_st.select(id=traceId)[0]
+                    trace_noise.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
+                    trace_noise.data = cumtrapz(trace_noise.data) * trace_noise.stats.delta
+                    trace_noise.stats.npts -= 1
         else:
             # remove the mean...
             trace_cut.detrend(type='constant')
             # ...and the linear trend...
             trace_cut.detrend(type='linear')
             trace_cut.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
+            if noise_st:
+                trace_noise = noise_st.select(id=traceId)[0]
+                trace_noise.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
 
         # trim...
         trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
         # ...and taper
         cosine_taper(trace_cut.data, width=config.taper_halfwidth)
+        if noise_st:
+            cosine_taper(trace_noise.data, width=config.taper_halfwidth)
 
         # normalization for the hypocentral distance
         trace_cut.data *= trace_cut.stats.hypo_dist * 1000
+        if noise_st:
+            trace_noise.data *= trace_noise.stats.hypo_dist * 1000
 
         # calculate fft
         spec = spectrum.do_spectrum(trace_cut)
@@ -116,13 +130,25 @@ def build_spectra(config, st):
         spec.stats.hypo      = stats.hypo
         spec.stats.hypo_dist = stats.hypo_dist
 
+        if noise_st:
+            specnoise = spectrum.do_spectrum(trace_noise)
+            specnoise.stats.instrtype = instrtype
+            specnoise.stats.coords    = stats.coords
+            specnoise.stats.hypo      = stats.hypo
+            specnoise.stats.hypo_dist = stats.hypo_dist
+
         if not config.time_domain_int:
             # Integrate in frequency domain (divide by the pulsation omega)
             for i in range(0,nint):
                 spec.data /= (2 * math.pi * spec.get_freq())
+                if noise_st:
+                    specnoise.data /= (2 * math.pi * spec.get_freq())
 
         # smooth the abs of fft
         spec.data = konnoOhmachiSmoothing(spec.data, spec.get_freq(),
+                                          40, normalize=True)
+        if noise_st:
+            specnoise.data = konnoOhmachiSmoothing(specnoise.data, spec.get_freq(),
                                           40, normalize=True)
 
         # TODO: parameterize
@@ -135,10 +161,22 @@ def build_spectra(config, st):
 
         # convert to seismic moment
         spec.data *= coeff
+        if noise_st:
+            specnoise.data *= coeff
 
         # Cut the spectrum between freq1 and freq2
         spec_cut = spec.slice(freq1, freq2)
         spec_st.append(spec_cut)
+
+        if noise_st:
+            specnoise_cut = specnoise.slice(freq1, freq2)
+            specnoise_st.append(specnoise_cut)
+
+            spec_cp = copy(spec)
+            spec_cp.stats = deepcopy(spec.stats)
+            spec_cp.data = deepcopy(spec.data)
+            spec_cp.data /= specnoise.data
+            specratio_st.append(spec_cp)
 
     # Add to spec_st the "horizontal" component, obtained from the
     # modulus of the N-S and E-W components.
@@ -165,5 +203,8 @@ def build_spectra(config, st):
     # convert the spectral amplitudes to moment magnitude
     for spec in spec_st:
         spec.data_mag = moment_to_mag(spec.data)
+    if noise_st:
+        for specnoise in specnoise_st:
+            specnoise.data_mag = moment_to_mag(specnoise.data)
 
     return spec_st

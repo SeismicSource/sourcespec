@@ -16,6 +16,7 @@ from ssp_util import remove_instr_response, hypo_dist,\
 def process_traces(config, st, skip_vertical=True):
     ''' Removes mean, deconvolves, and ignores unwanted components '''
     out_st = Stream()
+    out_st_noise = Stream()
     for orig_trace in st.traces:
         # copy trace for manipulation
         trace = copy(orig_trace)
@@ -98,5 +99,6 @@ def process_traces(config, st, skip_vertical=True):
 
         orig_trace.stats.hypo_dist = hd
         out_st.append(trace)
+        out_st_noise.append(trace_noise)
 
-    return out_st
+    return out_st, out_st_noise
