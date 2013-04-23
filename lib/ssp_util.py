@@ -37,6 +37,14 @@ def swave_arrival(trace, vs):
     # s-wave velocity and hypo_dist
     return trace.stats.hypo.origin_time + trace.stats.hypo_dist / vs
 
+def pwave_arrival(trace, vp):
+    for pick in trace.stats.picks:
+        if pick.phase == 'P':
+                return pick.time
+    # If no P pick is found in the pick list,
+    # then try to calculate the S arrival from
+    # p-wave velocity and hypo_dist
+    return trace.stats.hypo.origin_time + trace.stats.hypo_dist / vp
 
 def moment_to_mag(data):
     return (np.log10(data) - 9.1 ) / 1.5
