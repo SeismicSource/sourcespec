@@ -515,6 +515,7 @@ def read_traces(config):
                 continue
             for trace in tmpst.traces:
                 st.append(trace)
+                trace.stats.format = '' #FIXME: improve
                 __correct_traceid__(trace, config.traceids)
                 __add_paz_and_coords__(trace, dataless, paz)
                 __add_instrtype__(trace)
