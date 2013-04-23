@@ -172,11 +172,15 @@ def build_spectra(config, st, noise_st=None):
             specnoise_cut = specnoise.slice(freq1, freq2)
             specnoise_st.append(specnoise_cut)
 
-            spec_cp = copy(spec)
-            spec_cp.stats = deepcopy(spec.stats)
-            spec_cp.data = deepcopy(spec.data)
-            spec_cp.data /= specnoise.data
+            spec_cp = copy(spec_cut)
+            spec_cp.stats = deepcopy(spec_cut.stats)
+            spec_cp.data = deepcopy(spec_cut.data)
+            spec_cp.data /= specnoise_cut.data
             specratio_st.append(spec_cp)
+
+        # append to spec streams
+        spec_st.append(spec_cut)
+        specnoise_st.append(specnoise_cut)
 
     # Add to spec_st the "horizontal" component, obtained from the
     # modulus of the N-S and E-W components.

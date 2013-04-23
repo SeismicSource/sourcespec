@@ -49,6 +49,12 @@ def process_traces(config, st, skip_vertical=True):
             logging.warning('%s: Trace RMS smaller than %g: skipping trace' % (traceId, rms_min))
             continue
 
+        # Remove instrument response
+        if remove_instr_response(trace, config.correct_sensitivity_only,
+                                 config.pre_filt) == None:
+            logging.warning('%s: Unable to remove instrument response: skipping trace' % traceId)
+            continue
+
         # check if the trace has (significant) signal to noise ratio
         #### start signal/noise ratio
         # S time window
@@ -90,12 +96,6 @@ def process_traces(config, st, skip_vertical=True):
         evid = trace.stats.hypo.evid 
         print '%s %s.%s %s' % (evid, station, trace.stats.instrtype, sn_ratio)
         #### end signal/noise ratio
-
-        # Remove instrument response
-        if remove_instr_response(trace, config.correct_sensitivity_only,
-                                 config.pre_filt) == None:
-            logging.warning('%s: Unable to remove instrument response: skipping trace' % traceId)
-            continue
 
         orig_trace.stats.hypo_dist = hd
         out_st.append(trace)
