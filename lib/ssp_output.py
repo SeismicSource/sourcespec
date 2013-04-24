@@ -72,15 +72,14 @@ def write_output(config, evid, sourcepar):
     parfile.write('*** Average source parameters ***\n')
     # Mw
     Mw_array = np.array(list(x['Mw'] for x in sourcepar.values()))
-    Mw_mean  = gmean(Mw_array)
-    #Mw_std   = Mw_array.std()
-    Mw_std   = gstd(Mw_array)
+    Mw_mean  = Mw_array.mean()
+    Mw_std   = Mw_array.std()
     parfile.write('Mw: %.2f +/- %.2f\n' % (Mw_mean, Mw_std))
 
     # Mo (N.m)
     Mo_array = np.power(10, Mw_array*1.5 + 9.1)
-    Mo_mean  = Mo_array.mean()
-    Mo_std   = Mo_array.std()
+    Mo_mean  = gmean(Mo_array)
+    Mo_std   = gstd(Mo_array)
     parfile.write('Mo: %.3e +/- %.3e N.m\n' % (Mo_mean, Mo_std))
 
     # fc , hertz
