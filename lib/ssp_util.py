@@ -45,9 +45,6 @@ def cosine_taper(signal, width):
     npts=len(signal)
     p=2*width
     tap = cosTaper(npts, p)
-    ( tap[npts*p/2.:npts*(1-p/2.)]==np.ones(npts*(1-p)) ).all()
-    #plt.plot(tap)
-    #plt.show()
     signal *= tap
 
 # modified from: http://stackoverflow.com/questions/5515720/python-smooth-time-series-data

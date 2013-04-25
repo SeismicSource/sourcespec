@@ -80,7 +80,7 @@ def build_spectra(config, st):
         trace_cut.detrend(type='linear')
         trace_cut.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
         # ...and taper
-        cosine_taper(trace_cut.data, width=0.5)
+        cosine_taper(trace_cut.data, width=config.taper_halfwidth)
 
         # normalization for the hypocentral distance
         trace_cut.data *= trace_cut.stats.hypo_dist * 1000
