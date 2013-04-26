@@ -37,8 +37,8 @@ def main():
 
     if len(config.args) > 0:
         st = read_traces(config)
-        # Deconvolve, filter, cut traces:
-        proc_st = process_traces(config, st)
+        # Deconvolve, filter, cut traces (noise_st is not used, for now):
+        proc_st, noise_st = process_traces(config, st)
         # Build spectra (amplitude in magnitude units)
         spec_st = build_spectra(config, proc_st)
         # We keep just horizontal component:
