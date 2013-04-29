@@ -8,6 +8,7 @@
 import logging
 import numpy as np
 import math
+from scipy.integrate import cumtrapz
 from copy import deepcopy, copy
 from obspy.core import Stream
 from ssp_setup import dprint
@@ -29,7 +30,6 @@ def build_spectra(config, st):
         #trace_cut = trace.slice(t1, t2)
         trace_cut = copy(trace)
         trace_cut.stats = deepcopy(trace.stats)
-        trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
 
         npts = len(trace_cut.data)
         if npts == 0:
@@ -74,11 +74,25 @@ def build_spectra(config, st):
             dprint('%s: Unknown instrument type: %s: skipping trace' % (traceId, instrtype))
             continue
 
-        # remove the mean...
-        trace_cut.detrend(type='constant')
-        # ...and the linear trend...
-        trace_cut.detrend(type='linear')
-        trace_cut.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
+        if config.time_domain_int:
+            for i in range(0,nint):
+                # remove the mean...
+                trace_cut.detrend(type='constant')
+                # ...and the linear trend...
+                trace_cut.detrend(type='linear')
+                trace_cut.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
+                # integrate
+                trace_cut.data = cumtrapz(trace_cut.data) * trace_cut.stats.delta
+                trace_cut.stats.npts -= 1
+        else:
+            # remove the mean...
+            trace_cut.detrend(type='constant')
+            # ...and the linear trend...
+            trace_cut.detrend(type='linear')
+            trace_cut.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
+
+        # trim...
+        trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
         # ...and taper
         cosine_taper(trace_cut.data, width=config.taper_halfwidth)
 
@@ -92,9 +106,10 @@ def build_spectra(config, st):
         spec.stats.hypo      = stats.hypo
         spec.stats.hypo_dist = stats.hypo_dist
 
-        # Integrate in frequency domain (divide by the pulsation omega)
-        for i in range(0,nint):
-            spec.data /= (2 * math.pi * spec.get_freq())
+        if not config.time_domain_int:
+            # Integrate in frequency domain (divide by the pulsation omega)
+            for i in range(0,nint):
+                spec.data /= (2 * math.pi * spec.get_freq())
 
         # smooth the abs of fft
         #data_smooth = smooth(spec.data, 6)

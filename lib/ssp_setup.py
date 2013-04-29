@@ -130,6 +130,10 @@ def configure(progname='source_spec'):
     except AttributeError:
         config.trace_format = None
     try:
+        config.time_domain_int
+    except AttributeError:
+        config.time_domain_int = False
+    try:
         config.dataless
     except AttributeError:
         config.dataless = None
