@@ -22,6 +22,17 @@ from obspy.xseed import Parser
 from obspy.xseed.utils import SEEDParserException
 from ssp_setup import ssp_exit
 
+
+class Pick(AttribDict):
+    def __init__(self):
+        self.station  = None
+        self.flag     = None
+        self.phase    = None
+        self.polarity = None
+        self.quality  = None
+        self.time     = None
+
+
 # TRACE MANIPULATION ----------------------------------------------------------
 def __correct_traceid__(trace, traceids):
     if traceids == None:
@@ -74,7 +85,7 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
     # If we're still out of luck,
     # we try to build the sensitivity from the
     # user2 and user3 header fields (ISNet format)
-    if trace.stats.paz == None:
+    if trace.stats.paz == None and trace.stats.format == 'ISNet':
         try: 
             # instrument constants
             u2 = trace.stats.sac.user2 
@@ -88,8 +99,10 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
             trace.stats.paz = paz
         except AttributeError:
             pass
-    # Still no paz? Antilles format!
-    if trace.stats.paz == None and trace.stats.format == 'Antilles':
+    # Still no paz? Antilles or IPOC format!
+    if trace.stats.paz == None\
+            and (trace.stats.format == 'Antilles'
+                 or trace.stats.format == 'IPOC'):
         paz = AttribDict()
         paz.sensitivity = 1
         paz.poles = []
@@ -97,7 +110,7 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
         paz.gain = 1
         trace.stats.paz = paz
     # If we still don't have trace coordinates,
-        # we try to get them from SAC header
+    # we try to get them from SAC header
     if trace.stats.coords == None:
         try: 
             stla = trace.stats.sac.stla
@@ -129,7 +142,8 @@ def __add_instrtype__(trace):
             instrtype = 'shortp'
         if band_code == 'H': 
             instrtype = 'broadb'
-    if instr_code == 'N': instrtype = 'acc'
+    if instr_code == 'N' or instr_code =='L':
+        instrtype = 'acc'
 
     # If, not possible, let's see if there is an instrument
     # name in "kinst" (ISNet format)
@@ -156,30 +170,85 @@ def __add_hypocenter__(trace, hypo):
             tori = trace.stats.sac.o
             begin = trace.stats.sac.b
             if evla == -12345 or evlo == -12345\
-               or evdp == -12345 or tori == -12345\
-               or begin == -12345:
+               or evdp == -12345 or begin == -12345:
                 raise AttributeError
+
             hypo = AttribDict()
+            if tori == -12345:
+                hypo.origin_time = trace.stats.starttime
+            else:
+                hypo.origin_time = trace.stats.starttime + tori - begin
             hypo.latitude = evla
             hypo.longitude = evlo
             hypo.depth = evdp
-            hypo.origin_time = trace.stats.starttime + tori - begin
             hypo.evid = hypo.origin_time.strftime("%Y%m%d_%H%M%S")
         except AttributeError:
             pass
     trace.stats.hypo = hypo
 
 def __add_picks__(trace, picks):
-    # TODO: try to get picks from SAC header
-    if picks == None:
-        trace.stats.picks = []
-        return
-    
     stat_picks=[]
     station = trace.stats.station
-    for pick in picks:
-        if pick.station == station:
+
+    if picks == None:
+        # try to get picks from SAC header
+        if trace.stats._format != 'SAC':
+            return
+
+        times = []
+        times.append(trace.stats.sac.a)
+        times.append(trace.stats.sac.t0)
+        times.append(trace.stats.sac.t1)
+        times.append(trace.stats.sac.t2)
+        times.append(trace.stats.sac.t3)
+        times.append(trace.stats.sac.t4)
+        times.append(trace.stats.sac.t5)
+        times.append(trace.stats.sac.t6)
+        times.append(trace.stats.sac.t7)
+        times.append(trace.stats.sac.t8)
+        times.append(trace.stats.sac.t9)
+        labels = []
+        labels.append(trace.stats.sac.ka.strip())
+        labels.append(trace.stats.sac.kt0.strip())
+        labels.append(trace.stats.sac.kt1.strip())
+        labels.append(trace.stats.sac.kt2.strip())
+        labels.append(trace.stats.sac.kt3.strip())
+        labels.append(trace.stats.sac.kt4.strip())
+        labels.append(trace.stats.sac.kt5.strip())
+        labels.append(trace.stats.sac.kt6.strip())
+        labels.append(trace.stats.sac.kt7.strip())
+        labels.append(trace.stats.sac.kt8.strip())
+        labels.append(trace.stats.sac.kt9.strip())
+        fields = ['a', 't0', 't1', 't2', 't3', 't4',
+                  't5', 't6', 't7', 't8', 't9']
+
+        for time, label, field in zip(times, labels, fields):
+            if time == -12345:
+                continue
+
+            pick = Pick()
+            pick.station  = station
+            begin = trace.stats.sac.b
+            pick.time = trace.stats.starttime + time - begin
+            if len(label) == 4:
+                pick.flag = label[0]
+                pick.phase = label[1]
+                pick.polarity = label[2]
+                pick.quality = label[3]
+            else:
+                if field == 'a':
+                    pick.phase = 'P'
+                elif field == 't0':
+                    pick.phase = 'S'
+                else:
+                    pick.phase = 'X'
             stat_picks.append(pick)
+
+    else:
+        for pick in picks:
+            if pick.station == station:
+                stat_picks.append(pick)
+
     trace.stats.picks = stat_picks
 # -----------------------------------------------------------------------------
 
@@ -298,16 +367,6 @@ def __parse_hypocenter__(hypo_file):
 
     return hypo
 
-def __new_pick__():
-    pick = AttribDict()
-    pick.station  = None
-    pick.flag     = None
-    pick.phase    = None
-    pick.polarity = None
-    pick.quality  = None
-    pick.time     = None
-    return pick
-
 def __is_hypo_format(fp):
     for line in fp.readlines():
         # remove newline
@@ -354,7 +413,8 @@ def __parse_picks__(pick_file):
                              line[20].isdigit()):
                 continue
         
-            pick = __new_pick__()
+            #pick = __new_pick__()
+            pick = Pick()
             pick.station  = line[0:4]
             pick.flag     = line[4:5]
             pick.phase    = line[5:6]
@@ -375,7 +435,8 @@ def __parse_picks__(pick_file):
             except: continue
             if stime.replace(' ','') == '': continue
         
-            pick2 = __new_pick__()
+            #pick2 = __new_pick__()
+            pick2 = Pick()
             pick2.station  = pick.station
             pick2.flag     = line[36:37]
             pick2.phase    = line[37:38]
@@ -481,7 +542,7 @@ def read_traces(config):
                 continue
             for trace in tmpst.traces:
                 st.append(trace)
-                trace.stats.format = 'Antilles'
+                trace.stats.format = config.trace_format
                 __add_paz_and_coords__(trace, dataless, paz)
                 __add_hypocenter__(trace, hypo)
                 __add_picks__(trace, picks) #FIXME: actually add picks!
@@ -515,7 +576,7 @@ def read_traces(config):
                 continue
             for trace in tmpst.traces:
                 st.append(trace)
-                trace.stats.format = '' #FIXME: improve
+                trace.stats.format = config.trace_format
                 __correct_traceid__(trace, config.traceids)
                 __add_paz_and_coords__(trace, dataless, paz)
                 __add_instrtype__(trace)
