@@ -126,6 +126,10 @@ def configure(progname='source_spec'):
 
     # check if optional parameters are there:
     try:
+        config.trace_format
+    except AttributeError:
+        config.trace_format = None
+    try:
         config.dataless
     except AttributeError:
         config.dataless = None
