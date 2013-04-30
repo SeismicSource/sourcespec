@@ -20,6 +20,7 @@ from lib.ssp_local_magnitude import local_magnitude
 from lib.ssp_plot_spectra import plot_spectra
 from lib.ssp_output import write_output
 from lib.ssp_spectral_model import spectral_model
+from lib.ssp_util import mag_to_moment
 from obspy.core.util.geodetics import gps2DistAzimuth
 
 def main():
@@ -57,7 +58,7 @@ def main():
             dprint(station)
 
             # spectral amplitude is in Mw units
-            amp = spec.data
+            amp = spec.data_mag
 
             # We calculate the initial value for Mw,
             # as an average of the first 5 values of amp
@@ -125,7 +126,8 @@ def main():
 
             spec_synth = spec.copy()
             spec_synth.stats.channel = 'Synth'
-            spec_synth.data = spectral_model(xdata, *params_opt)
+            spec_synth.data_mag = spectral_model(xdata, *params_opt)
+            spec_synth.data = mag_to_moment(spec_synth.data_mag)
             spec_st.append(spec_synth)
 
     # Filter stations with negative t_star

@@ -11,7 +11,7 @@ import numpy as np
 from obspy.signal import cosTaper
 
 # MISC ------------------------------------------------------------------------
-def spec_minmax(amp, freq, amp_minmax, freq_minmax):
+def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
     amp_min = amp.min()
     amp_max = amp.max()
     if amp_minmax == None:
@@ -36,6 +36,13 @@ def swave_arrival(trace, vs):
     # then try to calculate the S arrival from
     # s-wave velocity and hypo_dist
     return trace.stats.hypo.origin_time + trace.stats.hypo_dist / vs
+
+
+def moment_to_mag(data):
+    return (np.log10(data) - 9.1 ) / 1.5
+
+def mag_to_moment(data):
+    return np.power(10, (1.5 * data + 9.1))
 # -----------------------------------------------------------------------------
 
 

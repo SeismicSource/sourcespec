@@ -12,7 +12,7 @@ from scipy.integrate import cumtrapz
 from copy import deepcopy, copy
 from obspy.core import Stream
 from ssp_setup import dprint
-from ssp_util import swave_arrival, cosine_taper
+from ssp_util import swave_arrival, cosine_taper, moment_to_mag
 from lib import spectrum
 from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
 
@@ -138,9 +138,6 @@ def build_spectra(config, st):
         # convert to seismic moment
         spec.data *= coeff
 
-        # convert the spectral amplitudes to moment magnitude
-        spec.data = (np.log10(spec.data) - 9.1 ) / 1.5
-
         # Cut the spectrum between freq1 and freq2
         spec_cut = spec.slice(freq1, freq2)
         spec_st.append(spec_cut)
@@ -162,8 +159,13 @@ def build_spectra(config, st):
                     data_h = spec_h.data
                     data   = spec.data
                     data_h = np.power(data_h, 2) + np.power(data, 2)
-                    data_h = np.sqrt(data_h / 2) #divide by the number of horizontal components
+                    #data_h = np.sqrt(data_h / 2) #divide by the number of horizontal components
+                    data_h = np.sqrt(data_h)
                     spec_h.data = data_h
             spec_st.append(spec_h)
+
+    # convert the spectral amplitudes to moment magnitude
+    for spec in spec_st:
+        spec.data_mag = moment_to_mag(spec.data)
 
     return spec_st

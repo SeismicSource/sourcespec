@@ -23,6 +23,7 @@ def process_traces(config, st, skip_vertical=True):
         traceId = trace.getId()
         stats = trace.stats
         comp  = stats.channel
+        skip_vertical = False
         if skip_vertical and comp[-1] == 'Z':
             continue
         station = stats.station
