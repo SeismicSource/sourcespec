@@ -38,6 +38,10 @@ To run the ISNet test:
 
      ./source_spec.py testdata/ISNet/14641r.full.sac.tgz -c testconfig/sample_config.py
 
+To run the IPOC test:
+
+     ./source_spec.py testdata/IPOC/324_0051-PB05-03077_tr14/ -c testconfig/config_IPOC.py
+
 To get help:
 
      ./source_spec.py -h
