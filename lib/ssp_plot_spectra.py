@@ -10,7 +10,7 @@ import sys
 import math
 import logging
 #from matplotlib.ticker import MaxNLocator
-from ssp_util import spec_minmax
+from ssp_util import spec_minmax, moment_to_mag
 
 synth_colors = [
     '#201F1F', 
@@ -45,20 +45,23 @@ def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
 
     # OK, now we can plot!
     fig = plt.figure(figsize=(16,9))
+    fig.subplots_adjust(hspace = .025, wspace = .03)
     # Determine the number of plots and axes min and max:
-    amp_minmax  = None
-    freq_minmax = None
     nplots=0
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
         for spec in spec_st_sel.traces:
-            amp_minmax, freq_minmax =\
-                spec_minmax(spec.data, spec.get_freq(), amp_minmax, freq_minmax) 
+            moment_minmax, freq_minmax =\
+                spec_minmax(spec.data, spec.get_freq()) 
+            mag_minmax, dum =\
+                spec_minmax(spec.data_mag, spec.get_freq()) 
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
             nplots += 1
     nlines = int(math.ceil(nplots/ncols))
+    moment_minmax[1] *= 10
     # we add a small margin to max amplitude (in magnitude units):
-    amp_minmax[1] += 0.1
+    #mag_minmax[1] += 0.1
+    mag_minmax = moment_to_mag(moment_minmax)
     # Plot!
     plotn=1
     axes=[]
@@ -73,18 +76,35 @@ def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
                     ax = fig.add_subplot(nlines, ncols, plotn)
             else:
                 if not stack_plots:
-                    ax = fig.add_subplot(nlines, ncols, plotn, sharex=axes[0], sharey=axes[0])
-            axes.append(ax)
+                    ax = fig.add_subplot(nlines, ncols, plotn, sharex=axes[0][0], sharey=axes[0][0])
             ax.set_xlim(freq_minmax)
-            ax.set_ylim(amp_minmax)
+            ax.set_ylim(moment_minmax)
             #ax.yaxis.set_major_locator(MaxNLocator(1))
             ax.grid(True, which='both')
             plt.setp(ax.get_xticklabels(), visible=False)
             plt.setp(ax.get_yticklabels(), visible=False)
+            ax.tick_params(width=2)
+            ax2 = ax.twinx()
+            ax2.set_ylim(mag_minmax)
+            plt.setp(ax2.get_xticklabels(), visible=False)
+            plt.setp(ax2.get_yticklabels(), visible=True)
+            for tick in ax2.yaxis.get_major_ticks():
+                tick.set_pad(-1)
+                tick.label2.set_horizontalalignment('right')
+            ax2.yaxis.set_tick_params(width=0)
+            axes.append((ax, ax2))
+            #for line in ax.xaxis.get_ticklines() +\
+            #        ax.yaxis.get_ticklines() +\
+            #        ax2.yaxis.get_ticklines():
+            #    line.set_markeredgewidth(2)
             for spec in spec_st_sel.traces:
+                amp = None
                 if spec.stats.instrtype != instrtype: continue
-                if spec.stats.channel == 'Synth': orientation = 'Synth'
+                if spec.stats.channel == 'Synth':
+                    orientation = 'Synth'
+                    amp = spec.data[0]
                 else: orientation = spec.stats.channel[-1]
+                if orientation == 'Z': color='purple'
                 if orientation == 'N': color='green'
                 if orientation == 'E': color='blue'
                 if orientation == 'H': color='red'
@@ -93,7 +113,8 @@ def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
                         color = synth_colors[(plotn-1)%len(synth_colors)]
                     else:
                         color='black'
-                ax.semilogx(spec.get_freq(), spec.data, color=color)
+                ax.loglog(spec.get_freq(), spec.data, color=color)
+                #ax2.semilogx(spec.get_freq(), spec.data_mag, color=color)
                 if not ax_text:
                     if stack_plots:
                         text_y = 0.1 + (plotn-1) * 0.05
@@ -107,18 +128,33 @@ def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
                             color = color,
                             transform = ax.transAxes)
                     ax_text = True
+                if amp:
+                    text_y = 0.05
+                    ax.text(0.05, text_y, '%g' % (amp),
+                            horizontalalignment='left',
+                            verticalalignment='bottom',
+                            color = color,
+                            transform = ax.transAxes)
             plotn+=1
 
     # Show the x-labels only for the last row
-    for ax in axes[-ncols:]:
+    for ax, ax2 in axes[-ncols:]:
         plt.setp(ax.get_xticklabels(), visible=True)
         ax.set_xlabel('Frequency (Hz)')
     # Show the y-labels only for the first column
     for i in range(0, len(axes)+ncols, ncols):
-        try: ax = axes[i]
-        except IndexError: continue
+        try:
+            ax, dum = axes[i]
+        except IndexError:
+            continue
+        try:
+            dum, ax2 = axes[i-1]
+        except IndexError:
+            continue
         plt.setp(ax.get_yticklabels(), visible=True)
-        ax.set_ylabel('Magnitude')
+        plt.setp(ax2.get_yticklabels(), visible=True)
+        ax.set_ylabel('Seismic moment (Nm)')
+        ax2.set_ylabel('Magnitude')
     
     if config.PLOT_SHOW:
         plt.show()
