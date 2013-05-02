@@ -111,7 +111,6 @@ def main():
             # weights as 1/yerr^2 . Therefore we build yerr as:
             yerr[xdata<=f_weight] = 1./math.sqrt(weight)
             # Curve fitting using the Levenburg-Marquardt algorithm
-            params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
             try:
                     params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
             except RuntimeError:
