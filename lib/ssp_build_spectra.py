@@ -27,10 +27,13 @@ def build_spectra(config, st):
         s_arrival_time = swave_arrival(trace, config.vs)
         t1 = s_arrival_time - config.pre_s_time
         t2 = t1 + config.s_win_length
-        #trace_cut = trace.slice(t1, t2)
+
         trace_cut = copy(trace)
         trace_cut.stats = deepcopy(trace.stats)
 
+        # Do a preliminary trim, in order to check if there is enough
+        # data within the selected time window
+        trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
         npts = len(trace_cut.data)
         if npts == 0:
             logging.warning('%s: No data for the selected cut interval: skipping trace' % traceId)
@@ -40,6 +43,11 @@ def build_spectra(config, st):
             logging.warning('%s: Too many gaps for the selected cut interval: skipping trace' % traceId)
             continue
         
+        # If the check is ok, recover the full trace
+        # (it will be cutted later on)
+        trace_cut = copy(trace)
+        trace_cut.stats = deepcopy(trace.stats)
+
         # compute S-wave (displacement) spectra from
         # accelerometers and velocimeters, uncorrected for attenuation,
         # corrected for instrumental constants, normalized by
