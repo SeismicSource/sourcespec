@@ -68,7 +68,7 @@ def local_magnitude(config, st, deconvolve=False):
         delta_t = trace_cut.data.argmax() - trace_cut.data.argmin()    
         delta_t = delta_t / trace_cut.stats.sampling_rate
 
-        #estimate Magnitude 
+        # estimate local magnitude 
         instrtype = trace_cut.stats.instrtype
         if instrtype == 'acc':
             poles = [0.0j] #integration to velocity 
