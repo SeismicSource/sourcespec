@@ -7,6 +7,7 @@
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
 import logging
 import numpy as np
+from scipy.integrate import cumtrapz
 from copy import deepcopy, copy
 from obspy.signal import estimateMagnitude
 from ssp_util import swave_arrival, cosine_taper
@@ -59,6 +60,12 @@ def local_magnitude(config, st, deconvolve=False):
         # TODO: parametrize?
         trace_cut.filter(type='bandpass',  freqmin=0.1, freqmax=20)
 
+        instrtype = trace_cut.stats.instrtype
+        if instrtype == 'acc':
+            # integrate to velocity
+            trace_cut.data = cumtrapz(trace_cut.data) * trace_cut.stats.delta
+            trace_cut.stats.npts -= 1
+
         # trim...
         trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
         # ...and taper
@@ -69,16 +76,12 @@ def local_magnitude(config, st, deconvolve=False):
         delta_t = delta_t / trace_cut.stats.sampling_rate
 
         # estimate local magnitude 
-        instrtype = trace_cut.stats.instrtype
-        if instrtype == 'acc':
-            poles = [0.0j] #integration to velocity 
-        else:
-            poles = []
-        paz = {'poles': poles,
-               'zeros': [],
-               'gain': 1.0, 'sensitivity': 1.0}
         if deconvolve:
             paz = trace_cut.stats.paz
+        else:
+            paz = {'poles': [],
+                   'zeros': [],
+                   'gain': 1.0, 'sensitivity': 1.0}
 
         ml = estimateMagnitude(paz, delta_amp, delta_t, trace_cut.stats.hypo_dist)
 
