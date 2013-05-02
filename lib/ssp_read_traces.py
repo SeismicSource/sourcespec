@@ -536,7 +536,7 @@ def read_traces(config):
         st = Stream()
         for trace in event.traces:
             try:
-                tmpst = read(trace.trace_file)
+                tmpst = read(trace.trace_file, fsize=False)
             except Exception, error:
                 print error
                 continue
@@ -570,7 +570,7 @@ def read_traces(config):
         st = Stream()
         for filename in filelist:
             try:
-                tmpst = read(filename)
+                tmpst = read(filename, fsize=False)
             except:
                 logging.error('%s: Unable to read file as a trace: skipping' % filename)
                 continue
