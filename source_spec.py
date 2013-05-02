@@ -11,7 +11,6 @@ import logging
 import math
 import numpy as np
 from scipy.optimize import curve_fit
-#from lib.ssp_util import *
 from lib.ssp_setup import dprint, configure, setup_logging, ssp_exit
 from lib.ssp_read_traces import read_traces
 from lib.ssp_process_traces import process_traces
