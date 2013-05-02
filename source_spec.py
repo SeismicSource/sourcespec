@@ -40,8 +40,8 @@ def main():
     # Build spectra (amplitude in magnitude units)
     spec_st = build_spectra(config, proc_st)
 
-    #Ml = local_magnitude(proc_st)
-    Ml = local_magnitude(st, deconvolve=True)
+    #Ml = local_magnitude(config, proc_st)
+    Ml = local_magnitude(config, st, deconvolve=True)
 
     # Inversion of displacement spectra
     # Spectral weighting:
