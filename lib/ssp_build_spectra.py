@@ -17,7 +17,13 @@ from lib import spectrum
 from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
 
 def build_spectra(config, st):
-    ''' Builds spectra and the spec_st object '''
+    ''' 
+    Builds spectra and the spec_st object.
+    Computes S-wave (displacement) spectra from
+    accelerometers and velocimeters, uncorrected for attenuation,
+    corrected for instrumental constants, normalized by
+    hypocentral distance
+    '''
     spec_st = Stream()
     for trace in st.traces:
         traceId = trace.getId()
@@ -48,10 +54,6 @@ def build_spectra(config, st):
         trace_cut = copy(trace)
         trace_cut.stats = deepcopy(trace.stats)
 
-        # compute S-wave (displacement) spectra from
-        # accelerometers and velocimeters, uncorrected for attenuation,
-        # corrected for instrumental constants, normalized by
-        # hypocentral distance
         instrtype = stats.instrtype
         if instrtype == 'acc':
             nint = 2 #number of intergrations to perform
@@ -120,20 +122,8 @@ def build_spectra(config, st):
                 spec.data /= (2 * math.pi * spec.get_freq())
 
         # smooth the abs of fft
-        #data_smooth = smooth(spec.data, 6)
-        #datanoise_smooth = smooth(specnoise.data, 6)
-        data_smooth = konnoOhmachiSmoothing(spec.data, spec.get_freq(),40,normalize=True)
-
-        # Uncomment these lines to see the effect of smoothing
-        #import matplotlib.pyplot as plt
-        #plt.figure()
-        #plt.loglog(spec.get_freq(), spec.data, color='gray')
-        #plt.loglog(spec.get_freq(), data_smooth)
-        #plt.grid(True)
-        #plt.show()
-        #ssp_exit()
-
-        spec.data = data_smooth
+        spec.data = konnoOhmachiSmoothing(spec.data, spec.get_freq(),
+                                          40, normalize=True)
 
         # TODO: parameterize
         # coefficient for converting displ spectrum
