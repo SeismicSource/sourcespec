@@ -46,22 +46,27 @@ def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
     # OK, now we can plot!
     fig = plt.figure(figsize=(16,9))
     fig.subplots_adjust(hspace = .025, wspace = .03)
+
     # Determine the number of plots and axes min and max:
     nplots=0
+    moment_minmax = None
+    mag_minmax = None
+    freq_minmax = None
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
         for spec in spec_st_sel.traces:
             moment_minmax, freq_minmax =\
-                spec_minmax(spec.data, spec.get_freq()) 
+                spec_minmax(spec.data, spec.get_freq(),
+                            moment_minmax, freq_minmax) 
             mag_minmax, dum =\
-                spec_minmax(spec.data_mag, spec.get_freq()) 
+                spec_minmax(spec.data_mag, spec.get_freq(),
+                            mag_minmax, freq_minmax) 
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
             nplots += 1
     nlines = int(math.ceil(nplots/ncols))
     moment_minmax[1] *= 10
-    # we add a small margin to max amplitude (in magnitude units):
-    #mag_minmax[1] += 0.1
     mag_minmax = moment_to_mag(moment_minmax)
+
     # Plot!
     plotn=1
     axes=[]
@@ -79,7 +84,6 @@ def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
                     ax = fig.add_subplot(nlines, ncols, plotn, sharex=axes[0][0], sharey=axes[0][0])
             ax.set_xlim(freq_minmax)
             ax.set_ylim(moment_minmax)
-            #ax.yaxis.set_major_locator(MaxNLocator(1))
             ax.grid(True, which='both')
             plt.setp(ax.get_xticklabels(), visible=False)
             plt.setp(ax.get_yticklabels(), visible=False)
@@ -93,10 +97,6 @@ def plot_spectra(config, spec_st, ncols=4, stack_plots=False):
                 tick.label2.set_horizontalalignment('right')
             ax2.yaxis.set_tick_params(width=0)
             axes.append((ax, ax2))
-            #for line in ax.xaxis.get_ticklines() +\
-            #        ax.yaxis.get_ticklines() +\
-            #        ax2.yaxis.get_ticklines():
-            #    line.set_markeredgewidth(2)
             for spec in spec_st_sel.traces:
                 amp = None
                 if spec.stats.instrtype != instrtype: continue
