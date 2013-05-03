@@ -6,7 +6,6 @@
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
 from __future__ import division
-import os
 import logging
 import math
 import numpy as np
@@ -161,8 +160,6 @@ def main():
 
 if __name__ == '__main__':
     try:
-        thismodule=os.path.basename(__file__).replace('.py','')
-        this=__import__(thismodule)
         main()
     except KeyboardInterrupt:
         ssp_exit(1)
