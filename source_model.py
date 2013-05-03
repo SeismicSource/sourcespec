@@ -7,6 +7,7 @@ from lib.ssp_read_traces import read_traces
 from lib.ssp_process_traces import process_traces
 from lib.ssp_build_spectra import build_spectra
 from lib.ssp_spectral_model import spectral_model
+from lib.ssp_util import mag_to_moment
 from lib.ssp_plot_spectra import plot_spectra
 from lib.spectrum import Spectrum
 
@@ -29,7 +30,8 @@ def make_synth(config, spec_st, trace_spec=None):
         spec.stats.channel = 'Synth'
     
         freq = spec.get_freq()
-        spec.data = spectral_model(freq, mag, fc, t_star)
+        spec.data_mag = spectral_model(freq, mag, fc, t_star)
+        spec.data = mag_to_moment(spec.data_mag)
         spec_st.append(spec)
 
 def main():
