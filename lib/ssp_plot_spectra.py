@@ -9,7 +9,6 @@ from __future__ import division
 import sys
 import math
 import logging
-#from matplotlib.ticker import MaxNLocator
 from ssp_util import spec_minmax, moment_to_mag
 
 synth_colors = [
