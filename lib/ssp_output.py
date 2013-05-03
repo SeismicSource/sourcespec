@@ -25,7 +25,7 @@ def write_output(config, evid, sourcepar):
     # Optional: write station source parameters to SQLite database
     try:
         database_file = config.database_file
-    except AttributeError:
+    except KeyError:
         database_file = None
 
     if database_file:

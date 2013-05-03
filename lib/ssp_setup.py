@@ -11,6 +11,7 @@ import logging
 from imp import load_source
 from optparse import OptionParser
 from datetime import datetime
+from obspy.core import AttribDict
 
 if sys.stdout.isatty():
     try:
@@ -119,6 +120,12 @@ def configure(progname='source_spec'):
     config_file = options.config_file
     try:
         config = load_source('config', config_file)
+        config = AttribDict(config.__dict__)
+        del config.__builtins__
+        del config.__doc__
+        del config.__file__
+        del config.__name__
+        del config.__package__
         DEBUG  = config.DEBUG
     except:
         sys.stderr.write('Unable to open file: %s\n' % config_file)
@@ -127,31 +134,31 @@ def configure(progname='source_spec'):
     # check if optional parameters are there:
     try:
         config.trace_format
-    except AttributeError:
+    except KeyError:
         config.trace_format = None
     try:
         config.time_domain_int
-    except AttributeError:
+    except KeyError:
         config.time_domain_int = False
     try:
         config.dataless
-    except AttributeError:
+    except KeyError:
         config.dataless = None
     try:
         config.paz
-    except AttributeError:
+    except KeyError:
         config.paz = None
     try:
         config.traceids
-    except AttributeError:
+    except KeyError:
         config.traceids = None
     try:
         config.pickle_catalog
-    except AttributeError:
+    except KeyError:
         config.pickle_catalog = None
     try:
         config.pickle_classpath
-    except AttributeError:
+    except KeyError:
         config.pickle_classpath = None
 
 
