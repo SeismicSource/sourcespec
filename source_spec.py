@@ -8,6 +8,7 @@
 from __future__ import division
 import logging
 import math
+import multiprocessing
 import numpy as np
 from scipy.optimize import curve_fit
 from lib.ssp_setup import dprint, configure, setup_logging, ssp_exit
@@ -149,12 +150,25 @@ def main():
     write_output(config, evid, sourcepar)
 
     # Plotting
-    plot_spectra(config, spec_st, specnoise_st=specnoise_st)
-    plot_spectra(config, specnoise_st, plottype='noise')
-    plot_spectra(config, weight_st, plottype='weight')
+    pool = multiprocessing.Pool()
+    args = [
+            (config, spec_st, specnoise_st, 'regular'),
+            (config, specnoise_st, None, 'noise'),
+            (config, weight_st, None, 'weight')
+           ]
+    pool.map(__call_plot_spectra__, args)
+
+    #plot_spectra(config, spec_st, specnoise_st=specnoise_st)
+    #plot_spectra(config, specnoise_st, plottype='noise')
+    #plot_spectra(config, weight_st, plottype='weight')
 
     ssp_exit()
 
+def __call_plot_spectra__(args):
+    config, spec_st, specnoise_st, plottype = args
+    plot_spectra(config, spec_st,
+            specnoise_st=specnoise_st,
+            plottype=plottype)
 
 if __name__ == '__main__':
     try:
