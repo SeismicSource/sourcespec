@@ -163,7 +163,7 @@ def build_spectra(config, st, noise_st=None):
         # same processing for noise, if requested
         if noise_st:
             specnoise.data = konnoOhmachiSmoothing(specnoise.data,
-                                          spec.get_freq(),
+                                          specnoise.get_freq(),
                                           40, normalize=True)
             specnoise.data *= coeff
 
