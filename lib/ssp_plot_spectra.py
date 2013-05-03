@@ -20,7 +20,8 @@ synth_colors = [
     '#FC4384', 
 ]
 
-def plot_spectra(config, spec_st, specnoise_st=None, ncols=4, stack_plots=False):
+def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
+        stack_plots=False, plottype='regular'):
     # Unload matplotlib modules (which have been presumably loaded by
     # ObsPy).
     # Source:
@@ -116,8 +117,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4, stack_plots=False)
                         color = synth_colors[(plotn-1)%len(synth_colors)]
                     else:
                         color='black'
-                ax.loglog(spec.get_freq(), spec.data, color=color)
-                #ax2.semilogx(spec.get_freq(), spec.data_mag, color=color)
+                if plottype == 'regular' or plottype == 'noise': 
+                    ax.loglog(spec.get_freq(), spec.data, color=color)
+                    #ax2.semilogx(spec.get_freq(), spec.data_mag, color=color)
+                else:
+                    raise ValueError, 'Unknown plot type: %s' % plottype
                 #leg = ax.legend(('N', 'E', 'H'),
                 #    'lower right')
 
@@ -126,7 +130,6 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4, stack_plots=False)
                             spec.stats.channel == 'H'):
                         continue
                     specid = spec.getId()
-                    print specid
                     sp_noise = specnoise_st.select(id=specid)[0]
                     orientation = sp_noise.stats.channel[-1]
                     if orientation == 'Z': color='purple'
@@ -180,7 +183,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4, stack_plots=False)
     if config.PLOT_SAVE:
         #TODO: improve this:
         evid = spec_st.traces[0].stats.hypo.evid
-        figurefile = config.options.outdir + '/' + evid + '.ssp.' +\
+        if plottype == 'regular':
+            suffix = '.ssp.'
+        elif plottype == 'noise': 
+            suffix = '.sspnoise.'
+        figurefile = config.options.outdir + '/' + evid + suffix +\
             config.PLOT_SAVE_FORMAT
         fig.savefig(figurefile, bbox_inches='tight')
         logging.info('Spectral plots saved to: ' + figurefile)

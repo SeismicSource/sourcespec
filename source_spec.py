@@ -17,7 +17,6 @@ from lib.ssp_process_traces import process_traces
 from lib.ssp_build_spectra import build_spectra
 from lib.ssp_local_magnitude import local_magnitude
 from lib.ssp_plot_spectra import plot_spectra
-from lib.ssp_plot_spectranoise import plot_spectranoise
 from lib.ssp_plot_weight import plot_weight
 from lib.ssp_output import write_output
 from lib.ssp_spectral_model import spectral_model
@@ -155,7 +154,7 @@ def main():
 
     # Plotting
     plot_spectra(config, spec_st, specnoise_st=specnoise_st)
-    plot_spectranoise(config, specnoise_st)
+    plot_spectra(config, specnoise_st, plottype='noise')
     plot_weight(config, weight_st)
 
     ssp_exit()
