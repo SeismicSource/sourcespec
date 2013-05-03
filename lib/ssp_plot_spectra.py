@@ -51,7 +51,6 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     # Determine the number of plots and axes min and max:
     nplots=0
     moment_minmax = None
-    mag_minmax = None
     freq_minmax = None
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
@@ -62,14 +61,12 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             moment_minmax, freq_minmax =\
                 spec_minmax(spec.data, spec.get_freq(),
                             moment_minmax, freq_minmax) 
-            mag_minmax, dum =\
-                spec_minmax(spec.data_mag, spec.get_freq(),
-                            mag_minmax, freq_minmax) 
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
             nplots += 1
     nlines = int(math.ceil(nplots/ncols))
-    moment_minmax[1] *= 10
-    mag_minmax = moment_to_mag(moment_minmax)
+    if plottype != 'weight':
+        moment_minmax[1] *= 10
+        mag_minmax = moment_to_mag(moment_minmax)
 
     # Plot!
     plotn=1
@@ -92,14 +89,17 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             plt.setp(ax.get_xticklabels(), visible=False)
             plt.setp(ax.get_yticklabels(), visible=False)
             ax.tick_params(width=2)
-            ax2 = ax.twinx()
-            ax2.set_ylim(mag_minmax)
-            plt.setp(ax2.get_xticklabels(), visible=False)
-            plt.setp(ax2.get_yticklabels(), visible=True)
-            for tick in ax2.yaxis.get_major_ticks():
-                tick.set_pad(-1)
-                tick.label2.set_horizontalalignment('right')
-            ax2.yaxis.set_tick_params(width=0)
+            if plottype != 'weight':
+                ax2 = ax.twinx()
+                ax2.set_ylim(mag_minmax)
+                plt.setp(ax2.get_xticklabels(), visible=False)
+                plt.setp(ax2.get_yticklabels(), visible=True)
+                for tick in ax2.yaxis.get_major_ticks():
+                    tick.set_pad(-1)
+                    tick.label2.set_horizontalalignment('right')
+                ax2.yaxis.set_tick_params(width=0)
+            else:
+                ax2 = None
             axes.append((ax, ax2))
             for spec in spec_st_sel.traces:
                 amp = None
@@ -120,6 +120,8 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 if plottype == 'regular' or plottype == 'noise': 
                     ax.loglog(spec.get_freq(), spec.data, color=color)
                     #ax2.semilogx(spec.get_freq(), spec.data_mag, color=color)
+                elif plottype == 'weight': 
+                    ax.semilogx(spec.get_freq(), spec.data, color=color)
                 else:
                     raise ValueError, 'Unknown plot type: %s' % plottype
                 #leg = ax.legend(('N', 'E', 'H'),
@@ -174,9 +176,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         except IndexError:
             continue
         plt.setp(ax.get_yticklabels(), visible=True)
-        plt.setp(ax2.get_yticklabels(), visible=True)
-        ax.set_ylabel('Seismic moment (Nm)')
-        ax2.set_ylabel('Magnitude')
+        ax.set_ylabel('Weight')
+        if plottype != 'weight':
+            ax.set_ylabel('Seismic moment (Nm)')
+            plt.setp(ax2.get_yticklabels(), visible=True)
+            ax2.set_ylabel('Magnitude')
     
     if config.PLOT_SHOW:
         plt.show()
@@ -185,10 +189,15 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         evid = spec_st.traces[0].stats.hypo.evid
         if plottype == 'regular':
             suffix = '.ssp.'
+            message = 'Spectral'
         elif plottype == 'noise': 
             suffix = '.sspnoise.'
+            message = 'Noise'
+        elif plottype == 'weight': 
+            suffix = '.sspweight.'
+            message = 'Weight'
         figurefile = config.options.outdir + '/' + evid + suffix +\
             config.PLOT_SAVE_FORMAT
         fig.savefig(figurefile, bbox_inches='tight')
-        logging.info('Spectral plots saved to: ' + figurefile)
+        logging.info(message + ' plots saved to: ' + figurefile)
 
