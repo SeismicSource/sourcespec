@@ -12,7 +12,8 @@ from scipy.integrate import cumtrapz
 from copy import deepcopy, copy
 from obspy.core import Stream
 from ssp_setup import dprint
-from ssp_util import swave_arrival, cosine_taper, moment_to_mag
+from ssp_util import swave_arrival, cosine_taper,\
+        moment_to_mag, select_trace
 from lib import spectrum
 from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
 
@@ -109,7 +110,7 @@ def build_spectra(config, st, noise_st=None):
         for i in range(0, n_time_procs):
             __process__(trace_cut, bp_freqmin, bp_freqmax, integrate)
             if noise_st:
-                trace_noise = noise_st.select(id=traceId)[0]
+                trace_noise = select_trace(noise_st, traceId, instrtype)
                 __process__(trace_noise, bp_freqmin, bp_freqmax, integrate)
 
         # trim...

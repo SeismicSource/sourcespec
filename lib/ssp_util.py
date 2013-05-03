@@ -51,6 +51,10 @@ def moment_to_mag(data):
 
 def mag_to_moment(data):
     return np.power(10, (1.5 * data + 9.1))
+
+def select_trace(stream, traceid, instrtype):
+    return [tr for tr in stream.select(id=traceid) 
+            if tr.stats.instrtype == instrtype][0]
 # -----------------------------------------------------------------------------
 
 

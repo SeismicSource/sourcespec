@@ -18,7 +18,7 @@ from lib.ssp_local_magnitude import local_magnitude
 from lib.ssp_plot_spectra import plot_spectra
 from lib.ssp_output import write_output
 from lib.ssp_spectral_model import spectral_model
-from lib.ssp_util import mag_to_moment
+from lib.ssp_util import mag_to_moment, select_trace
 from obspy.core.util.geodetics import gps2DistAzimuth
 
 def main():
@@ -55,9 +55,7 @@ def main():
             if spec.stats.channel != 'H': continue
             dprint(station)
 
-            spec_id = spec.id 
-            #print spec_id, weight_st.select(id=spec_id)
-            weight = weight_st.select(id=spec_id)[0] 
+            weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
 
             # spectral amplitude is in Mw units
             amp = spec.data_mag
