@@ -16,6 +16,16 @@ from ssp_util import swave_arrival, cosine_taper, moment_to_mag
 from lib import spectrum
 from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
 
+def __process__(trace, bp_freqmin, bp_freqmax, integrate=False):
+    # remove the mean...
+    trace.detrend(type='constant')
+    # ...and the linear trend...
+    trace.detrend(type='linear')
+    trace.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
+    if integrate:
+        trace.data = cumtrapz(trace.data) * trace.stats.delta
+        trace.stats.npts -= 1
+
 def build_spectra(config, st, noise_st=None):
     ''' 
     Builds spectra and the spec_st object.
@@ -87,41 +97,28 @@ def build_spectra(config, st, noise_st=None):
             continue
 
         if config.time_domain_int:
-            for i in range(0,nint):
-                # remove the mean...
-                trace_cut.detrend(type='constant')
-                # ...and the linear trend...
-                trace_cut.detrend(type='linear')
-                trace_cut.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
-                # integrate
-                trace_cut.data = cumtrapz(trace_cut.data) * trace_cut.stats.delta
-                trace_cut.stats.npts -= 1
-                if noise_st:
-                    trace_noise = noise_st.select(id=traceId)[0]
-                    trace_noise.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
-                    trace_noise.data = cumtrapz(trace_noise.data) * trace_noise.stats.delta
-                    trace_noise.stats.npts -= 1
+            n_time_procs = nint
+            n_freq_int = 0
+            integrate = True
         else:
-            # remove the mean...
-            trace_cut.detrend(type='constant')
-            # ...and the linear trend...
-            trace_cut.detrend(type='linear')
-            trace_cut.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
+            n_time_procs = 1
+            n_freq_int = nint
+            integrate = False
+
+        # Time domain processing
+        for i in range(0, n_time_procs):
+            __process__(trace_cut, bp_freqmin, bp_freqmax, integrate)
             if noise_st:
                 trace_noise = noise_st.select(id=traceId)[0]
-                trace_noise.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
+                __process__(trace_noise, bp_freqmin, bp_freqmax, integrate)
 
         # trim...
         trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
         # ...and taper
         cosine_taper(trace_cut.data, width=config.taper_halfwidth)
-        if noise_st:
-            cosine_taper(trace_noise.data, width=config.taper_halfwidth)
 
         # normalization for the hypocentral distance
         trace_cut.data *= trace_cut.stats.hypo_dist * 1000
-        if noise_st:
-            trace_noise.data *= trace_noise.stats.hypo_dist * 1000
 
         # calculate fft
         spec = spectrum.do_spectrum(trace_cut)
@@ -130,25 +127,25 @@ def build_spectra(config, st, noise_st=None):
         spec.stats.hypo      = stats.hypo
         spec.stats.hypo_dist = stats.hypo_dist
 
+        # same processing for noise, if requested
         if noise_st:
+            cosine_taper(trace_noise.data, width=config.taper_halfwidth)
+            trace_noise.data *= trace_noise.stats.hypo_dist * 1000
             specnoise = spectrum.do_spectrum(trace_noise)
             specnoise.stats.instrtype = instrtype
             specnoise.stats.coords    = stats.coords
             specnoise.stats.hypo      = stats.hypo
             specnoise.stats.hypo_dist = stats.hypo_dist
 
-        if not config.time_domain_int:
-            # Integrate in frequency domain (divide by the pulsation omega)
-            for i in range(0,nint):
-                spec.data /= (2 * math.pi * spec.get_freq())
-                if noise_st:
-                    specnoise.data /= (2 * math.pi * spec.get_freq())
+        # Integrate in frequency domain (divide by the pulsation omega)
+        # (performed only if config.time_domain_int == False)
+        for i in range(0, n_freq_int):
+            spec.data /= (2 * math.pi * spec.get_freq())
+            if noise_st:
+                specnoise.data /= (2 * math.pi * spec.get_freq())
 
         # smooth the abs of fft
         spec.data = konnoOhmachiSmoothing(spec.data, spec.get_freq(),
-                                          40, normalize=True)
-        if noise_st:
-            specnoise.data = konnoOhmachiSmoothing(specnoise.data, spec.get_freq(),
                                           40, normalize=True)
 
         # TODO: parameterize
@@ -161,11 +158,18 @@ def build_spectra(config, st, noise_st=None):
 
         # convert to seismic moment
         spec.data *= coeff
+
+        # same processing for noise, if requested
         if noise_st:
+            specnoise.data = konnoOhmachiSmoothing(specnoise.data,
+                                          spec.get_freq(),
+                                          40, normalize=True)
             specnoise.data *= coeff
 
         # Cut the spectrum between freq1 and freq2
         spec_cut = spec.slice(freq1, freq2)
+        spec_st.append(spec_cut)
+        # append to spec streams
         spec_st.append(spec_cut)
 
         if noise_st:
@@ -176,10 +180,6 @@ def build_spectra(config, st, noise_st=None):
             weight.data = deepcopy(spec_cut.data)
             weight.data /= specnoise_cut.data
             weight_st.append(weight)
-
-        # append to spec streams
-        spec_st.append(spec_cut)
-        specnoise_st.append(specnoise_cut)
 
     # Add to spec_st the "horizontal" component, obtained from the
     # modulus of the N-S and E-W components.
@@ -202,31 +202,33 @@ def build_spectra(config, st, noise_st=None):
                     spec_h.data = data_h
             spec_st.append(spec_h)
 
-    # Add to weight_st the "horizontal" component, obtained from the
-    # modulus of the N-S and E-W components.
-    for station in set(x.stats.station for x in weight_st.traces):
-        weight_st_sel = weight_st.select(station=station)
-        for instrtype in set(x.stats.instrtype for x in weight_st_sel):
-            weight_h = None
-            for weight in weight_st_sel.traces:
-                # this should never happen:
-                if weight.stats.instrtype != instrtype:
-                    continue
-                if weight_h == None:
-                    weight_h = weight.copy()
-                    weight_h.stats.channel = 'H'
-                else:
-                    data_h = weight_h.data
-                    data   = weight.data
-                    data_h = np.power(data_h, 2) + np.power(data, 2)
-                    data_h = np.sqrt(data_h)
-                    weight_h.data = data_h
-            weight_st.append(weight_h)
-
     # convert the spectral amplitudes to moment magnitude
     for spec in spec_st:
         spec.data_mag = moment_to_mag(spec.data)
+
     if noise_st:
+        # Add to weight_st the "horizontal" component, obtained from the
+        # modulus of the N-S and E-W components.
+        for station in set(x.stats.station for x in weight_st.traces):
+            weight_st_sel = weight_st.select(station=station)
+            for instrtype in set(x.stats.instrtype for x in weight_st_sel):
+                weight_h = None
+                for weight in weight_st_sel.traces:
+                    # this should never happen:
+                    if weight.stats.instrtype != instrtype:
+                        continue
+                    if weight_h == None:
+                        weight_h = weight.copy()
+                        weight_h.stats.channel = 'H'
+                    else:
+                        data_h = weight_h.data
+                        data   = weight.data
+                        data_h = np.power(data_h, 2) + np.power(data, 2)
+                        data_h = np.sqrt(data_h)
+                        weight_h.data = data_h
+                weight_st.append(weight_h)
+
+        # convert the spectral amplitudes to moment magnitude
         for specnoise in specnoise_st:
             specnoise.data_mag = moment_to_mag(specnoise.data)
 
