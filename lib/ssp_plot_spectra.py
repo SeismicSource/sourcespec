@@ -55,8 +55,8 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4, stack_plots=False)
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
         if specnoise_st:
-            spec_noise_sel = specnoise_st.select(station=station)
-            spec_st_sel += spec_noise_sel
+            specnoise_sel = specnoise_st.select(station=station)
+            spec_st_sel += specnoise_sel
         for spec in spec_st_sel.traces:
             moment_minmax, freq_minmax =\
                 spec_minmax(spec.data, spec.get_freq(),
