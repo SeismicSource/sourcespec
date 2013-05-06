@@ -30,7 +30,6 @@ def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
 
 def swave_arrival(trace, vs):
     theo_s_pick_time = trace.stats.hypo.origin_time + trace.stats.hypo_dist / vs
-   
     for pick in trace.stats.picks:
         if pick.phase == 'S':
             delta_t = abs(pick.time - theo_s_pick_time)
@@ -44,13 +43,18 @@ def swave_arrival(trace, vs):
     return theo_s_pick_time
 
 def pwave_arrival(trace, vp):
+    theo_p_pick_time = trace.stats.hypo.origin_time + trace.stats.hypo_dist / vp
     for pick in trace.stats.picks:
         if pick.phase == 'P':
-                return pick.time
+            delta_t = abs(pick.time - theo_p_pick_time)
+            if delta_t > 4.:#seconds #TODO parametrize?
+                continue
+            return pick.time
     # If no P pick is found in the pick list,
-    # then try to calculate the S arrival from
-    # p-wave velocity and hypo_dist
-    return trace.stats.hypo.origin_time + trace.stats.hypo_dist / vp
+    # or if picks are too far away from theoretical
+    # arrivals,then try to calculate the S arrival
+    # from s-wave velocity and hypo_dist
+    return theo_p_pick_time
 
 def moment_to_mag(data):
     return (np.log10(data) - 9.1 ) / 1.5
