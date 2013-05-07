@@ -57,11 +57,11 @@ def process_traces(config, st, skip_vertical=True):
 
         # check if the trace has (significant) signal to noise ratio
         #### start signal/noise ratio
-        # S time window
         p_arrival_time = pwave_arrival(trace, config.vp)
         s_arrival_time = swave_arrival(trace, config.vs)
-        pt1 = s_arrival_time - config.pre_p_time
-        pt2 = pt1 + config.p_win_length
+        # S time window
+        pt1 = s_arrival_time - config.pre_s_time
+        pt2 = pt1 + config.s_win_length
         trace_cutS = copy(trace)
         trace_cutS.stats = deepcopy(trace.stats)
         # remove the mean...
