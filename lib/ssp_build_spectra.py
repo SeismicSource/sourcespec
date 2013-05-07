@@ -169,7 +169,6 @@ def build_spectra(config, st, noise_st=None):
 
         # Cut the spectrum between freq1 and freq2
         spec_cut = spec.slice(freq1, freq2)
-        spec_st.append(spec_cut)
         # append to spec streams
         spec_st.append(spec_cut)
 
@@ -182,25 +181,23 @@ def build_spectra(config, st, noise_st=None):
             weight.data /= specnoise_cut.data
             weight_st.append(weight)
 
-    # Add to spec_st the "horizontal" component, obtained from the
-    # modulus of the N-S and E-W components.
+    # Add to spec_st the "H" component, obtained from the
+    # modulus of all the available components.
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
             spec_h = None
             for spec in spec_st_sel.traces:
-                # this should never happen:
+                # this avoids taking a component from co-located station:
                 if spec.stats.instrtype != instrtype:
                     continue
                 if spec_h == None:
                     spec_h = spec.copy()
+                    spec_h.data = np.power(spec_h.data, 2)
                     spec_h.stats.channel = 'H'
                 else:
-                    data_h = spec_h.data
-                    data   = spec.data
-                    data_h = np.power(data_h, 2) + np.power(data, 2)
-                    data_h = np.sqrt(data_h)
-                    spec_h.data = data_h
+                    spec_h.data += np.power(spec.data, 2)
+            spec_h.data = np.sqrt(spec_h.data)
             spec_st.append(spec_h)
 
     # convert the spectral amplitudes to moment magnitude
@@ -208,25 +205,23 @@ def build_spectra(config, st, noise_st=None):
         spec.data_mag = moment_to_mag(spec.data)
 
     if noise_st:
-        # Add to weight_st the "horizontal" component, obtained from the
-        # modulus of the N-S and E-W components.
+        # Add to weight_st the "H" component, obtained from the
+        # modulus of all the available components.
         for station in set(x.stats.station for x in weight_st.traces):
             weight_st_sel = weight_st.select(station=station)
             for instrtype in set(x.stats.instrtype for x in weight_st_sel):
                 weight_h = None
                 for weight in weight_st_sel.traces:
-                    # this should never happen:
+                    # this avoids taking a component from co-located station:
                     if weight.stats.instrtype != instrtype:
                         continue
                     if weight_h == None:
                         weight_h = weight.copy()
+                        weight_h.data = np.power(weight_h.data, 2)
                         weight_h.stats.channel = 'H'
                     else:
-                        data_h = weight_h.data
-                        data   = weight.data
-                        data_h = np.power(data_h, 2) + np.power(data, 2)
-                        data_h = np.sqrt(data_h)
-                        weight_h.data = data_h
+                        weight_h.data += np.power(weight.data, 2)
+                weight_h.data = np.sqrt(weight_h.data)
                 weight_st.append(weight_h)
 
         # convert the spectral amplitudes to moment magnitude
