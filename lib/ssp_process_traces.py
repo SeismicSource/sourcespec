@@ -13,7 +13,7 @@ from ssp_setup import dprint
 from ssp_util import remove_instr_response, hypo_dist,\
                      pwave_arrival, swave_arrival
 
-def process_traces(config, st, skip_vertical=True):
+def process_traces(config, st):
     ''' Removes mean, deconvolves, and ignores unwanted components '''
     out_st = Stream()
     out_st_noise = Stream()
@@ -25,8 +25,7 @@ def process_traces(config, st, skip_vertical=True):
         traceId = trace.getId()
         stats = trace.stats
         comp  = stats.channel
-        skip_vertical = False
-        if skip_vertical and comp[-1] == 'Z':
+        if config.ignore_vertical and comp[-1] == 'Z':
             continue
         station = stats.station
         dprint('%s %s' % (station, comp))

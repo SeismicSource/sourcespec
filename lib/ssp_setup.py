@@ -137,6 +137,10 @@ def configure(progname='source_spec'):
     except KeyError:
         config.trace_format = None
     try:
+        config.ignore_vertical
+    except KeyError:
+        config.ignore_vertical = False
+    try:
         config.time_domain_int
     except KeyError:
         config.time_domain_int = False
