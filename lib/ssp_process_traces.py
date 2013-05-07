@@ -70,7 +70,6 @@ def process_traces(config, st, skip_vertical=True):
         trace_cutS.detrend(type='linear')
         trace_cutS.trim(starttime=pt1, endtime=pt2, pad=True, fill_value=0)
         # noise time window
-        #s_arrival_time = swave_arrival(trace, config.vs)
         nt1 = p_arrival_time - config.pre_noise_time
         nt2 = nt1 + config.s_win_length
         trace_noise = copy(trace)
