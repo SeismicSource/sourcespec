@@ -143,7 +143,7 @@ def build_spectra(config, st, noise_st=None):
         for i in range(0, n_freq_int):
             spec.data /= (2 * math.pi * spec.get_freq())
             if noise_st:
-                specnoise.data /= (2 * math.pi * spec.get_freq())
+                specnoise.data /= (2 * math.pi * specnoise.get_freq())
 
         # smooth the abs of fft
         spec.data = konnoOhmachiSmoothing(spec.data, spec.get_freq(),
