@@ -9,6 +9,7 @@
 from __future__ import division
 import sys
 import os
+import re
 import logging
 import shutil
 import tarfile
@@ -305,11 +306,11 @@ def __read_paz__(path):
                 attach_paz(tr, fullpath)
                 bname = os.path.basename(filename)
                 #strip .pz suffix, if there
-                bname = bname.rstrip('.pz')
+                bname = re.sub('.pz$', '', bname)
                 #and strip any common prefix
                 #we assume that the string which remains
                 #is the trace_id
-                trace_id = bname.lstrip(prefix)
+                trace_id = re.sub('^' + prefix, '', bname)
                 paz[trace_id] = tr.stats.paz.copy()
             except IOError:
                 continue
