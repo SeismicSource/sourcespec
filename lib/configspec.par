@@ -1,0 +1,112 @@
+# Parameter file for source_spec.py
+
+# GENERAL PARAMETERS
+DEBUG = boolean(default=False) #True: print debug information
+PLOT_SHOW = boolean(default=False)
+PLOT_SAVE = boolean(default=True)
+PLOT_SAVE_FORMAT = option('png', 'pdf', default='png')
+
+# path to pickle catalog
+pickle_catalog = string(default=None)
+pickle_classpath = string(default=None)
+
+# directory or file for dataless (optional):
+dataless = string(default=None)
+# alternatively, a directory with PAZ files can be specified:
+paz = string(default=None)
+
+# traceid file for station SCNL correction (optional):
+traceids = string(default=None)
+
+# database file for storing output parameters (optional):
+database_file = string(default=None)
+
+trace_format = string(default=None)
+
+# If true, traces are not fully deconvolved
+# for the instrumental response: only the
+# sensitivity is corrected (faster, especially
+# on a large number of traces).
+correct_sensitivity_only = boolean(default=False)
+# Pre-filtering frequencies for instrument correction
+# Specify the four corner frequencies (f1,f2,f3,f4)
+# of a cosine taper which is one between f2 and f3
+# and tapers to zero for f1 < f < f2 and f3 < f < f4.
+pre_filt = float_list(default=list(0.1, 0.2, 55., 60.))
+# -------------------
+
+
+# INITIAL PARAMETERS
+vp = float(default=5.5)
+vs = float(default=3.2)
+# density:
+rho = float(default=2500)
+#radiation pattern coefficient:
+rps = float(default=0.62)
+# Brune stress drop (MPa):
+bsd = float(default=10e6)
+# -------------------
+
+ignore_vertical = boolean(default=False)
+
+## S/N PARAMETERS
+# Minimum rms (in trace units before instrument corrections)
+# to consider a trace as noise
+rmsmin = float(default=0.)
+
+# s-wave (and noise) window (sec)
+pre_p_time   = float(default=0.5)
+p_win_length = float(default=3.0)
+pre_noise_time = float(default=5.0)
+noise_win_length = float(default=3.0)
+#S/N ratio min
+sn_min = float(default=0)
+
+
+# SPECTRUM PARAMETERS
+time_domain_int = boolean(default=False)
+
+# S-wave window (sec)
+pre_s_time   = float(default=1.0)
+s_win_length = float(default=5.0)
+
+# Taper
+# between 0 (no taper) and 0.5
+taper_halfwidth = float(0, 0.5, default=0.05)
+
+# Band-pass frequencies for accelerometers and velocimeters (Hz)
+# TODO: calculate from sampling rate?
+bp_freqmin_acc    = float(default=1.0)
+bp_freqmax_acc    = float(default=50.0)
+bp_freqmin_shortp = float(default=1.0)
+bp_freqmax_shortp = float(default=40.0)
+bp_freqmin_broadb = float(default=0.5)
+bp_freqmax_broadb = float(default=40.0)
+
+# Filter cut frequencies for accelerometers and velocimeters
+freq1_acc     = float(default=1.0)
+freq2_acc     = float(default=30.0)
+freq1_shortp  = float(default=1.0)
+freq2_shortp  = float(default=30.0)
+freq1_broadb  = float(default=0.5)
+freq2_broadb  = float(default=30.0)
+# -------------------
+
+
+# INVERSION PARAMETERS
+# Spectral weighting:
+#   weight for f<=f_weight
+#   1      for f> f_weight
+f_weight = float(default=7.) #Hz
+weight = float(default=10.)
+# Initial values for fc (optional)
+fc_0 = float(default=None)
+# initial value for t_star
+t_star_0 = float(default=0.045)
+# -------------------
+
+
+# POST-PROCESSING PARAMETERS
+# Min and max acceptable corner frequencies (Hz)
+min_corner_freq = float(default=0.5)
+max_corner_freq = float(default=40.)
