@@ -50,8 +50,16 @@ def __parse_args_source_spec():
             help='Get evid from catalog', metavar='EVID')
     parser.add_option('-o', '--outdir', dest='outdir', action='store', default='sspec_out',
             help='Save output to OUTDIR (default: sspec_out)', metavar='OUTDIR')
+    parser.add_option('-s', '--sampleconf', dest='sampleconf', action='store_true', default=False,
+            help='Write sample configuration to file and exit')
 
     (options, args) = parser.parse_args()
+
+    if options.sampleconf:
+        configspec = __parse_configspec()
+        __write_sample_config(configspec, 'source_spec')
+        sys.exit(0)
+
     if len(args) < 1:
         parser.print_usage(file=sys.stderr)
         sys.stderr.write("\tUse '-h' for help\n\n")
@@ -108,6 +116,30 @@ def __parse_args_source_model():
 
     return options, args
 
+def __parse_configspec():
+    try:
+        configspec_file = os.path.join(os.path.dirname(__file__), 'configspec.conf')
+        configspec = ConfigObj(configspec_file, interpolation=False,
+                        list_values=False, _inspec=True, file_error=True)
+    except IOError, message:
+        sys.stderr.write('%s\n' % message)
+        sys.exit(1)
+    except Exception, message:
+        sys.stderr.write('Unable to read "%s": %s\n' % (configspec_file, message))
+        sys.exit(1)
+    return configspec
+
+def __write_sample_config(configspec, progname):
+    c = ConfigObj(configspec=configspec)
+    val = Validator()
+    c.validate(val)
+    c.defaults=[]
+    c.initial_comment = configspec.initial_comment
+    c.comments = configspec.comments
+    configfile = progname + '.conf'
+    c.write(open(configfile, 'w'))
+    print 'Sample config file written to: ' + configfile
+
 def configure(progname='source_spec'):
     global DEBUG
     if progname == 'source_spec':
@@ -118,29 +150,19 @@ def configure(progname='source_spec'):
         sys.stderr.write('Wrong program name: %s\n' % progname)
         sys.exit(1)
 
+    configspec = __parse_configspec()
     try:
-        _configspec_file = os.path.join(os.path.dirname(__file__), 'configspec.par')
-        _configspec = ConfigObj(_configspec_file, interpolation=False,
-                        list_values=False, _inspec=True, file_error=True)
+        config_file = options.config_file
+        config_obj = ConfigObj(config_file, configspec=configspec, file_error=True)
     except IOError, message:
         sys.stderr.write('%s\n' % message)
         sys.exit(1)
     except Exception, message:
-        sys.stderr.write('Unable to read "%s": %s\n' % (_configspec_file, message))
-        sys.exit(1)
-    print _configspec
-    try:
-        _config_file = options.config_file
-        _config = ConfigObj(_config_file, configspec=_configspec, file_error=True)
-    except IOError, message:
-        sys.stderr.write('%s\n' % message)
-        sys.exit(1)
-    except Exception, message:
-        sys.stderr.write('Unable to read "%s": %s\n' % (_config_file, message))
+        sys.stderr.write('Unable to read "%s": %s\n' % (config_file, message))
         sys.exit(1)
 
     val = Validator()
-    test = _config.validate(val)
+    test = config_obj.validate(val)
     if test is True:
         # no problem
         pass
@@ -151,27 +173,18 @@ def configure(progname='source_spec'):
         for entry in test:
             if test[entry] == False:
                 sys.stderr.write('Invalid value for "%s": "%s"\n'
-                        % (entry, _config[entry]))
+                        % (entry, config_obj[entry]))
         sys.exit(1)
 
     # Create a Config object
-    config = Config(_config.dict().copy())
+    config = Config(config_obj.dict().copy())
     DEBUG  = config.DEBUG
 
     #add options and args to config:
-    config.__dict__['options'] = options
-    config.__dict__['args'] = args
+    config.options = options
+    config.args = args
 
     return config
-
-def write_sample_config(configspec):
-    c = ConfigObj(configspec=configspec)
-    val = Validator()
-    c.validate(val)
-    c.defaults=[]
-    c.initial_comment = configspec.initial_comment
-    c.comments = configspec.comments
-    c.write(open('sample','w'))
 
 oldlogfile=None
 def setup_logging(config, basename=None):
