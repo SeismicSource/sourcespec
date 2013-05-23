@@ -12,5 +12,7 @@ testdata/CRL/PZ.new_20120221/
 
 *.sqlite
 
+source_spec.conf
+
 #Temporary files
 *~

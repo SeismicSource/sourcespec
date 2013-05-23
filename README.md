@@ -31,16 +31,16 @@ Computes average and st.dev of Mw, Mo, fc, source radius and Brune sd.
 ### Sample runs:
 To run the CRL test:
 
-     ./source_spec.py testdata/CRL/2010.01.20-08.10.27 -c testconfig/config_CRL.py\
+     ./source_spec.py testdata/CRL/2010.01.20-08.10.27 -c testconfig/config_CRL.conf\
          -H testdata/CRL/2010.01.20-08.10.27.phs.h -p testdata/CRL/2010.01.20-08.10.27.phs 
 
 To run the ISNet test:
 
-     ./source_spec.py testdata/ISNet/14641r.full.sac.tgz -c testconfig/sample_config.py
+     ./source_spec.py testdata/ISNet/14641r.full.sac.tgz -c testconfig/config_ISNet.conf
 
 To run the IPOC test:
 
-     ./source_spec.py testdata/IPOC/324_0051-PB05-03077_tr14/ -c testconfig/config_IPOC.py
+     ./source_spec.py testdata/IPOC/324_0051-PB05-03077_tr14/ -c testconfig/config_IPOC.conf
 
 To get help:
 
@@ -48,5 +48,5 @@ To get help:
 
 To run source\_model test on CRL:
 
-     ./source_model.py -c testconfig/config_CRL.py testdata/CRL/2010.01.20-08.10.27/2010.01.20-08.10.27.TRIZ.HHE.SAC\
+     ./source_model.py -c testconfig/config_CRL.conf testdata/CRL/2010.01.20-08.10.27/2010.01.20-08.10.27.TRIZ.HHE.SAC\
           -H testdata/CRL/2010.01.20-08.10.27.phs.h --mag=2.6 --fc=8,12 --tstar=0.02,0.03   
