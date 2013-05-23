@@ -179,6 +179,12 @@ def build_spectra(config, st, noise_st=None):
             weight.stats = deepcopy(spec_cut.stats)
             weight.data = deepcopy(spec_cut.data)
             weight.data /= specnoise_cut.data
+            #smooth weight
+            weight.data = konnoOhmachiSmoothing(weight.data,
+                                          weight.get_freq(),
+                                          10, normalize=True)
+            #noise normalization
+            weight.data /= np.max(weight.data)
             weight_st.append(weight)
 
     # Add to spec_st the "H" component, obtained from the
