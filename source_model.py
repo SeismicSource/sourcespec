@@ -25,9 +25,10 @@ def make_synth(config, spec_st, trace_spec=None):
             spec.stats.delta = fdelta
             spec.stats.npts = int((fmax-fmin)/fdelta)
 
-        spec.stats.station = 'mag: %.1f fc: %.2fHz t*: %.2fs' % (mag, fc, t_star)
+        spec.stats.station = 'Mw: %.1f fc: %.2fHz t*: %.2fs' % (mag, fc, t_star)
         spec.stats.instrtype = 'Synth'
         spec.stats.channel = 'Synth'
+        spec.stats.par = {'Mw': mag, 'fc': fc, 't_star': t_star}
     
         freq = spec.get_freq()
         spec.data_mag = spectral_model(freq, mag, fc, t_star)

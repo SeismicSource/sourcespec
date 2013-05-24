@@ -127,6 +127,7 @@ def main():
 
             spec_synth = spec.copy()
             spec_synth.stats.channel = 'Synth'
+            spec_synth.stats.par = par
             spec_synth.data_mag = spectral_model(xdata, *params_opt)
             spec_synth.data = mag_to_moment(spec_synth.data_mag)
             spec_st.append(spec_synth)

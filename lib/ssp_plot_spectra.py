@@ -9,20 +9,19 @@ from __future__ import division
 import sys
 import math
 import logging
-from ssp_util import spec_minmax, moment_to_mag
+from ssp_util import spec_minmax, moment_to_mag, mag_to_moment
 
 synth_colors = [
     '#201F1F', 
     '#94F75B', 
     '#3EC2AA', 
-    'FECC38',
+    '#FECC38',
     '#FC4384', 
 ]
 
 def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         stack_plots=False, plottype='regular'):
-    # Unload matplotlib modules (which have been presumably loaded by
-    # ObsPy).
+    # Unload matplotlib modules (which have been loaded by obspy.signal).
     # Source:
     #   http://stackoverflow.com/questions/3285193/how-to-switch-backends-in-matplotlib-python
     modules = []
@@ -42,10 +41,6 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         matplotlib.use('agg')
     # Finally we load the pyplot module
     import matplotlib.pyplot as plt
-
-    # OK, now we can plot!
-    fig = plt.figure(figsize=(16,9))
-    fig.subplots_adjust(hspace = .025, wspace = .03)
 
     # Determine the number of plots and axes min and max:
     nplots=0
@@ -67,13 +62,24 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         moment_minmax[1] *= 10
         mag_minmax = moment_to_mag(moment_minmax)
 
+    # OK, now we can plot!
+    if nlines <= 3 or stack_plots:
+        figsize=(16,9)
+    else:
+        figsize=(16,18)
+    fig = plt.figure(figsize=figsize)
+    fig.subplots_adjust(hspace = .025, wspace = .03)
+
     # Plot!
-    plotn=1
     axes=[]
+    plotn = 0
     for station in sorted(set(x.stats.station for x in spec_st.traces)):
         spec_st_sel = spec_st.select(station=station)
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
+            plotn += 1
             ax_text = False
+
+            # ax1 has moment units (or weight)
             if plotn==1:
                 if stack_plots:
                     ax = fig.add_subplot(1, 1, 1)
@@ -84,28 +90,30 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     ax = fig.add_subplot(nlines, ncols, plotn, sharex=axes[0][0], sharey=axes[0][0])
             ax.set_xlim(freq_minmax)
             ax.set_ylim(moment_minmax)
-            ax.grid(True, which='both')
+            ax.grid(True, which='both', linestyle='solid', color='#DDDDDD', zorder=0)
+            ax.set_axisbelow(True)
             plt.setp(ax.get_xticklabels(), visible=False)
             plt.setp(ax.get_yticklabels(), visible=False)
-            ax.tick_params(width=2)
+            ax.tick_params(width=2) #FIXME: ticks are below grid lines!
+
+            # ax2 has magnitude units 
             if plottype != 'weight':
                 ax2 = ax.twinx()
                 ax2.set_ylim(mag_minmax)
                 plt.setp(ax2.get_xticklabels(), visible=False)
                 plt.setp(ax2.get_yticklabels(), visible=True)
                 for tick in ax2.yaxis.get_major_ticks():
-                    tick.set_pad(-1)
+                    tick.set_pad(-2)
                     tick.label2.set_horizontalalignment('right')
                 ax2.yaxis.set_tick_params(width=0)
             else:
                 ax2 = None
             axes.append((ax, ax2))
+
             for spec in spec_st_sel.traces:
-                amp = None
                 if spec.stats.instrtype != instrtype: continue
                 if spec.stats.channel == 'Synth':
                     orientation = 'Synth'
-                    amp = spec.data[0]
                 else: orientation = spec.stats.channel[-1]
                 if orientation == 'Z': color='purple'
                 if orientation == 'N': color='green'
@@ -117,48 +125,61 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     else:
                         color='black'
                 if plottype == 'regular' or plottype == 'noise': 
-                    ax.loglog(spec.get_freq(), spec.data, color=color)
-                    #ax2.semilogx(spec.get_freq(), spec.data_mag, color=color)
+                    ax.loglog(spec.get_freq(), spec.data, color=color, zorder=20)
+                    if orientation == 'Synth':
+                        ax.axvline(spec.stats.par['fc'], color='#999999', linewidth=2., zorder=1)
                 elif plottype == 'weight': 
-                    ax.semilogx(spec.get_freq(), spec.data, color=color)
+                    ax.semilogx(spec.get_freq(), spec.data, color=color, zorder=20)
                 else:
                     raise ValueError, 'Unknown plot type: %s' % plottype
                 #leg = ax.legend(('N', 'E', 'H'),
                 #    'lower right')
 
                 if specnoise_st:
-                    if (spec.stats.channel == 'Synth' or
+                    if not (spec.stats.channel == 'Synth' or
                             spec.stats.channel == 'H'):
-                        continue
-                    specid = spec.getId()
-                    sp_noise = specnoise_st.select(id=specid)[0]
-                    orientation = sp_noise.stats.channel[-1]
-                    if orientation == 'Z': color='purple'
-                    if orientation == 'N': color='green'
-                    if orientation == 'E': color='blue'
-                    ax.loglog(sp_noise.get_freq(), sp_noise.data, '--', color=color)
+                        specid = spec.getId()
+                        sp_noise = specnoise_st.select(id=specid)[0]
+                        orientation = sp_noise.stats.channel[-1]
+                        if orientation == 'Z': color='purple'
+                        if orientation == 'N': color='green'
+                        if orientation == 'E': color='blue'
+                        ax.loglog(sp_noise.get_freq(), sp_noise.data,
+                                linestyle=':', linewidth=2., color=color, zorder=20)
 
                 if not ax_text:
                     if stack_plots:
-                        text_y = 0.1 + (plotn-1) * 0.05
+                        text_y = 0.05 + (plotn-1) * 0.05
                     else:
                         text_y = 0.1
-                    if not stack_plots:
                         color = 'black'
                     ax.text(0.05, text_y, '%s %s' % (spec.stats.station, spec.stats.instrtype),
                             horizontalalignment='left',
                             verticalalignment='bottom',
                             color = color,
-                            transform = ax.transAxes)
+                            #backgroundcolor = (1, 1, 1, 0.7),
+                            transform = ax.transAxes,
+                            zorder = 50)
                     ax_text = True
-                if amp:
-                    text_y = 0.05
-                    ax.text(0.05, text_y, '%g' % (amp),
+
+                if orientation == 'Synth':
+                    if stack_plots:
+                        text_y2 = text_y - 0.02
+                    else:
+                        text_y2 = 0.04
+                        color = 'black'
+                    fc = spec.stats.par['fc'] 
+                    Mw = spec.stats.par['Mw'] 
+                    Mo = mag_to_moment(Mw)
+                    t_star = spec.stats.par['t_star'] 
+                    ax.text(0.05, text_y2, 'Mo: %.2g Mw: %.1f fc: %.2fHz t*: %.2fs' % (Mo, Mw, fc, t_star),
                             horizontalalignment='left',
                             verticalalignment='bottom',
-                            color = 'black',
-                            transform = ax.transAxes)
-            plotn+=1
+                            #backgroundcolor = (1, 1, 1, 0.7), #FIXME: does not work in interactive plots
+                            color = color,
+                            fontsize = 9,
+                            transform = ax.transAxes,
+                            zorder = 50)
 
     # Show the x-labels only for the last row
     for ax, ax2 in axes[-ncols:]:
@@ -178,8 +199,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         ax.set_ylabel('Weight')
         if plottype != 'weight':
             ax.set_ylabel('Seismic moment (Nm)')
-            plt.setp(ax2.get_yticklabels(), visible=True)
-            ax2.set_ylabel('Magnitude')
+            if ax2:
+                plt.setp(ax2.get_yticklabels(), visible=True)
+                ax2.set_ylabel('Magnitude')
     
     if config.PLOT_SHOW:
         plt.show()
