@@ -136,14 +136,14 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 #    'lower right')
 
                 if specnoise_st:
-                    if not (spec.stats.channel == 'Synth' or
-                            spec.stats.channel == 'H'):
+                    if spec.stats.channel != 'Synth':
                         specid = spec.getId()
                         sp_noise = specnoise_st.select(id=specid)[0]
                         orientation = sp_noise.stats.channel[-1]
                         if orientation == 'Z': color='purple'
                         if orientation == 'N': color='green'
                         if orientation == 'E': color='blue'
+                        if orientation == 'H': color='red'
                         ax.loglog(sp_noise.get_freq(), sp_noise.data,
                                 linestyle=':', linewidth=2., color=color, zorder=20)
 

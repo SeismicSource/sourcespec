@@ -17,12 +17,12 @@ def process_traces(config, st):
     ''' Removes mean, deconvolves, and ignores unwanted components '''
     out_st = Stream()
     out_st_noise = Stream()
-    for orig_trace in st.traces:
+    for traceId in sorted(tr.id for tr in st.traces):
+	orig_trace = st.select(id=traceId)[0]
         # copy trace for manipulation
         trace = copy(orig_trace)
         trace.stats = deepcopy(orig_trace.stats)
 
-        traceId = trace.getId()
         stats = trace.stats
         comp  = stats.channel
         if config.ignore_vertical and comp[-1] == 'Z':
@@ -90,7 +90,7 @@ def process_traces(config, st):
         rmsS = np.sqrt(rmsS2)
 
         sn_ratio = rmsS/rmsnoise
-        logging.info('%s.%s S/N: %.1f' % (station, trace.stats.instrtype, sn_ratio))
+        logging.info('%s S/N: %.1f' % (traceId, sn_ratio))
 
         snratio_min = config.sn_min
         if sn_ratio <= snratio_min:
