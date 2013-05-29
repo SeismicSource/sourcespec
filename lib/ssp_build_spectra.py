@@ -14,8 +14,9 @@ from obspy.core import Stream
 from ssp_setup import dprint
 from ssp_util import swave_arrival, cosine_taper,\
         moment_to_mag, select_trace
-from lib import spectrum
+import spectrum
 from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
+
 
 def __process__(trace, bp_freqmin, bp_freqmax, integrate=False):
     # remove the mean...
@@ -26,6 +27,23 @@ def __process__(trace, bp_freqmin, bp_freqmax, integrate=False):
     if integrate:
         trace.data = cumtrapz(trace.data) * trace.stats.delta
         trace.stats.npts -= 1
+
+
+def __compute_h__(spec_st, instrtype):
+    spec_h = None
+    for spec in spec_st.traces:
+        # this avoids taking a component from co-located station:
+        if spec.stats.instrtype != instrtype:
+            continue
+        if spec_h == None:
+            spec_h = spec.copy()
+            spec_h.data = np.power(spec_h.data, 2)
+            spec_h.stats.channel = 'H'
+        else:
+            spec_h.data += np.power(spec.data, 2)
+    spec_h.data = np.sqrt(spec_h.data)
+    return spec_h
+        
 
 def build_spectra(config, st, noise_st=None):
     ''' 
@@ -38,6 +56,7 @@ def build_spectra(config, st, noise_st=None):
     spec_st = Stream()
     specnoise_st = Stream()
     weight_st = Stream()
+
     for trace in st.traces:
         traceId = trace.getId()
         stats = trace.stats
@@ -175,100 +194,52 @@ def build_spectra(config, st, noise_st=None):
         if noise_st:
             specnoise_cut = specnoise.slice(freq1, freq2)
             specnoise_st.append(specnoise_cut)
-            weight = copy(spec_cut)
-            weight.stats = deepcopy(spec_cut.stats)
-            weight.data = deepcopy(spec_cut.data)
-            weight.data /= specnoise_cut.data
-            # smooth weight
-            weight.data = konnoOhmachiSmoothing(weight.data,
-                                          weight.get_freq(),
-                                          10, normalize=True)
-            # normalization
-            weight.data /= np.max(weight.data)
-            weight_st.append(weight)
+    # end of loop on traces
 
-    if noise_st:
-        for station in set(x.stats.station for x in specnoise_st.traces):
-            specnoise_st_sel = specnoise_st.select(station=station)
-            for instrtype in set(x.stats.instrtype for x in specnoise_st_sel):
-                specnoise_h = None
-                for specnoise in specnoise_st_sel.traces:
-                    # this avoids taking a component from co-located station:
-                    if specnoise.stats.instrtype != instrtype:
-                        continue
-                    if specnoise_h == None:
-                        specnoise_h = specnoise.copy()
-                        specnoise_h.data = np.power(specnoise_h.data, 2)
-                        specnoise_h.stats.channel = 'H'
-                    else:
-                        specnoise_h.data += np.power(specnoise.data, 2)
-                specnoise_h.data = np.sqrt(specnoise_h.data)
-                specnoise_st.append(specnoise_h)
-        # Add to weight_st the "H" component, obtained from the
-        # modulus of all the available components.
-        #for station in set(x.stats.station for x in weight_st.traces):
-        #    weight_st_sel = weight_st.select(station=station)
-        #    for instrtype in set(x.stats.instrtype for x in weight_st_sel):
-        #        weight_h = None
-        #        for weight in weight_st_sel.traces:
-        #            # this avoids taking a component from co-located station:
-        #            if weight.stats.instrtype != instrtype:
-        #                continue
-        #            if weight_h == None:
-        #                weight_h = weight.copy()
-        #                weight_h.data = np.power(weight_h.data, 2)
-        #                weight_h.stats.channel = 'H'
-        #            else:
-        #                weight_h.data += np.power(weight.data, 2)
-        #        weight_h.data = np.sqrt(weight_h.data)
-        #        weight_st.append(weight_h)
-
-        # convert the spectral amplitudes to moment magnitude
-        for specnoise in specnoise_st:
-            specnoise.data_mag = moment_to_mag(specnoise.data)
-    #endif: noise_st
 
     # Add to spec_st the "H" component, obtained from the
     # modulus of all the available components.
+    # The same for noise, if requested. In this case we compute
+    # weighting function as well.
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
+        if noise_st:
+            specnoise_st_sel = specnoise_st.select(station=station)
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
-            spec_h = None
-            for spec in spec_st_sel.traces:
-                # this avoids taking a component from co-located station:
-                if spec.stats.instrtype != instrtype:
-                    continue
-                if spec_h == None:
-                    spec_h = spec.copy()
-                    spec_h.data = np.power(spec_h.data, 2)
-                    spec_h.stats.channel = 'H'
-                else:
-                    spec_h.data += np.power(spec.data, 2)
-            spec_h.data = np.sqrt(spec_h.data)
+            spec_h = __compute_h__(spec_st_sel, instrtype)
             spec_st.append(spec_h)
-            specnoise = select_trace(specnoise_st, spec_h.id, instrtype)
 
-            weight = copy(spec_h)
-            weight.stats = deepcopy(spec_h.stats)
-            weight.data = deepcopy(spec_h.data)
-            weight.data /= specnoise.data
-            # smooth weight
-            weight.data = konnoOhmachiSmoothing(weight.data,
+            # Compute "H" component for noise, if requested,
+            # and weighting function.
+            if noise_st:
+                specnoise_h = __compute_h__(specnoise_st_sel, instrtype)
+                specnoise_st.append(specnoise_h)
+
+                # Weighting function is the ratio between "H" components
+                # of signal and noise
+                weight = copy(spec_h)
+                weight.stats = deepcopy(spec_h.stats)
+                weight.data = deepcopy(spec_h.data)
+                weight.data /= specnoise_h.data
+                # smooth weight
+                weight.data = konnoOhmachiSmoothing(weight.data,
                                           weight.get_freq(),
                                           10, normalize=True)
-            # normalization
-            weight.data /= np.max(weight.data)
-            weight_st.append(weight)
+                # normalization
+                weight.data /= np.max(weight.data)
+                weight_st.append(weight)
 
     # convert the spectral amplitudes to moment magnitude
     for spec in spec_st:
         spec.data_mag = moment_to_mag(spec.data)
-
-
-
+    if noise_st:
+        for specnoise in specnoise_st:
+            specnoise.data_mag = moment_to_mag(specnoise.data)
 
 
     if noise_st:
         return spec_st, specnoise_st, weight_st
     else:
         return spec_st
+
+
