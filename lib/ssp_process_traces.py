@@ -91,7 +91,7 @@ def process_traces(config, st):
         rmsS = np.sqrt(rmsS2)
 
         sn_ratio = rmsS/rmsnoise
-        logging.info('%s %s S/N: %.1f' % (traceId, instrtype, sn_ratio))
+        logging.info('%s %s: S/N: %.1f' % (traceId, instrtype, sn_ratio))
 
         snratio_min = config.sn_min
         if sn_ratio <= snratio_min:

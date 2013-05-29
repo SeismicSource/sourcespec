@@ -86,9 +86,9 @@ def local_magnitude(config, st, deconvolve=False):
         ml = estimateMagnitude(paz, delta_amp, delta_t, trace_cut.stats.hypo_dist)
 
         magnitudes.append(ml)
-        print '%s %s %s %.1f' % (traceId, trace.stats.instrtype, "Ml", ml)
+        logging.info('%s %s: %s %.1f' % (traceId, trace.stats.instrtype, "Ml", ml))
 
     # average local magnitude
     Ml = np.mean(magnitudes)
-    print '\nNetwork Local Magnitude: %.2f' % Ml
+    logging.info('Network Local Magnitude: %.2f' % Ml)
     return Ml
