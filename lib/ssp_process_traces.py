@@ -99,15 +99,15 @@ def process_traces(config, st):
         #### end signal/noise ratio
 
         # Noise time window for weighting function:
-        nt1 = p_arrival_time - config.pre_noise_time
-        nt2 = nt1 + config.s_win_length
+        noise_start_t = p_arrival_time - config.pre_noise_time
+        noise_end_t = noise_start_t + config.s_win_length
         trace_noise = copy(trace)
         trace_noise.stats = deepcopy(trace.stats)
         # remove the mean...
         trace_noise.detrend(type='constant')
         # ...and the linear trend...
         trace_noise.detrend(type='linear')
-        trace_noise.trim(starttime=nt1, endtime=nt2, pad=True, fill_value=0)
+        trace_noise.trim(starttime=noise_start_t, endtime=noise_end_t, pad=True, fill_value=0)
 
         orig_trace.stats.hypo_dist = hd
         out_st.append(trace)
