@@ -17,14 +17,15 @@ def process_traces(config, st):
     ''' Removes mean, deconvolves, and ignores unwanted components '''
     out_st = Stream()
     out_st_noise = Stream()
-    for traceId in sorted(tr.id for tr in st.traces):
-	orig_trace = st.select(id=traceId)[0]
+    for orig_trace in st.traces:
         # copy trace for manipulation
         trace = copy(orig_trace)
         trace.stats = deepcopy(orig_trace.stats)
 
+        traceId = trace.id
         stats = trace.stats
         comp  = stats.channel
+        instrtype = stats.instrtype
         if config.ignore_vertical and comp[-1] == 'Z':
             continue
         station = stats.station
@@ -33,7 +34,7 @@ def process_traces(config, st):
         # compute hypocentral distance
         hd = hypo_dist(trace)
         if hd == None:
-            logging.warning('%s: Unable to compute hypocentral distance: skipping trace' % traceId)
+            logging.warning('%s %s: Unable to compute hypocentral distance: skipping trace' % (traceId, instrtype))
             continue
         trace.stats.hypo_dist = hd
 
@@ -46,13 +47,13 @@ def process_traces(config, st):
         rms = np.sqrt(rms2)
         rms_min = config.rmsmin
         if rms <= rms_min:
-            logging.warning('%s: Trace RMS smaller than %g: skipping trace' % (traceId, rms_min))
+            logging.warning('%s %s: Trace RMS smaller than %g: skipping trace' % (traceId, instrtype, rms_min))
             continue
 
         # Remove instrument response
         if remove_instr_response(trace, config.correct_sensitivity_only,
                                  config.pre_filt) == None:
-            logging.warning('%s: Unable to remove instrument response: skipping trace' % traceId)
+            logging.warning('%s %s: Unable to remove instrument response: skipping trace' % (traceId, instrtype))
             continue
 
         # Check if the trace has (significant) signal to noise ratio
@@ -90,11 +91,11 @@ def process_traces(config, st):
         rmsS = np.sqrt(rmsS2)
 
         sn_ratio = rmsS/rmsnoise
-        logging.info('%s S/N: %.1f' % (traceId, sn_ratio))
+        logging.info('%s %s S/N: %.1f' % (traceId, instrtype, sn_ratio))
 
         snratio_min = config.sn_min
         if sn_ratio <= snratio_min:
-            logging.warning('%s: S/N smaller than %g: skipping trace' % (traceId, snratio_min))
+            logging.warning('%s %s: S/N smaller than %g: skipping trace' % (traceId, instrtype, snratio_min))
             continue
         #### end signal/noise ratio
 

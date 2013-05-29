@@ -157,6 +157,8 @@ def __add_instrtype__(trace):
                 instrtype = 'broadb'
             if 'S13J' in instr:
                 instrtype = 'shortp'
+            if 'KS2000ED' in instr:
+                instrtype = 'shortp'
         except AttributeError:
             pass
     trace.stats.instrtype = instrtype
@@ -590,4 +592,6 @@ def read_traces(config):
     if len(st.traces) == 0:
         logging.info('No trace loaded') 
         ssp_exit()
+
+    st.sort()
     return st
