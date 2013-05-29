@@ -66,16 +66,16 @@ def main():
             Mw_0 = amp[0:5].mean()
 
             # We try to retrieve fc_0 from the configuration...
-            try:
-                fc_0 = config.fc_0
+            fc_0 = config.fc_0
             # ...if it is not available, we calculate it
-            except: 
+            if math.isnan(fc_0):
                 l_m0 = Mw_0 * 1.5 + 9.1
                 l_beta = math.log10(vs_m)
                 l_bsd = math.log10(config.bsd)
                 l_fc = l_bsd - l_m0 + 3*l_beta - 0.935
                 l_fc /= 3.
                 fc_0 = math.pow(10, l_fc)
+		logging.info('%s fc_0 autoset to: %.2f' % (spec.id, fc_0))
 
             # initial value for t_star
             t_star_0 = config.t_star_0
