@@ -9,7 +9,7 @@ import logging
 import numpy as np
 from copy import deepcopy, copy
 from obspy.core import Stream
-from ssp_setup import dprint
+from ssp_setup import dprint, ssp_exit
 from ssp_util import remove_instr_response, hypo_dist, wave_arrival
 
 def process_traces(config, st):
@@ -121,5 +121,10 @@ def process_traces(config, st):
         orig_trace.stats.hypo_dist = hd
         out_st.append(trace)
         out_st_noise.append(trace_noise)
+
+    if (len(out_st) == 0 or
+            len(out_st_noise) == 0):
+        logging.error('No traces left! Exiting.')
+        ssp_exit()
 
     return out_st, out_st_noise
