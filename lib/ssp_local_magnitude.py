@@ -10,7 +10,7 @@ import numpy as np
 from scipy.integrate import cumtrapz
 from copy import deepcopy, copy
 from obspy.signal import estimateMagnitude
-from ssp_util import swave_arrival, cosine_taper
+from ssp_util import wave_arrival, cosine_taper
 
 def local_magnitude(config, st, deconvolve=False):
     ''' Uses min/max amplitude for local magnitude estimation'''
@@ -28,7 +28,7 @@ def local_magnitude(config, st, deconvolve=False):
             continue
 
         # S time window
-        s_arrival_time = swave_arrival(trace, config.vs)
+        s_arrival_time = wave_arrival(trace, config.vs, 'S')
         t1 = s_arrival_time - config.pre_s_time
         t2 = t1 + config.s_win_length
 

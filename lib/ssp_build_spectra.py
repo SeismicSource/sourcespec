@@ -12,7 +12,7 @@ from scipy.integrate import cumtrapz
 from copy import deepcopy, copy
 from obspy.core import Stream
 from ssp_setup import dprint
-from ssp_util import swave_arrival, cosine_taper,\
+from ssp_util import wave_arrival, cosine_taper,\
         moment_to_mag, select_trace
 import spectrum
 from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
@@ -62,7 +62,7 @@ def build_spectra(config, st, noise_st=None):
         stats = trace.stats
 
         # S time window
-        s_arrival_time = swave_arrival(trace, config.vs)
+        s_arrival_time = wave_arrival(trace, config.vs, 'S')
         t1 = s_arrival_time - config.pre_s_time
         t2 = t1 + config.s_win_length
 

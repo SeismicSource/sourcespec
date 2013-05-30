@@ -117,10 +117,12 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
             stla = trace.stats.sac.stla
             stlo = trace.stats.sac.stlo
             stel = trace.stats.sac.stel
-            # elevation is in meters in SAC header
-            stel /= 1000
-            if stla==-12345 or stlo==-12345 or stel==-12345:
+            if stla==-12345 or stlo==-12345:
                 raise AttributeError
+            if stel==-12345:
+                stel = 0.
+            # elevation is in meters in SAC header:
+            stel /= 1000.
             coords = AttribDict()
             coords.elevation = stel
             coords.latitude = stla
@@ -178,13 +180,14 @@ def __add_hypocenter__(trace, hypo):
 
             hypo = AttribDict()
             if tori == -12345:
-                hypo.origin_time = trace.stats.starttime
+                hypo.origin_time = None
+                hypo.evid = trace.stats.starttime.strftime("%Y%m%d_%H%M%S")
             else:
                 hypo.origin_time = trace.stats.starttime + tori - begin
+                hypo.evid = hypo.origin_time.strftime("%Y%m%d_%H%M%S")
             hypo.latitude = evla
             hypo.longitude = evlo
             hypo.depth = evdp
-            hypo.evid = hypo.origin_time.strftime("%Y%m%d_%H%M%S")
         except AttributeError:
             pass
     trace.stats.hypo = hypo
