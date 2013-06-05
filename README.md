@@ -15,7 +15,8 @@ Optionally, one can specify:
  - a hypocenter file  
  - a phase file with P and S arrivals  
 
-The code computes spectra of the two horizontal components and then modulus as:  
+The code computes spectra of the two horizontal components (and optionally of the vertical
+component, as well), and then modulus as:  
 
      sqrt(c1(w)^2+c2(w)^2)
 
@@ -24,9 +25,8 @@ values for Mw, fc and t*:
 
      log S(w)= log(coeff*Mo) + log((1/(1+(w/wc)^2)) + log (exp (- w *t_star/2)) 
 
-It plots all spectra on a single log-log graph (Mw vs log-frequency).  
-Plot obs vs theo spectra for each vectorial component.  
-Computes average and st.dev of Mw, Mo, fc, source radius and Brune sd.  
+It plots observed and inverted spectra on a single log-log graph (Mo vs log-frequency).  
+Computes average and standard deviation of Mw, Mo, fc, t*, source radius and Brune stress drop.  
 
 ### Sample runs:
 To run the CRL test:
@@ -45,6 +45,13 @@ To run the IPOC test:
 To get help:
 
      ./source_spec.py -h
+
+
+
+
+### source\_model:
+source\_model plots theoretical spectra (and optionally observed ones), given one or more 
+values for Mw, fc and t*. 
 
 To run source\_model test on CRL:
 
