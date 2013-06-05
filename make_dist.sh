@@ -3,7 +3,7 @@ export LC_ALL=C
 
 timestamp=`date +"%Y%m%d"`
 
-branch=`git branch | head -n1 | awk '{print $2}'`
+branch=`git branch | grep \* | awk '{print $2}'`
 if [ $branch == "master" ]
 then
     dir=source_spec_${timestamp}
