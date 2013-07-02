@@ -9,8 +9,11 @@ import logging
 import numpy as np
 from scipy.integrate import cumtrapz
 from copy import deepcopy, copy
-from obspy.signal import estimateMagnitude
+from obspy.signal import estimateMagnitude, envelope
 from ssp_util import wave_arrival, cosine_taper
+import matplotlib.pyplot as plt
+from obspy.signal.util import smooth
+from obspy.signal.trigger import triggerOnset
 
 def local_magnitude(config, st, deconvolve=False):
     ''' Uses min/max amplitude for local magnitude estimation'''
@@ -28,16 +31,76 @@ def local_magnitude(config, st, deconvolve=False):
             continue
 
         # S time window
-        s_arrival_time = wave_arrival(trace, config.vs, 'S')
-        t1 = s_arrival_time - config.pre_s_time
-        t2 = t1 + config.s_win_length
+        #s_arrival_time = wave_arrival(trace, config.vs, 'S')
+        #t1 = s_arrival_time - config.pre_s_time
+        #t2 = t1 + config.s_win_length
+
+        trace_env = copy(trace)
+        trace_env.stats = deepcopy(trace.stats)
+
+        # remove the mean...
+        trace_env.detrend(type='constant')
+        # ...and the linear trend...
+        trace_env.detrend(type='linear')
+        # ...filter
+        # TODO: parametrize?
+        trace_env.filter(type='bandpass',  freqmin=0.1, freqmax=20)
+        trace_env.data = envelope(trace_env.data)
+        trace_env.data = smooth(trace_env.data, 100)
+
+        # Uncomment these lines to see the effect of envelope and smoothing
+        #plt.figure()
+        #plt.plot(trace_env, color='gray')
+        #plt.grid(True)
+        #plt.show()
+
+        trace_noise = copy(trace_env)
+        trace_noise.stats = deepcopy(trace_env.stats)
+        trace_signal = copy(trace_env)
+        trace_signal.stats = deepcopy(trace_env.stats)
+
+        p_arrival_time = wave_arrival(trace, config.vp, 'P')
+        t1 = p_arrival_time - 3
+        t2 = p_arrival_time + 3
+
+        trace_noise.trim(starttime=t1, endtime=p_arrival_time, pad=True, fill_value=0)
+        trace_signal.trim(starttime=p_arrival_time, endtime=t2, pad=True, fill_value=0)
+
+        ampmin = trace_noise.data.mean()
+        ampmax = trace_signal.data.mean()
+
+        if ampmax <= ampmin:
+            continue
+        
+        trigger = triggerOnset(trace_env.data, ampmax, ampmin, max_len=9e99, max_len_delete=False)[0]
+
+        df = trace.stats.sampling_rate
+        triggeron = trigger[0]/df
+        triggeroff = trigger[1]/df
+        #start_trace = trace.stats['starttime']
+        #t_end = start_trace + triggeroff
+        t1_end = p_arrival_time + triggeron
+        if t1_end <= p_arrival_time:
+            t_end = p_arrival_time + 20
+        else:
+            t_end = p_arrival_time + triggeron
+        #print p_arrival_time, t_end, triggeron, triggeroff
+
+        #trace_env.trim(starttime=p_arrival_time,endtime=t_end, pad=True, fill_value=0)
+
 
         trace_cut = copy(trace)
         trace_cut.stats = deepcopy(trace.stats)
 
         # Do a preliminary trim, in order to check if there is enough
         # data within the selected time window
-        trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+        #trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+        trace_cut.trim(starttime=p_arrival_time, endtime=t_end, pad=True, fill_value=0)
+        #plt.figure()
+        #plt.plot(trace_cut, color='gray')
+        #plt.grid(True)
+        #plt.show()
+
         npts = len(trace_cut.data)
         if npts == 0:
             logging.warning('%s: No data for the selected cut interval: skipping trace' % traceId)
@@ -67,7 +130,9 @@ def local_magnitude(config, st, deconvolve=False):
             trace_cut.stats.npts -= 1
 
         # trim...
-        trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+        #trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+        trace_cut.trim(starttime=p_arrival_time, endtime=t_end, pad=True, fill_value=0)
+
         # ...and taper
         cosine_taper(trace_cut.data, width=config.taper_halfwidth)
 
