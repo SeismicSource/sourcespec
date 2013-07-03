@@ -189,7 +189,7 @@ def __add_hypocenter__(trace, hypo):
             hypo.longitude = evlo
             hypo.depth = evdp
         except AttributeError:
-            pass
+            return
     trace.stats.hypo = hypo
 
 def __add_picks__(trace, picks):
