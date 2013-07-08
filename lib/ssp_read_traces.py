@@ -541,6 +541,9 @@ def read_traces(config):
         hypo = __parse_hypocenter__(event)
         st = Stream()
         for trace in event.traces:
+            if config.options.station is not None:
+                if not trace.station == config.options.station:
+                    continue 
             try:
                 tmpst = read(trace.trace_file, fsize=False)
             except Exception, error:

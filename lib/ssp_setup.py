@@ -5,9 +5,11 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
+#          Agnes Chounet <chounet@ipgp.fr>
 import sys
 import os
 import logging
+import numpy as np
 from configobj import ConfigObj
 from validate import Validator
 from config import Config
@@ -77,6 +79,8 @@ def __parse_args_source_model():
             help='Get hypocenter information from FILE', metavar='FILE')
     parser.add_option('-e', '--evid', dest='evid', action='store', default=None,
             help='Get evid from catalog', metavar='EVID')
+    parser.add_option('-s', '--station', dest='station', action='store', default=None,
+            help='Only use this station', metavar='STATION')
     parser.add_option('-f', '--fmin', dest='fmin', action='store', default='0.01',
             help='Minimum frequency', metavar='FMIN')
     parser.add_option('-F', '--fmax', dest='fmax', action='store', default='50.0',
@@ -85,8 +89,15 @@ def __parse_args_source_model():
             help='Corner frequency', metavar='FC')
     parser.add_option('-m', '--mag', dest='mag', action='store', default='2.0',
             help='Moment magnitude', metavar='Mw')
+    parser.add_option('-M', '--moment', dest='Mo', action='store', default='NaN',
+            help='Seismic moment', metavar='Mo')
     parser.add_option('-t', '--tstar', dest='t_star', action='store', default='0.0',
             help='T-star (attenuation)', metavar='T')
+    parser.add_option('-C', '--combine', dest='combine', action='store_true', default=False,
+            help='Generate all the combinations of fc, mag, Mo, tstar')
+    parser.add_option('-p', '--plot', dest='plot', action='store_true', default=False,
+            help='Plot results')
+
 
     (options, args) = parser.parse_args()
     if len(args) < 0:
@@ -96,21 +107,45 @@ def __parse_args_source_model():
 
     options.fmin = float(options.fmin)
     options.fmax = float(options.fmax)
-    options.fc = map(float, options.fc.rstrip(',').split(','))
+
     options.mag = map(float, options.mag.rstrip(',').split(','))
-    options.t_star = map(float, options.t_star.rstrip(',').split(','))
+    options.Mo = map(float, options.Mo.rstrip(',').split(','))    
+    #A#{ 
+    if options.fc[0] == 'i' or options.t_star[0] == 'i':    
+        if options.fc[0] == 'i':
+            options.fc = options.fc[1:]
+            fc_min, fc_max, fc_step = map(float, options.fc.rstrip(',').split(','))
+            options.fc = tuple(np.arange(fc_min, fc_max+fc_step, fc_step))
+        else:
+            options.fc = map(float, options.fc.rstrip(',').split(','))
 
-    oplist = [options.fc, options.mag, options.t_star]
-    # Add trailing "None" to shorter lists and zip:
-    oplist = map(None, *oplist)
-    # Unzip and convert tuple to lists:
-    oplist = map(list, zip(*oplist))
-    for l in oplist:
-        for n, x in enumerate(l):
-            if x == None:
-                l[n] = l[n-1]
-    options.fc, options.mag, options.t_star = oplist
+        if options.t_star[0] == 'i':
+            options.t_star = options.t_star[1:]
+            t_star_min, t_star_max, t_star_step = map(float, options.t_star.rstrip(',').split(','))
+            options.t_star = tuple(np.arange(t_star_min, t_star_max+t_star_step, t_star_step))
+        else:
+            options.t_star = map(float, options.t_star.rstrip(',').split(','))
 
+    else:
+        options.fc = map(float, options.fc.rstrip(',').split(','))
+        options.t_star = map(float, options.t_star.rstrip(',').split(','))
+
+    if options.combine:
+        oplist = [(fc, mag, Mo, t_star) for fc in options.fc for mag in options.mag for Mo in options.Mo for t_star in options.t_star]
+        oplist = map(list, zip(*oplist))
+    else:
+        # Add trailing "None" to shorter lists and zip:
+        oplist = [options.fc, options.mag, options.Mo, options.t_star]        
+        oplist = map(None, *oplist)
+        # Unzip and convert tuple to lists:
+        oplist = map(list, zip(*oplist))
+        for l in oplist:
+            for n, x in enumerate(l):
+                if x == None:
+                    l[n] = l[n-1]
+
+    options.fc, options.mag, options.Mo, options.t_star = oplist
+    #A#}
     # Add unused options (required by source_spec):
     options.pick_file = None
 

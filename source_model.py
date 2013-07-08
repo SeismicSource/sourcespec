@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*- 
+import math
+import numpy as np
+#import cPickle as pickle
 from copy import deepcopy
 from obspy.core import Stream
 from lib.ssp_setup import configure
 from lib.ssp_read_traces import read_traces
 from lib.ssp_process_traces import process_traces
 from lib.ssp_build_spectra import build_spectra
-from lib.ssp_spectral_model import spectral_model
-from lib.ssp_util import mag_to_moment
+from lib.ssp_spectral_model import spectral_model, objective_func
+from lib.ssp_util import mag_to_moment, moment_to_mag
 from lib.ssp_plot_spectra import plot_spectra
 from lib.spectrum import Spectrum
 
@@ -16,7 +19,8 @@ def make_synth(config, spec_st, trace_spec=None):
     fmin = config.options.fmin
     fmax = config.options.fmax + fdelta
 
-    for fc, mag, t_star in zip(config.options.fc, config.options.mag, config.options.t_star):
+    residuals=list()
+    for fc, mag, Mo, t_star in zip(config.options.fc, config.options.mag, config.options.Mo, config.options.t_star):
         spec = Spectrum()
         if trace_spec:
             spec.stats = deepcopy(trace_spec.stats)
@@ -24,6 +28,11 @@ def make_synth(config, spec_st, trace_spec=None):
             spec.stats.begin = fmin
             spec.stats.delta = fdelta
             spec.stats.npts = int((fmax-fmin)/fdelta)
+
+        if math.isnan(Mo):
+            Mo = mag_to_moment(mag)
+        else:
+            mag = moment_to_mag(Mo)
 
         spec.stats.station = 'Mw: %.1f fc: %.2fHz t*: %.2fs' % (mag, fc, t_star)
         spec.stats.instrtype = 'Synth'
@@ -34,6 +43,21 @@ def make_synth(config, spec_st, trace_spec=None):
         spec.data_mag = spectral_model(freq, mag, fc, t_star)
         spec.data = mag_to_moment(spec.data_mag)
         spec_st.append(spec)
+        
+        if trace_spec:
+            objective_func2 = objective_func(freq, trace_spec.data_mag, np.ones_like(trace_spec.data_mag))
+            print Mo, mag, fc, t_star, objective_func2((mag, fc, t_star))
+            residuals.append([Mo, mag, fc, t_star, objective_func2((mag, fc, t_star))])
+    #A#{
+    #figurefile = config.options.station+'-'+config.options.evid+'-res.pickle'
+    #fp = open(figurefile,'wb')
+    #pickle.dump(residuals,fp)
+    #fp.close()
+    #print 'residuals caculated. exit code'
+    #import sys
+    #sys.exit()
+    #A#}
+
 
 def main():
     config = configure('source_model')
@@ -55,9 +79,10 @@ def main():
         spec_st = Stream()
         make_synth(config, spec_st)
     
-    class C(): pass
-    config = C()
-    config.PLOT_SHOW = True
+    if config.options.plot:
+        config.PLOT_SHOW = True
+    else:
+        config.PLOT_SHOW = False
     config.PLOT_SAVE = False
     
     plot_spectra(config, spec_st, ncols=1, stack_plots=True)
