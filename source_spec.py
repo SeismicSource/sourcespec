@@ -5,12 +5,14 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
+#          Agnes Chounet <chounet@ipgp.fr>
 from __future__ import division
 import logging
 import math
 import multiprocessing
 import numpy as np
-from scipy.optimize import curve_fit
+#from scipy.optimize import curve_fit
+from scipy.optimize import minimize
 from lib.ssp_setup import dprint, configure, setup_logging, ssp_exit
 from lib.ssp_read_traces import read_traces
 from lib.ssp_process_traces import process_traces
@@ -18,7 +20,7 @@ from lib.ssp_build_spectra import build_spectra
 from lib.ssp_local_magnitude import local_magnitude
 from lib.ssp_plot_spectra import plot_spectra
 from lib.ssp_output import write_output
-from lib.ssp_spectral_model import spectral_model
+from lib.ssp_spectral_model import spectral_model, objective_func, callback
 from lib.ssp_util import mag_to_moment, select_trace
 from obspy.core.util.geodetics import gps2DistAzimuth
 
@@ -113,8 +115,14 @@ def main():
             #yerr[xdata<=f_weight] = 1./math.sqrt(weight)
             yerr = 1./np.sqrt(weight)
             # Curve fitting using the Levenburg-Marquardt algorithm
+            # or the truncated Newton algorithm (TNC), with bounds
+            # FIXME: parametrize inversion method
+            minimize_func = objective_func(xdata, ydata, yerr)
+            bounds=[(None,None),(None,None),(None,None)] #FIXME: parametrize
             try:
-                    params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
+                    #params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
+                    res = minimize(minimize_func, params_0, method='TNC', callback=callback, bounds=bounds)
+                    params_opt = res.x
             except RuntimeError:
                     logging.warning('Unable to fit spectral model for station: %s' % station)
             #print params_opt, params_cov
