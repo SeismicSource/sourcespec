@@ -8,17 +8,57 @@
 import logging
 import math
 import numpy as np
-#from scipy.optimize import curve_fit
-from scipy.optimize import minimize
+from scipy.optimize import curve_fit, minimize
 from lib.ssp_setup import dprint
 from lib.ssp_spectral_model import spectral_model, objective_func, callback
 from lib.ssp_util import mag_to_moment, select_trace
 from obspy.core.util.geodetics import gps2DistAzimuth
 
+
+def __nan_to_none__(val):
+    if math.isnan(val):
+        return None
+    else:
+        return val
+
+
+def __get_bounds__(config):
+    Mw_min_max = map(__nan_to_none__, config.Mw_min_max)
+    fc_min_max = map(__nan_to_none__, config.fc_min_max)
+    t_star_min_max = map(__nan_to_none__, config.t_star_min_max)
+    bounds = [
+            tuple(Mw_min_max),
+            tuple(fc_min_max),
+            tuple(t_star_min_max)
+            ]
+    return bounds
+
+
+def __print_bounds__(bounds):
+    s = 'Mw: %s, %s ; ' % tuple(map(str, bounds[0]))
+    s += 'fc: %s, %s ; ' % tuple(map(str, bounds[1]))
+    s += 't_star: %s, %s' % tuple(map(str, bounds[2]))
+    return s
+
+
 def spectral_inversion(config, spec_st, weight_st, Ml):
     '''
     Inversion of displacement spectra
     '''
+
+    if config.noise_weighting:
+        logging.info('Using noise weighting for inversion.')
+    else:
+        logging.info('Using frequency weighting for inversion.')
+    if config.inv_algorithm == 'TNC':
+        bounds = __get_bounds__(config)
+        logging.info('Using truncated Newton algorithm for inversion.')
+        logging.info('Bounds: %s' % __print_bounds__(bounds))
+    elif config.inv_algorithm == 'LM':
+        logging.info('Using Levenburg-Marquardt algorithm for inversion.')
+    else:
+        raise ValueError, 'Invalid choice of inversion algorithm.'
+
     sourcepar = dict()
     vs_m = config.vs*1000
     for station in set(x.stats.station for x in spec_st.traces):
@@ -91,17 +131,17 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
                 weight = 1./np.power(yerr, 2)
 
             # Curve fitting using the Levenburg-Marquardt algorithm
-            # or the truncated Newton algorithm (TNC), with bounds
-            # FIXME: parametrize inversion method
-            minimize_func = objective_func(xdata, ydata, weight)
-            bounds=[(None,None),(None,None),(None,None)] #FIXME: parametrize
+            # or the truncated Newton algorithm (TNC), with bounds.
             try:
-                    #params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
-                    res = minimize(minimize_func, params_0, method='TNC', callback=callback, bounds=bounds)
-                    params_opt = res.x
+                    if config.inv_algorithm == 'TNC':
+                        minimize_func = objective_func(xdata, ydata, weight)
+                        res = minimize(minimize_func, params_0, method='TNC', callback=callback, bounds=bounds)
+                        params_opt = res.x
+                    elif config.inv_algorithm == 'LM':
+                        params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
             except RuntimeError:
                     logging.warning('Unable to fit spectral model for station: %s' % station)
-            #print params_opt, params_cov
+
             par = dict(zip(params_name, params_opt))
             par['hyp_dist'] = hd
             par['az'] = az
