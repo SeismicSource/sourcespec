@@ -15,11 +15,10 @@ def spectral_model(freq, Mw, fc, t_star):
     loge = math.log10(math.e)
     return Mw - np.log10(1. + np.power((freq/fc), 2)) - loge * (math.pi * freq * t_star)
     
-def objective_func(xdata, ydata, yerr):
+def objective_func(xdata, ydata, weight):
 ###A### here ydata, xdata should be np.array ; and params_0 components should be np.float.
 ###A### and the 'func' argument should be the 'spectral_model' function, or a function 
 ###A### that takes exactly 4 parameters. (objective_fun is designed for this application only)
-    weight = 1./yerr
     errsum = np.sum(weight)
     def objective_func2(params):
         model = spectral_model(xdata, params[0], params[1], params[2])

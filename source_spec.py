@@ -117,7 +117,7 @@ def main():
             # Curve fitting using the Levenburg-Marquardt algorithm
             # or the truncated Newton algorithm (TNC), with bounds
             # FIXME: parametrize inversion method
-            minimize_func = objective_func(xdata, ydata, yerr)
+            minimize_func = objective_func(xdata, ydata, weight)
             bounds=[(None,None),(None,None),(None,None)] #FIXME: parametrize
             try:
                     #params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
