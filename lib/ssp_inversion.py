@@ -16,12 +16,9 @@ from lib.ssp_util import mag_to_moment, select_trace
 from obspy.core.util.geodetics import gps2DistAzimuth
 
 def spectral_inversion(config, spec_st, weight_st, Ml):
-    # Inversion of displacement spectra
-    # Spectral weighting:
-    #   weight for f<=f_weight
-    #   1      for f> f_weight
-    #f_weight = config.f_weight
-    #weight   = config.weight
+    '''
+    Inversion of displacement spectra
+    '''
     sourcepar = dict()
     vs_m = config.vs*1000
     for station in set(x.stats.station for x in spec_st.traces):
@@ -29,8 +26,6 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
         for spec in spec_st_sel.traces:
             if spec.stats.channel != 'H': continue
             dprint(station)
-
-            weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
 
             # spectral amplitude is in Mw units
             amp = spec.data_mag
@@ -81,11 +76,20 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
 
             xdata = spec.get_freq()
             ydata = amp
-            #yerr = np.ones(len(ydata))
-            # 'curve_fit' interprets 'yerr' as standard deviation vector and calculates
-            # weights as 1/yerr^2 . Therefore we build yerr as:
-            #yerr[xdata<=f_weight] = 1./math.sqrt(weight)
-            yerr = 1./np.sqrt(weight)
+
+            if config.noise_weighting:
+                weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
+                # 'curve_fit' interprets 'yerr' as standard deviation vector and calculates
+                # weights as 1/yerr^2 . Therefore we build yerr as:
+                yerr = 1./np.sqrt(weight)
+            else:
+                # Spectral weighting:
+                #   config.weight for f<=f_weight
+                #   1      for f> f_weight
+                yerr = np.ones(len(ydata))
+                yerr[xdata<=config.f_weight] = 1./math.sqrt(config.weight)
+                weight = 1./np.power(yerr, 2)
+
             # Curve fitting using the Levenburg-Marquardt algorithm
             # or the truncated Newton algorithm (TNC), with bounds
             # FIXME: parametrize inversion method
