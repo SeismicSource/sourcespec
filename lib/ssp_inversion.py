@@ -3,7 +3,7 @@
 # Spectral inversion routine for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
-#          Emanuela Matrullo <matrullo@geologie.ens.fr>
+#          Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #          Agnes Chounet <chounet@ipgp.fr>
 import logging
 import math

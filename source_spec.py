@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# source_spec.py
 #
 # Main function for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
-#          Emanuela Matrullo <matrullo@geologie.ens.fr>
+#          Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #          Agnes Chounet <chounet@ipgp.fr>
 from __future__ import division
 import multiprocessing
@@ -37,6 +38,7 @@ def main():
     #Ml = local_magnitude(config, proc_st)
     Ml = local_magnitude(config, st, deconvolve=True)
 
+    # Spectral inversion
     sourcepar = spectral_inversion(config, spec_st, weight_st, Ml)
 
     # Save output
