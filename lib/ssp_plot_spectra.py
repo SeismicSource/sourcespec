@@ -7,6 +7,7 @@
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
 from __future__ import division
 import sys
+import os
 import math
 import logging
 from ssp_util import spec_minmax, moment_to_mag, mag_to_moment
@@ -217,8 +218,8 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         elif plottype == 'weight': 
             suffix = '.sspweight.'
             message = 'Weight'
-        figurefile = config.options.outdir + '/' + evid + suffix +\
-            config.PLOT_SAVE_FORMAT
+        figurefile = os.path.join(config.options.outdir, evid + suffix +\
+                                  config.PLOT_SAVE_FORMAT)
         fig.savefig(figurefile, bbox_inches='tight')
         logging.info(message + ' plots saved to: ' + figurefile)
 

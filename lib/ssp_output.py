@@ -55,7 +55,7 @@ def write_output(config, evid, sourcepar):
     # Write station source parameters to file
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
-    parfilename = '%s/%s.ssp.out' % (config.options.outdir, evid)
+    parfilename = os.path.join(config.options.outdir, '%s.ssp.out' % evid)
     parfile = open(parfilename, 'w')
 
     parfile.write('*** Station source parameters ***\n')
@@ -142,7 +142,7 @@ def write_output(config, evid, sourcepar):
             #line[49+i] = mag[0+i]
             line[45+i] = mag[0+i]
         outline = ''.join(line)
-        hypo_file_out = '%s/%s.ssp.h' % (config.options.outdir, evid)
+        hypo_file_out = os.path.join(config.options.outdir, '%s.ssp.h' % evid)
         fp = open(hypo_file_out, 'w')
         try: fp.write(line1)
         except: pass

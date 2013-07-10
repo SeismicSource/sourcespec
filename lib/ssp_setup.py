@@ -229,10 +229,10 @@ def setup_logging(config, basename=None):
         os.makedirs(config.options.outdir)
 
     if basename:
-        logfile = '%s/%s.ssp.log' % (config.options.outdir, basename)
+        logfile = os.path.join(config.options.outdir, '%s.ssp.log' % basename)
     else:
         datestring = datetime.now().strftime('%Y%m%d_%H%M%S')
-        logfile = '%s/%s.ssp.log' % (config.options.outdir, datestring)
+        logfile = os.path.join(config.options.outdir, '%s.ssp.log' % datestring)
 
     log=logging.getLogger()
     if oldlogfile:
