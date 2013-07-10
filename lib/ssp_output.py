@@ -149,3 +149,9 @@ def write_output(config, evid, sourcepar):
         fp.write(outline)
         fp.close()
         logging.info('Hypo file written to: ' + hypo_file_out)
+
+    params_name = ('Mw', 'fc', 't_star')
+    sourcepar_mean=dict(zip(params_name, [Mw_mean, fc_mean, t_star_mean])) 
+    logging.info('params_mean: %s' % (sourcepar_mean)) 
+
+    return sourcepar_mean

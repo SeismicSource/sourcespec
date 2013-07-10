@@ -16,6 +16,7 @@ from lib.ssp_build_spectra import build_spectra
 from lib.ssp_local_magnitude import local_magnitude
 from lib.ssp_inversion import spectral_inversion
 from lib.ssp_output import write_output
+from lib.ssp_residuals import spectral_residuals
 from lib.ssp_plot_spectra import plot_spectra
 
 def main():
@@ -42,7 +43,10 @@ def main():
     sourcepar = spectral_inversion(config, spec_st, weight_st, Ml)
 
     # Save output
-    write_output(config, evid, sourcepar)
+    sourcepar_mean = write_output(config, evid, sourcepar) 
+
+    # Save residuals
+    spectral_residuals(config, spec_st, evid, sourcepar_mean)
 
     # Plotting
     pool = multiprocessing.Pool()
