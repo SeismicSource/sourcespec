@@ -1,4 +1,5 @@
 # -*- coding: utf8 -*-
+# ssp_inversion.py
 #
 # Spectral inversion routine for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
@@ -9,9 +10,9 @@ import logging
 import math
 import numpy as np
 from scipy.optimize import curve_fit, minimize
-from lib.ssp_setup import dprint
-from lib.ssp_spectral_model import spectral_model, objective_func, callback
-from lib.ssp_util import mag_to_moment, select_trace
+from ssp_setup import dprint
+from ssp_spectral_model import spectral_model, objective_func, callback
+from ssp_util import mag_to_moment, select_trace
 from obspy.core.util.geodetics import gps2DistAzimuth
 
 
