@@ -7,7 +7,6 @@
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #          Agnes Chounet <chounet@ipgp.fr>
-from __future__ import division
 import multiprocessing
 from lib.ssp_setup import configure, setup_logging, ssp_exit
 from lib.ssp_read_traces import read_traces

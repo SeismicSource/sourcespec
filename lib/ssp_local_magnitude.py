@@ -5,6 +5,7 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
+from __future__ import division
 import logging
 import numpy as np
 from scipy.integrate import cumtrapz
