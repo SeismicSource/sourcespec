@@ -12,7 +12,7 @@ from scipy.integrate import cumtrapz
 from copy import deepcopy, copy
 from obspy.signal import estimateMagnitude, envelope
 from ssp_util import wave_arrival, cosine_taper
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from obspy.signal.util import smooth
 from obspy.signal.trigger import triggerOnset
 
@@ -77,7 +77,7 @@ def local_magnitude(config, st, deconvolve=False):
 
         df = trace.stats.sampling_rate
         triggeron = trigger[0]/df
-        triggeroff = trigger[1]/df
+        #triggeroff = trigger[1]/df  #Not used --C.S.
         #start_trace = trace.stats['starttime']
         #t_end = start_trace + triggeroff
         t1_end = p_arrival_time + triggeron
