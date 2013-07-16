@@ -5,6 +5,7 @@
 #
 # v 0.1 - 2012-01-17 - Claudio Satriano <satriano@ipgp.fr>
 import numpy as np
+from copy import copy, deepcopy
 from obspy.core import Trace
 import matplotlib.pyplot as plt
 
@@ -57,12 +58,18 @@ class Spectrum(Trace):
         plt.xlabel('Frequency (Hz)')
         plt.ylabel('Amplitude')
         plt.show()
-    def slice(self, fmin, fmax):
+    def slice(self, fmin, fmax, pad=False, nearest_sample=True, fill_value=None):
         t = self.stats.starttime
         freq = self.get_freq()
         begin = self.stats.begin
-        spec_slice = super(Spectrum, self).slice(t-begin+fmin, t-begin+fmax)
-        #find the closest frequency to fmin:
-        idx=(np.abs(freq-fmin)).argmin()
-        spec_slice.stats.begin = freq[idx]
+        spec_slice = copy(self)
+        spec_slice.stats = deepcopy(self.stats)
+        spec_slice.trim(t-begin+fmin, t-begin+fmax, pad, nearest_sample, fill_value)
+        delta_t = t - spec_slice.stats.starttime
+        if delta_t > 0:
+            spec_slice.stats.begin = begin - delta_t
+        else:
+            #find the closest frequency to fmin:
+            idx = (np.abs(spec_slice.get_freq()-fmin)).argmin()
+            spec_slice.stats.begin = freq[idx]
         return spec_slice
