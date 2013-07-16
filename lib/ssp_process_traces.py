@@ -7,11 +7,12 @@
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
 from __future__ import division
 import logging
+import math
 import numpy as np
 from copy import deepcopy, copy
 from obspy.core import Stream
 from ssp_setup import dprint, ssp_exit
-from ssp_util import remove_instr_response, hypo_dist, wave_arrival
+from ssp_util import remove_instr_response, hypo_dist, wave_arrival, cosine_taper
 
 def process_traces(config, st):
     ''' Removes mean, deconvolves, and ignores unwanted components '''
@@ -117,7 +118,18 @@ def process_traces(config, st):
         trace_noise.detrend(type='constant')
         # ...and the linear trend...
         trace_noise.detrend(type='linear')
+        # ...trim...
         trace_noise.trim(starttime=noise_start_t, endtime=noise_end_t, pad=True, fill_value=0)
+        # ...taper...
+        cosine_taper(trace_noise.data, width=config.taper_halfwidth)
+        if not math.isnan(config.spectral_win_length):
+            # ...and zero pad to spectral_win_length
+            trace_noise.trim(
+                    starttime=noise_start_t,
+                    endtime=noise_start_t+config.spectral_win_length,
+                    pad=True,
+                    fill_value=0
+                    )
 
         orig_trace.stats.hypo_dist = hd
         out_st.append(trace)

@@ -135,8 +135,16 @@ def build_spectra(config, st, noise_st=None):
 
         # trim...
         trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
-        # ...and taper
+        # ...taper...
         cosine_taper(trace_cut.data, width=config.taper_halfwidth)
+        if not math.isnan(config.spectral_win_length):
+            # ...and zero pad to spectral_win_length
+            trace_cut.trim(
+                    starttime=t1,
+                    endtime=t1+config.spectral_win_length,
+                    pad=True,
+                    fill_value=0
+                    )
 
         # normalization for the hypocentral distance
         trace_cut.data *= trace_cut.stats.hypo_dist * 1000
