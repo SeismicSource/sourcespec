@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*- 
+# ssp_resiudals.py
+#
+# Computes station residuals from source_spec.py output
+# (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
+#          Agnes Chounet <chounet@ipgp.fr>
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt

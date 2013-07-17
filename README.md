@@ -1,7 +1,9 @@
 ## source\_spec: a python code for modelling S-wave displacement spectra and inverting source parameters 
 (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>  
 (c) 2013-     Claudio Satriano <satriano@ipgp.fr>,
-              Emanuela Matrullo <matrullo@geologie.ens.fr>  
+              Emanuela Matrullo <matrullo@geologie.ens.fr>,
+              Agnès Chounet <chounet@ipgp.fr> 
+
 Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano  
 
 ### Description:
@@ -57,3 +59,15 @@ To run source\_model test on CRL:
 
      ./source_model.py -c testconfig/config_CRL.conf testdata/CRL/2010.01.20-08.10.27/2010.01.20-08.10.27.TRIZ.HHE.SAC\
           -H testdata/CRL/2010.01.20-08.10.27.phs.h --mag=2.6 --fc=8,12 --tstar=0.02,0.03 -p  
+
+
+### ssp\_residuals:
+ssp\_residuals computes station residuals from the output of source\_spec.
+It takes multiple pickle files in the form:
+
+     EVID-residual.pickle
+
+containing single-event station residual, computes average station residuals, and store them into
+a pickle file called:
+
+     residual_mean.pickle
