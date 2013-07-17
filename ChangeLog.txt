@@ -2,39 +2,46 @@ source_spec
 Python code to invert S-wave displacement spectra
 (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
 (c) 2013-     Claudio Satriano <satriano@ipgp.fr>,
-              Emanuela Matrullo <matrullo@geologie.ens.fr>
+              Emanuela Matrullo <matrullo@geologie.ens.fr>,
+              Agnès Chounet <chounet@ipgp.fr>
 Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
 
-v 0.6 - 2013-06-05 - Several improvements:
-		Signal to noise weighitng
-		Improved local magnitude computation
-		New options:
-			time domain integration
-			vertical component
-		Largely improved plotting function
-		More data formats supported (Antilles, IPOC)
-		source_model: a code for plotting theoretical spectra
-		Code refactoring	
-v 0.5 - 2013-02-10 - Several improvements:
-        Azimuth computation
-        Construction of an overall database
-        Local magnitude computation
-        konnoOhmachiSmoothing
-v 0.4 - 2012-04-10 - Several improvements:
-        Logging infastructure
-        Code reorganization
-v 0.3 - 2012-02-10 - Several improvements:
-        Output is no more printed at screen, but to file
-        The plots can be saved to a file as well
-        We differentiate between short periods and broad bands
-v 0.2 - 2012-02-06 - Extended and generalized for the CRL application 
-v 0.1 - 2012-01-17 - Initial Python port
+v0.7 - 2013-??-??
+	- Code reorganization:
+		- inversion code splitted to its own functions
+	- Option to use bounded inversion
+	- Station residuals, through ssp_residuals.py
+	- source_model can now output tables of trade-off
+		between parameters
+v0.6 - 2013-06-05 - Several improvements:
+	- Signal to noise weighitng
+	- Improved local magnitude computation
+	- New options:
+		- time domain integration
+		- vertical component
+	- Largely improved plotting function
+	- More data formats supported (Antilles, IPOC)
+	- source_model: a code for plotting theoretical spectra
+	- Code refactoring	
+v0.5 - 2013-02-10 - Several improvements:
+	- Azimuth computation
+	- Construction of an overall database
+	- Local magnitude computation
+	- konnoOhmachiSmoothing
+v0.4 - 2012-04-10 - Several improvements:
+	- Logging infastructure
+	- Code reorganization
+v0.3 - 2012-02-10 - Several improvements:
+	- Output is no more printed at screen, but to file
+	- The plots can be saved to a file as well
+	- We differentiate between short periods and broad bands
+v0.2 - 2012-02-06 - Extended and generalized for the CRL application 
+v0.1 - 2012-01-17 - Initial Python port
 
 
 Original changelog:
 Original csh version by Aldo Zollo <zollo@unina.it>
 Bash version by Claudio Satriano <satriano@na.infn.it>
-v 1.0 - 2008-10-29 - Ported to bash
-                   - Added more handling of exceptions to run safely in
-                     automatic mode
-                     Claudio Satriano <satriano@na.infn.it>
+v1.0 - 2008-10-29 - Ported to bash
+	- Added more handling of exceptions to run safely in
+		automatic mode
