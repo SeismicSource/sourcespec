@@ -55,14 +55,17 @@ for stat_id in sorted(residual_dict.keys()):
     spec_mean.stats.delta = res[0].stats.delta
     spec_mean.stats.station = res[0].stats.station
     spec_mean.data_mag = None
-    for n, spec in enumerate(res):
+    for spec in res:
         spec_slice = spec.slice(freq_min, freq_max, pad=True, fill_value=mag_to_moment(0))
         spec_slice.data_mag = moment_to_mag(spec_slice.data)
+        norm = (spec_slice.data_mag != 0).astype(int)
         if spec_mean.data_mag is None:
             spec_mean.data_mag = spec_slice.data_mag
+            norm_mean = norm
         else:
             spec_mean.data_mag += spec_slice.data_mag
-    spec_mean.data_mag /= n
+            norm_mean += norm
+    spec_mean.data_mag /= norm_mean
     spec_mean.data = mag_to_moment(spec_mean.data_mag)
 
     residual_mean.append(spec_mean)
