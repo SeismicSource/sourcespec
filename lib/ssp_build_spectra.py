@@ -4,7 +4,8 @@
 # Builds spectra for source_spec 
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
-#          Emanuela Matrullo <matrullo@geologie.ens.fr>
+#          Emanuela Matrullo <matrullo@geologie.ens.fr>,
+#          Agnes Chounet <chounet@ipgp.fr>
 from __future__ import division
 import logging
 import numpy as np
@@ -15,6 +16,7 @@ from obspy.core import Stream
 from ssp_setup import dprint
 from ssp_util import wave_arrival, cosine_taper,\
         moment_to_mag, select_trace
+from ssp_correction import station_correction
 import spectrum
 from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
 
@@ -241,6 +243,11 @@ def build_spectra(config, st, noise_st=None):
     # convert the spectral amplitudes to moment magnitude
     for spec in spec_st:
         spec.data_mag = moment_to_mag(spec.data)
+
+    # optionally, apply station correction
+    if config.options.correction:
+        spec_st = station_correction(spec_st, config)
+
     if noise_st:
         for specnoise in specnoise_st:
             specnoise.data_mag = moment_to_mag(specnoise.data)

@@ -52,9 +52,12 @@ def __parse_args_source_spec():
             help='Get evid from catalog', metavar='EVID')
     parser.add_option('-o', '--outdir', dest='outdir', action='store', default='sspec_out',
             help='Save output to OUTDIR (default: sspec_out)', metavar='OUTDIR')
-    parser.add_option('-s', '--sampleconf', dest='sampleconf', action='store_true', default=False,
+    parser.add_option('-s', '--station', dest='station', action='store', default=None,
+            help='Only use this station', metavar='STATION')
+    parser.add_option('-C', '--correction', dest='correction', action='store_true', default=False,
+            help='Apply station correction to the "H" component of the spectra')
+    parser.add_option('-S', '--sampleconf', dest='sampleconf', action='store_true', default=False,
             help='Write sample configuration to file and exit')
-
     (options, args) = parser.parse_args()
 
     if options.sampleconf:
