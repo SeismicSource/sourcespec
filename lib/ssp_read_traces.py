@@ -59,7 +59,7 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
         for sp in dataless.values():
             # Check first if our traceid is in the dataless file
             if not traceid in str(sp):
-                continue    
+                continue
             try:
                 paz = sp.getPAZ(traceid, time)
                 coords = AttribDict(sp.getCoordinates(traceid, time))
@@ -87,9 +87,9 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
     # we try to build the sensitivity from the
     # user2 and user3 header fields (ISNet format)
     if trace.stats.paz == None and trace.stats.format == 'ISNet':
-        try: 
+        try:
             # instrument constants
-            u2 = trace.stats.sac.user2 
+            u2 = trace.stats.sac.user2
             u3 = trace.stats.sac.user3
             if u2==-12345 or u3==-12345: raise AttributeError
             paz = AttribDict()
@@ -113,7 +113,7 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
     # If we still don't have trace coordinates,
     # we try to get them from SAC header
     if trace.stats.coords == None:
-        try: 
+        try:
             stla = trace.stats.sac.stla
             stlo = trace.stats.sac.stlo
             stel = trace.stats.sac.stel
@@ -141,9 +141,9 @@ def __add_instrtype__(trace):
     try: instr_code = chan[1]
     except IndexError: instr_code = None
     if instr_code == 'H' or instr_code == 'L':
-        if band_code == 'E': 
+        if band_code == 'E':
             instrtype = 'shortp'
-        if band_code == 'H': 
+        if band_code == 'H':
             instrtype = 'broadb'
     if instr_code == 'N' or instr_code =='L':
         instrtype = 'acc'
@@ -164,7 +164,7 @@ def __add_instrtype__(trace):
         except AttributeError:
             pass
     trace.stats.instrtype = instrtype
-    
+
 def __add_hypocenter__(trace, hypo):
     if hypo == None:
         # Try to get hypocenter information from the SAC header
@@ -287,7 +287,7 @@ def __read_paz__(path):
     (2) all the paz files must have the same prefix (if any)
     (3) paz file can optionally have th ".pz" suffix
     (4) paz file name (without prefix and suffix) *has* to be
-        the trace_id (NET.STA.LOC.CHAN) of the corresponding trace 
+        the trace_id (NET.STA.LOC.CHAN) of the corresponding trace
     '''
     if path == None: return None
 
@@ -362,7 +362,7 @@ def __parse_hypocenter__(hypo_file):
         hypo.depth = float(line[36:42])
         evid = os.path.basename(hypo_file)
         hypo.evid = evid.replace('.phs','').replace('.h','').replace('.hyp','')
-    
+
     else: #FIXME: put a condition here!
         ev = hypo_file #FIXME: improve this!
         hypo.latitude = ev.latitude
@@ -418,7 +418,7 @@ def __parse_picks__(pick_file):
                              line[9].isdigit() and
                              line[20].isdigit()):
                 continue
-        
+
             #pick = __new_pick__()
             pick = Pick()
             pick.station  = line[0:4]
@@ -434,13 +434,13 @@ def __parse_picks__(pick_file):
             timestr       = line[9:24]
             dt = datetime.strptime(timestr, '%y%m%d%H%M%S.%f')
             pick.time = UTCDateTime(dt)
-        
+
             picks.append(pick)
-        
+
             try: stime = line[31:36]
             except: continue
             if stime.replace(' ','') == '': continue
-        
+
             #pick2 = __new_pick__()
             pick2 = Pick()
             pick2.station  = pick.station
@@ -456,7 +456,7 @@ def __parse_picks__(pick_file):
             pick2.time     = pick.time + float(stime)
 
             picks.append(pick2)
-        
+
             fp.close()
             return picks
         else:
@@ -471,7 +471,7 @@ def __build_filelist__(path, filelist, tmpdir):
             fullpath='%s/%s' % (path, filename)
             __build_filelist__(fullpath, filelist, tmpdir)
     else:
-        try: 
+        try:
             open(path)
         except IOError, message:
             logging.error(message)
@@ -503,7 +503,7 @@ def __set_hypo_file_path__(config):
 
 def __set_pick_file_path__(config):
     if config.options.pick_file != None:
-        return 
+        return
     # try with the basename of the datadir
     if os.path.isdir(config.args[0]):
         pick_file = config.args[0] + '.phs'
@@ -518,7 +518,7 @@ def __set_pick_file_path__(config):
 
 # Public interface:
 def read_traces(config):
-    # read dataless    
+    # read dataless
     dataless = __read_dataless__(config.dataless)
     # read PAZ (normally this is an alternative to dataless)
     paz = __read_paz__(config.paz)
@@ -543,7 +543,7 @@ def read_traces(config):
         for trace in event.traces:
             if config.options.station is not None:
                 if not trace.station == config.options.station:
-                    continue 
+                    continue
             try:
                 tmpst = read(trace.trace_file, fsize=False)
             except Exception, error:
@@ -593,10 +593,10 @@ def read_traces(config):
                 __add_picks__(trace, picks)
 
         shutil.rmtree(tmpdir)
-        
+
     logging.info('Reading traces: done')
     if len(st.traces) == 0:
-        logging.info('No trace loaded') 
+        logging.info('No trace loaded')
         ssp_exit()
 
     st.sort()

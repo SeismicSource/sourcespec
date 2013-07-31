@@ -16,24 +16,24 @@ def spectral_residuals(config, spec_st, evid, sourcepar_mean):
     Computes spectral residuals with respect to an average spectral
     model and saves a stream of residuals to disk using pickle.
     '''
-    
-    residuals = Stream() 
+
+    residuals = Stream()
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
         for spec in spec_st_sel.traces:
-            if spec.stats.channel != 'H': 
+            if spec.stats.channel != 'H':
                 continue
 
-            xdata = spec.get_freq() 
-            synth_mean_mag = spectral_model(xdata, **sourcepar_mean) 
+            xdata = spec.get_freq()
+            synth_mean_mag = spectral_model(xdata, **sourcepar_mean)
 
-            res = spec.copy() 
+            res = spec.copy()
             res.data_mag = spec.data_mag - synth_mean_mag
-            res.data = mag_to_moment(res.data_mag) 
-            residuals.append(res) 
-            
+            res.data = mag_to_moment(res.data_mag)
+            residuals.append(res)
+
     # Save residuals as pickle file
     res_file = os.path.join(config.options.outdir, evid + '-residuals.pickle')
     logging.info('Spectral residuals saved to: %s' % res_file)
     with open(res_file, 'wb') as fp:
-        pickle.dump(residuals, fp)  
+        pickle.dump(residuals, fp)

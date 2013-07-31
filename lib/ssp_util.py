@@ -51,7 +51,7 @@ def mag_to_moment(data):
     return np.power(10, (1.5 * data + 9.1))
 
 def select_trace(stream, traceid, instrtype):
-    return [tr for tr in stream.select(id=traceid) 
+    return [tr for tr in stream.select(id=traceid)
             if tr.stats.instrtype == instrtype][0]
 # -----------------------------------------------------------------------------
 
@@ -77,7 +77,7 @@ def smooth(x, window_len=11, window='hanning'):
     s=np.r_[2*x[0]-x[window_len-1::-1],x,2*x[-1]-x[-1:-window_len:-1]]
     if window == 'flat': #moving average
         w=np.ones(window_len,'d')
-    else:  
+    else:
         w=eval('np.'+window+'(window_len)')
     y=np.convolve(w/w.sum(),s,mode='same')
 
@@ -140,8 +140,8 @@ def calc_dist(lat1, lon1, lat2, lon2):
     dLon = toRad(lon2-lon1)
     a = math.sin(dLat/2) * math.sin(dLat/2) + \
         math.cos(toRad(lat1)) * math.cos(toRad(lat2)) * \
-               math.sin(dLon/2) * math.sin(dLon/2) 
-    gcarc = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a)) 
+               math.sin(dLon/2) * math.sin(dLon/2)
+    gcarc = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     dist = R * gcarc
     return dist, toDeg(gcarc)
 

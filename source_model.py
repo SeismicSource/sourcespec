@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*- 
+# -*- coding: utf8 -*-
 # source_model.py
 #
 # Direct spectral modelling
@@ -43,12 +43,12 @@ def make_synth(config, spec_st, trace_spec=None):
         spec.stats.instrtype = 'Synth'
         spec.stats.channel = 'Synth'
         spec.stats.par = {'Mw': mag, 'fc': fc, 't_star': t_star}
-    
+
         freq = spec.get_freq()
         spec.data_mag = spectral_model(freq, mag, fc, t_star)
         spec.data = mag_to_moment(spec.data_mag)
         spec_st.append(spec)
-        
+
         if trace_spec:
             objective_func2 = objective_func(freq, trace_spec.data_mag, np.ones_like(trace_spec.data_mag))
             print Mo, mag, fc, t_star, objective_func2((mag, fc, t_star))
@@ -83,13 +83,13 @@ def main():
     else:
         spec_st = Stream()
         make_synth(config, spec_st)
-    
+
     if config.options.plot:
         config.PLOT_SHOW = True
     else:
         config.PLOT_SHOW = False
     config.PLOT_SAVE = False
-    
+
     plot_spectra(config, spec_st, ncols=1, stack_plots=True)
 
 if __name__ == '__main__':

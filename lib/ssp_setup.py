@@ -109,9 +109,9 @@ def __parse_args_source_model():
     options.fmax = float(options.fmax)
 
     options.mag = map(float, options.mag.rstrip(',').split(','))
-    options.Mo = map(float, options.Mo.rstrip(',').split(','))    
-    #A#{ 
-    if options.fc[0] == 'i' or options.t_star[0] == 'i':    
+    options.Mo = map(float, options.Mo.rstrip(',').split(','))
+    #A#{
+    if options.fc[0] == 'i' or options.t_star[0] == 'i':
         if options.fc[0] == 'i':
             options.fc = options.fc[1:]
             fc_min, fc_max, fc_step = map(float, options.fc.rstrip(',').split(','))
@@ -135,7 +135,7 @@ def __parse_args_source_model():
         oplist = map(list, zip(*oplist))
     else:
         # Add trailing "None" to shorter lists and zip:
-        oplist = [options.fc, options.mag, options.Mo, options.t_star]        
+        oplist = [options.fc, options.mag, options.Mo, options.t_star]
         oplist = map(None, *oplist)
         # Unzip and convert tuple to lists:
         oplist = map(list, zip(*oplist))
@@ -224,7 +224,7 @@ def configure(progname='source_spec'):
 oldlogfile=None
 def setup_logging(config, basename=None):
     global oldlogfile
-    # Create outdir 
+    # Create outdir
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
 
