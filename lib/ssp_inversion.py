@@ -24,10 +24,18 @@ def __nan_to_none__(val):
         return val
 
 
-def __get_bounds__(config):
+def __Qo_to_t_star__(hd, config):
+    t_star_min_max = float(hd)/(config.vs*np.array(config.Qo_min_max))
+    return map(__nan_to_none__, t_star_min_max)
+
+
+def __get_bounds__(hd, config):
     Mw_min_max = map(__nan_to_none__, config.Mw_min_max)
     fc_min_max = map(__nan_to_none__, config.fc_min_max)
-    t_star_min_max = map(__nan_to_none__, config.t_star_min_max)
+    if any(math.isnan(x) for x in config.Qo_min_max):
+        t_star_min_max = map(__nan_to_none__, config.t_star_min_max)
+    else:
+        t_star_min_max = __Qo_to_t_star__(hd, config)
     bounds = [
             tuple(Mw_min_max),
             tuple(fc_min_max),
@@ -53,9 +61,9 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
     else:
         logging.info('Using frequency weighting for inversion.')
     if config.inv_algorithm == 'TNC':
-        bounds = __get_bounds__(config)
+        #bounds = __get_bounds__(config)
         logging.info('Using truncated Newton algorithm for inversion.')
-        logging.info('Bounds: %s' % __print_bounds__(bounds))
+        #logging.info('Bounds: %s' % __print_bounds__(bounds))
     elif config.inv_algorithm == 'LM':
         logging.info('Using Levenburg-Marquardt algorithm for inversion.')
     else:
@@ -90,7 +98,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
 
             # initial value for t_star
             t_star_0 = config.t_star_0
-            
+
             # print initial values of fc, M0 and t_star
             dprint('INITIAL CORNER FREQUENCY= %f' % fc_0)
             dprint('INITIAL MOMENT MAGNITUDE= %f' % Mw_0)
@@ -135,12 +143,14 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             # Curve fitting using the Levenburg-Marquardt algorithm
             # or the truncated Newton algorithm (TNC), with bounds.
             try:
-                    if config.inv_algorithm == 'TNC':
-                        minimize_func = objective_func(xdata, ydata, weight)
-                        res = minimize(minimize_func, params_0, method='TNC', callback=callback, bounds=bounds)
-                        params_opt = res.x
-                    elif config.inv_algorithm == 'LM':
-                        params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
+                if config.inv_algorithm == 'TNC':
+                    bounds = __get_bounds__(hd, config)
+                    logging.info('Bounds: %s' % __print_bounds__(bounds))
+                    minimize_func = objective_func(xdata, ydata, weight)
+                    res = minimize(minimize_func, params_0, method='TNC', callback=callback, bounds=bounds)
+                    params_opt = res.x
+                elif config.inv_algorithm == 'LM':
+                    params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
             except RuntimeError:
                     logging.warning('Unable to fit spectral model for station: %s' % station)
 
