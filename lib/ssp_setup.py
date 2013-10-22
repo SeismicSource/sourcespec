@@ -95,7 +95,9 @@ def __parse_args_source_model():
     parser.add_option('-M', '--moment', dest='Mo', action='store', default='NaN',
             help='Seismic moment', metavar='Mo')
     parser.add_option('-t', '--tstar', dest='t_star', action='store', default='0.0',
-            help='T-star (attenuation)', metavar='T')
+            help='T-star (attenuation)', metavar='0.0')
+    parser.add_option('-a', '--alpha', dest='alpha', action='store', default='1.0',
+            help='alpha (exponent for frequency dependence of attenuation)', metavar='1.0')
     parser.add_option('-C', '--combine', dest='combine', action='store_true', default=False,
             help='Generate all the combinations of fc, mag, Mo, tstar')
     parser.add_option('-p', '--plot', dest='plot', action='store_true', default=False,
@@ -113,7 +115,7 @@ def __parse_args_source_model():
 
     options.mag = map(float, options.mag.rstrip(',').split(','))
     options.Mo = map(float, options.Mo.rstrip(',').split(','))
-    #A#{
+    options.alpha = map(float, options.alpha.rstrip(',').split(','))
     if options.fc[0] == 'i' or options.t_star[0] == 'i':
         if options.fc[0] == 'i':
             options.fc = options.fc[1:]
@@ -134,11 +136,17 @@ def __parse_args_source_model():
         options.t_star = map(float, options.t_star.rstrip(',').split(','))
 
     if options.combine:
-        oplist = [(fc, mag, Mo, t_star) for fc in options.fc for mag in options.mag for Mo in options.Mo for t_star in options.t_star]
+        oplist = [(fc, mag, Mo, t_star, alpha)
+                for fc in options.fc
+                for mag in options.mag
+                for Mo in options.Mo
+                for t_star in options.t_star
+                for alpha in options.alpha
+                ]
         oplist = map(list, zip(*oplist))
     else:
         # Add trailing "None" to shorter lists and zip:
-        oplist = [options.fc, options.mag, options.Mo, options.t_star]
+        oplist = [options.fc, options.mag, options.Mo, options.t_star, options.alpha]
         oplist = map(None, *oplist)
         # Unzip and convert tuple to lists:
         oplist = map(list, zip(*oplist))
@@ -147,10 +155,10 @@ def __parse_args_source_model():
                 if x == None:
                     l[n] = l[n-1]
 
-    options.fc, options.mag, options.Mo, options.t_star = oplist
-    #A#}
+    options.fc, options.mag, options.Mo, options.t_star, options.alpha = oplist
     # Add unused options (required by source_spec):
     options.pick_file = None
+    options.correction = False
 
     return options, args
 

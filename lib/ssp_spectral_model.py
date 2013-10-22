@@ -10,13 +10,13 @@ from __future__ import division
 import math
 import numpy as np
 
-def spectral_model(freq, Mw, fc, t_star, alpha=0):
+def spectral_model(freq, Mw, fc, t_star, alpha=1.):
     # log S(w)= log(coeff*Mo) + log((1/(1+(w/wc)^2)) + log (exp (- w *t_star/2))
     # attenuation model: exp[-pi t* f] with t*=T /Q
     loge = math.log10(math.e)
     return Mw -\
            (2./3.)*np.log10(1. + np.power((freq/fc), 2)) -\
-           (2./3.)*loge * (math.pi * np.power(freq, 1-alpha) * t_star)
+           (2./3.)*loge * (math.pi * np.power(freq, alpha) * t_star)
 
 def objective_func(xdata, ydata, weight):
     '''
