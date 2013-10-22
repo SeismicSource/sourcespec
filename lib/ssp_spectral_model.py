@@ -10,24 +10,32 @@ from __future__ import division
 import math
 import numpy as np
 
-def spectral_model(freq, Mw, fc, t_star):
+def spectral_model(freq, Mw, fc, t_star, alpha=0):
     # log S(w)= log(coeff*Mo) + log((1/(1+(w/wc)^2)) + log (exp (- w *t_star/2))
     # attenuation model: exp[-pi t* f] with t*=T /Q
     loge = math.log10(math.e)
-    return Mw - np.log10(1. + np.power((freq/fc), 2)) - loge * (math.pi * freq * t_star)
+    return Mw -\
+           (2./3.)*np.log10(1. + np.power((freq/fc), 2)) -\
+           (2./3.)*loge * (math.pi * np.power(freq, 1-alpha) * t_star)
 
 def objective_func(xdata, ydata, weight):
-###A### here ydata, xdata should be np.array ; and params_0 components should be np.float.
-###A### and the 'func' argument should be the 'spectral_model' function, or a function
-###A### that takes exactly 4 parameters. (objective_fun is designed for this application only)
+    '''
+    ydata, xdata should be np.array;
+    '''
     errsum = np.sum(weight)
-    def objective_func2(params):
-        model = spectral_model(xdata, params[0], params[1], params[2])
+    def _objective_func(params):
+        '''
+        params components should be np.float;
+        '''
+        if len(params)==4:
+            model = spectral_model(xdata, params[0], params[1], params[2], params[3])
+        else:
+            model = spectral_model(xdata, params[0], params[1], params[2])
         res = np.array(ydata) - np.array(model)
         res2 = np.power(res, 2)
         wres = np.array(weight) * np.array(res2)
         return np.sqrt(np.sum(wres)/errsum)
-    return objective_func2
+    return _objective_func
 
 def callback(x):
     pass
