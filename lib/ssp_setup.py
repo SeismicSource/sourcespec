@@ -17,17 +17,29 @@ from optparse import OptionParser
 from datetime import datetime
 
 if sys.stdout.isatty():
-    try:
+    import IPython
+    ip_version = map(int, IPython.__version__.split('.'))
+    if ip_version[0] == 0:
+        if ip_version[1] >= 11:
         # ipython >= 0.11
-        from IPython.frontend.terminal.embed import InteractiveShellEmbed
-        ipshell = InteractiveShellEmbed()
-    except ImportError:
+            try:
+                from IPython.frontend.terminal.embed import InteractiveShellEmbed
+                ipshell = InteractiveShellEmbed()
+            except ImportError:
+                ipshell = None
+        else:
+        # ipython < 0.11
+            try:
+                from IPython.Shell import IPShellEmbed
+                ipshell = IPShellEmbed()
+            except ImportError:
+                ipshell = None
+    elif ip_version[0] > 0:
+    # ipython >= 1.0.0
         try:
-            # ipython < 0.11
-            from IPython.Shell import IPShellEmbed
-            ipshell = IPShellEmbed()
+            from IPython.terminal.embed import InteractiveShellEmbed
+            ipshell = InteractiveShellEmbed()
         except ImportError:
-            # Give up!
             ipshell = None
 else:
     ipshell = None
@@ -102,7 +114,6 @@ def __parse_args_source_model():
             help='Generate all the combinations of fc, mag, Mo, tstar')
     parser.add_option('-p', '--plot', dest='plot', action='store_true', default=False,
             help='Plot results')
-
 
     (options, args) = parser.parse_args()
     if len(args) < 0:
