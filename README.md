@@ -58,7 +58,7 @@ values for Mw, fc and t*.
 To run source\_model test on CRL:
 
      ./source_model.py -c testconfig/config_CRL.conf testdata/CRL/2010.01.20-08.10.27/2010.01.20-08.10.27.TRIZ.HHE.SAC\
-          -H testdata/CRL/2010.01.20-08.10.27.phs.h --mag=2.6 --fc=8,12 --tstar=0.02,0.03 -p
+          -H testdata/CRL/2010.01.20-08.10.27.phs.h --mag=3.0 --fc=6,10 --tstar=0.05,0.07 -p
 
 
 ### ssp\_residuals:
