@@ -17,38 +17,40 @@ from ssp_util import mag_to_moment, select_trace
 from obspy.core.util.geodetics import gps2DistAzimuth
 
 
-def __nan_to_none__(val):
-    if math.isnan(val):
-        return None
-    else:
-        return val
+class Bounds():
 
+    def __init__(self, hd, config):
+        self.hd = float(hd)
+        self.config = config
+        Mw_min_max = self.__nan_to_none__(config.Mw_min_max)
+        fc_min_max = self.__nan_to_none__(config.fc_min_max)
+        if any(math.isnan(x) for x in config.Qo_min_max):
+            t_star_min_max = self.__nan_to_none__(config.t_star_min_max)
+        else:
+            t_star_min_max = self.__Qo_to_t_star__(hd, config)
+        self.bounds = [ Mw_min_max,
+                        fc_min_max,
+                        t_star_min_max
+                      ]
 
-def __Qo_to_t_star__(hd, config):
-    t_star_min_max = float(hd)/(config.vs*np.array(config.Qo_min_max))
-    return map(__nan_to_none__, t_star_min_max)
+    def __nan_to_none__(self, val):
+        ret = [None if math.isnan(x) else x for x in tuple(val)]
+        return tuple(ret)
 
+    def __Qo_to_t_star__(self):
+        t_star_min_max =\
+            self.hd/(self.config.vs*np.array(self.config.Qo_min_max))
+        return self.__nan_to_none__(t_star_min_max)
 
-def __get_bounds__(hd, config):
-    Mw_min_max = map(__nan_to_none__, config.Mw_min_max)
-    fc_min_max = map(__nan_to_none__, config.fc_min_max)
-    if any(math.isnan(x) for x in config.Qo_min_max):
-        t_star_min_max = map(__nan_to_none__, config.t_star_min_max)
-    else:
-        t_star_min_max = __Qo_to_t_star__(hd, config)
-    bounds = [
-            tuple(Mw_min_max),
-            tuple(fc_min_max),
-            tuple(t_star_min_max)
-            ]
-    return bounds
+    def __str__(self):
+        s = 'Mw: %s, %s; ' % tuple(map(str, self.bounds[0]))
+        s += 'fc: %s, %s; ' % tuple(map(str, self.bounds[1]))
+        s += 't_star: %s, %s' % tuple(map(str, self.bounds[2]))
+        return s
 
+    def get_bounds(self):
+        return self.bounds
 
-def __print_bounds__(bounds):
-    s = 'Mw: %s, %s ; ' % tuple(map(str, bounds[0]))
-    s += 'fc: %s, %s ; ' % tuple(map(str, bounds[1]))
-    s += 't_star: %s, %s' % tuple(map(str, bounds[2]))
-    return s
 
 
 def spectral_inversion(config, spec_st, weight_st, Ml):
@@ -61,9 +63,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
     else:
         logging.info('Using frequency weighting for inversion.')
     if config.inv_algorithm == 'TNC':
-        #bounds = __get_bounds__(config)
         logging.info('Using truncated Newton algorithm for inversion.')
-        #logging.info('Bounds: %s' % __print_bounds__(bounds))
     elif config.inv_algorithm == 'LM':
         logging.info('Using Levenburg-Marquardt algorithm for inversion.')
     else:
@@ -104,7 +104,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             dprint('INITIAL MOMENT MAGNITUDE= %f' % Mw_0)
             dprint('INITIAL T_STAR= %f' % t_star_0)
 
-            hd   = spec.stats.hypo_dist
+            hd = spec.stats.hypo_dist
             hd_m = hd*1000
 
             # azimuth computation
@@ -144,13 +144,17 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             # or the truncated Newton algorithm (TNC), with bounds.
             try:
                 if config.inv_algorithm == 'TNC':
-                    bounds = __get_bounds__(hd, config)
-                    logging.info('Bounds: %s' % __print_bounds__(bounds))
+                    bounds = Bounds(hd, config)
+                    logging.info('%s %s: bounds: %s' %
+                            (spec.id, spec.stats.instrtype, str(bounds)))
                     minimize_func = objective_func(xdata, ydata, weight)
-                    res = minimize(minimize_func, params_0, method='TNC', callback=callback, bounds=bounds)
+                    res = minimize(
+                        minimize_func, params_0, method='TNC',
+                        callback=callback, bounds=bounds.get_bounds())
                     params_opt = res.x
                 elif config.inv_algorithm == 'LM':
-                    params_opt, params_cov = curve_fit(spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
+                    params_opt, params_cov = curve_fit(
+                        spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
             except RuntimeError:
                     logging.warning('Unable to fit spectral model for station: %s' % station)
 
