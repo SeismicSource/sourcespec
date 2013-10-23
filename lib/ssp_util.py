@@ -30,17 +30,20 @@ def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
 
 def wave_arrival(trace, vel, phase):
     if trace.stats.hypo.origin_time != None:
-        theo_pick_time = trace.stats.hypo.origin_time + trace.stats.hypo_dist / vel
+        theo_pick_time =\
+            trace.stats.hypo.origin_time + trace.stats.hypo_dist / vel
     else:
         theo_pick_time = None
     for pick in trace.stats.picks:
         if pick.phase == phase:
             if theo_pick_time != None:
                 delta_t = pick.time - theo_pick_time
-                if abs(delta_t) > 4.:#seconds #TODO parametrize?
-                    logging.warning('%s: measured %s pick time - theoretical time = %.1f s. Using theoretical.'
-                            % (trace.id, phase, delta_t))
+                if abs(delta_t) > 4.: # seconds #TODO parametrize?
+                    logging.warning(
+                        '%s: measured %s pick time - theoretical time = %.1f s. Using theoretical.'
+                        % (trace.id, phase, delta_t))
                     continue
+            logging.info('%s: found pick.' % trace.id)
             return pick.time
     return theo_pick_time
 
