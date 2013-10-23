@@ -331,19 +331,23 @@ def __parse_hypocenter__(hypo_file):
     hypo.origin_time = None
     hypo.evid = None
 
-    if hypo_file == None: return None
+    if hypo_file == None:
+        return None
 
     if isinstance(hypo_file, str):
-        try: fp = open(hypo_file)
-        except: return None
+        try:
+            with open(hypo_file) as fp:
+                # Corinth hypocenter file format:
+                # TODO: check file format
+                line = fp.readline()
+                # Skip the first line if it contains
+                # characters in the first 10 digits:
+                if any(c.isalpha() for c in line[0:10]):
+                    line = fp.readline()
+        except IOError, message:
+            logging.error(message)
+            ssp_exit(1)
 
-        # Corinth hypocenter file format:
-        # TODO: check file format
-        line = fp.readline()
-        # Skip the first line if it contains characters in the first 10 digits:
-        if any(c.isalpha() for c in line[0:10]):
-            line = fp.readline()
-        fp.close()
         timestr = line[0:17]
         # There are two possible formats for the timestring.
         # We try both of them
@@ -395,72 +399,75 @@ def __is_hypo_format(fp):
 #TODO: def __is_NLL_format(fp):
 
 def __parse_picks__(pick_file):
-    if pick_file == None: return None
+    if pick_file == None:
+        return None
 
-    try: fp = open(pick_file)
-    except: return None
+    try:
+        with open(pick_file) as fp:
+            picks = []
+            if __is_hypo_format(fp):
+                # Corinth phase file format is hypo
+                for line in fp.readlines():
+                    # remove newline
+                    line = line.replace('\n','')
+                    # skip separator and empty lines
+                    stripped_line = line.replace(' ','')
+                    if stripped_line == '10' or stripped_line == '':
+                        continue
+                    # Check if it is a pick line
+                    # 6th character should be alpha (phase name: P or S)
+                    # other character should be digits (date/time)
+                    if not (line[5].isalpha() and
+                                     line[9].isdigit() and
+                                     line[20].isdigit()):
+                        continue
 
-    picks = []
+                    #pick = __new_pick__()
+                    pick = Pick()
+                    pick.station  = line[0:4]
+                    pick.flag     = line[4:5]
+                    pick.phase    = line[5:6]
+                    pick.polarity = line[6:7]
+                    try:
+                        pick.quality = int(line[7:8])
+                    except ValueError:
+                        # If we cannot read pick quality,
+                        # we give the pick the lowest quality
+                        pick.quality = 4
+                    timestr = line[9:24]
+                    dt = datetime.strptime(timestr, '%y%m%d%H%M%S.%f')
+                    pick.time = UTCDateTime(dt)
 
-    if __is_hypo_format(fp):
-        # Corinth phase file format is hypo
-        for line in fp.readlines():
-            # remove newline
-            line = line.replace('\n','')
-            # skip separator and empty lines
-            stripped_line = line.replace(' ','')
-            if stripped_line == '10' or stripped_line == '':
-                continue
-            # Check if it is a pick line
-            # 6th character should be alpha (phase name: P or S)
-            # other character should be digits (date/time)
-            if not (line[5].isalpha() and
-                             line[9].isdigit() and
-                             line[20].isdigit()):
-                continue
+                    picks.append(pick)
 
-            #pick = __new_pick__()
-            pick = Pick()
-            pick.station  = line[0:4]
-            pick.flag     = line[4:5]
-            pick.phase    = line[5:6]
-            pick.polarity = line[6:7]
-            try:
-                pick.quality = int(line[7:8])
-            except ValueError:
-                # If we cannot read pick quality,
-                # we give the pick the lowest quality
-                pick.quality = 4
-            timestr       = line[9:24]
-            dt = datetime.strptime(timestr, '%y%m%d%H%M%S.%f')
-            pick.time = UTCDateTime(dt)
+                    try:
+                        stime = line[31:36]
+                    except:
+                        continue
+                    if stime.replace(' ','') == '':
+                        continue
 
-            picks.append(pick)
+                    #pick2 = __new_pick__()
+                    pick2 = Pick()
+                    pick2.station  = pick.station
+                    pick2.flag     = line[36:37]
+                    pick2.phase    = line[37:38]
+                    pick2.polarity = line[38:39]
+                    try:
+                        pick2.quality = int(line[39:40])
+                    except ValueError:
+                        # If we cannot read pick quality,
+                        # we give the pick the lowest quality
+                        pick2.quality = 4
+                    pick2.time = pick.time + float(stime)
 
-            try: stime = line[31:36]
-            except: continue
-            if stime.replace(' ','') == '': continue
-
-            #pick2 = __new_pick__()
-            pick2 = Pick()
-            pick2.station  = pick.station
-            pick2.flag     = line[36:37]
-            pick2.phase    = line[37:38]
-            pick2.polarity = line[38:39]
-            try:
-                pick2.quality = int(line[39:40])
-            except ValueError:
-                # If we cannot read pick quality,
-                # we give the pick the lowest quality
-                pick2.quality = 4
-            pick2.time     = pick.time + float(stime)
-
-            picks.append(pick2)
-
-            fp.close()
-            return picks
-        else:
-            raise IOError('%s: Not a phase file' % pick_file)
+                    picks.append(pick2)
+            else:
+                raise IOError('%s: Not a phase file' % pick_file)
+    except IOError, message:
+        logging.error(message)
+        ssp_exit(1)
+    return picks
 
 
 
@@ -534,9 +541,8 @@ def read_traces(config):
     # traces can be defined in a pickle catalog (Antilles format)...
     if config.pickle_catalog:
         sys.path.append(config.pickle_classpath)
-        fp = open(config.pickle_catalog, 'rb')
-        catalog = pickle.load(fp)
-        fp.close()
+        with open(config.pickle_catalog, 'rb') as fp:
+            catalog = pickle.load(fp)
         event = [ ev for ev in catalog if ev.event_id == config.options.evid ][0]
         hypo = __parse_hypocenter__(event)
         st = Stream()

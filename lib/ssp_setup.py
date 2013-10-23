@@ -194,7 +194,8 @@ def __write_sample_config(configspec, progname):
     c.initial_comment = configspec.initial_comment
     c.comments = configspec.comments
     configfile = progname + '.conf'
-    c.write(open(configfile, 'w'))
+    with open(configfile, 'w') as fp:
+        c.write(fp)
     print 'Sample config file written to: ' + configfile
 
 def configure(progname='source_spec'):

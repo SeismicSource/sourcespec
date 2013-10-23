@@ -10,7 +10,8 @@ from ssp_util import moment_to_mag, mag_to_moment
 
 def station_correction(spec_st, config):
     res_filepath = config.residuals_filepath
-    residual = pickle.load(open(res_filepath,'rb'))
+    with open(res_filepath,'rb') as fp:
+        residual = pickle.load(fp)
 
     for spec in [spec for spec in spec_st if (spec.stats.channel=='H')]:
         station = spec.stats.station
