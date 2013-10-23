@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ssp_process_traces.py
 #
-# Builds spectra for source_spec 
+# Builds spectra for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>,
@@ -46,10 +46,10 @@ def __compute_h__(spec_st, instrtype):
             spec_h.data += np.power(spec.data, 2)
     spec_h.data = np.sqrt(spec_h.data)
     return spec_h
-        
+
 
 def build_spectra(config, st, noise_st=None):
-    ''' 
+    '''
     Builds spectra and the spec_st object.
     Computes S-wave (displacement) spectra from
     accelerometers and velocimeters, uncorrected for attenuation,
@@ -83,7 +83,7 @@ def build_spectra(config, st, noise_st=None):
         if nzeros > npts/4:
             logging.warning('%s: Too many gaps for the selected cut interval: skipping trace' % traceId)
             continue
-        
+
         # If the check is ok, recover the full trace
         # (it will be cutted later on)
         trace_cut = copy(trace)
@@ -183,7 +183,7 @@ def build_spectra(config, st, noise_st=None):
         # coefficient for converting displ spectrum
         # to seismic moment (Aki&Richards,1980)
         vs_m = config.vs*1000
-        vs3  = pow(vs_m,3) 
+        vs3  = pow(vs_m,3)
         coeff = 4 * math.pi * vs3 * config.rho /config.rps/2.
         dprint('coeff= %f' % coeff)
 
@@ -206,7 +206,6 @@ def build_spectra(config, st, noise_st=None):
             specnoise_cut = specnoise.slice(freq1, freq2)
             specnoise_st.append(specnoise_cut)
     # end of loop on traces
-
 
     # Add to spec_st the "H" component, obtained from the
     # modulus of all the available components.
@@ -252,10 +251,7 @@ def build_spectra(config, st, noise_st=None):
         for specnoise in specnoise_st:
             specnoise.data_mag = moment_to_mag(specnoise.data)
 
-
     if noise_st:
         return spec_st, specnoise_st, weight_st
     else:
         return spec_st
-
-
