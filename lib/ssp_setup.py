@@ -116,7 +116,7 @@ def __parse_args_source_model():
             help='Plot results')
 
     (options, args) = parser.parse_args()
-    if len(args) < 0:
+    if len(args) < 1:
         parser.print_usage(file=sys.stderr)
         sys.stderr.write("\tUse '-h' for help\n\n")
         sys.exit(1)
