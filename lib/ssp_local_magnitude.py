@@ -61,8 +61,8 @@ def local_magnitude(config, st, deconvolve=False):
         trace_signal.stats = deepcopy(trace_env.stats)
 
         p_arrival_time = wave_arrival(trace, config.vp, 'P')
-        t1 = p_arrival_time - 3
-        t2 = p_arrival_time + 3
+        t1 = p_arrival_time - config.pre_mag_time
+        t2 = p_arrival_time + config.pre_mag_time
 
         trace_noise.trim(starttime=t1, endtime=p_arrival_time, pad=True, fill_value=0)
         trace_signal.trim(starttime=p_arrival_time, endtime=t2, pad=True, fill_value=0)
@@ -82,7 +82,7 @@ def local_magnitude(config, st, deconvolve=False):
         #t_end = start_trace + triggeroff
         t1_end = p_arrival_time + triggeron
         if t1_end <= p_arrival_time:
-            t_end = p_arrival_time + 20
+            t_end = p_arrival_time + config.mag_win_length
         else:
             t_end = p_arrival_time + triggeron
         #print p_arrival_time, t_end, triggeron, triggeroff
