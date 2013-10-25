@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*- 
-# ssp_resiudals.py
+# -*- coding: utf8 -*-
+# ssp_residuals.py
 #
 # Computes station residuals from source_spec.py output
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
@@ -38,7 +38,8 @@ min_spectra = float(options.min_spectra)
 
 residual_dict = defaultdict(Stream)
 for resfile in glob(os.path.join(resdir, '*-res*.pickle')):
-    residual_st = pickle.load(open(resfile, 'rb'))
+    with open(resfile, 'rb') as fp:
+        residual_st = pickle.load(fp)
     for spec in residual_st:
         residual_dict[spec.id].append(spec)
 
@@ -84,8 +85,8 @@ for stat_id in sorted(residual_dict.keys()):
             plt.semilogx(spec.get_freq(), spec.data_mag, 'b-')
         plt.semilogx(spec_mean.get_freq(), spec_mean.data_mag, 'r-')
         plt.xlabel('frequency (Hz)')
-        plt.ylabel('residual amplitude (obs - synth) in magnitude unit')
-        plt.title('residuals : ' + stnm + ', ' + str(len(res)) + ' records.')
+        plt.ylabel('residual amplitude (obs - synth) in magnitude units')
+        plt.title('residuals : ' + stnm + ', ' + str(len(res)) + ' records')
         fig.savefig(figurefile, bbox_inches='tight')
 
 ### writes the mean residuals (the stations corrections) ###
