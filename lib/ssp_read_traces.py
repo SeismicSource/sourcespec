@@ -26,12 +26,12 @@ from ssp_setup import ssp_exit
 
 class Pick(AttribDict):
     def __init__(self):
-        self.station  = None
-        self.flag     = None
-        self.phase    = None
+        self.station = None
+        self.flag = None
+        self.phase = None
         self.polarity = None
-        self.quality  = None
-        self.time     = None
+        self.quality = None
+        self.time = None
 
 
 # TRACE MANIPULATION ----------------------------------------------------------
@@ -262,7 +262,8 @@ def __add_picks__(trace, picks):
 
 # FILE PARSING ----------------------------------------------------------------
 def __read_dataless__(path):
-    if path == None: return None
+    if path == None:
+        return None
 
     logging.info('Reading dataless...')
     dataless = dict()
@@ -289,7 +290,8 @@ def __read_paz__(path):
     (4) paz file name (without prefix and suffix) *has* to be
         the trace_id (NET.STA.LOC.CHAN) of the corresponding trace
     '''
-    if path == None: return None
+    if path == None:
+        return None
 
     from obspy.sac.sacio import attach_paz
     from obspy.core import Trace
