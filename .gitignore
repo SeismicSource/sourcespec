@@ -15,7 +15,8 @@ testdata/CRL/PZ.new_20120221/
 source_spec.conf
 
 #Sphinx doc
-_build
+doc/
+doc_src/doctrees
 
 #Temporary files
 *~
