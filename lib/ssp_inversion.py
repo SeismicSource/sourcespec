@@ -27,11 +27,10 @@ class Bounds():
         if any(math.isnan(x) for x in config.Qo_min_max):
             t_star_min_max = self.__nan_to_none__(config.t_star_min_max)
         else:
-            t_star_min_max = self.__Qo_to_t_star__(hd, config)
-        self.bounds = [ Mw_min_max,
-                        fc_min_max,
-                        t_star_min_max
-                      ]
+            t_star_min_max = self.__Qo_to_t_star__()
+        self.bounds = [Mw_min_max,
+                       fc_min_max,
+                       t_star_min_max]
 
     def __nan_to_none__(self, val):
         ret = [None if math.isnan(x) else x for x in tuple(val)]
