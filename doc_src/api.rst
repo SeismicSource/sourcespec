@@ -2,19 +2,35 @@
 SourceSpec API
 ##############
 
-Title
-=====================
+SourceSpec has a modular structure. Each module corresponds to a specific
+function or class of functions.
 
-Blabla
+SourceSpec modules are presented below, following the logical order on which
+they're used within ``source_spec.py``.
+
+ssp_setup
+---------
+.. automodule:: ssp_setup
+   :members:
+
+ssp_read_traces
+---------------
+.. automodule:: ssp_read_traces
+   :members:
+
+ssp_process_traces
+------------------
+.. automodule:: ssp_process_traces
+   :members:
 
 ssp_build_spectra
 -----------------
 .. automodule:: ssp_build_spectra
    :members:
 
-ssp_correction
---------------
-.. automodule:: ssp_correction
+ssp_local_magnitude
+-------------------
+.. automodule:: ssp_local_magnitude
    :members:
 
 ssp_inversion
@@ -22,9 +38,19 @@ ssp_inversion
 .. automodule:: ssp_inversion
    :members:
 
-ssp_local_magnitude
--------------------
-.. automodule:: ssp_local_magnitude
+ssp_spectral_model
+------------------
+.. automodule:: ssp_spectral_model
+   :members:
+
+ssp_residuals
+-------------
+.. automodule:: ssp_residuals
+   :members:
+
+ssp_correction
+--------------
+.. automodule:: ssp_correction
    :members:
 
 ssp_output
@@ -35,31 +61,6 @@ ssp_output
 ssp_plot_spectra
 ----------------
 .. automodule:: ssp_plot_spectra
-   :members:
-
-ssp_process_traces
-------------------
-.. automodule:: ssp_process_traces
-   :members:
-
-ssp_read_traces
----------------
-.. automodule:: ssp_read_traces
-   :members:
-
-ssp_residuals
--------------
-.. automodule:: ssp_residuals
-   :members:
-
-ssp_setup
----------
-.. automodule:: ssp_setup
-   :members:
-
-ssp_spectral_model
-------------------
-.. automodule:: ssp_spectral_model
    :members:
 
 ssp_util

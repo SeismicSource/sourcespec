@@ -1,14 +1,20 @@
 # -*- coding: utf8 -*-
 # ssp_correction.py
 #
-# Spectral station correction calculated from ssp_residuals.py
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Agnes Chounet <chounet@ipgp.fr>
+'''
+Spectral station correction calculated from ssp_residuals.
+'''
 import cPickle as pickle
 import logging
 from ssp_util import moment_to_mag, mag_to_moment
 
 def station_correction(spec_st, config):
+    '''
+    Corrects spectra using station-average residuals
+    obtained after a first run.
+    '''
     res_filepath = config.residuals_filepath
     with open(res_filepath,'rb') as fp:
         residual = pickle.load(fp)

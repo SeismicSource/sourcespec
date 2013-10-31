@@ -1,9 +1,11 @@
 # -*- coding: utf8 -*-
 # ssp_residuals.py
 #
-# Spectral residual routine for source_spec
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Agnes Chounet <chounet@ipgp.fr>
+'''
+Spectral residual routine for source_spec.
+'''
 import os
 import logging
 import cPickle as pickle

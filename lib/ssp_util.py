@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 # ssp_util.py
 #
-# Utility functions for source_spec
-# (c) 2012 Claudio Satriano <satriano@ipgp.fr>
+# (c) 2012-2013 Claudio Satriano <satriano@ipgp.fr>
+'''
+Utility functions for source_spec.
+'''
 from __future__ import division
 import logging
 import warnings
@@ -29,6 +31,12 @@ def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
     return amp_minmax, freq_minmax
 
 def wave_arrival(trace, vel, phase):
+    '''
+    Obtain arrival time for a given phase and a given trace.
+
+    Returns the theoretical arrival time if no pick is available
+    or if the pick is too different from the theoretical arrival.
+    '''
     if trace.stats.hypo.origin_time != None:
         theo_pick_time =\
             trace.stats.hypo.origin_time + trace.stats.hypo_dist / vel
@@ -48,12 +56,18 @@ def wave_arrival(trace, vel, phase):
     return theo_pick_time
 
 def moment_to_mag(data):
+    ''' Convert moment to magnitude.'''
     return (np.log10(data) - 9.1 ) / 1.5
 
 def mag_to_moment(data):
+    ''' Convert magnitude to moment.'''
     return np.power(10, (1.5 * data + 9.1))
 
 def select_trace(stream, traceid, instrtype):
+    '''
+    Select trace from stream using traceid
+    and instrument type.
+    '''
     return [tr for tr in stream.select(id=traceid)
             if tr.stats.instrtype == instrtype][0]
 # -----------------------------------------------------------------------------
@@ -134,10 +148,12 @@ def toDeg(radians):
     degrees = 180 * radians / math.pi
     return degrees
 
-#distance between two point on the earth
-#Haversine formula
-#http://www.movable-type.co.uk/scripts/latlong.html
 def calc_dist(lat1, lon1, lat2, lon2):
+    '''
+    Distance between two point on the earth.
+    Haversine formula:
+    http://www.movable-type.co.uk/scripts/latlong.html
+    '''
     R = 6371 # km
     dLat = toRad(lat2-lat1)
     dLon = toRad(lon2-lon1)
@@ -164,6 +180,6 @@ def hypo_dist(trace):
     epi_dist, gcarc = calc_dist(stla, stlo, evla, evlo)
     hypo_dist = math.sqrt(epi_dist**2 + (stel+evdp)**2)
     trace.stats.hypo_dist = hypo_dist
-    trace.stats.gcarc     = gcarc
+    trace.stats.gcarc = gcarc
     return hypo_dist
 # -----------------------------------------------------------------------------

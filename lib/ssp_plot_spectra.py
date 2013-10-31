@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # ssp_plot_spectra.py
 #
-# Spectral plotting for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
+'''
+Spectral plotting routine.
+'''
 from __future__ import division
 import sys
 import os
@@ -13,15 +15,19 @@ import logging
 from ssp_util import spec_minmax, moment_to_mag, mag_to_moment
 
 synth_colors = [
-    '#201F1F', 
-    '#94F75B', 
-    '#3EC2AA', 
+    '#201F1F',
+    '#94F75B',
+    '#3EC2AA',
     '#FECC38',
-    '#FC4384', 
+    '#FC4384',
 ]
 
 def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         stack_plots=False, plottype='regular'):
+    '''
+    Plot spectra for signal and noise.
+    Display to screen and/or save to file.
+    '''
     # Unload matplotlib modules (which have been loaded by obspy.signal).
     # Source:
     #   http://stackoverflow.com/questions/3285193/how-to-switch-backends-in-matplotlib-python
@@ -55,7 +61,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         for spec in spec_st_sel.traces:
             moment_minmax, freq_minmax =\
                 spec_minmax(spec.data, spec.get_freq(),
-                            moment_minmax, freq_minmax) 
+                            moment_minmax, freq_minmax)
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
             nplots += 1
     nlines = int(math.ceil(nplots/ncols))
@@ -97,7 +103,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             plt.setp(ax.get_yticklabels(), visible=False)
             ax.tick_params(width=2) #FIXME: ticks are below grid lines!
 
-            # ax2 has magnitude units 
+            # ax2 has magnitude units
             if plottype != 'weight':
                 ax2 = ax.twinx()
                 ax2.set_ylim(mag_minmax)
@@ -125,11 +131,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                         color = synth_colors[(plotn-1)%len(synth_colors)]
                     else:
                         color='black'
-                if plottype == 'regular' or plottype == 'noise': 
+                if plottype == 'regular' or plottype == 'noise':
                     ax.loglog(spec.get_freq(), spec.data, color=color, zorder=20)
                     if orientation == 'Synth':
                         ax.axvline(spec.stats.par['fc'], color='#999999', linewidth=2., zorder=1)
-                elif plottype == 'weight': 
+                elif plottype == 'weight':
                     ax.semilogx(spec.get_freq(), spec.data, color=color, zorder=20)
                 else:
                     raise ValueError, 'Unknown plot type: %s' % plottype
@@ -169,10 +175,10 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     else:
                         text_y2 = 0.04
                         color = 'black'
-                    fc = spec.stats.par['fc'] 
-                    Mw = spec.stats.par['Mw'] 
+                    fc = spec.stats.par['fc']
+                    Mw = spec.stats.par['Mw']
                     Mo = mag_to_moment(Mw)
-                    t_star = spec.stats.par['t_star'] 
+                    t_star = spec.stats.par['t_star']
                     ax.text(0.05, text_y2, 'Mo: %.2g Mw: %.1f fc: %.2fHz t*: %.2fs' % (Mo, Mw, fc, t_star),
                             horizontalalignment='left',
                             verticalalignment='bottom',
@@ -203,7 +209,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             if ax2:
                 plt.setp(ax2.get_yticklabels(), visible=True)
                 ax2.set_ylabel('Magnitude')
-    
+
     if config.PLOT_SHOW:
         plt.show()
     if config.PLOT_SAVE:
@@ -212,10 +218,10 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         if plottype == 'regular':
             suffix = '.ssp.'
             message = 'Spectral'
-        elif plottype == 'noise': 
+        elif plottype == 'noise':
             suffix = '.sspnoise.'
             message = 'Noise'
-        elif plottype == 'weight': 
+        elif plottype == 'weight':
             suffix = '.sspweight.'
             message = 'Weight'
         figurefile = os.path.join(config.options.outdir, evid + suffix +\

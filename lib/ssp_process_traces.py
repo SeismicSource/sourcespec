@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # ssp_process_traces.py
 #
-# Trace processing for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
+'''
+Trace processing for source_spec.
+'''
 from __future__ import division
 import logging
 import math
@@ -15,7 +17,9 @@ from ssp_setup import dprint, ssp_exit
 from ssp_util import remove_instr_response, hypo_dist, wave_arrival, cosine_taper
 
 def process_traces(config, st):
-    ''' Removes mean, deconvolves, and ignores unwanted components '''
+    '''
+    Removes mean, deconvolves, and ignores unwanted components.
+    '''
     out_st = Stream()
     out_st_noise = Stream()
     for orig_trace in st.traces:

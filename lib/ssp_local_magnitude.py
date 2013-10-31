@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # ssp_local_magnitude.py
 #
-# Local magnitude calculation for source_spec 
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
+'''
+Local magnitude calculation for source_spec.
+'''
 from __future__ import division
 import logging
 import numpy as np
@@ -12,12 +14,13 @@ from scipy.integrate import cumtrapz
 from copy import deepcopy, copy
 from obspy.signal import estimateMagnitude, envelope
 from ssp_util import wave_arrival, cosine_taper
-#import matplotlib.pyplot as plt
 from obspy.signal.util import smooth
 from obspy.signal.trigger import triggerOnset
 
 def local_magnitude(config, st, deconvolve=False):
-    ''' Uses min/max amplitude for local magnitude estimation'''
+    '''
+    Computes local magnitude from min/max amplitude.
+    '''
     magnitudes = []
     for trace in st.traces:
         traceId = trace.getId()
@@ -72,7 +75,7 @@ def local_magnitude(config, st, deconvolve=False):
 
         if ampmax <= ampmin:
             continue
-        
+
         trigger = triggerOnset(trace_env.data, ampmax, ampmin, max_len=9e99, max_len_delete=False)[0]
 
         df = trace.stats.sampling_rate
@@ -137,11 +140,11 @@ def local_magnitude(config, st, deconvolve=False):
         # ...and taper
         cosine_taper(trace_cut.data, width=config.taper_halfwidth)
 
-        delta_amp = trace_cut.data.max() - trace_cut.data.min() 
-        delta_t = trace_cut.data.argmax() - trace_cut.data.argmin()    
+        delta_amp = trace_cut.data.max() - trace_cut.data.min()
+        delta_t = trace_cut.data.argmax() - trace_cut.data.argmin()
         delta_t = delta_t / trace_cut.stats.sampling_rate
 
-        # estimate local magnitude 
+        # estimate local magnitude
         if deconvolve:
             paz = trace_cut.stats.paz
         else:

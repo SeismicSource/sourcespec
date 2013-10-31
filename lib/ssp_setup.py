@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 # ssp_setup.py
 #
-# Setup functions for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #          Agnes Chounet <chounet@ipgp.fr>
+'''
+Setup functions for source_spec
+'''
 import sys
 import os
 import logging
@@ -46,11 +48,17 @@ else:
 
 DEBUG=False
 def dprint(string):
+    '''
+    Print debug information.
+    '''
     if DEBUG:
         sys.stderr.write(string)
         sys.stderr.write('\n')
 
 def __parse_args_source_spec():
+    '''
+    Parse command line arguments for ``source_spec.py``
+    '''
     usage = 'usage: %prog [options] trace_file(s) | trace_dir'
 
     parser = OptionParser(usage=usage);
@@ -85,6 +93,9 @@ def __parse_args_source_spec():
     return options, args
 
 def __parse_args_source_model():
+    '''
+    Parse command line arguments for ``source_model.py``
+    '''
     usage = 'usage: %prog [options] trace_file(s) | trace_dir'
 
     parser = OptionParser(usage=usage);
@@ -199,6 +210,10 @@ def __write_sample_config(configspec, progname):
     print 'Sample config file written to: ' + configfile
 
 def configure(progname='source_spec'):
+    '''
+    Parse command line arguments and read config file.
+    Returns a ``Config`` object.
+    '''
     global DEBUG
     if progname == 'source_spec':
         options, args = __parse_args_source_spec()
@@ -246,6 +261,9 @@ def configure(progname='source_spec'):
 
 oldlogfile=None
 def setup_logging(config, basename=None):
+    '''
+    Setup the logging infrastructure.
+    '''
     global oldlogfile
     # Create outdir
     if not os.path.exists(config.options.outdir):

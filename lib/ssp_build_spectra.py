@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 # ssp_process_traces.py
 #
-# Builds spectra for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #          Agnes Chounet <chounet@ipgp.fr>
+'''
+Build spectral objects.
+'''
 from __future__ import division
 import logging
 import numpy as np
@@ -54,7 +56,7 @@ def build_spectra(config, st, noise_st=None):
     Computes S-wave (displacement) spectra from
     accelerometers and velocimeters, uncorrected for attenuation,
     corrected for instrumental constants, normalized by
-    hypocentral distance
+    hypocentral distance.
     '''
     spec_st = Stream()
     specnoise_st = Stream()

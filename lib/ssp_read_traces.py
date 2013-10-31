@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 # ssp_read_traces.py
 #
-# Read traces for source_spec
 # All the functions whose name is between "__" are intended to be private
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
+'''
+Read traces in multiple formats of data and metadata.
+'''
 from __future__ import division
 import sys
 import os
@@ -25,6 +27,9 @@ from ssp_setup import ssp_exit
 
 
 class Pick(AttribDict):
+    '''
+    A pick object.
+    '''
     def __init__(self):
         self.station = None
         self.flag = None
@@ -527,6 +532,9 @@ def __set_pick_file_path__(config):
 
 # Public interface:
 def read_traces(config):
+    '''
+    Read traces, store waveforms and metadata.
+    '''
     # read dataless
     dataless = __read_dataless__(config.dataless)
     # read PAZ (normally this is an alternative to dataless)

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # ssp_output.py
 #
-# Output functions for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
+'''
+Output functions for source_spec.
+'''
 from __future__ import division
 import os
 import logging
@@ -19,6 +21,10 @@ def gstd(array):
     return np.exp(np.sqrt(arg))
 
 def write_output(config, evid, sourcepar):
+    '''
+    Write inversion results to a plain text file and/or
+    to a SQLite database file.
+    '''
     if len(sourcepar) == 0:
         logging.info('No source parameter calculated')
         ssp_exit()

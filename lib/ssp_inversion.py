@@ -1,11 +1,13 @@
 # -*- coding: utf8 -*-
 # ssp_inversion.py
 #
-# Spectral inversion routine for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #          Agnes Chounet <chounet@ipgp.fr>
+'''
+Spectral inversion routines for source_spec.
+'''
 from __future__ import division
 import logging
 import math
@@ -116,7 +118,7 @@ class Bounds():
 
 def spectral_inversion(config, spec_st, weight_st, Ml):
     '''
-    Inversion of displacement spectra
+    Inversion of displacement spectra.
     '''
 
     if config.noise_weighting:
