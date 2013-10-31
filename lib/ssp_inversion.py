@@ -37,9 +37,9 @@ class Bounds():
         return tuple(ret)
 
     def __Qo_to_t_star__(self):
-        t_star_min_max =\
+        t_star_max, t_star_min =\
             self.hd/(self.config.vs*np.array(self.config.Qo_min_max))
-        return self.__nan_to_none__(t_star_min_max)
+        return self.__nan_to_none__((t_star_min, t_star_max))
 
     def __str__(self):
         s = 'Mw: %s, %s; ' % tuple(map(str, self.bounds[0]))
