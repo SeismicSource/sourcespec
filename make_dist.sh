@@ -4,6 +4,8 @@ export LC_ALL=C
 git_tree=HEAD
 branch=`git branch | grep \* | awk '{print $2}'`
 version=`git tag | tail -n1`
+timestamp=`date +"%Y%m%d"`
+suffix=$timestamp
 if [ $# -ge 1 ]
 then
     if [ $1 == "release" ]
@@ -14,16 +16,15 @@ then
             exit 1
         fi
         git_tree=$version
+        suffix=$version
     fi
 fi
 
-timestamp=`date +"%Y%m%d"`
-
 if [ $branch == "master" ]
 then
-    dir=source_spec_${timestamp}
+    dir=source_spec_${suffix}
 else
-    dir=source_spec_${branch}_${timestamp}
+    dir=source_spec_${branch}_${suffix}
 fi
 tarfile=${dir}.tgz
 
