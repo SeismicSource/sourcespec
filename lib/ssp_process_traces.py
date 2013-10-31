@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ssp_process_traces.py
 #
-# Trace processing for source_spec 
+# Trace processing for source_spec
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
 #          Emanuela Matrullo <matrullo@geologie.ens.fr>
@@ -71,7 +71,7 @@ def process_traces(config, st):
         #noise_win_length = noise_end_t - noise_start_t
         noise_start_t = p_arrival_time - config.pre_p_time
         noise_end_t = noise_start_t + config.noise_win_length
-        
+
         trace_noise = copy(trace)
         trace_noise.stats = deepcopy(trace.stats)
         # remove the mean...
@@ -80,7 +80,7 @@ def process_traces(config, st):
         trace_noise.detrend(type='linear')
         trace_noise.trim(starttime=noise_start_t, endtime=noise_end_t, pad=True, fill_value=0)
         #trace_noise.plot()
-        
+
         # S window for s/n ratio
         s_start_t = s_arrival_time - config.pre_s_time
         #print traceId, s_arrival_time, config.pre_s_time
@@ -94,7 +94,7 @@ def process_traces(config, st):
         trace_cutS.detrend(type='linear')
         trace_cutS.trim(starttime=s_start_t, endtime=s_end_t, pad=True, fill_value=0)
         #trace_cutS.plot()
-        
+
         rmsnoise2 = np.power(trace_noise.data, 2).sum()
         rmsnoise = np.sqrt(rmsnoise2)
         rmsS2 = np.power(trace_cutS.data, 2).sum()

@@ -17,39 +17,101 @@ from ssp_util import mag_to_moment, select_trace
 from obspy.core.util.geodetics import gps2DistAzimuth
 
 
+class InitialValues():
+    '''
+    Initial values for spectral inversion.
+    '''
+    def __init__(self, Mw_0=None, fc_0=None, t_star_0=None):
+        self.Mw_0 = Mw_0
+        self.fc_0 = fc_0
+        self.t_star_0 = t_star_0
+
+    def __str__(self):
+        s = 'Mw_0: %s; ' % round(self.Mw_0, 4)
+        s += 'fc_0: %s; ' % round(self.fc_0, 4)
+        s += 't_star_0: %s' % round(self.t_star_0, 4)
+        return s
+
+    def get_params0(self):
+        return (self.Mw_0, self.fc_0, self.t_star_0)
+
+
 class Bounds():
-
-    def __init__(self, hd, config):
-        self.hd = float(hd)
+    '''
+    Bounds for bounded spectral inversion.
+    '''
+    def __init__(self, config, spec, initial_values):
         self.config = config
-        Mw_min_max = self.__nan_to_none__(config.Mw_min_max)
-        fc_min_max = self.__nan_to_none__(config.fc_min_max)
+        self.spec = spec
+        self.hd = spec.stats.hypo_dist
+        self.ini_values = initial_values
+        self.Mw_min, self.Mw_max = self._nan_to_none(config.Mw_min_max)
+        self.fc_min, self.fc_max = self._nan_to_none(config.fc_min_max)
         if any(math.isnan(x) for x in config.Qo_min_max):
-            t_star_min_max = self.__nan_to_none__(config.t_star_min_max)
+            self.t_star_min, self.t_star_max =\
+                self._nan_to_none(config.t_star_min_max)
         else:
-            t_star_min_max = self.__Qo_to_t_star__()
-        self.bounds = [Mw_min_max,
-                       fc_min_max,
-                       t_star_min_max]
+            self.t_star_min, self.t_star_max = self._Qo_to_t_star()
+        self.bounds = ((self.Mw_min, self.Mw_max),
+                       (self.fc_min, self.fc_max),
+                       (self.t_star_min, self.t_star_max))
+        self._fix_initial_values()
 
-    def __nan_to_none__(self, val):
+    def __str__(self):
+        s = 'Mw: %s, %s; ' %\
+            tuple(round(x, 4) if x is not None else x for x in self.bounds[0])
+        s += 'fc: %s, %s; ' %\
+            tuple(round(x, 4) if x is not None else x for x in self.bounds[1])
+        s += 't_star: %s, %s' %\
+            tuple(round(x, 4) if x is not None else x for x in self.bounds[2])
+        return s
+
+    def _nan_to_none(self, val):
         ret = [None if math.isnan(x) else x for x in tuple(val)]
         return tuple(ret)
 
-    def __Qo_to_t_star__(self):
-        t_star_min_max =\
+    def _Qo_to_t_star(self):
+        t_star_max, t_star_min =\
             self.hd/(self.config.vs*np.array(self.config.Qo_min_max))
-        return self.__nan_to_none__(t_star_min_max)
+        return self._nan_to_none((t_star_min, t_star_max))
 
-    def __str__(self):
-        s = 'Mw: %s, %s; ' % tuple(map(str, self.bounds[0]))
-        s += 'fc: %s, %s; ' % tuple(map(str, self.bounds[1]))
-        s += 't_star: %s, %s' % tuple(map(str, self.bounds[2]))
-        return s
+    def _fix_initial_values(self):
+        if (self.Mw_min is not None and
+            self.Mw_max is not None and
+            (self.ini_values.Mw_0 is None or
+             self.ini_values.Mw_0 < self.Mw_min or
+             self.ini_values.Mw_0 > self.Mw_max)):
+            Mw_0 = (self.Mw_max - self.Mw_min) / 2.
+            logging.warning('%s %s: initial Mw value: %s outside '
+                            'bounds. Using bound average: %s' %
+                            (self.spec.id, self.spec.stats.instrtype,
+                             self.ini_values_Mw_0, round(Mw_0, 4)))
+            self.ini_values.Mw_0 = Mw_0
+        if (self.fc_min is not None and
+            self.fc_max is not None and
+            (self.ini_values.fc_0 is None or
+             self.ini_values.fc_0 < self.fc_min or
+             self.ini_values.fc_0 > self.fc_max)):
+            fc_0 = (self.fc_max - self.fc_min) / 2.
+            logging.warning('%s %s: initial fc value: %s outside '
+                            'bounds. Using bound average: %s' %
+                            (self.spec.id, self.spec.stats.instrtype,
+                             self.ini_values.fc_0, round(fc_0, 4)))
+            self.ini_values.fc_0 = fc_0
+        if (self.t_star_min is not None and
+            self.t_star_max is not None and
+            (self.ini_values.t_star_0 is None or
+             self.ini_values.t_star_0 < self.t_star_min or
+             self.ini_values.t_star_0 > self.t_star_max)):
+            t_star_0 = (self.t_star_max - self.t_star_min) / 2.
+            logging.warning('%s %s: initial t_star value: %s outside '
+                            'bounds. Using bound average: %s' %
+                            (self.spec.id, self.spec.stats.instrtype,
+                             self.ini_values.t_star_0, round(t_star_0, 4)))
+            self.ini_values.t_star_0 = t_star_0
 
     def get_bounds(self):
         return self.bounds
-
 
 
 def spectral_inversion(config, spec_st, weight_st, Ml):
@@ -98,11 +160,6 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             # initial value for t_star
             t_star_0 = config.t_star_0
 
-            # print initial values of fc, M0 and t_star
-            dprint('INITIAL CORNER FREQUENCY= %f' % fc_0)
-            dprint('INITIAL MOMENT MAGNITUDE= %f' % Mw_0)
-            dprint('INITIAL T_STAR= %f' % t_star_0)
-
             hd = spec.stats.hypo_dist
             hd_m = hd*1000
 
@@ -121,7 +178,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             dprint('coeff= %f' % coeff)
 
             params_name = ('Mw', 'fc', 't_star')
-            params_0 = np.array([Mw_0, fc_0, t_star_0])
+            initial_values = InitialValues(Mw_0, fc_0, t_star_0)
 
             xdata = spec.get_freq()
             ydata = amp
@@ -143,17 +200,25 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             # or the truncated Newton algorithm (TNC), with bounds.
             try:
                 if config.inv_algorithm == 'TNC':
-                    bounds = Bounds(hd, config)
+                    bounds = Bounds(config, spec, initial_values)
+                    logging.info('%s %s: initial values: %s' %
+                            (spec.id, spec.stats.instrtype, str(initial_values)))
                     logging.info('%s %s: bounds: %s' %
                             (spec.id, spec.stats.instrtype, str(bounds)))
                     minimize_func = objective_func(xdata, ydata, weight)
-                    res = minimize(
-                        minimize_func, params_0, method='TNC',
-                        callback=callback, bounds=bounds.get_bounds())
+                    res =\
+                        minimize(minimize_func,
+                                 x0=initial_values.get_params0(), method='TNC',
+                                 callback=callback, bounds=bounds.get_bounds())
                     params_opt = res.x
                 elif config.inv_algorithm == 'LM':
-                    params_opt, params_cov = curve_fit(
-                        spectral_model, xdata, ydata, p0=params_0, sigma=yerr)
+                    logging.info('%s %s: initial values: %s' %
+                            (spec.id, spec.stats.instrtype, str(initial_values)))
+                    params_opt, params_cov =\
+                        curve_fit(spectral_model,
+                                  xdata, ydata,
+                                  p0=initial_values.get_params0(),
+                                  sigma=yerr)
             except RuntimeError:
                     logging.warning('Unable to fit spectral model for station: %s' % station)
 

@@ -22,7 +22,7 @@ v0.6 - 2013-06-05 - Several improvements:
 	- Largely improved plotting function
 	- More data formats supported (Antilles, IPOC)
 	- source_model: a code for plotting theoretical spectra
-	- Code refactoring	
+	- Code refactoring
 v0.5 - 2013-02-10 - Several improvements:
 	- Azimuth computation
 	- Construction of an overall database
@@ -35,7 +35,7 @@ v0.3 - 2012-02-10 - Several improvements:
 	- Output is no more printed at screen, but to file
 	- The plots can be saved to a file as well
 	- We differentiate between short periods and broad bands
-v0.2 - 2012-02-06 - Extended and generalized for the CRL application 
+v0.2 - 2012-02-06 - Extended and generalized for the CRL application
 v0.1 - 2012-01-17 - Initial Python port
 
 
