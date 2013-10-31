@@ -13,6 +13,7 @@ v0.7 - 2013-??-??
 	- Station residuals, through ssp_residuals.py
 	- source_model can now output tables of trade-off
 		between parameters
+	- Documentation!
 v0.6 - 2013-06-05 - Several improvements:
 	- Signal to noise weighitng
 	- Improved local magnitude computation
