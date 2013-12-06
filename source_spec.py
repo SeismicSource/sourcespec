@@ -31,9 +31,9 @@ def main():
     setup_logging(config, evid)
 
     # Deconvolve, filter, cut traces:
-    proc_st, noise_st = process_traces(config, st)
+    proc_st = process_traces(config, st)
     # Build spectra (amplitude in magnitude units)
-    spec_st, specnoise_st, weight_st = build_spectra(config, proc_st, noise_st)
+    spec_st, specnoise_st, weight_st = build_spectra(config, proc_st, noise_weight=True)
 
     #Ml = local_magnitude(config, proc_st)
     Ml = local_magnitude(config, st, deconvolve=True)

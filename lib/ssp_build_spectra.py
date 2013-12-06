@@ -17,7 +17,7 @@ from copy import deepcopy, copy
 from obspy.core import Stream
 from ssp_setup import dprint
 from ssp_util import wave_arrival, cosine_taper,\
-        moment_to_mag, select_trace
+        moment_to_mag
 from ssp_correction import station_correction
 import spectrum
 from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
@@ -50,7 +50,7 @@ def __compute_h__(spec_st, instrtype):
     return spec_h
 
 
-def build_spectra(config, st, noise_st=None):
+def build_spectra(config, st, noise_weight=False):
     '''
     Builds spectra and the spec_st object.
     Computes S-wave (displacement) spectra from
@@ -133,9 +133,16 @@ def build_spectra(config, st, noise_st=None):
         # Time domain processing
         for i in range(0, n_time_procs):
             __process__(trace_cut, bp_freqmin, bp_freqmax, integrate)
-            if noise_st:
-                trace_noise = select_trace(noise_st, traceId, instrtype)
-                __process__(trace_noise, bp_freqmin, bp_freqmax, integrate)
+
+        if noise_weight:
+            # Noise time window for weighting function:
+            p_arrival_time = wave_arrival(trace, config.vp, 'P')
+            noise_start_t = p_arrival_time - config.pre_p_time
+            noise_end_t = noise_start_t + config.s_win_length
+            # We inherit the same processing of trace_cut
+            # (which, despite its name, has not been yet cut!)
+            trace_noise = copy(trace_cut)
+            trace_noise.stats = deepcopy(trace_cut.stats)
 
         # trim...
         trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
@@ -150,6 +157,20 @@ def build_spectra(config, st, noise_st=None):
                     fill_value=0
                     )
 
+        if noise_weight:
+            # ...trim...
+            trace_noise.trim(starttime=noise_start_t, endtime=noise_end_t, pad=True, fill_value=0)
+            # ...taper...
+            cosine_taper(trace_noise.data, width=config.taper_halfwidth)
+            if not math.isnan(config.spectral_win_length):
+                # ...and zero pad to spectral_win_length
+                trace_noise.trim(
+                        starttime=noise_start_t,
+                        endtime=noise_start_t+config.spectral_win_length,
+                        pad=True,
+                        fill_value=0
+                        )
+
         # normalization for the hypocentral distance
         trace_cut.data *= trace_cut.stats.hypo_dist * 1000
 
@@ -161,7 +182,7 @@ def build_spectra(config, st, noise_st=None):
         spec.stats.hypo_dist = stats.hypo_dist
 
         # same processing for noise, if requested
-        if noise_st:
+        if noise_weight:
             cosine_taper(trace_noise.data, width=config.taper_halfwidth)
             trace_noise.data *= trace_noise.stats.hypo_dist * 1000
             specnoise = spectrum.do_spectrum(trace_noise)
@@ -174,7 +195,7 @@ def build_spectra(config, st, noise_st=None):
         # (performed only if config.time_domain_int == False)
         for i in range(0, n_freq_int):
             spec.data /= (2 * math.pi * spec.get_freq())
-            if noise_st:
+            if noise_weight:
                 specnoise.data /= (2 * math.pi * specnoise.get_freq())
 
         # smooth the abs of fft
@@ -193,7 +214,7 @@ def build_spectra(config, st, noise_st=None):
         spec.data *= coeff
 
         # same processing for noise, if requested
-        if noise_st:
+        if noise_weight:
             specnoise.data = konnoOhmachiSmoothing(specnoise.data,
                                           specnoise.get_freq(),
                                           40, normalize=True)
@@ -204,7 +225,7 @@ def build_spectra(config, st, noise_st=None):
         # append to spec streams
         spec_st.append(spec_cut)
 
-        if noise_st:
+        if noise_weight:
             specnoise_cut = specnoise.slice(freq1, freq2)
             specnoise_st.append(specnoise_cut)
     # end of loop on traces
@@ -215,7 +236,7 @@ def build_spectra(config, st, noise_st=None):
     # weighting function as well.
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
-        if noise_st:
+        if noise_weight:
             specnoise_st_sel = specnoise_st.select(station=station)
         for instrtype in set(x.stats.instrtype for x in spec_st_sel):
             spec_h = __compute_h__(spec_st_sel, instrtype)
@@ -223,7 +244,7 @@ def build_spectra(config, st, noise_st=None):
 
             # Compute "H" component for noise, if requested,
             # and weighting function.
-            if noise_st:
+            if noise_weight:
                 specnoise_h = __compute_h__(specnoise_st_sel, instrtype)
                 specnoise_st.append(specnoise_h)
 
@@ -249,11 +270,11 @@ def build_spectra(config, st, noise_st=None):
     if config.options.correction:
         spec_st = station_correction(spec_st, config)
 
-    if noise_st:
+    if noise_weight:
         for specnoise in specnoise_st:
             specnoise.data_mag = moment_to_mag(specnoise.data)
 
-    if noise_st:
+    if noise_weight:
         return spec_st, specnoise_st, weight_st
     else:
         return spec_st

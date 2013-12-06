@@ -9,19 +9,17 @@ Trace processing for source_spec.
 '''
 from __future__ import division
 import logging
-import math
 import numpy as np
 from copy import deepcopy, copy
 from obspy.core import Stream
 from ssp_setup import dprint, ssp_exit
-from ssp_util import remove_instr_response, hypo_dist, wave_arrival, cosine_taper
+from ssp_util import remove_instr_response, hypo_dist, wave_arrival
 
 def process_traces(config, st):
     '''
     Removes mean, deconvolves, and ignores unwanted components.
     '''
     out_st = Stream()
-    out_st_noise = Stream()
     for orig_trace in st.traces:
         # copy trace for manipulation
         trace = copy(orig_trace)
@@ -113,35 +111,11 @@ def process_traces(config, st):
             continue
         #### end signal/noise ratio
 
-        # Noise time window for weighting function:
-        noise_start_t = p_arrival_time - config.pre_p_time
-        noise_end_t = noise_start_t + config.s_win_length
-        trace_noise = copy(trace)
-        trace_noise.stats = deepcopy(trace.stats)
-        # remove the mean...
-        trace_noise.detrend(type='constant')
-        # ...and the linear trend...
-        trace_noise.detrend(type='linear')
-        # ...trim...
-        trace_noise.trim(starttime=noise_start_t, endtime=noise_end_t, pad=True, fill_value=0)
-        # ...taper...
-        cosine_taper(trace_noise.data, width=config.taper_halfwidth)
-        if not math.isnan(config.spectral_win_length):
-            # ...and zero pad to spectral_win_length
-            trace_noise.trim(
-                    starttime=noise_start_t,
-                    endtime=noise_start_t+config.spectral_win_length,
-                    pad=True,
-                    fill_value=0
-                    )
-
         orig_trace.stats.hypo_dist = hd
         out_st.append(trace)
-        out_st_noise.append(trace_noise)
 
-    if (len(out_st) == 0 or
-            len(out_st_noise) == 0):
+    if len(out_st) == 0:
         logging.error('No traces left! Exiting.')
         ssp_exit()
 
-    return out_st, out_st_noise
+    return out_st
