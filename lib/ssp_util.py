@@ -104,7 +104,9 @@ def smooth(x, window_len=11, window='hanning'):
     yy[nanindexes] = x[nanindexes]
     return yy
 
-def remove_instr_response(trace, just_sensitivity=False, pre_filt=(0.5, 0.6, 40., 45.)):
+def remove_instr_response(trace, correct='True', pre_filt=(0.5, 0.6, 40., 45.)):
+    if correct == 'False':
+        return trace
     traceId = trace.getId()
     paz = trace.stats.paz
     if paz == None:
@@ -120,8 +122,8 @@ def remove_instr_response(trace, just_sensitivity=False, pre_filt=(0.5, 0.6, 40.
     # If we don't have any pole or zero defined,
     # then be smart and just use the sensitivity ;)
     if len(paz.poles) == 0 and len(paz.zeros) == 0:
-        just_sensitivity = True
-    if just_sensitivity:
+        correct = 'sensitivity_only'
+    if correct == 'sensitivity_only':
         trace.data /= paz.sensitivity
     # Otherwhise we need to call trace.simulate(), which is quite slow...
     else:

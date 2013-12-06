@@ -54,7 +54,7 @@ def process_traces(config, st):
             continue
 
         # Remove instrument response
-        if remove_instr_response(trace, config.correct_sensitivity_only,
+        if remove_instr_response(trace, config.correct_instrumental_response,
                                  config.pre_filt) == None:
             logging.warning('%s %s: Unable to remove instrument response: skipping trace' % (traceId, instrtype))
             continue
