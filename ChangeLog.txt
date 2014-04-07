@@ -1,18 +1,19 @@
 source_spec
 Python code to invert S-wave displacement spectra
 (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
-(c) 2013-     Claudio Satriano <satriano@ipgp.fr>,
+(c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnès Chounet <chounet@ipgp.fr>
 Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
 
-v0.7 - 2013-??-??
+v0.7 - 2014-04-07
 	- Code reorganization:
 		- inversion code splitted to its own functions
 	- Option to use bounded inversion
 	- Station residuals, through ssp_residuals.py
 	- source_model can now output tables of trade-off
 		between parameters
+	- Fix in the way nois trace is computed and processed
 	- Documentation!
 v0.6 - 2013-06-05 - Several improvements:
 	- Signal to noise weighitng
