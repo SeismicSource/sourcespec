@@ -1,8 +1,8 @@
 # -*- coding: utf8 -*-
 # ssp_residuals.py
 #
-# (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
-#          Agnes Chounet <chounet@ipgp.fr>
+# (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
+#               Agnes Chounet <chounet@ipgp.fr>
 '''
 Spectral residual routine for source_spec.
 '''

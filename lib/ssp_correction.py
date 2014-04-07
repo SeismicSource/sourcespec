@@ -1,8 +1,8 @@
 # -*- coding: utf8 -*-
 # ssp_correction.py
 #
-# (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
-#          Agnes Chounet <chounet@ipgp.fr>
+# (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
+#               Agnes Chounet <chounet@ipgp.fr>
 '''
 Spectral station correction calculated from ssp_residuals.
 '''

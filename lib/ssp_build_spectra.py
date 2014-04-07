@@ -2,9 +2,9 @@
 # ssp_process_traces.py
 #
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
-# (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
-#          Emanuela Matrullo <matrullo@geologie.ens.fr>,
-#          Agnes Chounet <chounet@ipgp.fr>
+# (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
+#               Emanuela Matrullo <matrullo@geologie.ens.fr>,
+#               Agnes Chounet <chounet@ipgp.fr>
 '''
 Build spectral objects.
 '''

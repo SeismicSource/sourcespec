@@ -2,8 +2,8 @@
 # ssp_local_magnitude.py
 #
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
-# (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
-#          Emanuela Matrullo <matrullo@geologie.ens.fr>
+# (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
+#               Emanuela Matrullo <matrullo@geologie.ens.fr>
 '''
 Local magnitude calculation for source_spec.
 '''

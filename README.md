@@ -1,6 +1,6 @@
 ## source\_spec: a python code for modelling S-wave displacement spectra and inverting source parameters
 (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
-(c) 2013-     Claudio Satriano <satriano@ipgp.fr>,
+(c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnès Chounet <chounet@ipgp.fr>
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ssp_util.py
 #
-# (c) 2012-2013 Claudio Satriano <satriano@ipgp.fr>
+# (c) 2012-2014 Claudio Satriano <satriano@ipgp.fr>
 '''
 Utility functions for source_spec.
 '''

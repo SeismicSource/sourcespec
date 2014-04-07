@@ -2,9 +2,9 @@
 # ssp_spectral_model.py
 #
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
-# (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
-#          Emanuela Matrullo <matrullo@geologie.ens.fr>,
-#          Agnes Chounet <chounet@ipgp.fr>
+# (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
+#               Emanuela Matrullo <matrullo@geologie.ens.fr>,
+#               Agnes Chounet <chounet@ipgp.fr>
 '''
 Spectral model and objective function.
 '''

@@ -3,8 +3,8 @@
 # source_model.py
 #
 # Direct spectral modelling
-# (c) 2013 Claudio Satriano <satriano@ipgp.fr>,
-#          Agnes Chounet <chounet@ipgp.fr>
+# (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
+#               Agnes Chounet <chounet@ipgp.fr>
 import math
 import numpy as np
 #import cPickle as pickle
