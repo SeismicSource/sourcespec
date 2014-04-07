@@ -31,7 +31,7 @@ def local_magnitude(config, st, deconvolve=False):
         # Skip traces which do not have hypo_dist defined
         try:
             trace.stats.hypo_dist
-        except KeyError:
+        except (KeyError, AttributeError):
             continue
 
         # S time window
