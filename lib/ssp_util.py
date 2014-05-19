@@ -167,9 +167,13 @@ def calc_dist(lat1, lon1, lat2, lon2):
     return dist, toDeg(gcarc)
 
 def hypo_dist(trace):
-    coords = trace.stats.coords
-    hypo = trace.stats.hypo
-    if coords == None or hypo == None: return None
+    try:
+        coords = trace.stats.coords
+        hypo = trace.stats.hypo
+    except (KeyError, AttributeError):
+        return None
+    if coords == None or hypo == None:
+        return None
     stla = coords.latitude
     stlo = coords.longitude
     stel = coords.elevation
