@@ -10,7 +10,7 @@ import numpy as np
 #import cPickle as pickle
 from copy import deepcopy
 from obspy.core import Stream
-from lib.ssp_setup import configure
+from lib.ssp_setup import configure, ssp_exit
 from lib.ssp_read_traces import read_traces
 from lib.ssp_process_traces import process_traces
 from lib.ssp_build_spectra import build_spectra
@@ -72,6 +72,8 @@ def main():
         proc_st = process_traces(config, st)
         # Build spectra (amplitude in magnitude units)
         spec_st = build_spectra(config, proc_st)
+        if len(spec_st) == 0:
+            ssp_exit()
         # We keep just horizontal component:
         spec_st = Stream([ x for x in spec_st.traces if (x.stats.channel[-1] == 'H') ])
 
