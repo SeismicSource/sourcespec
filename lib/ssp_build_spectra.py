@@ -118,7 +118,7 @@ def build_spectra(config, st, noise_weight=False):
             freq1 = config.freq1_broadb
             freq2 = config.freq2_broadb
         else:
-            dprint('%s: Unknown instrument type: %s: skipping trace' % (traceId, instrtype))
+            logging.warning('%s: Unknown instrument type: %s: skipping trace' % (traceId, instrtype))
             continue
 
         if config.time_domain_int:
