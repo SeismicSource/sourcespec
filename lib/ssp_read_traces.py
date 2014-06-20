@@ -150,7 +150,7 @@ def __add_instrtype__(trace):
     except IndexError:
         instr_code = None
     if instr_code == 'H' or instr_code == 'L':
-        if band_code == 'E':
+        if band_code == 'E' or band_code == 'S':
             instrtype = 'shortp'
         if band_code == 'H':
             instrtype = 'broadb'
