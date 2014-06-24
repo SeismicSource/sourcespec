@@ -295,7 +295,7 @@ def __read_paz__(path):
     Limitations:
     (1) directory must contain *only* paz files
     (2) all the paz files must have the same prefix (if any)
-    (3) paz file can optionally have th ".pz" suffix
+    (3) paz file can optionally have ".pz" or ".paz" suffixes
     (4) paz file name (without prefix and suffix) *has* to be
         the trace_id (NET.STA.LOC.CHAN) of the corresponding trace
     '''
@@ -323,6 +323,8 @@ def __read_paz__(path):
                 bname = os.path.basename(filename)
                 #strip .pz suffix, if there
                 bname = re.sub('.pz$', '', bname)
+                #strip .paz suffix, if there
+                bname = re.sub('.paz$', '', bname)
                 #and strip any common prefix
                 #we assume that the string which remains
                 #is the trace_id
