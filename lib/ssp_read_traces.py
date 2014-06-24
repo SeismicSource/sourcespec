@@ -87,7 +87,12 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
                 paz = paz_dict[trace.id]
                 trace.stats.paz = paz
             except KeyError:
-                pass
+                # see if there is a default paz
+                try:
+                    paz = paz_dict['default']
+                    trace.stats.paz = paz
+                except KeyError:
+                    pass
     # If we're still out of luck,
     # we try to build the sensitivity from the
     # user2 and user3 header fields (ISNet format)
@@ -332,7 +337,13 @@ def __read_paz__(path):
                 paz[trace_id] = tr.stats.paz.copy()
             except IOError:
                 continue
-    #TODO: manage the case in which "path" is a file name
+    elif os.path.isfile(path):
+        # If a filename is provided, store it as
+        # 'default' paz.
+        filename = path
+        tr = Trace()
+        attach_paz(tr, filename)
+        paz['default'] = tr.stats.paz.copy()
     logging.info('Reading PAZ: done')
     return paz
 
