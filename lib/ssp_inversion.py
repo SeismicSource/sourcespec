@@ -222,7 +222,8 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
                                   p0=initial_values.get_params0(),
                                   sigma=yerr)
             except RuntimeError:
-                    logging.warning('Unable to fit spectral model for station: %s' % station)
+                logging.warning('Unable to fit spectral model for station: %s' % station)
+                continue
 
             par = dict(zip(params_name, params_opt))
             par['hyp_dist'] = hd
