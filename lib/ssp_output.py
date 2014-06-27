@@ -46,14 +46,13 @@ def write_output(config, evid, sourcepar):
         # Write station source parameters to database
         for statId in sorted(sourcepar.keys()):
             par = sourcepar[statId]
-            Mo  = np.power(10, par['Mw']*1.5 + 9.1)
 
             # Remove existing line, if present
             t = (statId, evid)
             c.execute('delete from Stations where stid=? and evid=?;', t)
 
             # Insert new line
-            t = (statId, evid, Mo, par['Mw'], par['fc'], par['t_star'], par['hyp_dist'], par['az'])
+            t = (statId, evid, par['Mo'], par['Mw'], par['fc'], par['t_star'], par['hyp_dist'], par['az'])
             c.execute('insert into Stations values(?, ?, ?, ?, ?, ?, ?, ?);', t)
 
         # Commit changes
@@ -68,10 +67,12 @@ def write_output(config, evid, sourcepar):
         parfile.write('*** Station source parameters ***\n')
         for statId in sorted(sourcepar.keys()):
             par = sourcepar[statId]
-            Mo  = np.power(10, par['Mw']*1.5 + 9.1)
             parfile.write('%s\t' % statId)
             for key in par:
-                parfile.write('  %s %6.3f ' % (key, par[key]))
+                if key == 'Mo':
+                    parfile.write('  %s %.3e ' % (key, par[key]))
+                else:
+                    parfile.write('  %s %6.3f ' % (key, par[key]))
             parfile.write('\n')
         parfile.write('\n')
 

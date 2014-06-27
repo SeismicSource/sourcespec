@@ -226,6 +226,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
                 continue
 
             par = dict(zip(params_name, params_opt))
+            par['Mo'] = np.power(10, par['Mw']*1.5 + 9.1)
             par['hyp_dist'] = hd
             par['az'] = az
             par['Ml'] = Ml #FIXME: this is the network magnitude!
