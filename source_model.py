@@ -17,6 +17,7 @@ from lib.ssp_build_spectra import build_spectra
 from lib.ssp_spectral_model import spectral_model, objective_func
 from lib.ssp_util import mag_to_moment, moment_to_mag
 from lib.ssp_plot_spectra import plot_spectra
+from lib.ssp_plot_traces import plot_traces
 from lib.spectrum import Spectrum
 
 def make_synth(config, spec_st, trace_spec=None):
@@ -91,6 +92,7 @@ def main():
         config.PLOT_SHOW = False
     config.PLOT_SAVE = False
 
+    plot_traces(config, proc_st, ncols=1, stack_plots=False)
     plot_spectra(config, spec_st, ncols=1, stack_plots=True)
 
 if __name__ == '__main__':

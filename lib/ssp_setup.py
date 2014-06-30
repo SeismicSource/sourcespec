@@ -55,6 +55,21 @@ def dprint(string):
         sys.stderr.write(string)
         sys.stderr.write('\n')
 
+matplotlib_unloaded = False
+def unload_matplotlib():
+    global matplotlib_unloaded
+    if matplotlib_unloaded:
+        return
+    # Source:
+    #   http://stackoverflow.com/questions/3285193/how-to-switch-backends-in-matplotlib-python
+    modules = []
+    for module in sys.modules:
+        if module.startswith('matplotlib'):
+            modules.append(module)
+    for module in modules:
+        sys.modules.pop(module)
+    matplotlib_unloaded = True
+
 def __parse_args_source_spec():
     '''
     Parse command line arguments for ``source_spec.py``

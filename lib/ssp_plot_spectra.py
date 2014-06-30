@@ -8,11 +8,11 @@
 Spectral plotting routine.
 '''
 from __future__ import division
-import sys
 import os
 import math
 import logging
 from ssp_util import spec_minmax, moment_to_mag, mag_to_moment
+from ssp_setup import unload_matplotlib
 
 synth_colors = [
     '#201F1F',
@@ -29,14 +29,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     Display to screen and/or save to file.
     '''
     # Unload matplotlib modules (which have been loaded by obspy.signal).
-    # Source:
-    #   http://stackoverflow.com/questions/3285193/how-to-switch-backends-in-matplotlib-python
-    modules = []
-    for module in sys.modules:
-        if module.startswith('matplotlib'):
-            modules.append(module)
-    for module in modules:
-        sys.modules.pop(module)
+    unload_matplotlib()
     # Check config, if we need to plot at all
     if config.PLOT_SHOW == False and config.PLOT_SAVE == False:
         return
@@ -228,4 +221,3 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                                   config.PLOT_SAVE_FORMAT)
         fig.savefig(figurefile, bbox_inches='tight')
         logging.info(message + ' plots saved to: ' + figurefile)
-
