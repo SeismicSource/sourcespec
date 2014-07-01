@@ -107,7 +107,7 @@ def plot_traces(config, st, ncols=4):
                 t2 = starttime + trace.stats.arrivals['S'][1] + 3 * config.s_win_length
                 trace.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
                 delta_stime = trace.stats.starttime - starttime
-                ax.plot(trace.times(), trace.data, color=color, zorder=20)
+                ax.plot(trace.times(), trace, color=color, zorder=20)
                 ax.text(0.05, trace.data.mean(), trace.stats.channel, color=color,
                         transform=trans3, zorder=22)
                 for phase in 'P', 'S':
@@ -118,9 +118,20 @@ def plot_traces(config, st, ncols=4):
                     ax.text(arrival, phase_label_pos[phase],
                             text, transform=trans,
                             zorder=22)
+                # Noise window
+                try:
+                    N1 = trace.stats.arrivals['N1'][1] - delta_stime
+                    N2 = trace.stats.arrivals['N2'][1] - delta_stime
+                    rect = patches.Rectangle((N1, 0), width=N2-N1, height=1,
+                             transform=trans, color='#eeeeee',
+                             alpha=0.5, zorder=-1)
+                    ax.add_patch(rect)
+                except KeyError:
+                    pass
+                # S-wave window
                 S1 = trace.stats.arrivals['S1'][1] - delta_stime
                 S2 = trace.stats.arrivals['S2'][1] - delta_stime
-                rect = patches.Rectangle((S1,0), width=S2-S1, height=1,
+                rect = patches.Rectangle((S1, 0), width=S2-S1, height=1,
                          transform=trans, color='yellow',
                          alpha=0.5, zorder=-1)
                 ax.add_patch(rect)

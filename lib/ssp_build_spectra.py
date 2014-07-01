@@ -141,6 +141,8 @@ def build_spectra(config, st, noise_weight=False):
             p_arrival_time = wave_arrival(trace, config.vp, 'P')
             noise_start_t = p_arrival_time - config.pre_p_time
             noise_end_t = noise_start_t + config.s_win_length
+            trace.stats.arrivals['N1'] = ('N1', noise_start_t - trace.stats.starttime)
+            trace.stats.arrivals['N2'] = ('N2', noise_end_t - trace.stats.starttime)
             # We inherit the same processing of trace_cut
             # (which, despite its name, has not been yet cut!)
             trace_noise = copy(trace_cut)
