@@ -92,7 +92,7 @@ def main():
         config.PLOT_SHOW = False
     config.PLOT_SAVE = False
 
-    plot_traces(config, proc_st, ncols=2)
+    plot_traces(config, proc_st, ncols=2, block=False)
     plot_spectra(config, spec_st, ncols=1, stack_plots=True)
 
 if __name__ == '__main__':

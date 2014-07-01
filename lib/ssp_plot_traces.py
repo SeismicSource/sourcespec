@@ -14,7 +14,7 @@ from ssp_setup import unload_matplotlib
 phase_label_pos = {'P': 0.9, 'S': 0.93}
 phase_label_color = {'P': 'black', 'S': 'black'}
 
-def plot_traces(config, st, ncols=4):
+def plot_traces(config, st, ncols=4, block=True):
     '''
     Plot displacement traces.
     Display to screen and/or save to file.
@@ -173,7 +173,7 @@ def plot_traces(config, st, ncols=4):
         plt.setp(ax.get_yticklabels(), visible=True)
 
     if config.PLOT_SHOW:
-        plt.show()
+        plt.show(block=block)
     if config.PLOT_SAVE:
         #TODO: improve this:
         evid = st.traces[0].stats.hypo.evid
