@@ -28,6 +28,11 @@ def __process__(trace, bp_freqmin, bp_freqmax, integrate=False):
     trace.detrend(type='constant')
     # ...and the linear trend...
     trace.detrend(type='linear')
+    nyquist = 1./(2. * trace.stats.delta)
+    if bp_freqmax >= nyquist:
+        bp_freqmax = nyquist * 0.999
+        logging.warning('%s: maximum frequency for bandpass filtering ' % trace.id +
+                        'is larger or equal to Nyquist. Setting it to %s Hz' % bp_freqmax)
     trace.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
     if integrate:
         trace.data = cumtrapz(trace.data) * trace.stats.delta
