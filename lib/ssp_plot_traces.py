@@ -75,7 +75,7 @@ def plot_traces(config, st, ncols=4):
             ax.ticklabel_format(style='scientific', axis='y', scilimits=(-1,1))
             axes.append(ax)
             if instrtype == 'acc':
-                ax.set_ylabel('Acceleration (m/s^2)')
+                ax.set_ylabel(u'Acceleration (m/s²)')
             elif instrtype == 'shortp' or instrtype == 'broadb':
                 ax.set_ylabel('Velocity (m/s)')
             # Custom transformation for plotting phase labels:
