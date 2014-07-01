@@ -17,6 +17,7 @@ from lib.ssp_inversion import spectral_inversion
 from lib.ssp_output import write_output
 from lib.ssp_residuals import spectral_residuals
 from lib.ssp_plot_spectra import plot_spectra
+from lib.ssp_plot_traces import plot_traces
 
 def main():
     # Setup stage
@@ -56,9 +57,7 @@ def main():
            ]
     pool.map(__call_plot_spectra__, args)
 
-    #plot_spectra(config, spec_st, specnoise_st=specnoise_st)
-    #plot_spectra(config, specnoise_st, plottype='noise')
-    #plot_spectra(config, weight_st, plottype='weight')
+    plot_traces(config, proc_st, ncols=2)
 
     ssp_exit()
 

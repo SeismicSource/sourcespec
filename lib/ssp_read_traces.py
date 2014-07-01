@@ -270,6 +270,9 @@ def __add_picks__(trace, picks):
                 stat_picks.append(pick)
 
     trace.stats.picks = stat_picks
+    # Create an empty dict for arrivals.
+    # It will be used later.
+    trace.stats.arrivals = dict()
 # -----------------------------------------------------------------------------
 
 

@@ -40,6 +40,7 @@ def wave_arrival(trace, vel, phase):
     if trace.stats.hypo.origin_time != None:
         theo_pick_time =\
             trace.stats.hypo.origin_time + trace.stats.hypo_dist / vel
+        trace.stats.arrivals[phase] = (phase + 'theo', theo_pick_time - trace.stats.starttime)
     else:
         theo_pick_time = None
     for pick in trace.stats.picks:
@@ -52,6 +53,7 @@ def wave_arrival(trace, vel, phase):
                         % (trace.id, phase, delta_t))
                     continue
             logging.info('%s: found pick.' % trace.id)
+            trace.stats.arrivals[phase] = (phase, pick.time - trace.stats.starttime)
             return pick.time
     return theo_pick_time
 

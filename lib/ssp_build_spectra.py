@@ -70,6 +70,8 @@ def build_spectra(config, st, noise_weight=False):
         s_arrival_time = wave_arrival(trace, config.vs, 'S')
         t1 = s_arrival_time - config.pre_s_time
         t2 = t1 + config.s_win_length
+        trace.stats.arrivals['S1'] = ('S1', t1 - trace.stats.starttime)
+        trace.stats.arrivals['S2'] = ('S2', t2 - trace.stats.starttime)
 
         trace_cut = copy(trace)
         trace_cut.stats = deepcopy(trace.stats)
