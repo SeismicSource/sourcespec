@@ -288,7 +288,7 @@ def __read_dataless__(path):
     if os.path.isdir(path):
         listing = os.listdir(path)
         for filename in listing:
-            fullpath = '%s/%s' % (path, filename)
+            fullpath = os.path.join(path, filename)
             try:
                 sp = Parser(fullpath)
                 dataless[filename] = sp
@@ -321,7 +321,7 @@ def __read_paz__(path):
         #check if files have a common prefix: we will strip it later
         prefix = os.path.commonprefix(listing)
         for filename in listing:
-            fullpath = '%s/%s' % (path, filename)
+            fullpath = os.path.join(path, filename)
             try:
                 # This is a horrible hack!
                 # Since attach_paz needs a trace,
@@ -505,7 +505,7 @@ def __build_filelist__(path, filelist, tmpdir):
     if os.path.isdir(path):
         listing = os.listdir(path)
         for filename in listing:
-            fullpath = '%s/%s' % (path, filename)
+            fullpath = os.path.join(path, filename)
             __build_filelist__(fullpath, filelist, tmpdir)
     else:
         try:
@@ -611,7 +611,7 @@ def read_traces(config):
         #         filelist all the extraceted files
         listing = os.listdir(tmpdir)
         for filename in listing:
-            fullpath = '%s/%s' % (tmpdir, filename)
+            fullpath = os.path.join(tmpdir, filename)
             __build_filelist__(fullpath, filelist, None)
 
         # phase 2: build a stream object from the file list
