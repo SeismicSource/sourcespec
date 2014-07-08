@@ -101,7 +101,8 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
             # instrument constants
             u2 = trace.stats.sac.user2
             u3 = trace.stats.sac.user3
-            if u2==-12345 or u3==-12345: raise AttributeError
+            if u2==-12345 or u3==-12345:
+                raise AttributeError
             paz = AttribDict()
             paz.sensitivity = u3/u2
             paz.poles = []
@@ -127,9 +128,9 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
             stla = trace.stats.sac.stla
             stlo = trace.stats.sac.stlo
             stel = trace.stats.sac.stel
-            if stla==-12345 or stlo==-12345:
+            if stla == -12345 or stlo == -12345:
                 raise AttributeError
-            if stel==-12345:
+            if stel == -12345:
                 stel = 0.
             # elevation is in meters in SAC header:
             stel /= 1000.
@@ -188,8 +189,8 @@ def __add_hypocenter__(trace, hypo):
             evdp = trace.stats.sac.evdp
             tori = trace.stats.sac.o
             begin = trace.stats.sac.b
-            if evla == -12345 or evlo == -12345\
-               or evdp == -12345 or begin == -12345:
+            if (evla == -12345 or evlo == -12345
+                    or evdp == -12345 or begin == -12345):
                 raise AttributeError
 
             hypo = AttribDict()
@@ -287,11 +288,12 @@ def __read_dataless__(path):
     if os.path.isdir(path):
         listing = os.listdir(path)
         for filename in listing:
-            fullpath='%s/%s' % (path, filename)
+            fullpath = '%s/%s' % (path, filename)
             try:
                 sp = Parser(fullpath)
                 dataless[filename] = sp
-            except IOError: continue
+            except IOError:
+                continue
         #TODO: manage the case in which "path" is a file name
     logging.info('Reading dataless: done')
     return dataless
@@ -319,7 +321,7 @@ def __read_paz__(path):
         #check if files have a common prefix: we will strip it later
         prefix = os.path.commonprefix(listing)
         for filename in listing:
-            fullpath='%s/%s' % (path, filename)
+            fullpath = '%s/%s' % (path, filename)
             try:
                 # This is a horrible hack!
                 # Since attach_paz needs a trace,
@@ -410,7 +412,8 @@ def __is_hypo_format(fp):
         line = line.replace('\n','')
         # skip separator and empty lines
         stripped_line = line.replace(' ','')
-        if stripped_line == '10' or stripped_line == '': continue
+        if stripped_line == '10' or stripped_line == '':
+            continue
         # Check if it is a pick line
         # 6th character should be alpha (phase name: P or S)
                 # other character should be digits (date/time)
@@ -445,15 +448,15 @@ def __parse_picks__(pick_file):
                     # 6th character should be alpha (phase name: P or S)
                     # other character should be digits (date/time)
                     if not (line[5].isalpha() and
-                                     line[9].isdigit() and
-                                     line[20].isdigit()):
+                            line[9].isdigit() and
+                            line[20].isdigit()):
                         continue
 
                     #pick = __new_pick__()
                     pick = Pick()
-                    pick.station  = line[0:4]
-                    pick.flag     = line[4:5]
-                    pick.phase    = line[5:6]
+                    pick.station = line[0:4]
+                    pick.flag = line[4:5]
+                    pick.phase = line[5:6]
                     pick.polarity = line[6:7]
                     try:
                         pick.quality = int(line[7:8])
@@ -476,9 +479,9 @@ def __parse_picks__(pick_file):
 
                     #pick2 = __new_pick__()
                     pick2 = Pick()
-                    pick2.station  = pick.station
-                    pick2.flag     = line[36:37]
-                    pick2.phase    = line[37:38]
+                    pick2.station = pick.station
+                    pick2.flag = line[36:37]
+                    pick2.phase = line[37:38]
                     pick2.polarity = line[38:39]
                     try:
                         pick2.quality = int(line[39:40])
@@ -502,7 +505,7 @@ def __build_filelist__(path, filelist, tmpdir):
     if os.path.isdir(path):
         listing = os.listdir(path)
         for filename in listing:
-            fullpath='%s/%s' % (path, filename)
+            fullpath = '%s/%s' % (path, filename)
             __build_filelist__(fullpath, filelist, tmpdir)
     else:
         try:
@@ -608,7 +611,7 @@ def read_traces(config):
         #         filelist all the extraceted files
         listing = os.listdir(tmpdir)
         for filename in listing:
-            fullpath='%s/%s' % (tmpdir, filename)
+            fullpath = '%s/%s' % (tmpdir, filename)
             __build_filelist__(fullpath, filelist, None)
 
         # phase 2: build a stream object from the file list
