@@ -12,6 +12,7 @@ import math
 import numpy as np
 from obspy.signal import cosTaper
 
+
 # MISC ------------------------------------------------------------------------
 def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
     amp_min = amp.min()
@@ -78,8 +79,8 @@ def select_trace(stream, traceid, instrtype):
 # SIGNAL ANALYSIS -------------------------------------------------------------
 def cosine_taper(signal, width):
     #TODO: this taper looks more like a hanning...
-    npts=len(signal)
-    p=2*width
+    npts = len(signal)
+    p = 2*width
     tap = cosTaper(npts, p)
     signal *= tap
 
@@ -93,12 +94,12 @@ def smooth(x, window_len=11, window='hanning'):
         return x
     if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
         raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
-    s=np.r_[2*x[0]-x[window_len-1::-1],x,2*x[-1]-x[-1:-window_len:-1]]
+    s = np.r_[2*x[0]-x[window_len-1::-1],x,2*x[-1]-x[-1:-window_len:-1]]
     if window == 'flat': #moving average
-        w=np.ones(window_len,'d')
+        w = np.ones(window_len,'d')
     else:
-        w=eval('np.'+window+'(window_len)')
-    y=np.convolve(w/w.sum(),s,mode='same')
+        w = eval('np.'+window+'(window_len)')
+    y = np.convolve(w/w.sum(),s,mode='same')
 
     yy = y[window_len:-window_len+1]
     # check if there are NaN values
@@ -134,8 +135,8 @@ def remove_instr_response(trace, correct='True', pre_filt=(0.5, 0.6, 40., 45.)):
             # (because of "c_sac_taper()")
             # TODO: fill up a bug on obspy.org
             trace.simulate(paz_remove=paz, paz_simulate=None,
-                remove_sensitivity=True, simulate_sensitivity=None,
-                pre_filt=pre_filt, sacsim=False)
+                    remove_sensitivity=True, simulate_sensitivity=None,
+                    pre_filt=pre_filt, sacsim=False)
             if len(w)>0:
                 logging.warning('%s: remove_instr_response: %s'
                         % (trace.stats.station, w[-1].message))
@@ -163,7 +164,7 @@ def calc_dist(lat1, lon1, lat2, lon2):
     dLon = toRad(lon2-lon1)
     a = math.sin(dLat/2) * math.sin(dLat/2) + \
         math.cos(toRad(lat1)) * math.cos(toRad(lat2)) * \
-               math.sin(dLon/2) * math.sin(dLon/2)
+        math.sin(dLon/2) * math.sin(dLon/2)
     gcarc = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     dist = R * gcarc
     return dist, toDeg(gcarc)
