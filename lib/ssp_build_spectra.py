@@ -39,16 +39,22 @@ def __process__(trace, bp_freqmin, bp_freqmax, integrate=False):
         trace.stats.npts -= 1
 
 
-def __compute_h__(spec_st, instrtype):
+def __compute_h__(spec_st, code):
+    '''
+    Computes the component 'H' from geometric
+    mean of the stream components
+    (which can also be all three components)
+    '''
     spec_h = None
     for spec in spec_st.traces:
         # this avoids taking a component from co-located station:
-        if spec.stats.instrtype != instrtype:
+        # ('code' is band+instrument code)
+        if spec.stats.channel[0:2] != code:
             continue
         if spec_h == None:
             spec_h = spec.copy()
             spec_h.data = np.power(spec_h.data, 2)
-            spec_h.stats.channel = 'H'
+            spec_h.stats.channel = code + 'H'
         else:
             spec_h.data += np.power(spec.data, 2)
     spec_h.data = np.sqrt(spec_h.data)
@@ -186,8 +192,8 @@ def build_spectra(config, st, noise_weight=False):
         # calculate fft
         spec = spectrum.do_spectrum(trace_cut)
         spec.stats.instrtype = instrtype
-        spec.stats.coords    = stats.coords
-        spec.stats.hypo      = stats.hypo
+        spec.stats.coords = stats.coords
+        spec.stats.hypo = stats.hypo
         spec.stats.hypo_dist = stats.hypo_dist
 
         # same processing for noise, if requested
@@ -196,8 +202,8 @@ def build_spectra(config, st, noise_weight=False):
             trace_noise.data *= trace_noise.stats.hypo_dist * 1000
             specnoise = spectrum.do_spectrum(trace_noise)
             specnoise.stats.instrtype = instrtype
-            specnoise.stats.coords    = stats.coords
-            specnoise.stats.hypo      = stats.hypo
+            specnoise.stats.coords = stats.coords
+            specnoise.stats.hypo = stats.hypo
             specnoise.stats.hypo_dist = stats.hypo_dist
 
         # Integrate in frequency domain (divide by the pulsation omega)
@@ -247,14 +253,15 @@ def build_spectra(config, st, noise_weight=False):
         spec_st_sel = spec_st.select(station=station)
         if noise_weight:
             specnoise_st_sel = specnoise_st.select(station=station)
-        for instrtype in set(x.stats.instrtype for x in spec_st_sel):
-            spec_h = __compute_h__(spec_st_sel, instrtype)
+        # 'code' is band+instrument code
+        for code in set(x.stats.channel[0:2] for x in spec_st_sel):
+            spec_h = __compute_h__(spec_st_sel, code)
             spec_st.append(spec_h)
 
             # Compute "H" component for noise, if requested,
             # and weighting function.
             if noise_weight:
-                specnoise_h = __compute_h__(specnoise_st_sel, instrtype)
+                specnoise_h = __compute_h__(specnoise_st_sel, code)
                 specnoise_st.append(specnoise_h)
 
                 # Weighting function is the ratio between "H" components

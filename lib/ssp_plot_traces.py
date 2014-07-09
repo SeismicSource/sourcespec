@@ -39,7 +39,8 @@ def plot_traces(config, st, ncols=4, block=True):
     nplots=0
     for station in set(x.stats.station for x in st.traces):
         st_sel = st.select(station=station)
-        for instrtype in set(x.stats.instrtype for x in st_sel):
+        # 'code' is band+instrument code
+        for code in set(x.stats.channel[0:2] for x in st_sel):
             nplots += 1
     nlines = int(math.ceil(nplots/ncols))
     if nplots < ncols:
@@ -59,7 +60,8 @@ def plot_traces(config, st, ncols=4, block=True):
     plotn = 0
     for station in sorted(set(x.stats.station for x in st.traces)):
         st_sel = st.select(station=station)
-        for instrtype in set(x.stats.instrtype for x in st_sel):
+        # 'code' is band+instrument code
+        for code in set(x.stats.channel[0:2] for x in st_sel):
             plotn += 1
             ax_text = False
 
@@ -74,6 +76,7 @@ def plot_traces(config, st, ncols=4, block=True):
             ax.tick_params(width=2) #FIXME: ticks are below grid lines!
             ax.ticklabel_format(style='scientific', axis='y', scilimits=(-1,1))
             axes.append(ax)
+            instrtype = [t.stats.instrtype for t in st_sel.traces if t.stats.channel[0:2] == code][0]
             if instrtype == 'acc':
                 ax.set_ylabel(u'Acceleration (m/s²)')
             elif instrtype == 'shortp' or instrtype == 'broadb':
@@ -84,11 +87,12 @@ def plot_traces(config, st, ncols=4, block=True):
             trans2 = transforms.blended_transform_factory(ax.transAxes, ax.transData)
             trans3 = transforms.offset_copy(trans2, fig=fig, x=0, y=0.1)
 
-            maxes = [abs(t.max()) for t in st_sel.traces if t.stats.instrtype == instrtype]
+            #maxes = [abs(t.max()) for t in st_sel.traces if t.stats.instrtype == instrtype]
+            maxes = [abs(t.max()) for t in st_sel.traces if t.stats.channel[0:2] == code]
             ntraces = len(maxes)
             tmax = max(maxes)
             for trace in st_sel.traces:
-                if trace.stats.instrtype != instrtype:
+                if trace.stats.channel[0:2] != code:
                     continue
                 orientation = trace.stats.channel[-1]
                 if orientation == 'Z':
@@ -147,18 +151,6 @@ def plot_traces(config, st, ncols=4, block=True):
                             transform = ax.transAxes,
                             zorder = 50)
                     ax_text = True
-
-                if orientation == 'Synth':
-                    #text_y2 = 0.04
-                    color = 'black'
-                    #ax.text(0.05, text_y2, 'Mo: %.2g Mw: %.1f fc: %.2fHz t*: %.2fs' % (Mo, Mw, fc, t_star),
-                    #        horizontalalignment='left',
-                    #        verticalalignment='bottom',
-                    #        #backgroundcolor = (1, 1, 1, 0.7), #FIXME: does not work in interactive plots
-                    #        color = color,
-                    #        fontsize = 9,
-                    #        transform = ax.transAxes,
-                    #        zorder = 50)
 
     # Show the x-labels only for the last row
     for ax in axes[-ncols:]:

@@ -144,6 +144,7 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
 
 def __add_instrtype__(trace):
     instrtype = None
+    trace.stats.instrtype = None
 
     # First, try to get the instrtype from channel name
     chan = trace.stats.channel
@@ -164,20 +165,34 @@ def __add_instrtype__(trace):
         instrtype = 'acc'
 
     # If, not possible, let's see if there is an instrument
-    # name in "kinst" (ISNet format)
+    # name in "kinst" (ISNet format).
+    # In this case, we define band and instrument codes
+    # a posteriori.
     if instrtype == None:
         try:
             instr = trace.stats.sac.kinst
             if 'CMG-5T' in instr:
                 instrtype = 'acc'
-            if 'TRILLIUM' in instr:
+                band_code = 'H'
+                instr_code = 'N'
+            elif 'TRILLIUM' or 'CMG-40T' in instr:
                 instrtype = 'broadb'
-            if 'S13J' in instr:
+                band_code = 'H'
+                instr_code = 'H'
+            elif 'S13J' in instr:
                 instrtype = 'shortp'
-            if 'KS2000ED' in instr:
+                band_code = 'S'
+                instr_code = 'H'
+            elif 'KS2000ED' in instr:
                 instrtype = 'shortp'
+                band_code = 'S'
+                instr_code = 'H'
+            else:
+                return
         except AttributeError:
-            pass
+            return
+        orientation = trace.stats.channel[-1]
+        trace.stats.channel = ''.join((band_code, instr_code, orientation))
     trace.stats.instrtype = instrtype
 
 def __add_hypocenter__(trace, hypo):

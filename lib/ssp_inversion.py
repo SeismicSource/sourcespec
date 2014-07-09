@@ -137,7 +137,8 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
         for spec in spec_st_sel.traces:
-            if spec.stats.channel != 'H': continue
+            if spec.stats.channel[2] != 'H':
+                continue
             dprint(station)
 
             # spectral amplitude is in Mw units
@@ -234,7 +235,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             sourcepar[chanId] = par
 
             spec_synth = spec.copy()
-            spec_synth.stats.channel = 'Synth'
+            spec_synth.stats.channel = spec.stats.channel[0:2] + 'S'
             spec_synth.stats.par = par
             spec_synth.data_mag = spectral_model(xdata, *params_opt)
             spec_synth.data = mag_to_moment(spec_synth.data_mag)

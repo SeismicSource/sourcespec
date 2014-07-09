@@ -55,7 +55,8 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             moment_minmax, freq_minmax =\
                 spec_minmax(spec.data, spec.get_freq(),
                             moment_minmax, freq_minmax)
-        for instrtype in set(x.stats.instrtype for x in spec_st_sel):
+        # 'code' is band+instrument code
+        for code in set(x.stats.channel[0:2] for x in spec_st_sel):
             nplots += 1
     nlines = int(math.ceil(nplots/ncols))
     if plottype != 'weight':
@@ -71,11 +72,12 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     fig.subplots_adjust(hspace = .025, wspace = .03)
 
     # Plot!
-    axes=[]
+    axes = []
     plotn = 0
     for station in sorted(set(x.stats.station for x in spec_st.traces)):
         spec_st_sel = spec_st.select(station=station)
-        for instrtype in set(x.stats.instrtype for x in spec_st_sel):
+        # 'code' is band+instrument code
+        for code in set(x.stats.channel[0:2] for x in spec_st_sel):
             plotn += 1
             ax_text = False
 
@@ -111,22 +113,25 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             axes.append((ax, ax2))
 
             for spec in spec_st_sel.traces:
-                if spec.stats.instrtype != instrtype: continue
-                if spec.stats.channel == 'Synth':
-                    orientation = 'Synth'
-                else: orientation = spec.stats.channel[-1]
-                if orientation == 'Z': color='purple'
-                if orientation == 'N': color='green'
-                if orientation == 'E': color='blue'
-                if orientation == 'H': color='red'
-                if orientation == 'Synth':
+                if spec.stats.channel[0:2] != code:
+                    continue
+                orientation = spec.stats.channel[2]
+                if orientation == 'Z':
+                    color='purple'
+                if orientation == 'N':
+                    color='green'
+                if orientation == 'E':
+                    color='blue'
+                if orientation == 'H':
+                    color='red'
+                if orientation == 'S':
                     if stack_plots:
                         color = synth_colors[(plotn-1)%len(synth_colors)]
                     else:
                         color='black'
                 if plottype == 'regular' or plottype == 'noise':
                     ax.loglog(spec.get_freq(), spec.data, color=color, zorder=20)
-                    if orientation == 'Synth':
+                    if orientation == 'S':
                         ax.axvline(spec.stats.par['fc'], color='#999999', linewidth=2., zorder=1)
                 elif plottype == 'weight':
                     ax.semilogx(spec.get_freq(), spec.data, color=color, zorder=20)
@@ -136,14 +141,18 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 #    'lower right')
 
                 if specnoise_st:
-                    if spec.stats.channel != 'Synth':
+                    if spec.stats.channel[2] != 'S':
                         specid = spec.getId()
                         sp_noise = specnoise_st.select(id=specid)[0]
-                        orientation = sp_noise.stats.channel[-1]
-                        if orientation == 'Z': color='purple'
-                        if orientation == 'N': color='green'
-                        if orientation == 'E': color='blue'
-                        if orientation == 'H': color='red'
+                        orientation = sp_noise.stats.channel[2]
+                        if orientation == 'Z':
+                            color='purple'
+                        if orientation == 'N':
+                            color='green'
+                        if orientation == 'E':
+                            color='blue'
+                        if orientation == 'H':
+                            color='red'
                         ax.loglog(sp_noise.get_freq(), sp_noise.data,
                                 linestyle=':', linewidth=2., color=color, zorder=20)
 
@@ -153,7 +162,8 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     else:
                         text_y = 0.1
                         color = 'black'
-                    ax.text(0.05, text_y, '%s %s' % (spec.stats.station, spec.stats.instrtype),
+                    ax_text = '%s %s' % (spec.id[0:-1], spec.stats.instrtype)
+                    ax.text(0.05, text_y, ax_text,
                             horizontalalignment='left',
                             verticalalignment='bottom',
                             color = color,
@@ -162,7 +172,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                             zorder = 50)
                     ax_text = True
 
-                if orientation == 'Synth':
+                if orientation == 'S':
                     if stack_plots:
                         text_y2 = text_y - 0.02
                     else:
