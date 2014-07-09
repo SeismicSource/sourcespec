@@ -14,9 +14,10 @@ import sqlite3
 import numpy as np
 from scipy.stats.mstats import gmean
 from ssp_setup import ssp_exit
+from ssp_util import mag_to_moment
 
 def gstd(array):
-    mean  = gmean(array)
+    mean = gmean(array)
     arg = np.power(np.log(array/mean),2).sum() / len(array)
     return np.exp(np.sqrt(arg))
 
@@ -80,45 +81,45 @@ def write_output(config, evid, sourcepar):
         parfile.write('*** Average source parameters ***\n')
         # Mw
         Mw_array = np.array(list(x['Mw'] for x in sourcepar.values()))
-        Mw_mean  = Mw_array.mean()
-        Mw_std   = Mw_array.std()
+        Mw_mean = Mw_array.mean()
+        Mw_std = Mw_array.std()
         parfile.write('Mw: %.2f +/- %.2f\n' % (Mw_mean, Mw_std))
 
         # Mo (N.m)
-        Mo_array = np.power(10, Mw_array*1.5 + 9.1)
-        Mo_mean  = gmean(Mo_array)
-        Mo_std   = gstd(Mo_array)
+        Mo_array = mag_to_moment(Mw_array)
+        Mo_mean = gmean(Mo_array)
+        Mo_std = gstd(Mo_array)
         parfile.write('Mo: %.3e +/- %.3e N.m\n' % (Mo_mean, Mo_std))
 
         # fc , hertz
         fc_array = np.array(list(x['fc'] for x in sourcepar.values()))
-        fc_mean  = fc_array.mean()
-        fc_std   = fc_array.std()
+        fc_mean = fc_array.mean()
+        fc_std = fc_array.std()
         parfile.write('fc: %.3f +/- %.3f Hz\n' % (fc_mean, fc_std))
 
         # t_star
         t_star_array = np.array(list(x['t_star'] for x in sourcepar.values()))
-        t_star_mean  = t_star_array.mean()
-        t_star_std   = t_star_array.std()
+        t_star_mean = t_star_array.mean()
+        t_star_std = t_star_array.std()
         parfile.write('t_star: %.3f +/- %.3f Hz\n' % (t_star_mean, t_star_std))
 
         # ra, radius (meters)
         vs_m = config.vs*1000
         ra_array = 0.37 * vs_m / fc_array
-        ra_mean  = ra_array.mean()
-        ra_std   = ra_array.std()
+        ra_mean = ra_array.mean()
+        ra_std = ra_array.std()
         parfile.write('Source radius: %.3f +/- %.3f m\n' % (ra_mean, ra_std))
 
         # bsd, Brune stress drop (MPa)
         bsd_array = 0.4375 * Mo_array / np.power(ra_array, 3) * 1e-6
-        bsd_mean  = bsd_array.mean()
-        bsd_std   = bsd_array.std()
+        bsd_mean = bsd_array.mean()
+        bsd_std = bsd_array.std()
         parfile.write('Brune stress drop: %.3f +/- %.3f MPa\n' % (bsd_mean, bsd_std))
 
         # Ml
         Ml_array = np.array(list(x['Ml'] for x in sourcepar.values()))
-        Ml_mean  = Ml_array.mean()
-        Ml_std   = Ml_array.std()
+        Ml_mean = Ml_array.mean()
+        Ml_std = Ml_array.std()
         parfile.write('Ml: %.3f +/- %.3f \n' % (Ml_mean, Ml_std))
 
     logging.info('Output written to file: ' + parfilename)
@@ -158,7 +159,7 @@ def write_output(config, evid, sourcepar):
         logging.info('Hypo file written to: ' + hypo_file_out)
 
     params_name = ('Mw', 'fc', 't_star')
-    sourcepar_mean=dict(zip(params_name, [Mw_mean, fc_mean, t_star_mean]))
+    sourcepar_mean = dict(zip(params_name, [Mw_mean, fc_mean, t_star_mean]))
     logging.info('params_mean: %s' % (sourcepar_mean))
 
     return sourcepar_mean
