@@ -54,6 +54,7 @@ def __correct_traceid__(trace, traceids):
     except KeyError:
         pass
 
+
 def __add_paz_and_coords__(trace, dataless, paz_dict=None):
     trace.stats.paz = None
     trace.stats.coords = None
@@ -142,6 +143,7 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
         except AttributeError:
             pass
 
+
 def __add_instrtype__(trace):
     instrtype = None
     trace.stats.instrtype = None
@@ -195,6 +197,7 @@ def __add_instrtype__(trace):
         trace.stats.channel = ''.join((band_code, instr_code, orientation))
     trace.stats.instrtype = instrtype
 
+
 def __add_hypocenter__(trace, hypo):
     if hypo == None:
         # Try to get hypocenter information from the SAC header
@@ -222,8 +225,9 @@ def __add_hypocenter__(trace, hypo):
             return
     trace.stats.hypo = hypo
 
+
 def __add_picks__(trace, picks):
-    stat_picks=[]
+    stat_picks = []
     station = trace.stats.station
 
     if picks == None:
@@ -263,7 +267,7 @@ def __add_picks__(trace, picks):
                 continue
 
             pick = Pick()
-            pick.station  = station
+            pick.station = station
             begin = trace.stats.sac.b
             pick.time = trace.stats.starttime + time - begin
             if len(label) == 4:
@@ -289,6 +293,28 @@ def __add_picks__(trace, picks):
     # Create an empty dict for arrivals.
     # It will be used later.
     trace.stats.arrivals = dict()
+
+
+def __complete_picks__(st):
+    '''
+    For every station/instrument, adds component-specific picks
+    to all components.
+    '''
+    for station in set(tr.stats.station for tr in st):
+        st_sel = st.select(station=station)
+        # 'code' is band+instrument code
+        for code in set(tr.stats.channel[0:2] for tr in st_sel):
+            st_sel2 = st_sel.select(channel=code + '?')
+            # Select default P and S picks as the first in list
+            all_picks = [pick for tr in st_sel2 for pick in tr.stats.picks]
+            default_P_pick = [pick for pick in all_picks if pick.phase == 'P'][0:1]
+            default_S_pick = [pick for pick in all_picks if pick.phase == 'S'][0:1]
+            for tr in st_sel2:
+                # Attribute default picks to components without picks
+                if len([pick for pick in tr.stats.picks if pick.phase == 'P']) == 0:
+                    tr.stats.picks += default_P_pick
+                if len([pick for pick in tr.stats.picks if pick.phase == 'S']) == 0:
+                    tr.stats.picks += default_S_pick
 # -----------------------------------------------------------------------------
 
 
@@ -312,6 +338,7 @@ def __read_dataless__(path):
         #TODO: manage the case in which "path" is a file name
     logging.info('Reading dataless: done')
     return dataless
+
 
 def __read_paz__(path):
     '''
@@ -367,6 +394,7 @@ def __read_paz__(path):
     logging.info('Reading PAZ: done')
     return paz
 
+
 def __parse_hypocenter__(hypo_file):
     hypo = AttribDict()
     hypo.latitude = None
@@ -421,6 +449,7 @@ def __parse_hypocenter__(hypo_file):
 
     return hypo
 
+
 def __is_hypo_format(fp):
     for line in fp.readlines():
         # remove newline
@@ -441,7 +470,9 @@ def __is_hypo_format(fp):
             fp.seek(0) #rewind file
             return False
 
+
 #TODO: def __is_NLL_format(fp):
+
 
 def __parse_picks__(pick_file):
     if pick_file == None:
@@ -515,7 +546,6 @@ def __parse_picks__(pick_file):
     return picks
 
 
-
 def __build_filelist__(path, filelist, tmpdir):
     if os.path.isdir(path):
         listing = os.listdir(path)
@@ -552,6 +582,7 @@ def __set_hypo_file_path__(config):
         except:
             pass
     return
+
 
 def __set_pick_file_path__(config):
     if config.options.pick_file != None:
@@ -653,5 +684,6 @@ def read_traces(config):
         logging.info('No trace loaded')
         ssp_exit()
 
+    __complete_picks__(st)
     st.sort()
     return st
