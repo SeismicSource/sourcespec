@@ -151,12 +151,12 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             fc_0 = config.fc_0
             # ...if it is not available, we calculate it
             if math.isnan(fc_0):
-                l_m0 = Mw_0 * 1.5 + 9.1
-                l_beta = math.log10(vs_m)
-                l_bsd = math.log10(config.bsd)
-                l_fc = l_bsd - l_m0 + 3*l_beta - 0.935
-                l_fc /= 3.
-                fc_0 = math.pow(10, l_fc)
+                log_m0 = math.log10(mag_to_moment(Mw_0))
+                log_beta = math.log10(vs_m)
+                log_bsd = math.log10(config.bsd)
+                log_fc = log_bsd - log_m0 + 3*log_beta - 0.935
+                log_fc /= 3.
+                fc_0 = math.pow(10, log_fc)
                 logging.info('%s fc_0 autoset to: %.2f' % (spec.id, fc_0))
 
             # initial value for t_star
@@ -173,7 +173,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             evla = hypo.latitude
             evlo = hypo.longitude
             geod = gps2DistAzimuth(evla, evlo, stla, stlo)
-            az   = geod[1]
+            az = geod[1]
             dprint('%s %s %f %f' % (station, spec.stats.instrtype, hd, az))
             loge = math.log10(math.e)
             coeff = math.pi*loge*hd_m/vs_m
@@ -226,7 +226,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
                 continue
 
             par = dict(zip(params_name, params_opt))
-            par['Mo'] = np.power(10, par['Mw']*1.5 + 9.1)
+            par['Mo'] = mag_to_moment(par['Mw'])
             par['hyp_dist'] = hd
             par['az'] = az
             par['Ml'] = Ml #FIXME: this is the network magnitude!
