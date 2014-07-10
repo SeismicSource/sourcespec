@@ -41,7 +41,7 @@ class Pick(AttribDict):
 
 # TRACE MANIPULATION ----------------------------------------------------------
 def __correct_traceid__(trace, traceids):
-    if traceids == None:
+    if traceids is None:
         return
     try:
         trids = load_source('traceids', traceids)
@@ -70,7 +70,7 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
                 paz = sp.getPAZ(traceid, time)
                 coords = AttribDict(sp.getCoordinates(traceid, time))
                 # elevation is in meters in the dataless
-                coords.elevation /= 1000
+                coords.elevation /= 1000.
             except SEEDParserException, message:
                 logging.error("%s time: %s" % (message, str(time)))
                 pass
@@ -82,27 +82,30 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
     # If we couldn't find any PAZ in the dataless dictionary,
     # we try to attach paz from the paz dictionary passed
     # as argument
-    if trace.stats.paz == None:
-        if paz_dict != None:
+    if trace.stats.paz is None and paz_dict is not None:
+        # Look for traceid or for a generic paz
+        net, sta, loc, chan = trace.id.split('.')
+        ids = [trace.id,
+               '.'.join(('__', '__', '__', '__')),
+               '.'.join((net, '__', '__', '__')),
+               '.'.join((net, sta, '__', '__')),
+               '.'.join((net, sta, loc, '__')),
+               'default']
+        for id in ids:
             try:
-                paz = paz_dict[trace.id]
+                paz = paz_dict[id]
                 trace.stats.paz = paz
             except KeyError:
-                # see if there is a default paz
-                try:
-                    paz = paz_dict['default']
-                    trace.stats.paz = paz
-                except KeyError:
-                    pass
+                pass
     # If we're still out of luck,
     # we try to build the sensitivity from the
     # user2 and user3 header fields (ISNet format)
-    if trace.stats.paz == None and trace.stats.format == 'ISNet':
+    if trace.stats.paz is None and trace.stats.format == 'ISNet':
         try:
             # instrument constants
             u2 = trace.stats.sac.user2
             u3 = trace.stats.sac.user3
-            if u2==-12345 or u3==-12345:
+            if u2 == -12345 or u3 == -12345:
                 raise AttributeError
             paz = AttribDict()
             paz.sensitivity = u3/u2
@@ -113,7 +116,7 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
         except AttributeError:
             pass
     # Still no paz? Antilles or IPOC format!
-    if trace.stats.paz == None\
+    if trace.stats.paz is None\
             and (trace.stats.format == 'Antilles'
                  or trace.stats.format == 'IPOC'):
         paz = AttribDict()
@@ -124,7 +127,7 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
         trace.stats.paz = paz
     # If we still don't have trace coordinates,
     # we try to get them from SAC header
-    if trace.stats.coords == None:
+    if trace.stats.coords is None:
         try:
             stla = trace.stats.sac.stla
             stlo = trace.stats.sac.stlo
@@ -170,7 +173,7 @@ def __add_instrtype__(trace):
     # name in "kinst" (ISNet format).
     # In this case, we define band and instrument codes
     # a posteriori.
-    if instrtype == None:
+    if instrtype is None:
         try:
             instr = trace.stats.sac.kinst
             if 'CMG-5T' in instr:
@@ -199,7 +202,7 @@ def __add_instrtype__(trace):
 
 
 def __add_hypocenter__(trace, hypo):
-    if hypo == None:
+    if hypo is None:
         # Try to get hypocenter information from the SAC header
         try:
             evla = trace.stats.sac.evla
@@ -230,7 +233,7 @@ def __add_picks__(trace, picks):
     stat_picks = []
     station = trace.stats.station
 
-    if picks == None:
+    if picks is None:
         # try to get picks from SAC header
         if trace.stats._format != 'SAC':
             return
@@ -321,7 +324,7 @@ def __complete_picks__(st):
 
 # FILE PARSING ----------------------------------------------------------------
 def __read_dataless__(path):
-    if path == None:
+    if path is None:
         return None
 
     logging.info('Reading dataless...')
@@ -343,15 +346,15 @@ def __read_dataless__(path):
 def __read_paz__(path):
     '''
     Reads a directory with paz files
-    (TODO: read a single file)
+    or a single file.
     Limitations:
     (1) directory must contain *only* paz files
-    (2) all the paz files must have the same prefix (if any)
-    (3) paz file can optionally have ".pz" or ".paz" suffixes
-    (4) paz file name (without prefix and suffix) *has* to be
+    (2) paz file can optionally have ".pz" or ".paz" suffixes
+    (3) paz file name (without prefix and suffix) *has* to have
         the trace_id (NET.STA.LOC.CHAN) of the corresponding trace
+        in the last part of his name (e.g. 20110208_1600.NOW.IV.CRAC.00.EHZ.paz)
     '''
-    if path == None:
+    if path is None:
         return None
 
     from obspy.sac.sacio import attach_paz
@@ -373,14 +376,15 @@ def __read_paz__(path):
                 tr = Trace()
                 attach_paz(tr, fullpath)
                 bname = os.path.basename(filename)
-                #strip .pz suffix, if there
+                # strip .pz suffix, if there
                 bname = re.sub('.pz$', '', bname)
-                #strip .paz suffix, if there
+                # strip .paz suffix, if there
                 bname = re.sub('.paz$', '', bname)
-                #and strip any common prefix
-                #we assume that the string which remains
-                #is the trace_id
-                trace_id = re.sub('^' + prefix, '', bname)
+                # and strip any common prefix
+                bname = re.sub('^' + prefix, '', bname)
+                # we assume that the last four fields of bname
+                # (separated by '.') are the trace_id
+                trace_id = '.'.join(bname.split('.')[-4:])
                 paz[trace_id] = tr.stats.paz.copy()
             except IOError:
                 continue
@@ -403,7 +407,7 @@ def __parse_hypocenter__(hypo_file):
     hypo.origin_time = None
     hypo.evid = None
 
-    if hypo_file == None:
+    if hypo_file is None:
         return None
 
     if isinstance(hypo_file, str):
@@ -475,7 +479,7 @@ def __is_hypo_format(fp):
 
 
 def __parse_picks__(pick_file):
-    if pick_file == None:
+    if pick_file is None:
         return None
 
     try:
