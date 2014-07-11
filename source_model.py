@@ -20,6 +20,7 @@ from lib.ssp_plot_spectra import plot_spectra
 from lib.ssp_plot_traces import plot_traces
 from lib.spectrum import Spectrum
 
+
 def make_synth(config, spec_st, trace_spec=None):
     fdelta = 0.01
     fmin = config.options.fmin
@@ -67,7 +68,7 @@ def make_synth(config, spec_st, trace_spec=None):
 def main():
     config = configure('source_model')
 
-    if len(config.args) > 0:
+    if len(config.options.trace_path) > 0:
         st = read_traces(config)
         # Deconvolve, filter, cut traces:
         proc_st = process_traces(config, st)

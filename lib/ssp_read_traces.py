@@ -578,8 +578,8 @@ def __set_hypo_file_path__(config):
     if config.options.hypo_file != None:
         return
     # try with the basename of the datadir
-    if os.path.isdir(config.args[0]):
-        hypo_file = config.args[0] + '.phs.h'
+    if os.path.isdir(config.options.trace_path[0]):
+        hypo_file = config.options.trace_path[0] + '.phs.h'
         try:
             open(hypo_file)
             config.options.hypo_file = hypo_file
@@ -592,8 +592,8 @@ def __set_pick_file_path__(config):
     if config.options.pick_file != None:
         return
     # try with the basename of the datadir
-    if os.path.isdir(config.args[0]):
-        pick_file = config.args[0] + '.phs'
+    if os.path.isdir(config.options.trace_path[0]):
+        pick_file = config.options.trace_path[0] + '.phs'
         try:
             open(pick_file)
             config.options.pick_file = pick_file
@@ -655,8 +655,8 @@ def read_traces(config):
         #         to move files to it and extract all tar archives
         tmpdir = tempfile.mkdtemp()
         filelist = []
-        for arg in config.args:
-            __build_filelist__(arg, filelist, tmpdir)
+        for trace_path in config.options.trace_path:
+            __build_filelist__(trace_path, filelist, tmpdir)
         # ph 1.2: rerun '_build_filelist()' in tmpdir to add to the
         #         filelist all the extraceted files
         listing = os.listdir(tmpdir)
