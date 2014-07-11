@@ -13,6 +13,7 @@ It reads as input a file, a tgz archive or a directory (which can, in turn, cont
 files and/or tgz archives) with traces in any format supported by ObsPy.
 
 Optionally, one can specify:
+
    - a file or a dir path containing station dataless
    - a hypocenter file
    - a phase file with P and S arrivals
