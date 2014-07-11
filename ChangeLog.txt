@@ -6,6 +6,11 @@ Python code to invert S-wave displacement spectra
               Agnès Chounet <chounet@ipgp.fr>
 Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
 
+v0.8 - 2014-07-11
+	- Trace plot showing S and noise time windows
+	- Improved handling of paz files
+	- Per-station Mo on output file
+	- Code cleaning and optimization
 v0.7 - 2014-04-07
 	- Code reorganization:
 		- inversion code splitted to its own functions
