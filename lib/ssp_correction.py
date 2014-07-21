@@ -19,7 +19,7 @@ def station_correction(spec_st, config):
     with open(res_filepath,'rb') as fp:
         residual = pickle.load(fp)
 
-    for spec in [spec for spec in spec_st if (spec.stats.channel=='H')]:
+    for spec in [spec for spec in spec_st if (spec.stats.channel[-1] == 'H')]:
         station = spec.stats.station
         if station in set(x.stats.station for x in residual):
             corr = residual.select(station=station)[0]
