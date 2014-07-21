@@ -23,7 +23,7 @@ def spectral_residuals(config, spec_st, evid, sourcepar_mean):
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
         for spec in spec_st_sel.traces:
-            if spec.stats.channel != 'H':
+            if spec.stats.channel[-1] != 'H':
                 continue
 
             xdata = spec.get_freq()
