@@ -40,12 +40,18 @@ class Pick(AttribDict):
 
 
 # TRACE MANIPULATION ----------------------------------------------------------
-def __correct_traceid__(trace, traceids):
-    if traceids is None:
+correct_traceids = None
+
+def __correct_traceid__(trace, traceid_file):
+    if traceid_file is None:
         return
+    global correct_traceids
+    if correct_traceids is None:
+        #FIXME: load_source is not secure!
+        trids = load_source('traceids', traceid_file)
+        correct_traceids = trids.__correct_traceid_dict__
     try:
-        trids = load_source('traceids', traceids)
-        traceid = trids.__correct_traceid_dict__[trace.getId()]
+        traceid = correct_traceids[trace.getId()]
         net, sta, loc, chan = traceid.split('.')
         trace.stats.network = net
         trace.stats.station = sta
@@ -53,6 +59,27 @@ def __correct_traceid__(trace, traceids):
         trace.stats.channel = chan
     except KeyError:
         pass
+
+
+def __correct_station_name__(station, traceid_file):
+    if traceid_file is None:
+        return
+    global correct_traceids
+    if correct_traceids is None:
+        #FIXME: load_source is not secure!
+        trids = load_source('traceids', traceid_file)
+        correct_traceids = trids.__correct_traceid_dict__
+    # get all the keys containing station name in it
+    keys = [key for key in correct_traceids
+            if station == key.split('.')[1]]
+    # then take just the first one
+    try:
+        key = keys[0]
+    except IndexError:
+        return station
+    traceid = correct_traceids[key]
+    correct_station = traceid.split('.')[1]
+    return correct_station
 
 
 def __add_paz_and_coords__(trace, dataless, paz_dict=None):
@@ -478,7 +505,8 @@ def __is_hypo_format(fp):
 #TODO: def __is_NLL_format(fp):
 
 
-def __parse_picks__(pick_file):
+def __parse_picks__(config):
+    pick_file = config.options.pick_file
     if pick_file is None:
         return None
 
@@ -504,6 +532,7 @@ def __parse_picks__(pick_file):
 
                     pick = Pick()
                     pick.station = line[0:4].strip()
+                    pick.station = __correct_station_name__(pick.station, config.traceids)
                     pick.flag = line[4:5]
                     pick.phase = line[5:6]
                     pick.polarity = line[6:7]
@@ -623,7 +652,7 @@ def read_traces(config):
     hypo = __parse_hypocenter__(config.options.hypo_file)
     # parse pick file
     __set_pick_file_path__(config)
-    picks = __parse_picks__(config.options.pick_file)
+    picks = __parse_picks__(config)
 
     # finally, read traces
     # traces can be defined in a pickle catalog (Antilles format)...
@@ -695,4 +724,5 @@ def read_traces(config):
 
     __complete_picks__(st)
     st.sort()
+    #ssp_exit()
     return st
