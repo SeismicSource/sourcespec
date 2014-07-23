@@ -459,7 +459,7 @@ def __is_hypo_format(fp):
         # remove newline
         line = line.replace('\n','')
         # skip separator and empty lines
-        stripped_line = line.replace(' ','')
+        stripped_line = line.strip()
         if stripped_line == '10' or stripped_line == '':
             continue
         # Check if it is a pick line
@@ -491,7 +491,7 @@ def __parse_picks__(pick_file):
                     # remove newline
                     line = line.replace('\n','')
                     # skip separator and empty lines
-                    stripped_line = line.replace(' ','')
+                    stripped_line = line.strip()
                     if stripped_line == '10' or stripped_line == '':
                         continue
                     # Check if it is a pick line
@@ -503,7 +503,7 @@ def __parse_picks__(pick_file):
                         continue
 
                     pick = Pick()
-                    pick.station = line[0:4]
+                    pick.station = line[0:4].strip()
                     pick.flag = line[4:5]
                     pick.phase = line[5:6]
                     pick.polarity = line[6:7]
@@ -523,7 +523,7 @@ def __parse_picks__(pick_file):
                         stime = line[31:36]
                     except:
                         continue
-                    if stime.replace(' ','') == '':
+                    if stime.strip() == '':
                         continue
 
                     pick2 = Pick()
