@@ -502,7 +502,6 @@ def __parse_picks__(pick_file):
                             line[20].isdigit()):
                         continue
 
-                    #pick = __new_pick__()
                     pick = Pick()
                     pick.station = line[0:4]
                     pick.flag = line[4:5]
@@ -527,7 +526,6 @@ def __parse_picks__(pick_file):
                     if stime.replace(' ','') == '':
                         continue
 
-                    #pick2 = __new_pick__()
                     pick2 = Pick()
                     pick2.station = pick.station
                     pick2.flag = line[36:37]
@@ -539,7 +537,14 @@ def __parse_picks__(pick_file):
                         # If we cannot read pick quality,
                         # we give the pick the lowest quality
                         pick2.quality = 4
-                    pick2.time = pick.time + float(stime)
+                    # pick2.time has the same date, hour and minutes than pick.time
+                    # We therefore make first a copy of pick.time...
+                    pick2.time = UTCDateTime(pick.time)
+                    # ...then set seconds and miscorseconds to 0...
+                    pick2.time.second = 0
+                    pick2.time.microsecond = 0
+                    # ...and finally add stime
+                    pick2.time += float(stime)
 
                     picks.append(pick2)
             else:
