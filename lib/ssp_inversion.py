@@ -231,8 +231,8 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             par['hyp_dist'] = hd
             par['az'] = az
             par['Ml'] = Ml #FIXME: this is the network magnitude!
-            chanId = '%s.%s' % (station, spec.stats.instrtype)
-            sourcepar[chanId] = par
+            statId = '%s %s' % (spec.id, spec.stats.instrtype)
+            sourcepar[statId] = par
 
             spec_synth = spec.copy()
             spec_synth.stats.channel = spec.stats.channel[0:2] + 'S'
