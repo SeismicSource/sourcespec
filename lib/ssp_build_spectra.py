@@ -5,6 +5,7 @@
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
+# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
 '''
 Build spectral objects.
 '''
@@ -51,7 +52,7 @@ def __compute_h__(spec_st, code):
         # ('code' is band+instrument code)
         if spec.stats.channel[0:2] != code:
             continue
-        if spec_h == None:
+        if spec_h is None:
             spec_h = spec.copy()
             spec_h.data = np.power(spec_h.data, 2)
             spec_h.stats.channel = code + 'H'
@@ -207,7 +208,7 @@ def build_spectra(config, st, noise_weight=False):
             specnoise.stats.hypo_dist = stats.hypo_dist
 
         # Integrate in frequency domain (divide by the pulsation omega)
-        # (performed only if config.time_domain_int == False)
+        # (performed only if config.time_domain_int is False)
         for i in range(0, n_freq_int):
             spec.data /= (2 * math.pi * spec.get_freq())
             if noise_weight:

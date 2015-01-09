@@ -4,6 +4,7 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
+# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
 '''
 Trace processing for source_spec.
 '''
@@ -36,7 +37,7 @@ def process_traces(config, st):
 
         # compute hypocentral distance
         hd = hypo_dist(trace)
-        if hd == None:
+        if hd is None:
             logging.warning('%s %s: Unable to compute hypocentral distance: skipping trace' % (traceId, instrtype))
             continue
         trace.stats.hypo_dist = hd
@@ -55,7 +56,7 @@ def process_traces(config, st):
 
         # Remove instrument response
         if remove_instr_response(trace, config.correct_instrumental_response,
-                                 config.pre_filt) == None:
+                                 config.pre_filt) is None:
             logging.warning('%s %s: Unable to remove instrument response: skipping trace' % (traceId, instrtype))
             continue
 
@@ -63,7 +64,7 @@ def process_traces(config, st):
         #### start signal/noise ratio
         p_arrival_time = wave_arrival(trace, config.vp, 'P')
         s_arrival_time = wave_arrival(trace, config.vs, 'S')
-        if (p_arrival_time == None or s_arrival_time == None):
+        if (p_arrival_time is None or s_arrival_time is None):
             logging.warning('%s %s: Unable to get arrival times: skipping trace' % (traceId, instrtype))
             continue
 

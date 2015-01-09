@@ -4,6 +4,7 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
+# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
 '''
 Spectral plotting routine.
 '''
@@ -31,13 +32,13 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     # Unload matplotlib modules (which have been loaded by obspy.signal).
     unload_matplotlib()
     # Check config, if we need to plot at all
-    if config.PLOT_SHOW == False and config.PLOT_SAVE == False:
+    if not config.PLOT_SHOW and not config.PLOT_SAVE:
         return
     # Re-import matplotlib
     import matplotlib
     matplotlib.rcParams['pdf.fonttype'] = 42 #to edit text in Illustrator
     # If we do not need to show the plot, we use the 'agg' backend
-    if config.PLOT_SHOW == False:
+    if not config.PLOT_SHOW:
         matplotlib.use('agg')
     # Finally we load the pyplot module
     import matplotlib.pyplot as plt

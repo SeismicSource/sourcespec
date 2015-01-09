@@ -5,6 +5,7 @@
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
+# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
 '''
 Setup functions for source_spec
 '''
@@ -189,7 +190,7 @@ def __parse_args_source_model():
         oplist = map(list, zip(*oplist))
         for l in oplist:
             for n, x in enumerate(l):
-                if x == None:
+                if x is None:
                     l[n] = l[n-1]
 
     options.fc, options.mag, options.Mo, options.t_star, options.alpha = oplist
@@ -216,7 +217,7 @@ def __write_sample_config(configspec, progname):
     c = ConfigObj(configspec=configspec)
     val = Validator()
     c.validate(val)
-    c.defaults=[]
+    c.defaults = []
     c.initial_comment = configspec.initial_comment
     c.comments = configspec.comments
     configfile = progname + '.conf'
@@ -251,17 +252,14 @@ def configure(progname='source_spec'):
 
     val = Validator()
     test = config_obj.validate(val)
-    if test is True:
-        # no problem
-        pass
-    elif test is False:
-        sys.stderr.write('No configuration value present!\n')
-        sys.exit(1)
-    else:
+    if isinstance(test, dict):
         for entry in test:
-            if test[entry] == False:
+            if not test[entry]:
                 sys.stderr.write('Invalid value for "%s": "%s"\n'
                         % (entry, config_obj[entry]))
+        sys.exit(1)
+    if not test:
+        sys.stderr.write('No configuration value present!\n')
         sys.exit(1)
 
     # Create a Config object
@@ -274,7 +272,7 @@ def configure(progname='source_spec'):
 
     return config
 
-oldlogfile=None
+oldlogfile = None
 def setup_logging(config, basename=None):
     '''
     Setup the logging infrastructure.
