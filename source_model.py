@@ -5,6 +5,7 @@
 # Direct spectral modelling
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
+# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
 import math
 import numpy as np
 #import cPickle as pickle
