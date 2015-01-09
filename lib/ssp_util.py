@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ssp_util.py
 #
-# (c) 2012-2014 Claudio Satriano <satriano@ipgp.fr>
+# (c) 2012-2015 Claudio Satriano <satriano@ipgp.fr>
 '''
 Utility functions for source_spec.
 '''
@@ -17,14 +17,14 @@ from obspy.signal import cosTaper
 def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
     amp_min = amp.min()
     amp_max = amp.max()
-    if amp_minmax == None:
+    if amp_minmax is None:
         amp_minmax = [amp_min, amp_max]
     else:
         if amp_min < amp_minmax[0]: amp_minmax[0] = amp_min
         if amp_max > amp_minmax[1]: amp_minmax[1] = amp_max
     freq_min = freq.min()
     freq_max = freq.max()
-    if freq_minmax == None:
+    if freq_minmax is None:
         freq_minmax = [freq_min, freq_max]
     else:
         if freq_min < freq_minmax[0]: freq_minmax[0] = freq_min
@@ -38,7 +38,7 @@ def wave_arrival(trace, vel, phase):
     Returns the theoretical arrival time if no pick is available
     or if the pick is too different from the theoretical arrival.
     '''
-    if trace.stats.hypo.origin_time != None:
+    if trace.stats.hypo.origin_time is not None:
         theo_pick_time =\
             trace.stats.hypo.origin_time + trace.stats.hypo_dist / vel
         trace.stats.arrivals[phase] = (phase + 'theo', theo_pick_time - trace.stats.starttime)
@@ -46,7 +46,7 @@ def wave_arrival(trace, vel, phase):
         theo_pick_time = None
     for pick in trace.stats.picks:
         if pick.phase == phase:
-            if theo_pick_time != None:
+            if theo_pick_time is not None:
                 delta_t = pick.time - theo_pick_time
                 if abs(delta_t) > 4.: # seconds #TODO parametrize?
                     logging.warning(
@@ -112,7 +112,7 @@ def remove_instr_response(trace, correct='True', pre_filt=(0.5, 0.6, 40., 45.)):
         return trace
     traceId = trace.getId()
     paz = trace.stats.paz
-    if paz == None:
+    if paz is None:
         logging.warning('%s: no poles and zeros for trace' % traceId)
         return None
 
@@ -175,7 +175,7 @@ def hypo_dist(trace):
         hypo = trace.stats.hypo
     except (KeyError, AttributeError):
         return None
-    if coords == None or hypo == None:
+    if coords is None or hypo is None:
         return None
     stla = coords.latitude
     stlo = coords.longitude
@@ -183,8 +183,8 @@ def hypo_dist(trace):
     evla = hypo.latitude
     evlo = hypo.longitude
     evdp = hypo.depth
-    if stla == None or stlo == None or stel == None\
-        or evla == None or evlo == None or evdp == None:
+    if stla is None or stlo is None or stel is None\
+        or evla is None or evlo is None or evdp is None:
             return None
     epi_dist, gcarc = calc_dist(stla, stlo, evla, evlo)
     hypo_dist = math.sqrt(epi_dist**2 + (stel+evdp)**2)
