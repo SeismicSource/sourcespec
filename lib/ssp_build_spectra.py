@@ -19,28 +19,61 @@ from obspy.core import Stream
 from ssp_setup import dprint
 from ssp_util import wave_arrival, cosine_taper,\
         moment_to_mag
+from ssp_process_traces import filter_trace
 from ssp_correction import station_correction
 import spectrum
 from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
 
 
-def __process__(trace, bp_freqmin, bp_freqmax, integrate=False):
-    # remove the mean...
+def _time_integrate(config, trace):
+    instrtype = trace.stats.instrtype
+    if instrtype == 'acc':
+        nint = 2
+    elif instrtype == 'shortp':
+        nint = 1
+    elif instrtype == 'broadb':
+        nint = 1
+    else:
+        raise ValueError
     trace.detrend(type='constant')
-    # ...and the linear trend...
     trace.detrend(type='linear')
-    nyquist = 1./(2. * trace.stats.delta)
-    if bp_freqmax >= nyquist:
-        bp_freqmax = nyquist * 0.999
-        logging.warning('%s: maximum frequency for bandpass filtering ' % trace.id +
-                        'is larger or equal to Nyquist. Setting it to %s Hz' % bp_freqmax)
-    trace.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
-    if integrate:
+    for i in range(0, nint):
         trace.data = cumtrapz(trace.data) * trace.stats.delta
         trace.stats.npts -= 1
+        filter_trace(config, trace)
 
 
-def __compute_h__(spec_st, code):
+def _frequency_integrate(config, spec):
+    instrtype = spec.stats.instrtype
+    if instrtype == 'acc':
+        nint = 2
+    elif instrtype == 'shortp':
+        nint = 1
+    elif instrtype == 'broadb':
+        nint = 1
+    else:
+        raise ValueError
+    for i in range(0, nint):
+        spec.data /= (2 * math.pi * spec.get_freq())
+
+
+def _cut_spectrum(config, spec):
+    instrtype = spec.stats.instrtype
+    if instrtype == 'acc':
+        freq1 = config.freq1_acc
+        freq2 = config.freq2_acc
+    elif instrtype == 'shortp':
+        freq1 = config.freq1_shortp
+        freq2 = config.freq2_shortp
+    elif instrtype == 'broadb':
+        freq1 = config.freq1_broadb
+        freq2 = config.freq2_broadb
+    else:
+        raise ValueError
+    return spec.slice(freq1, freq2)
+
+
+def _compute_h(spec_st, code):
     '''
     Computes the component 'H' from geometric
     mean of the stream components
@@ -105,48 +138,11 @@ def build_spectra(config, st, noise_weight=False):
         trace_cut = copy(trace)
         trace_cut.stats = deepcopy(trace.stats)
 
-        instrtype = stats.instrtype
-        if instrtype == 'acc':
-            nint = 2 #number of intergrations to perform
-            # band-pass frequencies:
-            # TODO: calculate from sampling rate?
-            bp_freqmin = config.bp_freqmin_acc
-            bp_freqmax = config.bp_freqmax_acc
-            # cut frequencies:
-            freq1 = config.freq1_acc
-            freq2 = config.freq2_acc
-        elif instrtype == 'shortp':
-            nint = 1 #number of intergrations to perform
-            # band-pass frequencies:
-            # TODO: calculate from sampling rate?
-            bp_freqmin = config.bp_freqmin_shortp
-            bp_freqmax = config.bp_freqmax_shortp
-            # cut frequencies:
-            freq1 = config.freq1_shortp
-            freq2 = config.freq2_shortp
-        elif instrtype == 'broadb':
-            nint = 1
-            bp_freqmin = config.bp_freqmin_broadb
-            bp_freqmax = config.bp_freqmax_broadb
-            # cut frequencies:
-            freq1 = config.freq1_broadb
-            freq2 = config.freq2_broadb
-        else:
-            logging.warning('%s: Unknown instrument type: %s: skipping trace' % (traceId, instrtype))
-            continue
-
+        # Integrate in time domain, if required.
+        # (otherwhise frequency-domain integration is
+        # performed later)
         if config.time_domain_int:
-            n_time_procs = nint
-            n_freq_int = 0
-            integrate = True
-        else:
-            n_time_procs = 1
-            n_freq_int = nint
-            integrate = False
-
-        # Time domain processing
-        for i in range(0, n_time_procs):
-            __process__(trace_cut, bp_freqmin, bp_freqmax, integrate)
+            _time_integrate(config, trace_cut)
 
         if noise_weight:
             # Noise time window for weighting function:
@@ -192,7 +188,7 @@ def build_spectra(config, st, noise_weight=False):
 
         # calculate fft
         spec = spectrum.do_spectrum(trace_cut)
-        spec.stats.instrtype = instrtype
+        spec.stats.instrtype = stats.instrtype
         spec.stats.coords = stats.coords
         spec.stats.hypo = stats.hypo
         spec.stats.hypo_dist = stats.hypo_dist
@@ -202,17 +198,17 @@ def build_spectra(config, st, noise_weight=False):
             cosine_taper(trace_noise.data, width=config.taper_halfwidth)
             trace_noise.data *= trace_noise.stats.hypo_dist * 1000
             specnoise = spectrum.do_spectrum(trace_noise)
-            specnoise.stats.instrtype = instrtype
+            specnoise.stats.instrtype = stats.instrtype
             specnoise.stats.coords = stats.coords
             specnoise.stats.hypo = stats.hypo
             specnoise.stats.hypo_dist = stats.hypo_dist
 
-        # Integrate in frequency domain (divide by the pulsation omega)
-        # (performed only if config.time_domain_int is False)
-        for i in range(0, n_freq_int):
-            spec.data /= (2 * math.pi * spec.get_freq())
+        # Integrate in frequency domain, if no time-domain
+        # integration has been performed
+        if not config.time_domain_int:
+            _frequency_integrate(config, spec)
             if noise_weight:
-                specnoise.data /= (2 * math.pi * specnoise.get_freq())
+                _frequency_integrate(config, specnoise)
 
         # smooth the abs of fft
         spec.data = konnoOhmachiSmoothing(spec.data, spec.get_freq(),
@@ -222,7 +218,7 @@ def build_spectra(config, st, noise_weight=False):
         # coefficient for converting displ spectrum
         # to seismic moment (Aki&Richards,1980)
         vs_m = config.vs*1000
-        vs3  = pow(vs_m,3)
+        vs3 = pow(vs_m,3)
         coeff = 4 * math.pi * vs3 * config.rho /config.rps/2.
         dprint('coeff= %f' % coeff)
 
@@ -236,13 +232,13 @@ def build_spectra(config, st, noise_weight=False):
                                           40, normalize=True)
             specnoise.data *= coeff
 
-        # Cut the spectrum between freq1 and freq2
-        spec_cut = spec.slice(freq1, freq2)
+        # Cut the spectrum
+        spec_cut = _cut_spectrum(config, spec)
         # append to spec streams
         spec_st.append(spec_cut)
 
         if noise_weight:
-            specnoise_cut = specnoise.slice(freq1, freq2)
+            specnoise_cut = _cut_spectrum(config, specnoise)
             specnoise_st.append(specnoise_cut)
     # end of loop on traces
 
@@ -256,13 +252,13 @@ def build_spectra(config, st, noise_weight=False):
             specnoise_st_sel = specnoise_st.select(station=station)
         # 'code' is band+instrument code
         for code in set(x.stats.channel[0:2] for x in spec_st_sel):
-            spec_h = __compute_h__(spec_st_sel, code)
+            spec_h = _compute_h(spec_st_sel, code)
             spec_st.append(spec_h)
 
             # Compute "H" component for noise, if requested,
             # and weighting function.
             if noise_weight:
-                specnoise_h = __compute_h__(specnoise_st_sel, code)
+                specnoise_h = _compute_h(specnoise_st_sel, code)
                 specnoise_st.append(specnoise_h)
 
                 # Weighting function is the ratio between "H" components

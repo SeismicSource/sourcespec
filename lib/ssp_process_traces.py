@@ -16,6 +16,37 @@ from obspy.core import Stream
 from ssp_setup import dprint, ssp_exit
 from ssp_util import remove_instr_response, hypo_dist, wave_arrival
 
+
+def filter_trace(config, trace):
+    instrtype = trace.stats.instrtype
+    if instrtype == 'acc':
+        # band-pass frequencies:
+        # TODO: calculate from sampling rate?
+        bp_freqmin = config.bp_freqmin_acc
+        bp_freqmax = config.bp_freqmax_acc
+    elif instrtype == 'shortp':
+        # band-pass frequencies:
+        # TODO: calculate from sampling rate?
+        bp_freqmin = config.bp_freqmin_shortp
+        bp_freqmax = config.bp_freqmax_shortp
+    elif instrtype == 'broadb':
+        # band-pass frequencies:
+        bp_freqmin = config.bp_freqmin_broadb
+        bp_freqmax = config.bp_freqmax_broadb
+    else:
+        raise ValueError
+    # remove the mean...
+    trace.detrend(type='constant')
+    # ...and the linear trend...
+    trace.detrend(type='linear')
+    nyquist = 1./(2. * trace.stats.delta)
+    if bp_freqmax >= nyquist:
+        bp_freqmax = nyquist * 0.999
+        logging.warning('%s: maximum frequency for bandpass filtering ' % trace.id +
+                        'is larger or equal to Nyquist. Setting it to %s Hz' % bp_freqmax)
+    trace.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
+
+
 def process_traces(config, st):
     '''
     Removes mean, deconvolves, and ignores unwanted components.
@@ -40,7 +71,6 @@ def process_traces(config, st):
         trace = copy(orig_trace)
         trace.stats = deepcopy(orig_trace.stats)
 
-        traceId = trace.id
         stats = trace.stats
         comp = stats.channel
         instrtype = stats.instrtype
@@ -58,13 +88,19 @@ def process_traces(config, st):
         rms = np.sqrt(rms2)
         rms_min = config.rmsmin
         if rms <= rms_min:
-            logging.warning('%s %s: Trace RMS smaller than %g: skipping trace' % (traceId, instrtype, rms_min))
+            logging.warning('%s %s: Trace RMS smaller than %g: skipping trace' % (trace.id, instrtype, rms_min))
             continue
 
         # Remove instrument response
         if remove_instr_response(trace, config.correct_instrumental_response,
                                  config.pre_filt) is None:
-            logging.warning('%s %s: Unable to remove instrument response: skipping trace' % (traceId, instrtype))
+            logging.warning('%s %s: Unable to remove instrument response: skipping trace' % (trace.id, instrtype))
+            continue
+
+        try:
+            filter_trace(config, trace)
+        except ValueError:
+            logging.warning('%s: Unknown instrument type: %s: skipping trace' % (trace.id, instrtype))
             continue
 
         # Check if the trace has (significant) signal to noise ratio
@@ -106,11 +142,11 @@ def process_traces(config, st):
         rmsS = np.sqrt(rmsS2)
 
         sn_ratio = rmsS/rmsnoise
-        logging.info('%s %s: S/N: %.1f' % (traceId, instrtype, sn_ratio))
+        logging.info('%s %s: S/N: %.1f' % (trace.id, instrtype, sn_ratio))
 
         snratio_min = config.sn_min
         if sn_ratio < snratio_min:
-            logging.warning('%s %s: S/N smaller than %g: skipping trace' % (traceId, instrtype, snratio_min))
+            logging.warning('%s %s: S/N smaller than %g: skipping trace' % (trace.id, instrtype, snratio_min))
             continue
         #### end signal/noise ratio
 
