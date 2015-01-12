@@ -705,7 +705,7 @@ def read_traces(config):
             try:
                 tmpst = read(filename, fsize=False)
             except:
-                logging.error('%s: Unable to read file as a trace: skipping' % filename)
+                logging.warning('%s: Unable to read file as a trace: skipping' % filename)
                 continue
             for trace in tmpst.traces:
                 st.append(trace)
