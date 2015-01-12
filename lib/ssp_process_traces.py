@@ -22,25 +22,32 @@ def process_traces(config, st):
     '''
     out_st = Stream()
     for orig_trace in st.traces:
+        # compute hypocentral distance
+        hd = hypo_dist(orig_trace)
+        if hd is None:
+            logging.warning('%s: Unable to compute hypocentral distance: skipping trace' % orig_trace.id)
+            continue
+        orig_trace.stats.hypo_dist = hd
+
+        # retrieve arrival times
+        p_arrival_time = wave_arrival(orig_trace, config.vp, 'P')
+        s_arrival_time = wave_arrival(orig_trace, config.vs, 'S')
+        if (p_arrival_time is None or s_arrival_time is None):
+            logging.warning('%s: Unable to get arrival times: skipping trace' % orig_trace.id)
+            continue
+
         # copy trace for manipulation
         trace = copy(orig_trace)
         trace.stats = deepcopy(orig_trace.stats)
 
         traceId = trace.id
         stats = trace.stats
-        comp  = stats.channel
+        comp = stats.channel
         instrtype = stats.instrtype
         if config.ignore_vertical and comp[-1] == 'Z':
             continue
         station = stats.station
         dprint('%s %s' % (station, comp))
-
-        # compute hypocentral distance
-        hd = hypo_dist(trace)
-        if hd is None:
-            logging.warning('%s %s: Unable to compute hypocentral distance: skipping trace' % (traceId, instrtype))
-            continue
-        trace.stats.hypo_dist = hd
 
         # check if the trace has (significant) signal
         # since the count value is generally huge, we need to demean twice
@@ -62,11 +69,6 @@ def process_traces(config, st):
 
         # Check if the trace has (significant) signal to noise ratio
         #### start signal/noise ratio
-        p_arrival_time = wave_arrival(trace, config.vp, 'P')
-        s_arrival_time = wave_arrival(trace, config.vs, 'S')
-        if (p_arrival_time is None or s_arrival_time is None):
-            logging.warning('%s %s: Unable to get arrival times: skipping trace' % (traceId, instrtype))
-            continue
 
         # noise time window for s/n ratio
         #noise_start_t = trace.stats['starttime']

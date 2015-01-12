@@ -38,6 +38,11 @@ def wave_arrival(trace, vel, phase):
     Returns the theoretical arrival time if no pick is available
     or if the pick is too different from the theoretical arrival.
     '''
+    try:
+        arrival_secs = trace.stats.arrivals[phase][1]
+        return trace.stats.starttime + arrival_secs
+    except KeyError:
+        pass
     if trace.stats.hypo.origin_time is not None:
         theo_pick_time =\
             trace.stats.hypo.origin_time + trace.stats.hypo_dist / vel
@@ -50,12 +55,13 @@ def wave_arrival(trace, vel, phase):
                 delta_t = pick.time - theo_pick_time
                 if abs(delta_t) > 4.: # seconds #TODO parametrize?
                     logging.warning(
-                        '%s: measured %s pick time - theoretical time = %.1f s. Using theoretical.'
+                        '%s: measured %s pick time - theoretical time = %.1f s. Using theoretical'
                         % (trace.id, phase, delta_t))
                     continue
-            logging.info('%s: found pick.' % trace.id)
+            logging.info('%s: found %s pick' % (trace.id, phase))
             trace.stats.arrivals[phase] = (phase, pick.time - trace.stats.starttime)
             return pick.time
+    logging.info('%s: using theoretical %s pick' % (trace.id, phase))
     return theo_pick_time
 
 def moment_to_mag(data):
