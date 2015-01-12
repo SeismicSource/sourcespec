@@ -147,13 +147,15 @@ def local_magnitude(config, st, deconvolve=False):
         # estimate local magnitude
         if deconvolve:
             paz = trace_cut.stats.paz
+            if paz is None:
+                logging.warning('%s: no poles and zeros for trace: skipping trace' % traceId)
+                continue
         else:
             paz = {'poles': [],
                    'zeros': [],
                    'gain': 1.0, 'sensitivity': 1.0}
 
         ml = estimateMagnitude(paz, delta_amp, delta_t, trace_cut.stats.hypo_dist)
-
         magnitudes.append(ml)
         logging.info('%s %s: %s %.1f' % (traceId, trace.stats.instrtype, "Ml", ml))
 
