@@ -144,10 +144,12 @@ def write_output(config, evid, sourcepar):
                 line1 = line
                 line = fp.readline()
             line = list(line)
-        mag='%03.2f' % Mw_mean
+        mw_str = '%03.2f' % Mw_mean
+        ml_str = '%03.2f' % Ml_mean
         for i in range(0,4):
-            #line[49+i] = mag[0+i]
-            line[45+i] = mag[0+i]
+            line[49+i] = mw_str[0+i]
+            #line[45+i] = mw_str[0+i]
+            line[69+i] = ml_str[0+i]
         outline = ''.join(line)
         hypo_file_out = os.path.join(config.options.outdir, '%s.ssp.h' % evid)
         with open(hypo_file_out, 'w') as fp:
