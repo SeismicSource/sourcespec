@@ -14,9 +14,10 @@ It reads as input a file, a tgz archive or a directory (which can, in turn, cont
 files and/or tgz archives) with traces in any format supported by ObsPy.
 
 Optionally, one can specify:
- - a file or a dir path containing station dataless
- - a hypocenter file
- - a phase file with P and S arrivals
+
+   - a file or a dir path containing station dataless
+   - a hypocenter file
+   - a phase file with P and S arrivals
 
 The code computes spectra of the two horizontal components (and optionally of the vertical
 component, as well), and then modulus as:
@@ -34,16 +35,17 @@ Computes average and standard deviation of Mw, Mo, fc, t*, source radius and Bru
 ### Sample runs:
 To run the CRL test:
 
-     ./source_spec.py testdata/CRL/2010.01.20-08.10.27 -c testconfig/config_CRL.conf\
+     ./source_spec.py -c testconfig/config_CRL.conf\
+         -t testdata/CRL/2010.01.20-08.10.27\
          -H testdata/CRL/2010.01.20-08.10.27.phs.h -p testdata/CRL/2010.01.20-08.10.27.phs
 
 To run the ISNet test:
 
-     ./source_spec.py testdata/ISNet/14641r.full.sac.tgz -c testconfig/config_ISNet.conf
+     ./source_spec.py -c testconfig/config_ISNet.conf -t testdata/ISNet/14641r.full.sac.tgz
 
 To run the IPOC test:
 
-     ./source_spec.py testdata/IPOC/324_0051-PB05-03077_tr14/ -c testconfig/config_IPOC.conf
+     ./source_spec.py -c testconfig/config_IPOC.conf -t testdata/IPOC/324_0051-PB05-03077_tr14
 
 To get help:
 
@@ -58,8 +60,10 @@ values for Mw, fc and t*.
 
 To run source\_model test on CRL:
 
-     ./source_model.py -c testconfig/config_CRL.conf testdata/CRL/2010.01.20-08.10.27/2010.01.20-08.10.27.TRIZ.HHE.SAC\
-          -H testdata/CRL/2010.01.20-08.10.27.phs.h --mag=3.0 --fc=6,10 --tstar=0.05,0.07 -p
+     ./source_model.py -c testconfig/config_CRL.conf\
+         -t testdata/CRL/2010.01.20-08.10.27/2010.01.20-08.10.27.TRIZ.HHE.SAC\
+         -H testdata/CRL/2010.01.20-08.10.27.phs.h -p testdata/CRL/2010.01.20-08.10.27.phs\
+         --mag=3.0 --fc=6,10 --tstar=0.05,0.07 -P
 
 
 ### ssp\_residuals:
