@@ -80,9 +80,9 @@ def __parse_args(progname):
     Parse command line arguments
     '''
     if progname == 'source_spec':
-        nargs='+'
+        nargs = '+'
     elif progname == 'source_model':
-        nargs='*'
+        nargs = '*'
     else:
         sys.stderr.write('Wrong program name: %s\n' % progname)
         sys.exit(1)
@@ -206,7 +206,7 @@ def __write_sample_config(configspec, progname):
     c = ConfigObj(configspec=configspec)
     val = Validator()
     c.validate(val)
-    c.defaults=[]
+    c.defaults = []
     c.initial_comment = configspec.initial_comment
     c.comments = configspec.comments
     configfile = progname + '.conf'
@@ -236,22 +236,19 @@ def configure(progname='source_spec'):
 
     val = Validator()
     test = config_obj.validate(val)
-    if test is True:
-        # no problem
-        pass
-    elif test is False:
-        sys.stderr.write('No configuration value present!\n')
-        sys.exit(1)
-    else:
+    if isinstance(test, dict):
         for entry in test:
-            if test[entry] == False:
+            if not test[entry]:
                 sys.stderr.write('Invalid value for "%s": "%s"\n'
                         % (entry, config_obj[entry]))
+        sys.exit(1)
+    if not test:
+        sys.stderr.write('No configuration value present!\n')
         sys.exit(1)
 
     # Create a Config object
     config = Config(config_obj.dict().copy())
-    DEBUG  = config.DEBUG
+    DEBUG = config.DEBUG
 
     #add options to config:
     config.options = options
@@ -294,8 +291,10 @@ def setup_logging(config, basename=None):
     #        )
 
     # captureWarnings is not supported in old versions of python
-    try: logging.captureWarnings(True)
-    except: pass
+    try:
+        logging.captureWarnings(True)
+    except:
+        pass
     log.setLevel(logging.DEBUG)
     filehand = logging.FileHandler(filename=logfile, mode=filemode)
     filehand.setLevel(logging.DEBUG)
