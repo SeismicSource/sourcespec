@@ -4,6 +4,7 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
+# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
 '''
 Local magnitude calculation for source_spec.
 '''

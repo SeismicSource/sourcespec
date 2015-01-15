@@ -5,6 +5,7 @@
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
+# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
 '''
 Spectral model and objective function.
 '''

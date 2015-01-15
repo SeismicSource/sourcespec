@@ -3,6 +3,7 @@
 #
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
+# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
 '''
 Spectral residual routine for source_spec.
 '''

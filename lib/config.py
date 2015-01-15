@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 #
-# (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>
+# (c) 2013-2015 Claudio Satriano <satriano@ipgp.fr>
 
 class Config(dict):
     '''
