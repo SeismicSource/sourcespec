@@ -182,7 +182,6 @@ def __parse_args(progname):
 
         options.fc, options.mag, options.Mo, options.t_star, options.alpha = oplist
         # Add unused options (required by source_spec):
-        options.pick_file = None
         options.correction = False
 
     return options
