@@ -91,6 +91,14 @@ def process_traces(config, st):
             logging.warning('%s %s: Trace RMS smaller than %g: skipping trace' % (trace.id, instrtype, rms_min))
             continue
 
+        # check if trace is clipped
+        nclips = (trace.data == trace.data.max()).sum()
+        nclips += (trace.data == trace.data.min()).sum()
+        clip_max = config.clip_max
+        if float(nclips)/trace.stats.npts > clip_max/100.:
+            logging.warning('%s %s: Trace is clipped for more than %.2f%%: skipping trace' % (trace.id, instrtype, clip_max))
+            continue
+
         # Remove instrument response
         if remove_instr_response(trace, config.correct_instrumental_response,
                                  config.pre_filt) is None:
