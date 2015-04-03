@@ -17,7 +17,12 @@ def station_correction(spec_st, config):
     obtained after a first run.
     '''
     res_filepath = config.residuals_filepath
-    with open(res_filepath,'rb') as fp:
+    if res_filepath is None:
+        msg = "'-C' option set, but 'residuals_filepath' not specified "
+        msg += "in config file: ignoring station correction"
+        logging.warning(msg)
+        return spec_st
+    with open(res_filepath, 'rb') as fp:
         residual = pickle.load(fp)
 
     for spec in [spec for spec in spec_st if (spec.stats.channel[-1] == 'H')]:
@@ -31,5 +36,6 @@ def station_correction(spec_st, config):
             spec.data_mag -= corr.data_mag
             spec.data = mag_to_moment(spec.data_mag)
 
-            logging.info('%s corrected, frequency range is: %f %f' % (spec.id, fmin, fmax))
+            logging.info('%s corrected, frequency range is: %f %f'
+                         % (spec.id, fmin, fmax))
     return spec_st
