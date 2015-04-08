@@ -16,7 +16,7 @@ import numpy as np
 from configobj import ConfigObj
 from validate import Validator
 from config import Config
-from argparse import ArgumentParser
+from argparse import ArgumentParser, RawTextHelpFormatter
 from datetime import datetime
 
 
@@ -75,19 +75,51 @@ def unload_matplotlib():
     matplotlib_unloaded = True
 
 
+def _parse_values(value_str):
+    if value_str[0] == 'i':
+        value_str = value_str[1:]
+        val_min, val_max, val_step = map(float, value_str.rstrip(',').split(','))
+        output = tuple(np.arange(val_min, val_max+val_step, val_step))
+    else:
+        try:
+            output = map(float, value_str.rstrip(',').split(','))
+        except ValueError:
+            sys.stderr.write('ERROR: Invalid value: %s\n' % value_str)
+            sys.exit(1)
+    return output
+
+
 def __parse_args(progname):
     '''
     Parse command line arguments
     '''
     if progname == 'source_spec':
         nargs = '+'
+        description = 'Estimation of seismic source parameters from inversion of S-wave spectra.'
+        epilog = ''
     elif progname == 'source_model':
         nargs = '*'
+        description = 'Direct modeling of S-wave spectra.'
+        epilog = 'Several values of moment magnitude, seismic moment, t-star and alpha\n'
+        epilog += 'can be specified using a comma-separated list, eg.:\n'
+        epilog += '  --mag=3,3.5,4,4.5\n\n'
+        epilog += 'A value interval can be specified by prepending "i" and indicating\n'
+        epilog += 'min, max and step, eg.:\n'
+        epilog += '  --fc=i1.0,5.0,0.5\n\n'
+        epilog += 'When specifing several values, by default a simple correspondance is\n'
+        epilog += 'established, e.g.:\n'
+        epilog += '  --mag=3,3.5 --fc=1.0,2.0,3.0\n'
+        epilog += 'will generate the couples:\n'
+        epilog += '  (3, 1.0), (3.5, 2.0), (3.5, 3.0)\n'
+        epilog += '(note that the magnitude value "3.5" is repeated twice).\n'
+        epilog += 'Use "-C" to generate all the possible combinations.'
     else:
         sys.stderr.write('Wrong program name: %s\n' % progname)
         sys.exit(1)
 
-    parser = ArgumentParser()
+    parser = ArgumentParser(description=description,
+                            epilog=epilog,
+                            formatter_class=RawTextHelpFormatter)
     parser.add_argument('-c', '--configfile', dest='config_file', action='store', default='config.py',
             help='load configuration from FILE (default: config.py)', metavar='FILE')
     group = parser.add_mutually_exclusive_group(required=True)
@@ -108,22 +140,23 @@ def __parse_args(progname):
         parser.add_argument('-C', '--correction', dest='correction', action='store_true', default=False,
                 help='apply station correction to the "H" component of the spectra')
     elif progname == 'source_model':
-        parser.add_argument('-f', '--fmin', dest='fmin', action='store', default='0.01',
+        parser.add_argument('-f', '--fmin', dest='fmin', action='store', type=float, default='0.01',
                 help='minimum frequency (Hz, default 0.01)', metavar='FMIN')
-        parser.add_argument('-F', '--fmax', dest='fmax', action='store', default='50.0',
+        parser.add_argument('-F', '--fmax', dest='fmax', action='store', type=float, default='50.0',
                 help='maximum frequency (Hz, default 50.0)', metavar='FMAX')
         parser.add_argument('-k', '--fc', dest='fc', action='store', default='10.0',
-                help='corner frequency (Hz, default 10.0)', metavar='FC')
+                help='(list of) corner frequency (Hz, default 10.0)', metavar='FC')
         parser.add_argument('-m', '--mag', dest='mag', action='store', default='2.0',
-                help='moment magnitude (default 2.0)', metavar='Mw')
+                help='(list of) moment magnitude (default 2.0)', metavar='Mw')
         parser.add_argument('-M', '--moment', dest='Mo', action='store', default='NaN',
-                help='seismic moment (N.m, default undefined)', metavar='Mo')
+                help='(list of) seismic moment (N.m, default undefined)', metavar='Mo')
         parser.add_argument('-*', '--tstar', dest='t_star', action='store', default='0.0',
-                help='t-star (attenuation, default 0.0)', metavar='T-STAR')
+                help='(list of) t-star (attenuation, default 0.0)', metavar='T-STAR')
         parser.add_argument('-a', '--alpha', dest='alpha', action='store', default='1.0',
-                help='alpha (exponent for frequency dependence of attenuation, default 1.0)', metavar='1.0')
+                help='(list of) alpha (exponent for frequency dependence\n of attenuation, default 1.0)',
+                metavar='1.0')
         parser.add_argument('-C', '--combine', dest='combine', action='store_true', default=False,
-                help='generate all the combinations of fc, mag, Mo, tstar')
+                help='generate all the combinations of fc, mag, Mo, tstar, alpha')
         parser.add_argument('-P', '--plot', dest='plot', action='store_true', default=False,
                 help='plot results')
 
@@ -135,30 +168,11 @@ def __parse_args(progname):
         sys.exit(0)
 
     if progname == 'source_model':
-        options.fmin = float(options.fmin)
-        options.fmax = float(options.fmax)
-
-        options.mag = map(float, options.mag.rstrip(',').split(','))
-        options.Mo = map(float, options.Mo.rstrip(',').split(','))
-        options.alpha = map(float, options.alpha.rstrip(',').split(','))
-        if options.fc[0] == 'i' or options.t_star[0] == 'i':
-            if options.fc[0] == 'i':
-                options.fc = options.fc[1:]
-                fc_min, fc_max, fc_step = map(float, options.fc.rstrip(',').split(','))
-                options.fc = tuple(np.arange(fc_min, fc_max+fc_step, fc_step))
-            else:
-                options.fc = map(float, options.fc.rstrip(',').split(','))
-
-            if options.t_star[0] == 'i':
-                options.t_star = options.t_star[1:]
-                t_star_min, t_star_max, t_star_step = map(float, options.t_star.rstrip(',').split(','))
-                options.t_star = tuple(np.arange(t_star_min, t_star_max+t_star_step, t_star_step))
-            else:
-                options.t_star = map(float, options.t_star.rstrip(',').split(','))
-
-        else:
-            options.fc = map(float, options.fc.rstrip(',').split(','))
-            options.t_star = map(float, options.t_star.rstrip(',').split(','))
+        options.mag = _parse_values(options.mag)
+        options.Mo = _parse_values(options.Mo)
+        options.alpha = _parse_values(options.alpha)
+        options.fc = _parse_values(options.fc)
+        options.t_star = _parse_values(options.t_star)
 
         if options.combine:
             oplist = [(fc, mag, Mo, t_star, alpha)
