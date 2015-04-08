@@ -44,7 +44,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     import matplotlib.pyplot as plt
 
     # Determine the number of plots and axes min and max:
-    nplots=0
+    nplots = 0
     moment_minmax = None
     freq_minmax = None
     for station in set(x.stats.station for x in spec_st.traces):
@@ -66,11 +66,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
 
     # OK, now we can plot!
     if nlines <= 3 or stack_plots:
-        figsize=(16,9)
+        figsize = (16, 9)
     else:
-        figsize=(16,18)
+        figsize = (16, 18)
     fig = plt.figure(figsize=figsize)
-    fig.subplots_adjust(hspace = .025, wspace = .03)
+    fig.subplots_adjust(hspace=.025, wspace=.03)
 
     # Plot!
     axes = []
@@ -83,7 +83,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             ax_text = False
 
             # ax1 has moment units (or weight)
-            if plotn==1:
+            if plotn == 1:
                 if stack_plots:
                     ax = fig.add_subplot(1, 1, 1)
                 else:
@@ -101,14 +101,15 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
 
             # ax2 has magnitude units
             if plottype != 'weight':
-                ax2 = ax.twinx()
-                ax2.set_ylim(mag_minmax)
-                plt.setp(ax2.get_xticklabels(), visible=False)
-                plt.setp(ax2.get_yticklabels(), visible=True)
-                for tick in ax2.yaxis.get_major_ticks():
-                    tick.set_pad(-2)
-                    tick.label2.set_horizontalalignment('right')
-                ax2.yaxis.set_tick_params(width=0)
+                if ((stack_plots and plotn == 1) or not stack_plots):
+                    ax2 = ax.twinx()
+                    ax2.set_ylim(mag_minmax)
+                    plt.setp(ax2.get_xticklabels(), visible=False)
+                    plt.setp(ax2.get_yticklabels(), visible=True)
+                    for tick in ax2.yaxis.get_major_ticks():
+                        tick.set_pad(-2)
+                        tick.label2.set_horizontalalignment('right')
+                    ax2.yaxis.set_tick_params(width=0)
             else:
                 ax2 = None
             axes.append((ax, ax2))
@@ -118,18 +119,18 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     continue
                 orientation = spec.stats.channel[2]
                 if orientation == 'Z':
-                    color='purple'
+                    color = 'purple'
                 if orientation == 'N':
-                    color='green'
+                    color = 'green'
                 if orientation == 'E':
-                    color='blue'
+                    color = 'blue'
                 if orientation == 'H':
-                    color='red'
+                    color = 'red'
                 if orientation == 'S':
                     if stack_plots:
                         color = synth_colors[(plotn-1)%len(synth_colors)]
                     else:
-                        color='black'
+                        color = 'black'
                 if plottype == 'regular' or plottype == 'noise':
                     ax.loglog(spec.get_freq(), spec.data, color=color, zorder=20)
                     if orientation == 'S':
@@ -199,11 +200,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     # Show the y-labels only for the first column
     for i in range(0, len(axes)+ncols, ncols):
         try:
-            ax, dum = axes[i]
+            ax = axes[i][0]
         except IndexError:
             continue
         try:
-            dum, ax2 = axes[i-1]
+            ax2 = axes[i-1][1]
         except IndexError:
             continue
         plt.setp(ax.get_yticklabels(), visible=True)

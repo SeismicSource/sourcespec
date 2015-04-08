@@ -36,7 +36,7 @@ def plot_traces(config, st, ncols=4, block=True):
     import matplotlib.patches as patches
 
     # Determine the number of plots and axes min and max:
-    nplots=0
+    nplots = 0
     for station in set(x.stats.station for x in st.traces):
         st_sel = st.select(station=station)
         # 'code' is band+instrument code
@@ -48,12 +48,11 @@ def plot_traces(config, st, ncols=4, block=True):
 
     # OK, now we can plot!
     if nlines <= 3:
-        figsize=(16,9)
+        figsize = (16, 9)
     else:
-        figsize=(16,18)
+        figsize = (16, 18)
     fig = plt.figure(figsize=figsize)
-    #fig.subplots_adjust(hspace = .025, wspace = .03)
-    fig.subplots_adjust(hspace = .1, wspace = .15)
+    fig.subplots_adjust(hspace=.1, wspace=.15)
 
     # Plot!
     axes = []
@@ -87,7 +86,6 @@ def plot_traces(config, st, ncols=4, block=True):
             trans2 = transforms.blended_transform_factory(ax.transAxes, ax.transData)
             trans3 = transforms.offset_copy(trans2, fig=fig, x=0, y=0.1)
 
-            #maxes = [abs(t.max()) for t in st_sel.traces if t.stats.instrtype == instrtype]
             maxes = [abs(t.max()) for t in st_sel.traces if t.stats.channel[0:2] == code]
             ntraces = len(maxes)
             tmax = max(maxes)
@@ -96,13 +94,13 @@ def plot_traces(config, st, ncols=4, block=True):
                     continue
                 orientation = trace.stats.channel[-1]
                 if orientation == 'Z':
-                    color='purple'
+                    color = 'purple'
                 if orientation == 'N':
-                    color='green'
+                    color = 'green'
                     if ntraces > 1:
                         trace.data = (trace.data / tmax - 1) * tmax
                 if orientation == 'E':
-                    color='blue'
+                    color = 'blue'
                     if ntraces > 1:
                         trace.data = (trace.data / tmax + 1) * tmax
 
