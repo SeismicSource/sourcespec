@@ -18,8 +18,8 @@ import shutil
 import tarfile
 import tempfile
 import cPickle as pickle
+import json
 from datetime import datetime
-from imp import load_source
 from obspy.core import Stream, read, UTCDateTime
 from obspy.core.util import AttribDict
 from obspy.xseed import Parser
@@ -42,15 +42,18 @@ class Pick(AttribDict):
 
 # TRACE MANIPULATION ----------------------------------------------------------
 correct_traceids = None
+def _get_correct_traceids(traceid_file):
+    global correct_traceids
+    if correct_traceids is None:
+        with open(traceid_file, 'r') as fp:
+            correct_traceids = json.loads(fp.read())
+    return correct_traceids
+
 
 def _correct_traceid(trace, traceid_file):
     if traceid_file is None:
         return
-    global correct_traceids
-    if correct_traceids is None:
-        #FIXME: load_source is not secure!
-        trids = load_source('traceids', traceid_file)
-        correct_traceids = trids.__correct_traceid_dict__
+    correct_traceids = _get_correct_traceids(traceid_file)
     try:
         traceid = correct_traceids[trace.getId()]
         net, sta, loc, chan = traceid.split('.')
@@ -65,11 +68,7 @@ def _correct_traceid(trace, traceid_file):
 def _correct_station_name(station, traceid_file):
     if traceid_file is None:
         return
-    global correct_traceids
-    if correct_traceids is None:
-        #FIXME: load_source is not secure!
-        trids = load_source('traceids', traceid_file)
-        correct_traceids = trids.__correct_traceid_dict__
+    correct_traceids = _get_correct_traceids(traceid_file)
     # get all the keys containing station name in it
     keys = [key for key in correct_traceids
             if station == key.split('.')[1]]
