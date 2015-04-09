@@ -9,8 +9,11 @@ Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
 
 v0.9 -
 	- Traces are filtered before computing S/N ratio
+	- Trace clipping detection (via the "clip_max" parameter)
 	- Code cleaning and optimization:
 		- Switch from optparse (deprecated) to argparse
+	- BUGFIX: Fix a major bug in reading hypo pick file
+	- BUGFIX: Fix for pick file not read in source_model
 v0.8 - 2014-07-11
 	- Trace plot showing S and noise time windows
 	- Improved handling of paz files
