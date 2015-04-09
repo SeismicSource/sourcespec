@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ssp_read_traces.py
 #
-# All the functions whose name is between "__" are intended to be private
+# All the functions whose name starts with "_" are intended to be private
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
@@ -43,7 +43,7 @@ class Pick(AttribDict):
 # TRACE MANIPULATION ----------------------------------------------------------
 correct_traceids = None
 
-def __correct_traceid__(trace, traceid_file):
+def _correct_traceid(trace, traceid_file):
     if traceid_file is None:
         return
     global correct_traceids
@@ -62,7 +62,7 @@ def __correct_traceid__(trace, traceid_file):
         pass
 
 
-def __correct_station_name__(station, traceid_file):
+def _correct_station_name(station, traceid_file):
     if traceid_file is None:
         return
     global correct_traceids
@@ -83,7 +83,7 @@ def __correct_station_name__(station, traceid_file):
     return correct_station
 
 
-def __add_paz_and_coords__(trace, dataless, paz_dict=None):
+def _add_paz_and_coords(trace, dataless, paz_dict=None):
     trace.stats.paz = None
     trace.stats.coords = None
     traceid = trace.getId()
@@ -175,7 +175,7 @@ def __add_paz_and_coords__(trace, dataless, paz_dict=None):
             pass
 
 
-def __add_instrtype__(trace):
+def _add_instrtype(trace):
     instrtype = None
     trace.stats.instrtype = None
 
@@ -229,7 +229,7 @@ def __add_instrtype__(trace):
     trace.stats.instrtype = instrtype
 
 
-def __add_hypocenter__(trace, hypo):
+def _add_hypocenter(trace, hypo):
     if hypo is None:
         # Try to get hypocenter information from the SAC header
         try:
@@ -257,7 +257,7 @@ def __add_hypocenter__(trace, hypo):
     trace.stats.hypo = hypo
 
 
-def __add_picks__(trace, picks):
+def _add_picks(trace, picks):
     stat_picks = []
     station = trace.stats.station
 
@@ -326,7 +326,7 @@ def __add_picks__(trace, picks):
     trace.stats.arrivals = dict()
 
 
-def __complete_picks__(st):
+def _complete_picks(st):
     '''
     For every station/instrument, adds component-specific picks
     to all components.
@@ -351,7 +351,7 @@ def __complete_picks__(st):
 
 
 # FILE PARSING ----------------------------------------------------------------
-def __read_dataless__(path):
+def _read_dataless(path):
     if path is None:
         return None
 
@@ -371,7 +371,7 @@ def __read_dataless__(path):
     return dataless
 
 
-def __read_paz__(path):
+def _read_paz(path):
     '''
     Reads a directory with paz files
     or a single file.
@@ -427,7 +427,7 @@ def __read_paz__(path):
     return paz
 
 
-def __parse_hypocenter__(hypo_file):
+def _parse_hypocenter(hypo_file):
     hypo = AttribDict()
     hypo.latitude = None
     hypo.longitude = None
@@ -482,7 +482,7 @@ def __parse_hypocenter__(hypo_file):
     return hypo
 
 
-def __is_hypo_format(fp):
+def _is_hypo_format(fp):
     for line in fp.readlines():
         # remove newline
         line = line.replace('\n','')
@@ -503,10 +503,10 @@ def __is_hypo_format(fp):
             return False
 
 
-#TODO: def __is_NLL_format(fp):
+#TODO: def _is_NLL_format(fp):
 
 
-def __parse_picks__(config):
+def _parse_picks(config):
     pick_file = config.options.pick_file
     if pick_file is None:
         return None
@@ -514,7 +514,7 @@ def __parse_picks__(config):
     try:
         with open(pick_file) as fp:
             picks = []
-            if __is_hypo_format(fp):
+            if _is_hypo_format(fp):
                 # Corinth phase file format is hypo
                 for line in fp.readlines():
                     # remove newline
@@ -533,7 +533,7 @@ def __parse_picks__(config):
 
                     pick = Pick()
                     pick.station = line[0:4].strip()
-                    pick.station = __correct_station_name__(pick.station, config.traceids)
+                    pick.station = _correct_station_name(pick.station, config.traceids)
                     pick.flag = line[4:5]
                     pick.phase = line[5:6]
                     pick.polarity = line[6:7]
@@ -585,12 +585,12 @@ def __parse_picks__(config):
     return picks
 
 
-def __build_filelist__(path, filelist, tmpdir):
+def _build_filelist(path, filelist, tmpdir):
     if os.path.isdir(path):
         listing = os.listdir(path)
         for filename in listing:
             fullpath = os.path.join(path, filename)
-            __build_filelist__(fullpath, filelist, tmpdir)
+            _build_filelist(fullpath, filelist, tmpdir)
     else:
         try:
             open(path)
@@ -609,7 +609,7 @@ def __build_filelist__(path, filelist, tmpdir):
 # PATH DISCOVERY --------------------------------------------------------------
 # We try to guess the path of the hypo and pick file from the data dir
 # This applies (for the moment) only to the Corinth format
-def __set_hypo_file_path__(config):
+def _set_hypo_file_path(config):
     if config.options.hypo_file != None:
         return
     # try with the basename of the datadir
@@ -623,7 +623,7 @@ def __set_hypo_file_path__(config):
     return
 
 
-def __set_pick_file_path__(config):
+def _set_pick_file_path(config):
     if config.options.pick_file != None:
         return
     # try with the basename of the datadir
@@ -644,16 +644,16 @@ def read_traces(config):
     Read traces, store waveforms and metadata.
     '''
     # read dataless
-    dataless = __read_dataless__(config.dataless)
+    dataless = _read_dataless(config.dataless)
     # read PAZ (normally this is an alternative to dataless)
-    paz = __read_paz__(config.paz)
+    paz = _read_paz(config.paz)
 
     # parse hypocenter file
-    __set_hypo_file_path__(config)
-    hypo = __parse_hypocenter__(config.options.hypo_file)
+    _set_hypo_file_path(config)
+    hypo = _parse_hypocenter(config.options.hypo_file)
     # parse pick file
-    __set_pick_file_path__(config)
-    picks = __parse_picks__(config)
+    _set_pick_file_path(config)
+    picks = _parse_picks(config)
 
     # finally, read traces
     # traces can be defined in a pickle catalog (Antilles format)...
@@ -662,7 +662,7 @@ def read_traces(config):
         with open(config.pickle_catalog, 'rb') as fp:
             catalog = pickle.load(fp)
         event = [ ev for ev in catalog if ev.event_id == config.options.evid ][0]
-        hypo = __parse_hypocenter__(event)
+        hypo = _parse_hypocenter(event)
         st = Stream()
         for trace in event.traces:
             if config.options.station is not None:
@@ -676,12 +676,11 @@ def read_traces(config):
             for trace in tmpst.traces:
                 st.append(trace)
                 trace.stats.format = config.trace_format
-                __add_paz_and_coords__(trace, dataless, paz)
-                __add_hypocenter__(trace, hypo)
-                __add_picks__(trace, picks) #FIXME: actually add picks!
-                #__add_instrtype__(trace)
+                _add_paz_and_coords(trace, dataless, paz)
+                _add_hypocenter(trace, hypo)
+                _add_picks(trace, picks) #FIXME: actually add picks!
+                #_add_instrtype(trace)
                 trace.stats.instrtype = 'acc' #FIXME
-        #ssp_exit()
     # ...or in standard files (CRL and ISNet)
     else:
         logging.info('Reading traces...')
@@ -691,13 +690,13 @@ def read_traces(config):
         tmpdir = tempfile.mkdtemp()
         filelist = []
         for trace_path in config.options.trace_path:
-            __build_filelist__(trace_path, filelist, tmpdir)
+            _build_filelist(trace_path, filelist, tmpdir)
         # ph 1.2: rerun '_build_filelist()' in tmpdir to add to the
         #         filelist all the extraceted files
         listing = os.listdir(tmpdir)
         for filename in listing:
             fullpath = os.path.join(tmpdir, filename)
-            __build_filelist__(fullpath, filelist, None)
+            _build_filelist(fullpath, filelist, None)
 
         # phase 2: build a stream object from the file list
         st = Stream()
@@ -710,11 +709,11 @@ def read_traces(config):
             for trace in tmpst.traces:
                 st.append(trace)
                 trace.stats.format = config.trace_format
-                __correct_traceid__(trace, config.traceids)
-                __add_paz_and_coords__(trace, dataless, paz)
-                __add_instrtype__(trace)
-                __add_hypocenter__(trace, hypo)
-                __add_picks__(trace, picks)
+                _correct_traceid(trace, config.traceids)
+                _add_paz_and_coords(trace, dataless, paz)
+                _add_instrtype(trace)
+                _add_hypocenter(trace, hypo)
+                _add_picks(trace, picks)
 
         shutil.rmtree(tmpdir)
 
@@ -723,7 +722,6 @@ def read_traces(config):
         logging.info('No trace loaded')
         ssp_exit()
 
-    __complete_picks__(st)
+    _complete_picks(st)
     st.sort()
-    #ssp_exit()
     return st

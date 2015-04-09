@@ -91,7 +91,7 @@ def _parse_values(value_str):
     return output
 
 
-def __parse_args(progname):
+def _parse_args(progname):
     '''
     Parse command line arguments
     '''
@@ -165,8 +165,8 @@ def __parse_args(progname):
     options = parser.parse_args()
 
     if options.sampleconf:
-        configspec = __parse_configspec()
-        __write_sample_config(configspec, 'source_spec')
+        configspec = _parse_configspec()
+        _write_sample_config(configspec, 'source_spec')
         sys.exit(0)
 
     if progname == 'source_model':
@@ -203,7 +203,7 @@ def __parse_args(progname):
     return options
 
 
-def __parse_configspec():
+def _parse_configspec():
     try:
         configspec_file = os.path.join(os.path.dirname(__file__), 'configspec.conf')
         configspec = ConfigObj(configspec_file, interpolation=False,
@@ -217,7 +217,7 @@ def __parse_configspec():
     return configspec
 
 
-def __write_sample_config(configspec, progname):
+def _write_sample_config(configspec, progname):
     c = ConfigObj(configspec=configspec)
     val = Validator()
     c.validate(val)
@@ -236,9 +236,9 @@ def configure(progname='source_spec'):
     Returns a ``Config`` object.
     '''
     global DEBUG
-    options = __parse_args(progname)
+    options = _parse_args(progname)
 
-    configspec = __parse_configspec()
+    configspec = _parse_configspec()
     try:
         config_file = options.config_file
         config_obj = ConfigObj(config_file, configspec=configspec, file_error=True)
