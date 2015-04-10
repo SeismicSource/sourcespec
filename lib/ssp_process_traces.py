@@ -92,11 +92,15 @@ def process_traces(config, st):
             continue
 
         # check if trace is clipped
-        nclips = (trace.data == trace.data.max()).sum()
-        nclips += (trace.data == trace.data.min()).sum()
-        clip_max = config.clip_max
-        if float(nclips)/trace.stats.npts > clip_max/100.:
-            logging.warning('%s %s: Trace is clipped for more than %.2f%%: skipping trace' % (trace.id, instrtype, clip_max))
+        clip_tollerance = config.clip_tollerance
+        clip_max = (1 - clip_tollerance/100.) * trace.data.max()
+        clip_min = (1 - clip_tollerance/100.) * trace.data.min()
+        nclips = (trace.data > clip_max).sum()
+        nclips += (trace.data < clip_min).sum()
+        clip_nmax = config.clip_nmax
+        if float(nclips)/trace.stats.npts > clip_nmax/100.:
+            logging.warning('%s %s: Trace is clipped for more than %.2f%% with %.2f%% tollerance: skipping trace'
+                             % (trace.id, instrtype, clip_nmax, clip_tollerance))
             continue
 
         # Remove instrument response
