@@ -31,6 +31,7 @@ def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
         if freq_max > freq_minmax[1]: freq_minmax[1] = freq_max
     return amp_minmax, freq_minmax
 
+
 def wave_arrival(trace, vel, phase):
     '''
     Obtain arrival time for a given phase and a given trace.
@@ -64,13 +65,16 @@ def wave_arrival(trace, vel, phase):
     logging.info('%s: using theoretical %s pick' % (trace.id, phase))
     return theo_pick_time
 
+
 def moment_to_mag(data):
     ''' Convert moment to magnitude.'''
     return (np.log10(data) - 9.1 ) / 1.5
 
+
 def mag_to_moment(data):
     ''' Convert magnitude to moment.'''
     return np.power(10, (1.5 * data + 9.1))
+
 
 def select_trace(stream, traceid, instrtype):
     '''
@@ -86,9 +90,10 @@ def select_trace(stream, traceid, instrtype):
 def cosine_taper(signal, width):
     #TODO: this taper looks more like a hanning...
     npts = len(signal)
-    p = 2*width
+    p = 2 * width
     tap = cosTaper(npts, p)
     signal *= tap
+
 
 # modified from: http://stackoverflow.com/questions/5515720/python-smooth-time-series-data
 def smooth(x, window_len=11, window='hanning'):
@@ -112,6 +117,7 @@ def smooth(x, window_len=11, window='hanning'):
     nanindexes = np.where(np.isnan(yy))
     yy[nanindexes] = x[nanindexes]
     return yy
+
 
 def remove_instr_response(trace, correct='True', pre_filt=(0.5, 0.6, 40., 45.)):
     if correct == 'False':
@@ -155,9 +161,11 @@ def toRad(degrees):
     radians = math.pi * degrees / 180
     return radians
 
+
 def toDeg(radians):
     degrees = 180 * radians / math.pi
     return degrees
+
 
 def calc_dist(lat1, lon1, lat2, lon2):
     '''
@@ -174,6 +182,7 @@ def calc_dist(lat1, lon1, lat2, lon2):
     gcarc = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     dist = R * gcarc
     return dist, toDeg(gcarc)
+
 
 def hypo_dist(trace):
     try:

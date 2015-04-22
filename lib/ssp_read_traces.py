@@ -88,7 +88,7 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
     traceid = trace.getId()
     time = trace.stats.starttime
     # We first look into the dataless dictionary, if available
-    if dataless != None:
+    if dataless is not None:
         for sp in dataless.values():
             # Check first if our traceid is in the dataless file
             if not traceid in str(sp):
@@ -596,7 +596,7 @@ def _build_filelist(path, filelist, tmpdir):
         except IOError, message:
             logging.error(message)
             return
-        if tarfile.is_tarfile(path) and tmpdir!=None:
+        if tarfile.is_tarfile(path) and tmpdir is not None:
             tar = tarfile.open(path)
             tar.extractall(path=tmpdir)
             tar.close()
@@ -609,7 +609,7 @@ def _build_filelist(path, filelist, tmpdir):
 # We try to guess the path of the hypo and pick file from the data dir
 # This applies (for the moment) only to the Corinth format
 def _set_hypo_file_path(config):
-    if config.options.hypo_file != None:
+    if config.options.hypo_file is not None:
         return
     # try with the basename of the datadir
     if os.path.isdir(config.options.trace_path[0]):
@@ -623,7 +623,7 @@ def _set_hypo_file_path(config):
 
 
 def _set_pick_file_path(config):
-    if config.options.pick_file != None:
+    if config.options.pick_file is not None:
         return
     # try with the basename of the datadir
     if os.path.isdir(config.options.trace_path[0]):
@@ -660,7 +660,7 @@ def read_traces(config):
         sys.path.append(config.pickle_classpath)
         with open(config.pickle_catalog, 'rb') as fp:
             catalog = pickle.load(fp)
-        event = [ ev for ev in catalog if ev.event_id == config.options.evid ][0]
+        event = [ev for ev in catalog if ev.event_id == config.options.evid][0]
         hypo = _parse_hypocenter(event)
         st = Stream()
         for trace in event.traces:
