@@ -118,11 +118,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 if spec.stats.channel[0:2] != code:
                     continue
                 orientation = spec.stats.channel[2]
-                if orientation == 'Z':
+                if orientation in ['Z', '1']:
                     color = 'purple'
-                if orientation == 'N':
+                if orientation in ['N', '2']:
                     color = 'green'
-                if orientation == 'E':
+                if orientation in ['E', '3']:
                     color = 'blue'
                 if orientation == 'H':
                     color = 'red'
@@ -131,7 +131,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                         color = synth_colors[(plotn-1)%len(synth_colors)]
                     else:
                         color = 'black'
-                if plottype == 'regular' or plottype == 'noise':
+                if plottype in ['regular', 'noise']:
                     ax.loglog(spec.get_freq(), spec.data, color=color, zorder=20)
                     if orientation == 'S':
                         ax.axvline(spec.stats.par['fc'], color='#999999', linewidth=2., zorder=1)
@@ -147,11 +147,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                         specid = spec.getId()
                         sp_noise = specnoise_st.select(id=specid)[0]
                         orientation = sp_noise.stats.channel[2]
-                        if orientation == 'Z':
+                        if orientation in ['Z', '1']:
                             color='purple'
-                        if orientation == 'N':
+                        if orientation in ['N', '2']:
                             color='green'
-                        if orientation == 'E':
+                        if orientation in ['E', '3']:
                             color='blue'
                         if orientation == 'H':
                             color='red'

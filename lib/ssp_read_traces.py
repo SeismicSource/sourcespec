@@ -188,12 +188,12 @@ def _add_instrtype(trace):
         instr_code = chan[1]
     except IndexError:
         instr_code = None
-    if instr_code == 'H' or instr_code == 'L':
-        if band_code == 'E' or band_code == 'S':
+    if instr_code in ['H', 'L']:
+        if band_code in ['E', 'S']:
             instrtype = 'shortp'
         if band_code == 'H':
             instrtype = 'broadb'
-    if instr_code == 'N' or instr_code =='L':
+    if instr_code in ['N', 'L']:
         instrtype = 'acc'
 
     # If, not possible, let's see if there is an instrument

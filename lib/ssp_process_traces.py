@@ -74,7 +74,7 @@ def process_traces(config, st):
         stats = trace.stats
         comp = stats.channel
         instrtype = stats.instrtype
-        if config.ignore_vertical and comp[-1] == 'Z':
+        if config.ignore_vertical and comp[-1] in ['Z', '1']:
             continue
         station = stats.station
         dprint('%s %s' % (station, comp))

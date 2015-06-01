@@ -93,13 +93,13 @@ def plot_traces(config, st, ncols=4, block=True):
                 if trace.stats.channel[0:2] != code:
                     continue
                 orientation = trace.stats.channel[-1]
-                if orientation == 'Z':
+                if orientation in ['Z', '1']:
                     color = 'purple'
-                if orientation == 'N':
+                if orientation in ['N', '2']:
                     color = 'green'
                     if ntraces > 1:
                         trace.data = (trace.data / tmax - 1) * tmax
-                if orientation == 'E':
+                if orientation in ['E', '3']:
                     color = 'blue'
                     if ntraces > 1:
                         trace.data = (trace.data / tmax + 1) * tmax
