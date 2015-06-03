@@ -45,7 +45,6 @@ def main():
 
     apply(plot_traces, (config, proc_st, 2))
 
-    #Ml = local_magnitude(config, proc_st)
     Ml = local_magnitude(config, st, deconvolve=True)
 
     # Spectral inversion
