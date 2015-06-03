@@ -8,8 +8,8 @@
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
 # (c) 2015 Claudio Satriano <satriano@ipgp.fr>
-import multiprocessing
-from lib.ssp_setup import configure, setup_logging, ssp_exit
+from lib.ssp_setup import configure, setup_logging,\
+        init_plotting, ssp_exit
 from lib.ssp_read_traces import read_traces
 from lib.ssp_process_traces import process_traces
 from lib.ssp_build_spectra import build_spectra
@@ -24,6 +24,7 @@ def main():
     # Setup stage
     config = configure()
     setup_logging(config)
+    plot_pool = init_plotting()
     st = read_traces(config)
 
     # Now that we (hopefully) have the evid
@@ -34,8 +35,11 @@ def main():
 
     # Deconvolve, filter, cut traces:
     proc_st = process_traces(config, st)
+
     # Build spectra (amplitude in magnitude units)
     spec_st, specnoise_st, weight_st = build_spectra(config, proc_st, noise_weight=True)
+
+    plot_pool.apply_async(plot_traces, (config, proc_st, 2))
 
     #Ml = local_magnitude(config, proc_st)
     Ml = local_magnitude(config, st, deconvolve=True)
@@ -50,23 +54,19 @@ def main():
     spectral_residuals(config, spec_st, evid, sourcepar_mean)
 
     # Plotting
-    pool = multiprocessing.Pool()
-    args = [
-            (config, spec_st, specnoise_st, 'regular'),
-            (config, specnoise_st, None, 'noise'),
-            (config, weight_st, None, 'weight')
-           ]
-    pool.map(__call_plot_spectra__, args)
-
-    plot_traces(config, proc_st, ncols=2)
+    plot_pool.apply_async(plot_spectra,
+                          (config, spec_st),
+                          {'specnoise_st': specnoise_st,
+                           'plottype': 'regular'})
+    plot_pool.apply_async(plot_spectra,
+                          (config, specnoise_st),
+                          {'plottype': 'noise'})
+    plot_pool.apply_async(plot_spectra,
+                          (config, weight_st),
+                          {'plottype': 'weight'})
 
     ssp_exit()
 
-def __call_plot_spectra__(args):
-    config, spec_st, specnoise_st, plottype = args
-    plot_spectra(config, spec_st,
-            specnoise_st=specnoise_st,
-            plottype=plottype)
 
 if __name__ == '__main__':
     try:

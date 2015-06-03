@@ -18,6 +18,7 @@ from validate import Validator
 from config import Config
 from argparse import ArgumentParser, RawTextHelpFormatter
 from datetime import datetime
+from multiprocessing import Pool
 
 
 if sys.stdout.isatty():
@@ -328,7 +329,19 @@ def setup_logging(config, basename=None):
         logging.debug(' '.join(sys.argv))
 
 
+plot_pool = None
+def init_plotting():
+    global plot_pool
+    if plot_pool is None:
+        plot_pool = Pool()
+    return plot_pool
+
+
 def ssp_exit(retval=0):
     logging.debug('source_spec END')
     logging.shutdown()
+    global plot_pool
+    if plot_pool is not None:
+        plot_pool.close()
+        plot_pool.join()
     sys.exit(retval)
