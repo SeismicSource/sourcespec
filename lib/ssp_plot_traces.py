@@ -171,3 +171,4 @@ def plot_traces(config, st, ncols=4, block=True):
                                   '.traces.' + config.PLOT_SAVE_FORMAT)
         fig.savefig(figurefile, bbox_inches='tight')
         logging.info('Trace plots saved to: ' + figurefile)
+    fig.clf()

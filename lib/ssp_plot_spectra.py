@@ -233,3 +233,4 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                                   config.PLOT_SAVE_FORMAT)
         fig.savefig(figurefile, bbox_inches='tight')
         logging.info(message + ' plots saved to: ' + figurefile)
+    fig.clf()
