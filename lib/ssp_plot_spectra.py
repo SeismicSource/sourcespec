@@ -145,7 +145,10 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 if specnoise_st:
                     if spec.stats.channel[2] != 'S':
                         specid = spec.getId()
-                        sp_noise = specnoise_st.select(id=specid)[0]
+                        try:
+                            sp_noise = specnoise_st.select(id=specid)[0]
+                        except IndexError:
+                            continue
                         orientation = sp_noise.stats.channel[2]
                         if orientation in ['Z', '1']:
                             color='purple'

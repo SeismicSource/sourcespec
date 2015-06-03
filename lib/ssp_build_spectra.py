@@ -162,12 +162,11 @@ def build_spectra(config, st, noise_weight=False):
         cosine_taper(trace_cut.data, width=config.taper_halfwidth)
         if not math.isnan(config.spectral_win_length):
             # ...and zero pad to spectral_win_length
-            trace_cut.trim(
-                    starttime=t1,
-                    endtime=t1+config.spectral_win_length,
-                    pad=True,
-                    fill_value=0
-                    )
+            trace_cut.trim(starttime=t1,
+                           endtime=t1+config.spectral_win_length,
+                           pad=True,
+                           fill_value=0
+                          )
 
         if noise_weight:
             # ...trim...
@@ -176,12 +175,17 @@ def build_spectra(config, st, noise_weight=False):
             cosine_taper(trace_noise.data, width=config.taper_halfwidth)
             if not math.isnan(config.spectral_win_length):
                 # ...and zero pad to spectral_win_length
-                trace_noise.trim(
-                        starttime=noise_start_t,
-                        endtime=noise_start_t+config.spectral_win_length,
-                        pad=True,
-                        fill_value=0
-                        )
+                trace_noise.trim(starttime=noise_start_t,
+                                 endtime=noise_start_t+config.spectral_win_length,
+                                 pad=True,
+                                 fill_value=0
+                                )
+                trace_noise_rms = ((trace_noise.data**2).sum())**0.5
+                trace_cut_rms = ((trace_cut.data**2).sum())**0.5
+                if trace_noise_rms/trace_cut_rms < 1e-6:
+                    logging.warning('%s: Noise level is too low or zero: ignoring for noise weighting' %
+                        traceId)
+                    trace_noise = None
 
         # normalization for the hypocentral distance
         trace_cut.data *= trace_cut.stats.hypo_dist * 1000
@@ -194,7 +198,7 @@ def build_spectra(config, st, noise_weight=False):
         spec.stats.hypo_dist = stats.hypo_dist
 
         # same processing for noise, if requested
-        if noise_weight:
+        if noise_weight and trace_noise is not None:
             cosine_taper(trace_noise.data, width=config.taper_halfwidth)
             trace_noise.data *= trace_noise.stats.hypo_dist * 1000
             specnoise = spectrum.do_spectrum(trace_noise)
@@ -202,12 +206,14 @@ def build_spectra(config, st, noise_weight=False):
             specnoise.stats.coords = stats.coords
             specnoise.stats.hypo = stats.hypo
             specnoise.stats.hypo_dist = stats.hypo_dist
+        else:
+            specnoise = None
 
         # Integrate in frequency domain, if no time-domain
         # integration has been performed
         if not config.time_domain_int:
             _frequency_integrate(config, spec)
-            if noise_weight:
+            if noise_weight and specnoise is not None:
                 _frequency_integrate(config, specnoise)
 
         # smooth the abs of fft
@@ -226,7 +232,7 @@ def build_spectra(config, st, noise_weight=False):
         spec.data *= coeff
 
         # same processing for noise, if requested
-        if noise_weight:
+        if noise_weight and specnoise is not None:
             specnoise.data = konnoOhmachiSmoothing(specnoise.data,
                                           specnoise.get_freq(),
                                           40, normalize=True)
@@ -237,7 +243,7 @@ def build_spectra(config, st, noise_weight=False):
         # append to spec streams
         spec_st.append(spec_cut)
 
-        if noise_weight:
+        if noise_weight and specnoise is not None:
             specnoise_cut = _cut_spectrum(config, specnoise)
             specnoise_st.append(specnoise_cut)
     # end of loop on traces
