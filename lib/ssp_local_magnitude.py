@@ -26,7 +26,7 @@ def local_magnitude(config, st, deconvolve=False):
     for trace in st.traces:
         traceId = trace.getId()
         comp  = trace.stats.channel
-        if comp[-1] == 'Z':
+        if comp[-1] in ['Z', 'H']:
             continue
 
         # Skip traces which do not have hypo_dist defined
@@ -49,7 +49,16 @@ def local_magnitude(config, st, deconvolve=False):
         trace_env.detrend(type='linear')
         # ...filter
         # TODO: parametrize?
-        trace_env.filter(type='bandpass',  freqmin=0.1, freqmax=20)
+        freqmin = 0.1
+        freqmax = 20.
+        nyquist = 1./(2. * trace.stats.delta)
+        if freqmax >= nyquist:
+            freqmax = nyquist * 0.999
+            print trace.stats.delta
+            logging.warning('%s: maximum frequency for bandpass filtering ' % trace.id +
+                            'in local magnitude computation ' +
+                            'is larger or equal to Nyquist. Setting it to %s Hz' % freqmax)
+        trace.filter(type='bandpass', freqmin=freqmin, freqmax=freqmax)
         trace_env.data = envelope(trace_env.data)
         trace_env.data = smooth(trace_env.data, 100)
 
