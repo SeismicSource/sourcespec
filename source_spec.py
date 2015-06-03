@@ -25,6 +25,10 @@ def main():
     config = configure()
     setup_logging(config)
     plot_pool = init_plotting()
+    # comment the following line to do
+    # serial plotting (useful for debug)
+    apply = plot_pool.apply_async
+
     st = read_traces(config)
 
     # Now that we (hopefully) have the evid
@@ -39,7 +43,7 @@ def main():
     # Build spectra (amplitude in magnitude units)
     spec_st, specnoise_st, weight_st = build_spectra(config, proc_st, noise_weight=True)
 
-    plot_pool.apply_async(plot_traces, (config, proc_st, 2))
+    apply(plot_traces, (config, proc_st, 2))
 
     #Ml = local_magnitude(config, proc_st)
     Ml = local_magnitude(config, st, deconvolve=True)
@@ -54,16 +58,16 @@ def main():
     spectral_residuals(config, spec_st, evid, sourcepar_mean)
 
     # Plotting
-    plot_pool.apply_async(plot_spectra,
-                          (config, spec_st),
-                          {'specnoise_st': specnoise_st,
-                           'plottype': 'regular'})
-    plot_pool.apply_async(plot_spectra,
-                          (config, specnoise_st),
-                          {'plottype': 'noise'})
-    plot_pool.apply_async(plot_spectra,
-                          (config, weight_st),
-                          {'plottype': 'weight'})
+    apply(plot_spectra,
+          (config, spec_st),
+          {'specnoise_st': specnoise_st,
+           'plottype': 'regular'})
+    apply(plot_spectra,
+          (config, specnoise_st),
+          {'plottype': 'noise'})
+    apply(plot_spectra,
+          (config, weight_st),
+          {'plottype': 'weight'})
 
     ssp_exit()
 
