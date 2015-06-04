@@ -18,7 +18,7 @@ from validate import Validator
 from config import Config
 from argparse import ArgumentParser, RawTextHelpFormatter
 from datetime import datetime
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 
 
 if sys.stdout.isatty():
@@ -333,7 +333,9 @@ plot_pool = None
 def init_plotting():
     global plot_pool
     if plot_pool is None:
-        plot_pool = Pool()
+        processes = cpu_count() - 1
+        processes = processes if processes > 0 else 1
+        plot_pool = Pool(processes)
     return plot_pool
 
 
