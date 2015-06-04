@@ -91,7 +91,8 @@ def _compute_h(spec_st, code):
             spec_h.stats.channel = code + 'H'
         else:
             spec_h.data += np.power(spec.data, 2)
-    spec_h.data = np.sqrt(spec_h.data)
+    if spec_h is not None:
+        spec_h.data = np.sqrt(spec_h.data)
     return spec_h
 
 
@@ -265,20 +266,28 @@ def build_spectra(config, st, noise_weight=False):
             # and weighting function.
             if noise_weight:
                 specnoise_h = _compute_h(specnoise_st_sel, code)
-                specnoise_st.append(specnoise_h)
+                if specnoise_h is not None:
+                    specnoise_st.append(specnoise_h)
 
                 # Weighting function is the ratio between "H" components
                 # of signal and noise
                 weight = copy(spec_h)
                 weight.stats = deepcopy(spec_h.stats)
                 weight.data = deepcopy(spec_h.data)
-                weight.data /= specnoise_h.data
-                # smooth weight
-                weight.data = konnoOhmachiSmoothing(weight.data,
-                                          weight.get_freq(),
-                                          10, normalize=True)
-                # normalization
-                weight.data /= np.max(weight.data)
+                if specnoise_h is not None:
+                    weight.data = deepcopy(spec_h.data)
+                    weight.data /= specnoise_h.data
+                    # smooth weight
+                    weight.data = konnoOhmachiSmoothing(weight.data,
+                                                        weight.get_freq(),
+                                                        10, normalize=True)
+                    # normalization
+                    weight.data /= np.max(weight.data)
+                else:
+                    logging.warning('%s: No available noise window: '
+                                    % weight.getId()[0:-1] +
+                                    'a uniform weight will be applied')
+                    weight.data = np.ones(len(spec_h.data))
                 weight_st.append(weight)
 
     # convert the spectral amplitudes to moment magnitude
