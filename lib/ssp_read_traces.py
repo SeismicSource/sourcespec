@@ -22,8 +22,8 @@ import json
 from datetime import datetime
 from obspy.core import Stream, read, UTCDateTime
 from obspy.core.util import AttribDict
-from obspy.xseed import Parser
-from obspy.xseed.utils import SEEDParserException
+from obspy.io.xseed import Parser
+from obspy.io.xseed.utils import SEEDParserException
 from ssp_setup import ssp_exit
 
 
@@ -94,8 +94,8 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
             if not traceid in str(sp):
                 continue
             try:
-                paz = sp.getPAZ(traceid, time)
-                coords = AttribDict(sp.getCoordinates(traceid, time))
+                paz = sp.get_PAZ(traceid, time)
+                coords = AttribDict(sp.get_coordinates(traceid, time))
                 # elevation is in meters in the dataless
                 coords.elevation /= 1000.
             except SEEDParserException, message:
@@ -132,8 +132,6 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
             # instrument constants
             u2 = trace.stats.sac.user2
             u3 = trace.stats.sac.user3
-            if u2 == -12345 or u3 == -12345:
-                raise AttributeError
             paz = AttribDict()
             paz.sensitivity = u3/u2
             paz.poles = []
@@ -158,13 +156,12 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
         try:
             stla = trace.stats.sac.stla
             stlo = trace.stats.sac.stlo
-            stel = trace.stats.sac.stel
-            if stla == -12345 or stlo == -12345:
-                raise AttributeError
-            if stel == -12345:
+            try:
+                stel = trace.stats.sac.stel
+                # elevation is in meters in SAC header:
+                stel /= 1000.
+            except AttributeError:
                 stel = 0.
-            # elevation is in meters in SAC header:
-            stel /= 1000.
             coords = AttribDict()
             coords.elevation = stel
             coords.latitude = stla
@@ -235,19 +232,16 @@ def _add_hypocenter(trace, hypo):
             evla = trace.stats.sac.evla
             evlo = trace.stats.sac.evlo
             evdp = trace.stats.sac.evdp
-            tori = trace.stats.sac.o
             begin = trace.stats.sac.b
-            if (evla == -12345 or evlo == -12345
-                    or evdp == -12345 or begin == -12345):
-                raise AttributeError
 
             hypo = AttribDict()
-            if tori == -12345:
-                hypo.origin_time = None
-                hypo.evid = trace.stats.starttime.strftime("%Y%m%d_%H%M%S")
-            else:
+            try:
+                tori = trace.stats.sac.o
                 hypo.origin_time = trace.stats.starttime + tori - begin
                 hypo.evid = hypo.origin_time.strftime("%Y%m%d_%H%M%S")
+            except AttributeError:
+                hypo.origin_time = None
+                hypo.evid = trace.stats.starttime.strftime("%Y%m%d_%H%M%S")
             hypo.latitude = evla
             hypo.longitude = evlo
             hypo.depth = evdp
@@ -265,42 +259,29 @@ def _add_picks(trace, picks):
         if trace.stats._format != 'SAC':
             return
 
+        fields = ('a', 't0', 't1', 't2', 't3', 't4',
+                  't5', 't6', 't7', 't8', 't9')
         times = []
-        times.append(trace.stats.sac.a)
-        times.append(trace.stats.sac.t0)
-        times.append(trace.stats.sac.t1)
-        times.append(trace.stats.sac.t2)
-        times.append(trace.stats.sac.t3)
-        times.append(trace.stats.sac.t4)
-        times.append(trace.stats.sac.t5)
-        times.append(trace.stats.sac.t6)
-        times.append(trace.stats.sac.t7)
-        times.append(trace.stats.sac.t8)
-        times.append(trace.stats.sac.t9)
+        for key in fields:
+            try:
+                times.append(trace.stats.sac[key])
+            except KeyError:
+                times.append(None)
         labels = []
-        labels.append(trace.stats.sac.ka.strip())
-        labels.append(trace.stats.sac.kt0.strip())
-        labels.append(trace.stats.sac.kt1.strip())
-        labels.append(trace.stats.sac.kt2.strip())
-        labels.append(trace.stats.sac.kt3.strip())
-        labels.append(trace.stats.sac.kt4.strip())
-        labels.append(trace.stats.sac.kt5.strip())
-        labels.append(trace.stats.sac.kt6.strip())
-        labels.append(trace.stats.sac.kt7.strip())
-        labels.append(trace.stats.sac.kt8.strip())
-        labels.append(trace.stats.sac.kt9.strip())
-        fields = ['a', 't0', 't1', 't2', 't3', 't4',
-                  't5', 't6', 't7', 't8', 't9']
-
+        for key in ['k' + f for f in fields]:
+            try:
+                labels.append(trace.stats.sac[key].strip())
+            except KeyError:
+                labels.append(None)
         for time, label, field in zip(times, labels, fields):
-            if time == -12345:
+            if time is None:
                 continue
 
             pick = Pick()
             pick.station = station
             begin = trace.stats.sac.b
             pick.time = trace.stats.starttime + time - begin
-            if len(label) == 4:
+            if label is not None and len(label) == 4:
                 pick.flag = label[0]
                 pick.phase = label[1]
                 pick.polarity = label[2]

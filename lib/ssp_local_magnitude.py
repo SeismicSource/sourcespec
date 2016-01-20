@@ -13,10 +13,11 @@ import logging
 import numpy as np
 from scipy.integrate import cumtrapz
 from copy import deepcopy, copy
-from obspy.signal import estimateMagnitude, envelope
-from ssp_util import wave_arrival, cosine_taper
+from obspy.signal.filter import envelope
+from obspy.signal.invsim import estimate_magnitude
 from obspy.signal.util import smooth
-from obspy.signal.trigger import triggerOnset
+from obspy.signal.trigger import trigger_onset
+from ssp_util import wave_arrival, cosine_taper
 
 def local_magnitude(config, st, deconvolve=False):
     '''
@@ -86,7 +87,8 @@ def local_magnitude(config, st, deconvolve=False):
         if ampmax <= ampmin:
             continue
 
-        trigger = triggerOnset(trace_env.data, ampmax, ampmin, max_len=9e99, max_len_delete=False)[0]
+        trigger = trigger_onset(trace_env.data, ampmax, ampmin,
+                                max_len=9e99, max_len_delete=False)[0]
 
         df = trace.stats.sampling_rate
         triggeron = trigger[0]/df
@@ -165,7 +167,7 @@ def local_magnitude(config, st, deconvolve=False):
                    'zeros': [],
                    'gain': 1.0, 'sensitivity': 1.0}
 
-        ml = estimateMagnitude(paz, delta_amp, delta_t, trace_cut.stats.hypo_dist)
+        ml = estimate_magnitude(paz, delta_amp, delta_t, trace_cut.stats.hypo_dist)
         magnitudes.append(ml)
         logging.info('%s %s: %s %.1f' % (traceId, trace.stats.instrtype, "Ml", ml))
 

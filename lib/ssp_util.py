@@ -10,7 +10,7 @@ import logging
 import warnings
 import math
 import numpy as np
-from obspy.signal import cosTaper
+from obspy.signal.invsim import cosine_taper as _cos_taper
 
 
 # MISC ------------------------------------------------------------------------
@@ -91,7 +91,7 @@ def cosine_taper(signal, width):
     #TODO: this taper looks more like a hanning...
     npts = len(signal)
     p = 2 * width
-    tap = cosTaper(npts, p)
+    tap = _cos_taper(npts, p)
     signal *= tap
 
 
