@@ -262,13 +262,14 @@ def _add_picks(trace, picks):
         fields = ('a', 't0', 't1', 't2', 't3', 't4',
                   't5', 't6', 't7', 't8', 't9')
         times = []
+        labels = []
         for key in fields:
             try:
                 times.append(trace.stats.sac[key])
             except KeyError:
                 times.append(None)
-        labels = []
-        for key in ['k' + f for f in fields]:
+            # now look at labels (ka, kt0, ...)
+            key = 'k' + key
             try:
                 labels.append(trace.stats.sac[key].strip())
             except KeyError:
