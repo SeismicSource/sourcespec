@@ -82,8 +82,8 @@ class Bounds():
         if (self.Mw_min is not None and
             self.Mw_max is not None and
             (self.ini_values.Mw_0 is None or
-             self.ini_values.Mw_0 < self.Mw_min or
-             self.ini_values.Mw_0 > self.Mw_max)):
+             self.ini_values.Mw_0 <= self.Mw_min or
+             self.ini_values.Mw_0 >= self.Mw_max)):
             Mw_0 = (self.Mw_max - self.Mw_min) / 2.
             logging.warning('%s %s: initial Mw value: %s outside '
                             'bounds. Using bound average: %s' %
@@ -93,8 +93,8 @@ class Bounds():
         if (self.fc_min is not None and
             self.fc_max is not None and
             (self.ini_values.fc_0 is None or
-             self.ini_values.fc_0 < self.fc_min or
-             self.ini_values.fc_0 > self.fc_max)):
+             self.ini_values.fc_0 <= self.fc_min or
+             self.ini_values.fc_0 >= self.fc_max)):
             fc_0 = (self.fc_max - self.fc_min) / 2.
             logging.warning('%s %s: initial fc value: %s outside '
                             'bounds. Using bound average: %s' %
@@ -104,8 +104,8 @@ class Bounds():
         if (self.t_star_min is not None and
             self.t_star_max is not None and
             (self.ini_values.t_star_0 is None or
-             self.ini_values.t_star_0 < self.t_star_min or
-             self.ini_values.t_star_0 > self.t_star_max)):
+             self.ini_values.t_star_0 <= self.t_star_min or
+             self.ini_values.t_star_0 >= self.t_star_max)):
             t_star_0 = (self.t_star_max - self.t_star_min) / 2.
             logging.warning('%s %s: initial t_star value: %s outside '
                             'bounds. Using bound average: %s' %
