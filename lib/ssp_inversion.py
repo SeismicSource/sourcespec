@@ -88,7 +88,7 @@ class Bounds():
             logging.warning('%s %s: initial Mw value: %s outside '
                             'bounds. Using bound average: %s' %
                             (self.spec.id, self.spec.stats.instrtype,
-                             self.ini_values_Mw_0, round(Mw_0, 4)))
+                             self.ini_values.Mw_0, round(Mw_0, 4)))
             self.ini_values.Mw_0 = Mw_0
         if (self.fc_min is not None and
             self.fc_max is not None and
