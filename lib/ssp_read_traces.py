@@ -55,7 +55,7 @@ def _correct_traceid(trace, traceid_file):
         return
     correct_traceids = _get_correct_traceids(traceid_file)
     try:
-        traceid = correct_traceids[trace.getId()]
+        traceid = correct_traceids[trace.get_id()]
         net, sta, loc, chan = traceid.split('.')
         trace.stats.network = net
         trace.stats.station = sta
@@ -85,7 +85,7 @@ def _correct_station_name(station, traceid_file):
 def _add_paz_and_coords(trace, dataless, paz_dict=None):
     trace.stats.paz = None
     trace.stats.coords = None
-    traceid = trace.getId()
+    traceid = trace.get_id()
     time = trace.stats.starttime
     # We first look into the dataless dictionary, if available
     if dataless is not None:

@@ -110,7 +110,7 @@ def build_spectra(config, st, noise_weight=False):
     weight_st = Stream()
 
     for trace in st.traces:
-        traceId = trace.getId()
+        traceId = trace.get_id()
         stats = trace.stats
 
         # S time window
@@ -286,7 +286,7 @@ def build_spectra(config, st, noise_weight=False):
                     weight.data /= np.max(weight.data)
                 else:
                     logging.warning('%s: No available noise window: '
-                                    % weight.getId()[0:-1] +
+                                    % weight.get_id()[0:-1] +
                                     'a uniform weight will be applied')
                     weight.data = np.ones(len(spec_h.data))
                 weight_st.append(weight)

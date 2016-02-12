@@ -25,7 +25,7 @@ def local_magnitude(config, st, deconvolve=False):
     '''
     magnitudes = []
     for trace in st.traces:
-        traceId = trace.getId()
+        traceId = trace.get_id()
         comp  = trace.stats.channel
         if comp[-1] in ['Z', 'H']:
             continue

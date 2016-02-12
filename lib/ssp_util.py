@@ -122,7 +122,7 @@ def smooth(x, window_len=11, window='hanning'):
 def remove_instr_response(trace, correct='True', pre_filt=(0.5, 0.6, 40., 45.)):
     if correct == 'False':
         return trace
-    traceId = trace.getId()
+    traceId = trace.get_id()
     paz = trace.stats.paz
     if paz is None:
         logging.warning('%s: no poles and zeros for trace' % traceId)
