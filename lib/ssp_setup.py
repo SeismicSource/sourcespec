@@ -20,6 +20,16 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
 
+# check ObsPy version
+import obspy
+MIN_OBSPY_VERSION = (1, 0, 0)
+OBSPY_VERSION_STR = obspy.__version__
+OBSPY_VERSION = tuple(map(int, OBSPY_VERSION_STR.split('.')[:3]))
+if OBSPY_VERSION < MIN_OBSPY_VERSION:
+    msg = 'ERROR: ObsPy >= %s.%s.%s is required.' % MIN_OBSPY_VERSION
+    msg += ' You have version: %s\n' % OBSPY_VERSION_STR
+    sys.stderr.write(msg)
+    sys.exit(1)
 
 if sys.stdout.isatty():
     import IPython
