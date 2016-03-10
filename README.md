@@ -3,7 +3,7 @@
 (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnès Chounet <chounet@ipgp.fr>
-(c) 2015 Claudio Satriano <satriano@ipgp.fr>
+(c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 
 Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
 
