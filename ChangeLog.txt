@@ -4,16 +4,18 @@ Python code to invert S-wave displacement spectra
 (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnès Chounet <chounet@ipgp.fr>
-(c) 2015 Claudio Satriano <satriano@ipgp.fr>
+(c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
 
-v0.9 -
+v0.9 - 2016-XX-XX
+  - Only compatible with ObsPy >= 1.0.0
 	- Traces are filtered before computing S/N ratio
 	- Trace clipping detection
 	- Traces are always plotted, even if no inversion is performed
 	- Use json format for traceid correction file
 	- Code cleaning and optimization:
 		- Switch from optparse (deprecated) to argparse
+    - Code style fixes and refactoring
 	- BUGFIX: Fix a major bug in reading hypo pick file
 	- BUGFIX: Fix for pick file not read in source_model
 v0.8 - 2014-07-11
