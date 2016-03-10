@@ -22,7 +22,8 @@ from ssp_util import wave_arrival, cosine_taper,\
 from ssp_process_traces import filter_trace
 from ssp_correction import station_correction
 import spectrum
-from obspy.signal.konnoohmachismoothing import konnoOhmachiSmoothing
+from obspy.signal.konnoohmachismoothing import \
+        konno_ohmachi_smoothing
 
 
 def _time_integrate(config, trace):
@@ -109,7 +110,7 @@ def build_spectra(config, st, noise_weight=False):
     weight_st = Stream()
 
     for trace in st.traces:
-        traceId = trace.getId()
+        traceId = trace.get_id()
         stats = trace.stats
 
         # S time window
@@ -218,8 +219,8 @@ def build_spectra(config, st, noise_weight=False):
                 _frequency_integrate(config, specnoise)
 
         # smooth the abs of fft
-        spec.data = konnoOhmachiSmoothing(spec.data, spec.get_freq(),
-                                          40, normalize=True)
+        spec.data = konno_ohmachi_smoothing(spec.data, spec.get_freq(),
+                                            40, normalize=True)
 
         # TODO: parameterize
         # coefficient for converting displ spectrum
@@ -234,9 +235,9 @@ def build_spectra(config, st, noise_weight=False):
 
         # same processing for noise, if requested
         if noise_weight and specnoise is not None:
-            specnoise.data = konnoOhmachiSmoothing(specnoise.data,
-                                          specnoise.get_freq(),
-                                          40, normalize=True)
+            specnoise.data = konno_ohmachi_smoothing(specnoise.data,
+                                                     specnoise.get_freq(),
+                                                     40, normalize=True)
             specnoise.data *= coeff
 
         # Cut the spectrum
@@ -278,14 +279,14 @@ def build_spectra(config, st, noise_weight=False):
                     weight.data = deepcopy(spec_h.data)
                     weight.data /= specnoise_h.data
                     # smooth weight
-                    weight.data = konnoOhmachiSmoothing(weight.data,
-                                                        weight.get_freq(),
-                                                        10, normalize=True)
+                    weight.data = konno_ohmachi_smoothing(weight.data,
+                                                          weight.get_freq(),
+                                                          10, normalize=True)
                     # normalization
                     weight.data /= np.max(weight.data)
                 else:
                     logging.warning('%s: No available noise window: '
-                                    % weight.getId()[0:-1] +
+                                    % weight.get_id()[0:-1] +
                                     'a uniform weight will be applied')
                     weight.data = np.ones(len(spec_h.data))
                 weight_st.append(weight)

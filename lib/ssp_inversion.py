@@ -17,7 +17,7 @@ from scipy.optimize import curve_fit, minimize
 from ssp_setup import dprint
 from ssp_spectral_model import spectral_model, objective_func, callback
 from ssp_util import mag_to_moment, select_trace
-from obspy.core.util.geodetics import gps2DistAzimuth
+from obspy.geodetics import gps2dist_azimuth
 
 
 class InitialValues():
@@ -174,7 +174,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             stlo = coords.longitude
             evla = hypo.latitude
             evlo = hypo.longitude
-            geod = gps2DistAzimuth(evla, evlo, stla, stlo)
+            geod = gps2dist_azimuth(evla, evlo, stla, stlo)
             az = geod[1]
             dprint('%s %s %f %f' % (station, spec.stats.instrtype, hd, az))
             loge = math.log10(math.e)

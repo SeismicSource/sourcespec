@@ -144,7 +144,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
 
                 if specnoise_st:
                     if spec.stats.channel[2] != 'S':
-                        specid = spec.getId()
+                        specid = spec.get_id()
                         try:
                             sp_noise = specnoise_st.select(id=specid)[0]
                         except IndexError:
