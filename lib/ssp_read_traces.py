@@ -5,10 +5,8 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
-# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
-'''
-Read traces in multiple formats of data and metadata.
-'''
+# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
+"""Read traces in multiple formats of data and metadata."""
 from __future__ import division
 import sys
 import os
@@ -28,9 +26,8 @@ from ssp_setup import ssp_exit
 
 
 class Pick(AttribDict):
-    '''
-    A pick object.
-    '''
+    """A pick object."""
+
     def __init__(self):
         self.station = None
         self.flag = None
@@ -42,6 +39,8 @@ class Pick(AttribDict):
 
 # TRACE MANIPULATION ----------------------------------------------------------
 correct_traceids = None
+
+
 def _get_correct_traceids(traceid_file):
     global correct_traceids
     if correct_traceids is None:
@@ -91,7 +90,7 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
     if dataless is not None:
         for sp in dataless.values():
             # Check first if our traceid is in the dataless file
-            if not traceid in str(sp):
+            if traceid not in str(sp):
                 continue
             try:
                 paz = sp.get_paz(traceid, time)
@@ -141,9 +140,9 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
         except AttributeError:
             pass
     # Still no paz? Antilles or IPOC format!
-    if trace.stats.paz is None\
-            and (trace.stats.format == 'Antilles'
-                 or trace.stats.format == 'IPOC'):
+    if (trace.stats.paz is None and
+        (trace.stats.format == 'Antilles' or
+         trace.stats.format == 'IPOC')):
         paz = AttribDict()
         paz.sensitivity = 1
         paz.poles = []
@@ -308,10 +307,7 @@ def _add_picks(trace, picks):
 
 
 def _complete_picks(st):
-    '''
-    For every station/instrument, adds component-specific picks
-    to all components.
-    '''
+    """Add component-specific picks to all components."""
     for station in set(tr.stats.station for tr in st):
         st_sel = st.select(station=station)
         # 'code' is band+instrument code
@@ -319,16 +315,19 @@ def _complete_picks(st):
             st_sel2 = st_sel.select(channel=code + '?')
             # Select default P and S picks as the first in list
             all_picks = [pick for tr in st_sel2 for pick in tr.stats.picks]
-            default_P_pick = [pick for pick in all_picks if pick.phase == 'P'][0:1]
-            default_S_pick = [pick for pick in all_picks if pick.phase == 'S'][0:1]
+            default_P_pick = [pick for pick in all_picks
+                              if pick.phase == 'P'][0:1]
+            default_S_pick = [pick for pick in all_picks
+                              if pick.phase == 'S'][0:1]
             for tr in st_sel2:
                 # Attribute default picks to components without picks
-                if len([pick for pick in tr.stats.picks if pick.phase == 'P']) == 0:
+                if len([pick for pick in tr.stats.picks
+                        if pick.phase == 'P']) == 0:
                     tr.stats.picks += default_P_pick
-                if len([pick for pick in tr.stats.picks if pick.phase == 'S']) == 0:
+                if len([pick for pick in tr.stats.picks
+                        if pick.phase == 'S']) == 0:
                     tr.stats.picks += default_S_pick
 # -----------------------------------------------------------------------------
-
 
 
 # FILE PARSING ----------------------------------------------------------------
@@ -353,16 +352,17 @@ def _read_dataless(path):
 
 
 def _read_paz(path):
-    '''
-    Reads a directory with paz files
-    or a single file.
+    """
+    Read a directory with paz files or a single file.
+
     Limitations:
     (1) directory must contain *only* paz files
     (2) paz file can optionally have ".pz" or ".paz" suffixes
     (3) paz file name (without prefix and suffix) *has* to have
         the trace_id (NET.STA.LOC.CHAN) of the corresponding trace
-        in the last part of his name (e.g. 20110208_1600.NOW.IV.CRAC.00.EHZ.paz)
-    '''
+        in the last part of his name
+        (e.g., 20110208_1600.NOW.IV.CRAC.00.EHZ.paz)
+    """
     if path is None:
         return None
 
@@ -450,10 +450,11 @@ def _parse_hypocenter(hypo_file):
         hypo.longitude = lon + lon_deg/60
         hypo.depth = float(line[36:42])
         evid = os.path.basename(hypo_file)
-        hypo.evid = evid.replace('.phs','').replace('.h','').replace('.hyp','')
+        evid = evid.replace('.phs', '').replace('.h', '').replace('.hyp', '')
+        hypo.evid = evid
 
-    else: #FIXME: put a condition here!
-        ev = hypo_file #FIXME: improve this!
+    else:  # FIXME: put a condition here!
+        ev = hypo_file  # FIXME: improve this!
         hypo.latitude = ev.latitude
         hypo.longitude = ev.longitude
         hypo.depth = ev.depth
@@ -466,21 +467,21 @@ def _parse_hypocenter(hypo_file):
 def _is_hypo_format(fp):
     for line in fp.readlines():
         # remove newline
-        line = line.replace('\n','')
+        line = line.replace('\n', '')
         # skip separator and empty lines
         stripped_line = line.strip()
         if stripped_line == '10' or stripped_line == '':
             continue
         # Check if it is a pick line
         # 6th character should be alpha (phase name: P or S)
-                # other character should be digits (date/time)
+        # other character should be digits (date/time)
         if (line[5].isalpha() and
                 line[9].isdigit() and
                 line[20].isdigit()):
-            fp.seek(0) #rewind file
+            fp.seek(0)  # rewind file
             return True
         else:
-            fp.seek(0) #rewind file
+            fp.seek(0)  # rewind file
             return False
 
 
@@ -499,7 +500,7 @@ def _parse_picks(config):
                 # Corinth phase file format is hypo
                 for line in fp.readlines():
                     # remove newline
-                    line = line.replace('\n','')
+                    line = line.replace('\n', '')
                     # skip separator and empty lines
                     stripped_line = line.strip()
                     if stripped_line == '10' or stripped_line == '':
@@ -514,7 +515,8 @@ def _parse_picks(config):
 
                     pick = Pick()
                     pick.station = line[0:4].strip()
-                    pick.station = _correct_station_name(pick.station, config.traceids)
+                    pick.station = \
+                        _correct_station_name(pick.station, config.traceids)
                     pick.flag = line[4:5]
                     pick.phase = line[5:6]
                     pick.polarity = line[6:7]
@@ -548,7 +550,8 @@ def _parse_picks(config):
                         # If we cannot read pick quality,
                         # we give the pick the lowest quality
                         pick2.quality = 4
-                    # pick2.time has the same date, hour and minutes than pick.time
+                    # pick2.time has the same date, hour and minutes
+                    # than pick.time
                     # We therefore make first a copy of pick.time...
                     pick2.time = UTCDateTime(pick.time)
                     # ...then set seconds and miscorseconds to 0...
@@ -621,9 +624,7 @@ def _set_pick_file_path(config):
 
 # Public interface:
 def read_traces(config):
-    '''
-    Read traces, store waveforms and metadata.
-    '''
+    """Read traces, store waveforms and metadata."""
     # read dataless
     dataless = _read_dataless(config.dataless)
     # read PAZ (normally this is an alternative to dataless)
@@ -659,9 +660,9 @@ def read_traces(config):
                 trace.stats.format = config.trace_format
                 _add_paz_and_coords(trace, dataless, paz)
                 _add_hypocenter(trace, hypo)
-                _add_picks(trace, picks) #FIXME: actually add picks!
+                _add_picks(trace, picks)  # FIXME: actually add picks!
                 #_add_instrtype(trace)
-                trace.stats.instrtype = 'acc' #FIXME
+                trace.stats.instrtype = 'acc'  # FIXME
     # ...or in standard files (CRL and ISNet)
     else:
         logging.info('Reading traces...')
@@ -685,7 +686,8 @@ def read_traces(config):
             try:
                 tmpst = read(filename, fsize=False)
             except:
-                logging.warning('%s: Unable to read file as a trace: skipping' % filename)
+                logging.warning('%s: Unable to read file as a trace: '
+                                'skipping' % filename)
                 continue
             for trace in tmpst.traces:
                 st.append(trace)

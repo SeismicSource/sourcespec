@@ -4,10 +4,8 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
-# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
-'''
-Trace processing for source_spec.
-'''
+# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
+"""Trace processing for source_spec."""
 from __future__ import division
 import logging
 import numpy as np
@@ -42,21 +40,22 @@ def filter_trace(config, trace):
     nyquist = 1./(2. * trace.stats.delta)
     if bp_freqmax >= nyquist:
         bp_freqmax = nyquist * 0.999
-        logging.warning('%s: maximum frequency for bandpass filtering ' % trace.id +
-                        'is larger or equal to Nyquist. Setting it to %s Hz' % bp_freqmax)
+        msg = '%s: maximum frequency for bandpass filtering ' % trace.id
+        msg += 'is larger or equal to Nyquist. '
+        msg += 'Setting it to %s Hz' % bp_freqmax
+        logging.warning(msg)
     trace.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
 
 
 def process_traces(config, st):
-    '''
-    Removes mean, deconvolves, and ignores unwanted components.
-    '''
+    """Remove mean, deconvolve and ignore unwanted components."""
     out_st = Stream()
     for orig_trace in st.traces:
         # compute hypocentral distance
         hd = hypo_dist(orig_trace)
         if hd is None:
-            logging.warning('%s: Unable to compute hypocentral distance: skipping trace' % orig_trace.id)
+            logging.warning('%s: Unable to compute hypocentral distance: '
+                            'skipping trace' % orig_trace.id)
             continue
         orig_trace.stats.hypo_dist = hd
 
@@ -64,7 +63,8 @@ def process_traces(config, st):
         p_arrival_time = wave_arrival(orig_trace, config.vp, 'P')
         s_arrival_time = wave_arrival(orig_trace, config.vs, 'S')
         if (p_arrival_time is None or s_arrival_time is None):
-            logging.warning('%s: Unable to get arrival times: skipping trace' % orig_trace.id)
+            logging.warning('%s: Unable to get arrival times: '
+                            'skipping trace' % orig_trace.id)
             continue
 
         # copy trace for manipulation
@@ -88,7 +88,8 @@ def process_traces(config, st):
         rms = np.sqrt(rms2)
         rms_min = config.rmsmin
         if rms <= rms_min:
-            logging.warning('%s %s: Trace RMS smaller than %g: skipping trace' % (trace.id, instrtype, rms_min))
+            logging.warning('%s %s: Trace RMS smaller than %g: '
+                            'skipping trace' % (trace.id, instrtype, rms_min))
             continue
 
         # check if trace is clipped
@@ -99,24 +100,27 @@ def process_traces(config, st):
         nclips += (trace.data < clip_min).sum()
         clip_nmax = config.clip_nmax
         if float(nclips)/trace.stats.npts > clip_nmax/100.:
-            logging.warning('%s %s: Trace is clipped for more than %.2f%% with %.2f%% tollerance: skipping trace'
-                             % (trace.id, instrtype, clip_nmax, clip_tollerance))
+            logging.warning('%s %s: Trace is clipped for more than %.2f%% '
+                            'with %.2f%% tollerance: skipping trace' %
+                            (trace.id, instrtype, clip_nmax, clip_tollerance))
             continue
 
         # Remove instrument response
         if remove_instr_response(trace, config.correct_instrumental_response,
                                  config.pre_filt) is None:
-            logging.warning('%s %s: Unable to remove instrument response: skipping trace' % (trace.id, instrtype))
+            logging.warning('%s %s: Unable to remove instrument response: '
+                            'skipping trace' % (trace.id, instrtype))
             continue
 
         try:
             filter_trace(config, trace)
         except ValueError:
-            logging.warning('%s: Unknown instrument type: %s: skipping trace' % (trace.id, instrtype))
+            logging.warning('%s: Unknown instrument type: %s: '
+                            'skipping trace' % (trace.id, instrtype))
             continue
 
         # Check if the trace has (significant) signal to noise ratio
-        #### start signal/noise ratio
+        # ***start signal/noise ratio
 
         # noise time window for s/n ratio
         #noise_start_t = trace.stats['starttime']
@@ -131,7 +135,8 @@ def process_traces(config, st):
         trace_noise.detrend(type='constant')
         # ...and the linear trend...
         trace_noise.detrend(type='linear')
-        trace_noise.trim(starttime=noise_start_t, endtime=noise_end_t, pad=True, fill_value=0)
+        trace_noise.trim(starttime=noise_start_t, endtime=noise_end_t,
+                         pad=True, fill_value=0)
         #trace_noise.plot()
 
         # S window for s/n ratio
@@ -145,7 +150,8 @@ def process_traces(config, st):
         trace_cutS.detrend(type='constant')
         # ...and the linear trend...
         trace_cutS.detrend(type='linear')
-        trace_cutS.trim(starttime=s_start_t, endtime=s_end_t, pad=True, fill_value=0)
+        trace_cutS.trim(starttime=s_start_t, endtime=s_end_t,
+                        pad=True, fill_value=0)
         #trace_cutS.plot()
 
         rmsnoise2 = np.power(trace_noise.data, 2).sum()
@@ -158,9 +164,11 @@ def process_traces(config, st):
 
         snratio_min = config.sn_min
         if sn_ratio < snratio_min:
-            logging.warning('%s %s: S/N smaller than %g: skipping trace' % (trace.id, instrtype, snratio_min))
+            logging.warning('%s %s: S/N smaller than %g: '
+                            'skipping trace' %
+                            (trace.id, instrtype, snratio_min))
             continue
-        #### end signal/noise ratio
+        # ***end signal/noise ratio
 
         orig_trace.stats.hypo_dist = hd
         out_st.append(trace)

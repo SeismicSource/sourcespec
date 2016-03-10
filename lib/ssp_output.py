@@ -4,10 +4,8 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
-# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
-'''
-Output functions for source_spec.
-'''
+# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
+"""Output functions for source_spec."""
 from __future__ import division
 import os
 import logging
@@ -17,16 +15,15 @@ from scipy.stats.mstats import gmean
 from ssp_setup import ssp_exit
 from ssp_util import mag_to_moment
 
+
 def gstd(array):
     mean = gmean(array)
-    arg = np.power(np.log(array/mean),2).sum() / len(array)
+    arg = np.power(np.log(array/mean), 2).sum() / len(array)
     return np.exp(np.sqrt(arg))
 
+
 def write_output(config, evid, sourcepar):
-    '''
-    Write inversion results to a plain text file and/or
-    to a SQLite database file.
-    '''
+    """Write results to a plain text file and/or to a SQLite database file."""
     if len(sourcepar) == 0:
         logging.info('No source parameter calculated')
         ssp_exit()
@@ -43,7 +40,8 @@ def write_output(config, evid, sourcepar):
         c = conn.cursor()
 
         # Init database schema
-        c.execute('create table if not exists Stations (stid, evid, Mo, Mw, fc, t_star, dist, azimuth);')
+        c.execute('create table if not exists Stations '
+                  '(stid, evid, Mo, Mw, fc, t_star, dist, azimuth);')
 
         # Write station source parameters to database
         for statId in sorted(sourcepar.keys()):
@@ -54,8 +52,10 @@ def write_output(config, evid, sourcepar):
             c.execute('delete from Stations where stid=? and evid=?;', t)
 
             # Insert new line
-            t = (statId, evid, par['Mo'], par['Mw'], par['fc'], par['t_star'], par['hyp_dist'], par['az'])
-            c.execute('insert into Stations values(?, ?, ?, ?, ?, ?, ?, ?);', t)
+            t = (statId, evid, par['Mo'], par['Mw'], par['fc'], par['t_star'],
+                 par['hyp_dist'], par['az'])
+            c.execute('insert into Stations values(?, ?, ?, ?, ?, ?, ?, ?);',
+                      t)
 
         # Commit changes
         conn.commit()
@@ -78,7 +78,7 @@ def write_output(config, evid, sourcepar):
             parfile.write('\n')
         parfile.write('\n')
 
-        ## Compute and write average source parameters
+        # Compute and write average source parameters
         parfile.write('*** Average source parameters ***\n')
         # Mw
         Mw_array = np.array(list(x['Mw'] for x in sourcepar.values()))
@@ -115,7 +115,8 @@ def write_output(config, evid, sourcepar):
         bsd_array = 0.4375 * Mo_array / np.power(ra_array, 3) * 1e-6
         bsd_mean = bsd_array.mean()
         bsd_std = bsd_array.std()
-        parfile.write('Brune stress drop: %.3f +/- %.3f MPa\n' % (bsd_mean, bsd_std))
+        parfile.write('Brune stress drop: %.3f +/- %.3f MPa\n' %
+                      (bsd_mean, bsd_std))
 
         # Ml
         Ml_array = np.array(list(x['Ml'] for x in sourcepar.values()))
@@ -127,10 +128,13 @@ def write_output(config, evid, sourcepar):
 
     # Write average source parameters to database
     if database_file:
-        c.execute('create table if not exists Events (evid, Mw_mean, Mo_mean, fc_mean, t_star_mean, ra_mean, bsd_mean, Ml_mean);')
+        c.execute('create table if not exists Events '
+                  '(evid, Mw_mean, Mo_mean, fc_mean, t_star_mean, '
+                  'ra_mean, bsd_mean, Ml_mean);')
         t = (evid, Mw_mean)
         c.execute('delete from Events where evid=? and Mw_mean=?;', t)
-        t = (evid, Mw_mean, Mo_mean, fc_mean, t_star_mean, ra_mean, bsd_mean, Ml_mean)
+        t = (evid, Mw_mean, Mo_mean, fc_mean, t_star_mean, ra_mean,
+             bsd_mean, Ml_mean)
         c.execute('insert into Events values(?, ?, ?, ?, ?, ?, ?, ?);', t)
         # Commit changes and close database
         conn.commit()
@@ -147,7 +151,7 @@ def write_output(config, evid, sourcepar):
             line = list(line)
         mw_str = '%03.2f' % Mw_mean
         ml_str = '%03.2f' % Ml_mean
-        for i in range(0,4):
+        for i in range(0, 4):
             line[49+i] = mw_str[0+i]
             #line[45+i] = mw_str[0+i]
             line[69+i] = ml_str[0+i]

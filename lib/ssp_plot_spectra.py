@@ -4,10 +4,8 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
-# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
-'''
-Spectral plotting routine.
-'''
+# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
+"""Spectral plotting routine."""
 from __future__ import division
 import os
 import math
@@ -23,12 +21,14 @@ synth_colors = [
     '#FC4384',
 ]
 
+
 def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
-        stack_plots=False, plottype='regular'):
-    '''
+                 stack_plots=False, plottype='regular'):
+    """
     Plot spectra for signal and noise.
+
     Display to screen and/or save to file.
-    '''
+    """
     # Unload matplotlib modules (which have been loaded by obspy.signal).
     unload_matplotlib()
     # Check config, if we need to plot at all
@@ -36,7 +36,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         return
     # Re-import matplotlib
     import matplotlib
-    matplotlib.rcParams['pdf.fonttype'] = 42 #to edit text in Illustrator
+    matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
     # If we do not need to show the plot, we use the 'agg' backend
     if not config.PLOT_SHOW:
         matplotlib.use('agg')
@@ -90,14 +90,16 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     ax = fig.add_subplot(nlines, ncols, plotn)
             else:
                 if not stack_plots:
-                    ax = fig.add_subplot(nlines, ncols, plotn, sharex=axes[0][0], sharey=axes[0][0])
+                    ax = fig.add_subplot(nlines, ncols, plotn,
+                                         sharex=axes[0][0], sharey=axes[0][0])
             ax.set_xlim(freq_minmax)
             ax.set_ylim(moment_minmax)
-            ax.grid(True, which='both', linestyle='solid', color='#DDDDDD', zorder=0)
+            ax.grid(True, which='both', linestyle='solid', color='#DDDDDD',
+                    zorder=0)
             ax.set_axisbelow(True)
             plt.setp(ax.get_xticklabels(), visible=False)
             plt.setp(ax.get_yticklabels(), visible=False)
-            ax.tick_params(width=2) #FIXME: ticks are below grid lines!
+            ax.tick_params(width=2)  # FIXME: ticks are below grid lines!
 
             # ax2 has magnitude units
             if plottype != 'weight':
@@ -128,17 +130,20 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     color = 'red'
                 if orientation == 'S':
                     if stack_plots:
-                        color = synth_colors[(plotn-1)%len(synth_colors)]
+                        color = synth_colors[(plotn-1) % len(synth_colors)]
                     else:
                         color = 'black'
                 if plottype in ['regular', 'noise']:
-                    ax.loglog(spec.get_freq(), spec.data, color=color, zorder=20)
+                    ax.loglog(spec.get_freq(), spec.data, color=color,
+                              zorder=20)
                     if orientation == 'S':
-                        ax.axvline(spec.stats.par['fc'], color='#999999', linewidth=2., zorder=1)
+                        ax.axvline(spec.stats.par['fc'], color='#999999',
+                                   linewidth=2., zorder=1)
                 elif plottype == 'weight':
-                    ax.semilogx(spec.get_freq(), spec.data, color=color, zorder=20)
+                    ax.semilogx(spec.get_freq(), spec.data, color=color,
+                                zorder=20)
                 else:
-                    raise ValueError, 'Unknown plot type: %s' % plottype
+                    raise ValueError('Unknown plot type: %s' % plottype)
                 #leg = ax.legend(('N', 'E', 'H'),
                 #    'lower right')
 
@@ -151,15 +156,16 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                             continue
                         orientation = sp_noise.stats.channel[2]
                         if orientation in ['Z', '1']:
-                            color='purple'
+                            color = 'purple'
                         if orientation in ['N', '2']:
-                            color='green'
+                            color = 'green'
                         if orientation in ['E', '3']:
-                            color='blue'
+                            color = 'blue'
                         if orientation == 'H':
-                            color='red'
+                            color = 'red'
                         ax.loglog(sp_noise.get_freq(), sp_noise.data,
-                                linestyle=':', linewidth=2., color=color, zorder=20)
+                                  linestyle=':', linewidth=2.,
+                                  color=color, zorder=20)
 
                 if not ax_text:
                     if stack_plots:
@@ -171,10 +177,10 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     ax.text(0.05, text_y, ax_text,
                             horizontalalignment='left',
                             verticalalignment='bottom',
-                            color = color,
-                            #backgroundcolor = (1, 1, 1, 0.7),
-                            transform = ax.transAxes,
-                            zorder = 50)
+                            color=color,
+                            #backgroundcolor=(1, 1, 1, 0.7),
+                            transform=ax.transAxes,
+                            zorder=50)
                     ax_text = True
 
                 if orientation == 'S':
@@ -187,14 +193,17 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     Mw = spec.stats.par['Mw']
                     Mo = mag_to_moment(Mw)
                     t_star = spec.stats.par['t_star']
-                    ax.text(0.05, text_y2, 'Mo: %.2g Mw: %.1f fc: %.2fHz t*: %.2fs' % (Mo, Mw, fc, t_star),
+                    ax.text(0.05, text_y2,
+                            'Mo: %.2g Mw: %.1f fc: %.2fHz t*: %.2fs' %
+                            (Mo, Mw, fc, t_star),
                             horizontalalignment='left',
                             verticalalignment='bottom',
-                            #backgroundcolor = (1, 1, 1, 0.7), #FIXME: does not work in interactive plots
-                            color = color,
-                            fontsize = 9,
-                            transform = ax.transAxes,
-                            zorder = 50)
+                            #FIXME: does not work in interactive plots
+                            #backgroundcolor = (1, 1, 1, 0.7),
+                            color=color,
+                            fontsize=9,
+                            transform=ax.transAxes,
+                            zorder=50)
 
     # Show the x-labels only for the last row
     for ax, ax2 in axes[-ncols:]:
@@ -232,7 +241,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         elif plottype == 'weight':
             suffix = '.sspweight.'
             message = 'Weight'
-        figurefile = os.path.join(config.options.outdir, evid + suffix +\
+        figurefile = os.path.join(config.options.outdir, evid + suffix +
                                   config.PLOT_SAVE_FORMAT)
         fig.savefig(figurefile, bbox_inches='tight')
         logging.info(message + ' plots saved to: ' + figurefile)

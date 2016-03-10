@@ -5,10 +5,8 @@
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
-# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
-'''
-Spectral inversion routines for source_spec.
-'''
+# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
+"""Spectral inversion routines for source_spec."""
 from __future__ import division
 import logging
 import math
@@ -21,9 +19,8 @@ from obspy.geodetics import gps2dist_azimuth
 
 
 class InitialValues():
-    '''
-    Initial values for spectral inversion.
-    '''
+    """Initial values for spectral inversion."""
+
     def __init__(self, Mw_0=None, fc_0=None, t_star_0=None):
         self.Mw_0 = Mw_0
         self.fc_0 = fc_0
@@ -40,9 +37,8 @@ class InitialValues():
 
 
 class Bounds():
-    '''
-    Bounds for bounded spectral inversion.
-    '''
+    """Bounds for bounded spectral inversion."""
+
     def __init__(self, config, spec, initial_values):
         self.config = config
         self.spec = spec
@@ -118,10 +114,7 @@ class Bounds():
 
 
 def spectral_inversion(config, spec_st, weight_st, Ml):
-    '''
-    Inversion of displacement spectra.
-    '''
-
+    """Inversion of displacement spectra."""
     if config.noise_weighting:
         logging.info('Using noise weighting for inversion.')
     else:
@@ -131,7 +124,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
     elif config.inv_algorithm == 'LM':
         logging.info('Using Levenburg-Marquardt algorithm for inversion.')
     else:
-        raise ValueError, 'Invalid choice of inversion algorithm.'
+        raise ValueError('Invalid choice of inversion algorithm.')
 
     sourcepar = dict()
     vs_m = config.vs*1000
@@ -189,15 +182,16 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
 
             if config.noise_weighting:
                 weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
-                # 'curve_fit' interprets 'yerr' as standard deviation vector and calculates
-                # weights as 1/yerr^2 . Therefore we build yerr as:
+                # 'curve_fit' interprets 'yerr' as standard deviation vector
+                # and calculates weights as 1/yerr^2 .
+                # Therefore we build yerr as:
                 yerr = 1./np.sqrt(weight)
             else:
                 # Spectral weighting:
                 #   config.weight for f<=f_weight
                 #   1      for f> f_weight
                 yerr = np.ones(len(ydata))
-                yerr[xdata<=config.f_weight] = 1./math.sqrt(config.weight)
+                yerr[xdata <= config.f_weight] = 1./math.sqrt(config.weight)
                 weight = 1./np.power(yerr, 2)
 
             # Curve fitting using the Levenburg-Marquardt algorithm
@@ -206,9 +200,10 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
                 if config.inv_algorithm == 'TNC':
                     bounds = Bounds(config, spec, initial_values)
                     logging.info('%s %s: initial values: %s' %
-                            (spec.id, spec.stats.instrtype, str(initial_values)))
+                                 (spec.id, spec.stats.instrtype,
+                                  str(initial_values)))
                     logging.info('%s %s: bounds: %s' %
-                            (spec.id, spec.stats.instrtype, str(bounds)))
+                                 (spec.id, spec.stats.instrtype, str(bounds)))
                     minimize_func = objective_func(xdata, ydata, weight)
                     res =\
                         minimize(minimize_func,
@@ -217,21 +212,23 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
                     params_opt = res.x
                 elif config.inv_algorithm == 'LM':
                     logging.info('%s %s: initial values: %s' %
-                            (spec.id, spec.stats.instrtype, str(initial_values)))
+                                 (spec.id, spec.stats.instrtype,
+                                  str(initial_values)))
                     params_opt, params_cov =\
                         curve_fit(spectral_model,
                                   xdata, ydata,
                                   p0=initial_values.get_params0(),
                                   sigma=yerr)
             except RuntimeError:
-                logging.warning('%s %s: unable to fit spectral model' % (spec.id, spec.stats.instrtype))
+                logging.warning('%s %s: unable to fit spectral model' %
+                                (spec.id, spec.stats.instrtype))
                 continue
 
             par = dict(zip(params_name, params_opt))
             par['Mo'] = mag_to_moment(par['Mw'])
             par['hyp_dist'] = hd
             par['az'] = az
-            par['Ml'] = Ml #FIXME: this is the network magnitude!
+            par['Ml'] = Ml  # FIXME: this is the network magnitude!
             statId = '%s %s' % (spec.id, spec.stats.instrtype)
             sourcepar[statId] = par
 
@@ -250,7 +247,8 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
         par = sourcepar[statId]
         t_star = par['t_star']
         if t_star < 0:
-            logging.warning('Ignoring station: %s t_star: %f' % (statId, t_star))
+            logging.warning('Ignoring station: %s t_star: %f' %
+                            (statId, t_star))
             sourcepar.pop(statId, None)
         fc = par['fc']
         if fc < f1 or fc > f2:

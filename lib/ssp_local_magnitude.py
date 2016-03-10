@@ -4,10 +4,8 @@
 # (c) 2012 Claudio Satriano <satriano@ipgp.fr>
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
-# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
-'''
-Local magnitude calculation for source_spec.
-'''
+# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
+"""Local magnitude calculation for source_spec."""
 from __future__ import division
 import logging
 import numpy as np
@@ -19,14 +17,13 @@ from obspy.signal.util import smooth
 from obspy.signal.trigger import trigger_onset
 from ssp_util import wave_arrival, cosine_taper
 
+
 def local_magnitude(config, st, deconvolve=False):
-    '''
-    Computes local magnitude from min/max amplitude.
-    '''
+    """Compute local magnitude from min/max amplitude."""
     magnitudes = []
     for trace in st.traces:
         traceId = trace.get_id()
-        comp  = trace.stats.channel
+        comp = trace.stats.channel
         if comp[-1] in ['Z', 'H']:
             continue
 
@@ -55,10 +52,10 @@ def local_magnitude(config, st, deconvolve=False):
         nyquist = 1./(2. * trace.stats.delta)
         if freqmax >= nyquist:
             freqmax = nyquist * 0.999
-            print trace.stats.delta
-            logging.warning('%s: maximum frequency for bandpass filtering ' % trace.id +
-                            'in local magnitude computation ' +
-                            'is larger or equal to Nyquist. Setting it to %s Hz' % freqmax)
+            msg = '%s: maximum frequency for bandpass filtering ' % trace.id
+            msg += 'in local magnitude computation is larger than or equal '
+            msg += 'to Nyquist. Setting it to %s Hz' % freqmax
+            logging.warning(msg)
         trace.filter(type='bandpass', freqmin=freqmin, freqmax=freqmax)
         trace_env.data = envelope(trace_env.data)
         trace_env.data = smooth(trace_env.data, 100)
@@ -78,8 +75,10 @@ def local_magnitude(config, st, deconvolve=False):
         t1 = p_arrival_time - config.pre_mag_time
         t2 = p_arrival_time + config.pre_mag_time
 
-        trace_noise.trim(starttime=t1, endtime=p_arrival_time, pad=True, fill_value=0)
-        trace_signal.trim(starttime=p_arrival_time, endtime=t2, pad=True, fill_value=0)
+        trace_noise.trim(starttime=t1, endtime=p_arrival_time,
+                         pad=True, fill_value=0)
+        trace_signal.trim(starttime=p_arrival_time, endtime=t2,
+                          pad=True, fill_value=0)
 
         ampmin = trace_noise.data.mean()
         ampmax = trace_signal.data.mean()
@@ -100,10 +99,6 @@ def local_magnitude(config, st, deconvolve=False):
             t_end = p_arrival_time + config.mag_win_length
         else:
             t_end = p_arrival_time + triggeron
-        #print p_arrival_time, t_end, triggeron, triggeroff
-
-        #trace_env.trim(starttime=p_arrival_time,endtime=t_end, pad=True, fill_value=0)
-
 
         trace_cut = copy(trace)
         trace_cut.stats = deepcopy(trace.stats)
@@ -111,7 +106,8 @@ def local_magnitude(config, st, deconvolve=False):
         # Do a preliminary trim, in order to check if there is enough
         # data within the selected time window
         #trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
-        trace_cut.trim(starttime=p_arrival_time, endtime=t_end, pad=True, fill_value=0)
+        trace_cut.trim(starttime=p_arrival_time, endtime=t_end,
+                       pad=True, fill_value=0)
         #plt.figure()
         #plt.plot(trace_cut, color='gray')
         #plt.grid(True)
@@ -119,11 +115,13 @@ def local_magnitude(config, st, deconvolve=False):
 
         npts = len(trace_cut.data)
         if npts == 0:
-            logging.warning('%s: No data for the selected cut interval: skipping trace' % traceId)
+            logging.warning('%s: No data for the selected cut interval: '
+                            'skipping trace' % traceId)
             continue
-        nzeros = len(np.where(trace_cut.data==0)[0])
+        nzeros = len(np.where(trace_cut.data == 0)[0])
         if nzeros > npts/4:
-            logging.warning('%s: Too many gaps for the selected cut interval: skipping trace' % traceId)
+            logging.warning('%s: Too many gaps for the selected cut '
+                            'interval: skipping trace' % traceId)
             continue
 
         # If the check is ok, recover the full trace
@@ -147,7 +145,8 @@ def local_magnitude(config, st, deconvolve=False):
 
         # trim...
         #trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
-        trace_cut.trim(starttime=p_arrival_time, endtime=t_end, pad=True, fill_value=0)
+        trace_cut.trim(starttime=p_arrival_time, endtime=t_end,
+                       pad=True, fill_value=0)
 
         # ...and taper
         cosine_taper(trace_cut.data, width=config.taper_halfwidth)
@@ -160,16 +159,19 @@ def local_magnitude(config, st, deconvolve=False):
         if deconvolve:
             paz = trace_cut.stats.paz
             if paz is None:
-                logging.warning('%s: no poles and zeros for trace: skipping trace' % traceId)
+                logging.warning('%s: no poles and zeros for trace: '
+                                'skipping trace' % traceId)
                 continue
         else:
             paz = {'poles': [],
                    'zeros': [],
                    'gain': 1.0, 'sensitivity': 1.0}
 
-        ml = estimate_magnitude(paz, delta_amp, delta_t, trace_cut.stats.hypo_dist)
+        ml = estimate_magnitude(paz, delta_amp, delta_t,
+                                trace_cut.stats.hypo_dist)
         magnitudes.append(ml)
-        logging.info('%s %s: %s %.1f' % (traceId, trace.stats.instrtype, "Ml", ml))
+        logging.info('%s %s: %s %.1f' %
+                     (traceId, trace.stats.instrtype, "Ml", ml))
 
     # average local magnitude
     Ml = np.mean(magnitudes)

@@ -3,10 +3,8 @@
 #
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
-# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
-'''
-Spectral residual routine for source_spec.
-'''
+# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
+"""Spectral residual routine for source_spec."""
 import os
 import logging
 import cPickle as pickle
@@ -14,12 +12,13 @@ from obspy.core import Stream
 from ssp_spectral_model import spectral_model
 from ssp_util import mag_to_moment
 
-def spectral_residuals(config, spec_st, evid, sourcepar_mean):
-    '''
-    Computes spectral residuals with respect to an average spectral
-    model and saves a stream of residuals to disk using pickle.
-    '''
 
+def spectral_residuals(config, spec_st, evid, sourcepar_mean):
+    """
+    Compute spectral residuals with respect to an average spectral model.
+
+    Saves a stream of residuals to disk using pickle.
+    """
     residuals = Stream()
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)

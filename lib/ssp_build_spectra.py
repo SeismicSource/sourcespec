@@ -5,10 +5,8 @@
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
-# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
-'''
-Build spectral objects.
-'''
+# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
+"""Build spectral objects."""
 from __future__ import division
 import logging
 import numpy as np
@@ -75,11 +73,11 @@ def _cut_spectrum(config, spec):
 
 
 def _compute_h(spec_st, code):
-    '''
-    Computes the component 'H' from geometric
-    mean of the stream components
+    """
+    Compute the component 'H' from geometric mean of the stream components.
+
     (which can also be all three components)
-    '''
+    """
     spec_h = None
     for spec in spec_st.traces:
         # this avoids taking a component from co-located station:
@@ -98,13 +96,14 @@ def _compute_h(spec_st, code):
 
 
 def build_spectra(config, st, noise_weight=False):
-    '''
-    Builds spectra and the spec_st object.
+    """
+    Build spectra and the spec_st object.
+
     Computes S-wave (displacement) spectra from
     accelerometers and velocimeters, uncorrected for attenuation,
     corrected for instrumental constants, normalized by
     hypocentral distance.
-    '''
+    """
     spec_st = Stream()
     specnoise_st = Stream()
     weight_st = Stream()
@@ -128,11 +127,13 @@ def build_spectra(config, st, noise_weight=False):
         trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
         npts = len(trace_cut.data)
         if npts == 0:
-            logging.warning('%s: No data for the selected cut interval: skipping trace' % traceId)
+            logging.warning('%s: No data for the selected cut interval: '
+                            'skipping trace' % traceId)
             continue
-        nzeros = len(np.where(trace_cut.data==0)[0])
+        nzeros = len(np.where(trace_cut.data == 0)[0])
         if nzeros > npts/4:
-            logging.warning('%s: Too many gaps for the selected cut interval: skipping trace' % traceId)
+            logging.warning('%s: Too many gaps for the selected cut '
+                            'interval: skipping trace' % traceId)
             continue
 
         # If the check is ok, recover the full trace
@@ -151,8 +152,10 @@ def build_spectra(config, st, noise_weight=False):
             p_arrival_time = wave_arrival(trace, config.vp, 'P')
             noise_start_t = p_arrival_time - config.pre_p_time
             noise_end_t = noise_start_t + config.s_win_length
-            trace.stats.arrivals['N1'] = ('N1', noise_start_t - trace.stats.starttime)
-            trace.stats.arrivals['N2'] = ('N2', noise_end_t - trace.stats.starttime)
+            trace.stats.arrivals['N1'] = \
+                ('N1', noise_start_t - trace.stats.starttime)
+            trace.stats.arrivals['N2'] = \
+                ('N2', noise_end_t - trace.stats.starttime)
             # We inherit the same processing of trace_cut
             # (which, despite its name, has not been yet cut!)
             trace_noise = copy(trace_cut)
@@ -167,26 +170,26 @@ def build_spectra(config, st, noise_weight=False):
             trace_cut.trim(starttime=t1,
                            endtime=t1+config.spectral_win_length,
                            pad=True,
-                           fill_value=0
-                          )
+                           fill_value=0)
 
         if noise_weight:
             # ...trim...
-            trace_noise.trim(starttime=noise_start_t, endtime=noise_end_t, pad=True, fill_value=0)
+            trace_noise.trim(starttime=noise_start_t, endtime=noise_end_t,
+                             pad=True, fill_value=0)
             # ...taper...
             cosine_taper(trace_noise.data, width=config.taper_halfwidth)
             if not math.isnan(config.spectral_win_length):
                 # ...and zero pad to spectral_win_length
                 trace_noise.trim(starttime=noise_start_t,
-                                 endtime=noise_start_t+config.spectral_win_length,
+                                 endtime=noise_start_t +
+                                 config.spectral_win_length,
                                  pad=True,
-                                 fill_value=0
-                                )
+                                 fill_value=0)
                 trace_noise_rms = ((trace_noise.data**2).sum())**0.5
                 trace_cut_rms = ((trace_cut.data**2).sum())**0.5
                 if trace_noise_rms/trace_cut_rms < 1e-6:
-                    logging.warning('%s: Noise level is too low or zero: ignoring for noise weighting' %
-                        traceId)
+                    logging.warning('%s: Noise level is too low or zero: '
+                                    'ignoring for noise weighting' % traceId)
                     trace_noise = None
 
         # normalization for the hypocentral distance
@@ -226,8 +229,8 @@ def build_spectra(config, st, noise_weight=False):
         # coefficient for converting displ spectrum
         # to seismic moment (Aki&Richards,1980)
         vs_m = config.vs*1000
-        vs3 = pow(vs_m,3)
-        coeff = 4 * math.pi * vs3 * config.rho /config.rps/2.
+        vs3 = pow(vs_m, 3)
+        coeff = 4 * math.pi * vs3 * config.rho / config.rps / 2.
         dprint('coeff= %f' % coeff)
 
         # convert to seismic moment
