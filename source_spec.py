@@ -7,7 +7,7 @@
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
-# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
+# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 from lib.ssp_setup import configure, setup_logging,\
         init_plotting, ssp_exit
 from lib.ssp_read_traces import read_traces
@@ -19,6 +19,7 @@ from lib.ssp_output import write_output
 from lib.ssp_residuals import spectral_residuals
 from lib.ssp_plot_spectra import plot_spectra
 from lib.ssp_plot_traces import plot_traces
+
 
 def main():
     # Setup stage
@@ -41,7 +42,8 @@ def main():
     proc_st = process_traces(config, st)
 
     # Build spectra (amplitude in magnitude units)
-    spec_st, specnoise_st, weight_st = build_spectra(config, proc_st, noise_weight=True)
+    spec_st, specnoise_st, weight_st =\
+        build_spectra(config, proc_st, noise_weight=True)
 
     apply(plot_traces, (config, proc_st, 2))
 

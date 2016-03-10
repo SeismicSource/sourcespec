@@ -5,7 +5,7 @@
 # Computes station residuals from source_spec.py output
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
-# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
+# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -22,11 +22,12 @@ from lib.spectrum import Spectrum
 
 usage = 'usage: %prog [options] residuals_dir'
 
-parser = OptionParser(usage=usage);
-parser.add_option('-m', '--min_spectra', dest='min_spectra', action='store', default='20',
-        help='minimum number of spectra to compute residuals (default=20)', metavar='NUMBER')
-parser.add_option('-p', '--plot', dest='plot', action='store_true', default=False,
-        help='save residuals plots to file')
+parser = OptionParser(usage=usage)
+parser.add_option('-m', '--min_spectra', dest='min_spectra', action='store',
+                  default='20', help='minimum number of spectra to '
+                  'compute residuals (default=20)', metavar='NUMBER')
+parser.add_option('-p', '--plot', dest='plot', action='store_true',
+                  default=False, help='save residuals plots to file')
 (options, args) = parser.parse_args()
 
 if len(args) < 1:
@@ -63,7 +64,8 @@ for stat_id in sorted(residual_dict.keys()):
     spec_mean.stats.station = res[0].stats.station
     spec_mean.data_mag = None
     for spec in res:
-        spec_slice = spec.slice(freq_min, freq_max, pad=True, fill_value=mag_to_moment(0))
+        spec_slice = spec.slice(freq_min, freq_max, pad=True,
+                                fill_value=mag_to_moment(0))
         spec_slice.data_mag = moment_to_mag(spec_slice.data)
         norm = (spec_slice.data_mag != 0).astype(int)
         if spec_mean.data_mag is None:
@@ -77,7 +79,7 @@ for stat_id in sorted(residual_dict.keys()):
 
     residual_mean.append(spec_mean)
 
-    ### plot traces ###
+    # plot traces
     if options.plot:
         stnm = spec_mean.stats.station
         figurefile = os.path.join(resdir, stnm + '-res.png')
@@ -90,6 +92,6 @@ for stat_id in sorted(residual_dict.keys()):
         plt.title('residuals : ' + stnm + ', ' + str(len(res)) + ' records')
         fig.savefig(figurefile, bbox_inches='tight')
 
-### writes the mean residuals (the stations corrections) ###
+# writes the mean residuals (the stations corrections)
 with open(os.path.join(resdir, 'residual_mean.pickle'), 'wb') as fp:
     pickle.dump(residual_mean, fp)

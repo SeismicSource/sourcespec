@@ -5,7 +5,7 @@
 # Direct spectral modelling
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
-# (c) 2015 Claudio Satriano <satriano@ipgp.fr>
+# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 import math
 import numpy as np
 #import cPickle as pickle
@@ -27,10 +27,10 @@ def make_synth(config, spec_st, trace_spec=None):
     fmin = config.options.fmin
     fmax = config.options.fmax + fdelta
 
-    residuals=list()
+    residuals = list()
     for fc, mag, Mo, t_star, alpha in zip(
             config.options.fc, config.options.mag, config.options.Mo,
-            config.options.t_star ,config.options.alpha):
+            config.options.t_star, config.options.alpha):
         spec = Spectrum()
         if trace_spec:
             spec.stats = deepcopy(trace_spec.stats)
@@ -44,10 +44,12 @@ def make_synth(config, spec_st, trace_spec=None):
         else:
             mag = moment_to_mag(Mo)
 
-        spec.stats.station = 'Mw: %.1f fc: %.2fHz t*: %.2fs alpha: %.2f' % (mag, fc, t_star, alpha)
+        spec.stats.station = 'Mw: %.1f fc: %.2fHz t*: %.2fs alpha: %.2f' %\
+            (mag, fc, t_star, alpha)
         spec.stats.instrtype = 'Synth'
         spec.stats.channel = spec.stats.channel[0:2] + 'S'
-        spec.stats.par = {'Mw': mag, 'fc': fc, 't_star': t_star, 'alpha': alpha}
+        spec.stats.par = {'Mw': mag, 'fc': fc, 't_star': t_star,
+                          'alpha': alpha}
 
         freq = spec.get_freq()
         spec.data_mag = spectral_model(freq, mag, fc, t_star, alpha)
@@ -55,9 +57,12 @@ def make_synth(config, spec_st, trace_spec=None):
         spec_st.append(spec)
 
         if trace_spec:
-            objective_func2 = objective_func(freq, trace_spec.data_mag, np.ones_like(trace_spec.data_mag))
-            print Mo, mag, fc, t_star, alpha, objective_func2((mag, fc, t_star, alpha))
-            residuals.append([Mo, mag, fc, t_star, objective_func2((mag, fc, t_star, alpha))])
+            objective_func2 = objective_func(freq, trace_spec.data_mag,
+                                             np.ones_like(trace_spec.data_mag))
+            print Mo, mag, fc, t_star, alpha, objective_func2((mag, fc,
+                                                               t_star, alpha))
+            residuals.append([Mo, mag, fc, t_star,
+                             objective_func2((mag, fc, t_star, alpha))])
 
     #figurefile = config.options.station+'-'+config.options.evid+'-res.pickle'
     #fp = open(figurefile,'wb')
@@ -78,11 +83,13 @@ def main():
         if len(spec_st) == 0:
             ssp_exit()
         # We keep just horizontal component:
-        spec_st = Stream([ x for x in spec_st.traces if (x.stats.channel[-1] == 'H') ])
+        spec_st = Stream([x for x in spec_st.traces
+                          if (x.stats.channel[-1] == 'H')])
 
         for trace_spec in spec_st:
             orientation = trace_spec.stats.channel[-1]
-            if orientation != 'H': continue
+            if orientation != 'H':
+                continue
             make_synth(config, spec_st, trace_spec)
     else:
         spec_st = Stream()
@@ -96,6 +103,7 @@ def main():
 
     plot_traces(config, proc_st, ncols=2, block=False)
     plot_spectra(config, spec_st, ncols=1, stack_plots=True)
+
 
 if __name__ == '__main__':
     main()
