@@ -94,7 +94,7 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
             if not traceid in str(sp):
                 continue
             try:
-                paz = sp.get_PAZ(traceid, time)
+                paz = sp.get_paz(traceid, time)
                 coords = AttribDict(sp.get_coordinates(traceid, time))
                 # elevation is in meters in the dataless
                 coords.elevation /= 1000.
