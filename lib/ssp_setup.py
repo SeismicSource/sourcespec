@@ -9,6 +9,7 @@
 """Setup functions for source_spec."""
 import sys
 import os
+import shutil
 import logging
 import numpy as np
 from configobj import ConfigObj
@@ -50,6 +51,7 @@ else:
     ipshell = None
 
 # global variables
+OS = os.name
 DEBUG = False
 matplotlib_unloaded = False
 oldlogfile = None
@@ -341,8 +343,14 @@ def setup_logging(config, basename=None):
     if oldlogfile:
         hdlrs = log.handlers[:]
         for hdlr in hdlrs:
+            hdlr.flush()
+            hdlr.close()
             log.removeHandler(hdlr)
-        os.rename(oldlogfile, logfile)
+        if OS == 'nt':
+            # Windows has problems with renaming
+            shutil.copyfile(oldlogfile, logfile)
+        else:
+            os.rename(oldlogfile, logfile)
         filemode = 'a'
     else:
         filemode = 'w'
