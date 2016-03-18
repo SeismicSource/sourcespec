@@ -8,17 +8,17 @@
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
-from lib.ssp_setup import configure, setup_logging,\
+from source_spec.ssp_setup import configure, setup_logging,\
         init_plotting, ssp_exit
-from lib.ssp_read_traces import read_traces
-from lib.ssp_process_traces import process_traces
-from lib.ssp_build_spectra import build_spectra
-from lib.ssp_local_magnitude import local_magnitude
-from lib.ssp_inversion import spectral_inversion
-from lib.ssp_output import write_output
-from lib.ssp_residuals import spectral_residuals
-from lib.ssp_plot_spectra import plot_spectra
-from lib.ssp_plot_traces import plot_traces
+from source_spec.ssp_read_traces import read_traces
+from source_spec.ssp_process_traces import process_traces
+from source_spec.ssp_build_spectra import build_spectra
+from source_spec.ssp_local_magnitude import local_magnitude
+from source_spec.ssp_inversion import spectral_inversion
+from source_spec.ssp_output import write_output
+from source_spec.ssp_residuals import spectral_residuals
+from source_spec.ssp_plot_spectra import plot_spectra
+from source_spec.ssp_plot_traces import plot_traces
 
 
 def main():

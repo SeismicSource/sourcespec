@@ -11,15 +11,15 @@ import numpy as np
 #import cPickle as pickle
 from copy import deepcopy
 from obspy.core import Stream
-from lib.ssp_setup import configure, ssp_exit
-from lib.ssp_read_traces import read_traces
-from lib.ssp_process_traces import process_traces
-from lib.ssp_build_spectra import build_spectra
-from lib.ssp_spectral_model import spectral_model, objective_func
-from lib.ssp_util import mag_to_moment, moment_to_mag
-from lib.ssp_plot_spectra import plot_spectra
-from lib.ssp_plot_traces import plot_traces
-from lib.spectrum import Spectrum
+from source_spec.ssp_setup import configure, ssp_exit
+from source_spec.ssp_read_traces import read_traces
+from source_spec.ssp_process_traces import process_traces
+from source_spec.ssp_build_spectra import build_spectra
+from source_spec.ssp_spectral_model import spectral_model, objective_func
+from source_spec.ssp_util import mag_to_moment, moment_to_mag
+from source_spec.ssp_plot_spectra import plot_spectra
+from source_spec.ssp_plot_traces import plot_traces
+from source_spec.spectrum import Spectrum
 
 
 def make_synth(config, spec_st, trace_spec=None):

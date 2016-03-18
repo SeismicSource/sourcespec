@@ -16,8 +16,8 @@ from collections import defaultdict
 import cPickle as pickle
 from optparse import OptionParser
 from obspy.core import Stream
-from lib.ssp_util import moment_to_mag, mag_to_moment
-from lib.spectrum import Spectrum
+from source_spec.ssp_util import moment_to_mag, mag_to_moment
+from source_spec.spectrum import Spectrum
 
 
 usage = 'usage: %prog [options] residuals_dir'
