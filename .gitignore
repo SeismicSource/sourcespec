@@ -5,10 +5,6 @@
 #Directories
 profiling
 sspec_out
-testdata/CRL/PZ.new_20120211
-testdata/CRL/PZ.new_20120215/
-testdata/CRL/PZ.new_20120217/
-testdata/CRL/PZ.new_20120221/
 
 *.sqlite
 
@@ -20,3 +16,8 @@ doc/
 
 #Temporary files
 *~
+
+#Build products
+source_spec.egg-info/
+dist/
+build/

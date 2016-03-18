@@ -1,6 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf8 -*-
-# ssp_residuals.py
+# source_residuals.py
 #
 # Computes station residuals from source_spec.py output
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
@@ -16,8 +15,8 @@ from collections import defaultdict
 import cPickle as pickle
 from optparse import OptionParser
 from obspy.core import Stream
-from source_spec.ssp_util import moment_to_mag, mag_to_moment
-from source_spec.spectrum import Spectrum
+from ssp_util import moment_to_mag, mag_to_moment
+from spectrum import Spectrum
 
 
 usage = 'usage: %prog [options] residuals_dir'
