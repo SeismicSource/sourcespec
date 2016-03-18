@@ -20,15 +20,13 @@ from source_spec.ssp_residuals import spectral_residuals
 from source_spec.ssp_plot_spectra import plot_spectra
 from source_spec.ssp_plot_traces import plot_traces
 
+PARALLEL_PLOTTING = True
+
 
 def main():
     # Setup stage
     config = configure()
     setup_logging(config)
-    plot_pool = init_plotting()
-    # comment the following line to do
-    # serial plotting (useful for debug)
-    apply = plot_pool.apply_async
 
     st = read_traces(config)
 
@@ -45,7 +43,13 @@ def main():
     spec_st, specnoise_st, weight_st =\
         build_spectra(config, proc_st, noise_weight=True)
 
-    apply(plot_traces, (config, proc_st, 2))
+    if PARALLEL_PLOTTING:
+        plot_pool = init_plotting()
+        apply = plot_pool.apply_async
+    res = apply(plot_traces, (config, proc_st, 2))
+    # Need to introduce a long timeout as workaround for a python bug
+    # source: http://stackoverflow.com/q/1408356
+    res.get(999999) if PARALLEL_PLOTTING else None
 
     Ml = local_magnitude(config, st, deconvolve=True)
 
@@ -59,22 +63,22 @@ def main():
     spectral_residuals(config, spec_st, evid, sourcepar_mean)
 
     # Plotting
-    apply(plot_spectra,
-          (config, spec_st),
-          {'specnoise_st': specnoise_st,
-           'plottype': 'regular'})
-    apply(plot_spectra,
-          (config, specnoise_st),
-          {'plottype': 'noise'})
-    apply(plot_spectra,
-          (config, weight_st),
-          {'plottype': 'weight'})
+    res = apply(plot_spectra,
+                (config, spec_st),
+                {'specnoise_st': specnoise_st,
+                 'plottype': 'regular'})
+    res.get(999999) if PARALLEL_PLOTTING else None
+    res = apply(plot_spectra,
+                (config, specnoise_st),
+                {'plottype': 'noise'})
+    res.get(999999) if PARALLEL_PLOTTING else None
+    res = apply(plot_spectra,
+                (config, weight_st),
+                {'plottype': 'weight'})
+    res.get(999999) if PARALLEL_PLOTTING else None
 
     ssp_exit()
 
 
 if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        ssp_exit(1)
+    main()

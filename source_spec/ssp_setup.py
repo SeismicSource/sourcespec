@@ -11,6 +11,7 @@ import sys
 import os
 import shutil
 import logging
+import signal
 import numpy as np
 from configobj import ConfigObj
 from validate import Validator
@@ -56,6 +57,7 @@ DEBUG = False
 matplotlib_unloaded = False
 oldlogfile = None
 plot_pool = None
+ssp_exit_called = False
 
 
 def dprint(string):
@@ -396,11 +398,26 @@ def init_plotting():
     return plot_pool
 
 
-def ssp_exit(retval=0):
-    logging.debug('source_spec END')
+def ssp_exit(retval=0, message=''):
+    # ssp_exit might have already been called if multiprocessing
+    global ssp_exit_called
+    if ssp_exit_called:
+        return
+    ssp_exit_called = True
+    if message:
+        logging.debug(message)
+    else:
+        logging.debug('source_spec END')
     logging.shutdown()
     global plot_pool
     if plot_pool is not None:
         plot_pool.close()
         plot_pool.join()
     sys.exit(retval)
+
+
+def sigint_handler(sig, frame):
+    print ''
+    print 'Aborting.'
+    ssp_exit(1, 'source_spec ABORTED')
+signal.signal(signal.SIGINT, sigint_handler)
