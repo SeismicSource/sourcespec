@@ -1,9 +1,17 @@
 # -*- coding: utf-8 -*-
 """setup.py: setuptools control."""
-
 from setuptools import setup
 
-version = 0.9
+import inspect
+import os
+import sys
+
+# Import the version string.
+path = os.path.join(os.path.abspath(os.path.dirname(inspect.getfile(
+    inspect.currentframe()))), 'source_spec')
+sys.path.insert(0, path)
+from version import get_git_version
+
 
 with open('README.md', 'rb') as f:
     long_descr = f.read().decode('utf-8')
@@ -18,7 +26,7 @@ setup(
                             'source_residuals = '
                             'source_spec.source_residuals:main']
         },
-    version=version,
+    version=get_git_version(),
     description='Modelling S-wave displacement spectra and '
                 'inverting source parameters.',
     long_description=long_descr,

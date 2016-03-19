@@ -21,3 +21,4 @@ doc/
 source_spec.egg-info/
 dist/
 build/
+RELEASE-VERSION
