@@ -25,4 +25,5 @@ setup(
     author='Claudio Satriano',
     author_email='satriano@gmail.com',
     url='',
+    install_requires=['obspy>=1.0.0']
     )
