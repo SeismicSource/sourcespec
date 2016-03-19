@@ -8,7 +8,6 @@
 import numpy as np
 from copy import copy, deepcopy
 from obspy.core import Trace
-import matplotlib.pyplot as plt
 
 
 def do_fft(signal, delta):
@@ -57,6 +56,7 @@ class Spectrum(Trace):
 
     def plot(self, **kwargs):
         freq = self.get_freq()
+        import matplotlib.pyplot as plt
         plt.loglog(freq, self.data, **kwargs)
         plt.grid(True)
         plt.xlabel('Frequency (Hz)')
