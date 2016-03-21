@@ -10,9 +10,9 @@ sspec_out
 
 source_spec.conf
 
-#Sphinx doc
-doc_src/_build
-doc/
+#Sphinx doc build
+doc/_build
+doc/generated
 
 #Temporary files
 *~

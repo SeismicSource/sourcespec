@@ -30,7 +30,7 @@ tarfile=${dir}.tgz
 
 git archive --prefix=$dir/ $git_tree | tar xv
 
-cd $dir/doc_src &&
+cd $dir/doc &&
     make html-install &&
     make latexpdf-install &&
     make clean &&
