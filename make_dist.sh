@@ -29,12 +29,14 @@ fi
 tarfile=${dir}.tgz
 
 git archive --prefix=$dir/ $git_tree | tar xv
+python source_spec/version.py
+cp source_spec/RELEASE-VERSION $dir/source_spec
 
 cd $dir/doc &&
     make html-install &&
     make latexpdf-install &&
     make clean &&
-cd -
+cd - || exit
 find $dir -iname "*.pyc" | xargs rm
 
 tar cvfz ../$tarfile $dir
