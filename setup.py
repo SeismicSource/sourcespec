@@ -27,8 +27,8 @@ setup(
                             'source_spec.source_residuals:main']
         },
     version=get_git_version(),
-    description='Modelling S-wave displacement spectra and '
-                'inverting source parameters.',
+    description='Earthquake source parameters from S-wave '
+                'displacement spectra',
     long_description=long_descr,
     author='Claudio Satriano',
     author_email='satriano@gmail.com',
