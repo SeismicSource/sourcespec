@@ -17,6 +17,7 @@ from configobj import ConfigObj
 from validate import Validator
 from config import Config
 from argparse import ArgumentParser, RawTextHelpFormatter
+from version import get_git_version
 from datetime import datetime
 from multiprocessing import Pool, cpu_count
 
@@ -204,6 +205,8 @@ def _update_parser(parser, progname):
                             'Mo, tstar, alpha')
         parser.add_argument('-P', '--plot', dest='plot', action='store_true',
                             default=False, help='plot results')
+    parser.add_argument('-v', '--version', action='version',
+                        version=get_git_version())
 
 
 def _parse_args(progname):
@@ -384,6 +387,7 @@ def setup_logging(config, basename=None):
 
     if not basename:
         logging.debug('source_spec START')
+        logging.debug('Version: ' + get_git_version())
         # write running arguments
         logging.debug('Running arguments:')
         logging.debug(' '.join(sys.argv))
