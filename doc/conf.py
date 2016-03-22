@@ -9,7 +9,7 @@ import inspect
 
 # Import the version string.
 path = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(
-    inspect.currentframe())), os.pardir, 'source_spec'))
+    inspect.currentframe())), os.pardir, 'sourcespec'))
 sys.path.insert(0, path)
 from version import get_git_version
 
@@ -17,7 +17,7 @@ from version import get_git_version
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
-sys.path.insert(0, os.path.join(os.path.abspath('..'), 'source_spec'))
+sys.path.insert(0, os.path.join(os.path.abspath('..'), 'sourcespec'))
 
 # -- General configuration ----------------------------------------------------
 

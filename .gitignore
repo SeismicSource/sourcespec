@@ -18,7 +18,7 @@ doc/generated
 *~
 
 #Build products
-source_spec.egg-info/
+sourcespec.egg-info/
 dist/
 build/
 RELEASE-VERSION

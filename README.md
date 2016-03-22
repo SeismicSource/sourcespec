@@ -40,4 +40,4 @@ To get help:
 
 
 ## Sample runs
-Several sample runs are available in the `source_spec_testruns` package.
+Several sample runs are available in the `sourcespec_testruns` package.

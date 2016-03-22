@@ -8,7 +8,7 @@ import sys
 
 # Import the version string.
 path = os.path.join(os.path.abspath(os.path.dirname(inspect.getfile(
-    inspect.currentframe()))), 'source_spec')
+    inspect.currentframe()))), 'sourcespec')
 sys.path.insert(0, path)
 from version import get_git_version
 
@@ -18,13 +18,13 @@ with open('README.md', 'rb') as f:
 
 
 setup(
-    name='source_spec',
-    packages=['source_spec'],
+    name='sourcespec',
+    packages=['sourcespec'],
     entry_points={
-        'console_scripts': ['source_spec = source_spec.source_spec:main',
-                            'source_model = source_spec.source_model:main',
+        'console_scripts': ['source_spec = sourcespec.source_spec:main',
+                            'source_model = sourcespec.source_model:main',
                             'source_residuals = '
-                            'source_spec.source_residuals:main']
+                            'sourcespec.source_residuals:main']
         },
     version=get_git_version(),
     description='Earthquake source parameters from S-wave '
