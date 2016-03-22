@@ -22,7 +22,7 @@ synth_colors = [
 
 
 def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
-                 stack_plots=False, plottype='regular'):
+                 stack_plots=False, plottype='regular', async_plotter=None):
     """
     Plot spectra for signal and noise.
 
@@ -245,6 +245,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             fig.savefig(figurefile, bbox_inches='tight')
         else:
             canvas = FigureCanvasAgg(fig)
-            canvas.print_figure(figurefile, bbox_inches='tight')
+            if async_plotter is not None:
+                async_plotter.save(canvas, figurefile, bbox_inches='tight')
+            else:
+                canvas.print_figure(figurefile, bbox_inches='tight')
         logging.info(message + ' plots saved to: ' + figurefile)
     fig.clf()

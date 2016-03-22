@@ -19,7 +19,7 @@ from config import Config
 from argparse import ArgumentParser, RawTextHelpFormatter
 from version import get_git_version
 from datetime import datetime
-from multiprocessing import Pool, cpu_count
+from AsyncPlotter import AsyncPlotter
 
 # check ObsPy version
 import obspy
@@ -56,7 +56,7 @@ else:
 OS = os.name
 DEBUG = False
 oldlogfile = None
-plot_pool = None
+plotter = None
 ssp_exit_called = False
 
 
@@ -378,34 +378,32 @@ def setup_logging(config, basename=None):
 
 
 def init_plotting():
-    global plot_pool
-    if plot_pool is None:
-        processes = cpu_count() - 1
-        processes = processes if processes > 0 else 1
-        plot_pool = Pool(processes)
-    return plot_pool
+    global plotter
+    plotter = AsyncPlotter()
+    return plotter
 
 
-def ssp_exit(retval=0, message=''):
+def ssp_exit(retval=0, abort=False):
     # ssp_exit might have already been called if multiprocessing
     global ssp_exit_called
     if ssp_exit_called:
         return
     ssp_exit_called = True
-    if message:
-        logging.debug(message)
+    if abort:
+        print '\nAborting.'
+        logging.debug('source_spec ABORTED')
     else:
         logging.debug('source_spec END')
     logging.shutdown()
-    global plot_pool
-    if plot_pool is not None:
-        plot_pool.close()
-        plot_pool.join()
+    global plotter
+    if plotter is not None:
+        if abort:
+            plotter.terminate()
+        else:
+            plotter.join()
     sys.exit(retval)
 
 
 def sigint_handler(sig, frame):
-    print ''
-    print 'Aborting.'
-    ssp_exit(1, 'source_spec ABORTED')
+    ssp_exit(1, abort=True)
 signal.signal(signal.SIGINT, sigint_handler)

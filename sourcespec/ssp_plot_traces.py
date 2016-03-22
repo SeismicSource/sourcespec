@@ -12,7 +12,7 @@ phase_label_pos = {'P': 0.9, 'S': 0.93}
 phase_label_color = {'P': 'black', 'S': 'black'}
 
 
-def plot_traces(config, st, ncols=4, block=True):
+def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
     """
     Plot displacement traces.
 
@@ -173,6 +173,9 @@ def plot_traces(config, st, ncols=4, block=True):
             fig.savefig(figurefile, bbox_inches='tight')
         else:
             canvas = FigureCanvasAgg(fig)
-            canvas.print_figure(figurefile, bbox_inches='tight')
+            if async_plotter is not None:
+                async_plotter.save(canvas, figurefile, bbox_inches='tight')
+            else:
+                canvas.print_figure(figurefile, bbox_inches='tight')
         logging.info('Trace plots saved to: ' + figurefile)
     fig.clf()
