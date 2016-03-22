@@ -22,15 +22,15 @@ fi
 
 if [ $branch == "master" ]
 then
-    dir=source_spec_${suffix}
+    dir=sourcespec_${suffix}
 else
-    dir=source_spec_${branch}_${suffix}
+    dir=sourcespec_${branch}_${suffix}
 fi
 tarfile=${dir}.tgz
 
 git archive --prefix=$dir/ $git_tree | tar xv
-python source_spec/version.py
-cp source_spec/RELEASE-VERSION $dir/source_spec
+python sourcespec/version.py
+cp sourcespec/RELEASE-VERSION $dir/sourcespec
 
 cd $dir/doc &&
     make html-install &&
