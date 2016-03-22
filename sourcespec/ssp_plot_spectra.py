@@ -11,7 +11,6 @@ import os
 import math
 import logging
 from ssp_util import spec_minmax, moment_to_mag, mag_to_moment
-from ssp_setup import unload_matplotlib
 
 synth_colors = [
     '#201F1F',
@@ -29,19 +28,16 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
 
     Display to screen and/or save to file.
     """
-    # Unload matplotlib modules (which have been loaded by obspy.signal).
-    unload_matplotlib()
     # Check config, if we need to plot at all
     if not config.PLOT_SHOW and not config.PLOT_SAVE:
         return
-    # Re-import matplotlib
     import matplotlib
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
-    # If we do not need to show the plot, we use the 'agg' backend
-    if not config.PLOT_SHOW:
-        matplotlib.use('agg')
-    # Finally we load the pyplot module
-    import matplotlib.pyplot as plt
+    if config.PLOT_SHOW:
+        import matplotlib.pyplot as plt
+    else:
+        from matplotlib.figure import Figure
+        from matplotlib.backends.backend_agg import FigureCanvasAgg
 
     # Determine the number of plots and axes min and max:
     nplots = 0
@@ -69,7 +65,10 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         figsize = (16, 9)
     else:
         figsize = (16, 18)
-    fig = plt.figure(figsize=figsize)
+    if config.PLOT_SHOW:
+        fig = plt.figure(figsize=figsize)
+    else:
+        fig = Figure(figsize=figsize)
     fig.subplots_adjust(hspace=.025, wspace=.03)
 
     # Plot!
@@ -97,8 +96,8 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             ax.grid(True, which='both', linestyle='solid', color='#DDDDDD',
                     zorder=0)
             ax.set_axisbelow(True)
-            plt.setp(ax.get_xticklabels(), visible=False)
-            plt.setp(ax.get_yticklabels(), visible=False)
+            [t.set_visible(False) for t in ax.get_xticklabels()]
+            [t.set_visible(False) for t in ax.get_yticklabels()]
             ax.tick_params(width=2)  # FIXME: ticks are below grid lines!
 
             # ax2 has magnitude units
@@ -106,8 +105,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 if ((stack_plots and plotn == 1) or not stack_plots):
                     ax2 = ax.twinx()
                     ax2.set_ylim(mag_minmax)
-                    plt.setp(ax2.get_xticklabels(), visible=False)
-                    plt.setp(ax2.get_yticklabels(), visible=True)
+                    [t.set_visible(False) for t in ax2.get_xticklabels()]
                     for tick in ax2.yaxis.get_major_ticks():
                         tick.set_pad(-2)
                         tick.label2.set_horizontalalignment('right')
@@ -207,7 +205,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
 
     # Show the x-labels only for the last row
     for ax, ax2 in axes[-ncols:]:
-        plt.setp(ax.get_xticklabels(), visible=True)
+        [t.set_visible(True) for t in ax.get_xticklabels()]
         ax.set_xlabel('Frequency (Hz)')
     # Show the y-labels only for the first column
     for i in range(0, len(axes)+ncols, ncols):
@@ -219,12 +217,12 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             ax2 = axes[i-1][1]
         except IndexError:
             continue
-        plt.setp(ax.get_yticklabels(), visible=True)
+        [t.set_visible(True) for t in ax.get_yticklabels()]
         ax.set_ylabel('Weight')
         if plottype != 'weight':
             ax.set_ylabel('Seismic moment (Nm)')
             if ax2:
-                plt.setp(ax2.get_yticklabels(), visible=True)
+                [t.set_visible(True) for t in ax2.get_yticklabels()]
                 ax2.set_ylabel('Magnitude')
 
     if config.PLOT_SHOW:
@@ -243,6 +241,10 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             message = 'Weight'
         figurefile = os.path.join(config.options.outdir, evid + suffix +
                                   config.PLOT_SAVE_FORMAT)
-        fig.savefig(figurefile, bbox_inches='tight')
+        if config.PLOT_SHOW:
+            fig.savefig(figurefile, bbox_inches='tight')
+        else:
+            canvas = FigureCanvasAgg(fig)
+            canvas.print_figure(figurefile, bbox_inches='tight')
         logging.info(message + ' plots saved to: ' + figurefile)
     fig.clf()

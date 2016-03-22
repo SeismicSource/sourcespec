@@ -7,7 +7,6 @@ from __future__ import division
 import os
 import math
 import logging
-from ssp_setup import unload_matplotlib
 
 phase_label_pos = {'P': 0.9, 'S': 0.93}
 phase_label_color = {'P': 'black', 'S': 'black'}
@@ -19,19 +18,16 @@ def plot_traces(config, st, ncols=4, block=True):
 
     Display to screen and/or save to file.
     """
-    # Unload matplotlib modules (which have been loaded by obspy.signal).
-    unload_matplotlib()
     # Check config, if we need to plot at all
     if not config.PLOT_SHOW and not config.PLOT_SAVE:
         return
-    # Re-import matplotlib
     import matplotlib
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
-    # If we do not need to show the plot, we use the 'agg' backend
-    if not config.PLOT_SHOW:
-        matplotlib.use('agg')
-    # Finally we load the pyplot module
-    import matplotlib.pyplot as plt
+    if config.PLOT_SHOW:
+        import matplotlib.pyplot as plt
+    else:
+        from matplotlib.figure import Figure
+        from matplotlib.backends.backend_agg import FigureCanvasAgg
     import matplotlib.transforms as transforms
     import matplotlib.patches as patches
 
@@ -51,7 +47,10 @@ def plot_traces(config, st, ncols=4, block=True):
         figsize = (16, 9)
     else:
         figsize = (16, 18)
-    fig = plt.figure(figsize=figsize)
+    if config.PLOT_SHOW:
+        fig = plt.figure(figsize=figsize)
+    else:
+        fig = Figure(figsize=figsize)
     fig.subplots_adjust(hspace=.1, wspace=.15)
 
     # Plot!
@@ -71,8 +70,8 @@ def plot_traces(config, st, ncols=4, block=True):
             ax.grid(True, which='both', linestyle='solid', color='#DDDDDD',
                     zorder=0)
             ax.set_axisbelow(True)
-            plt.setp(ax.get_xticklabels(), visible=False)
-            plt.setp(ax.get_yticklabels(), visible=True)
+            [t.set_visible(False) for t in ax.get_xticklabels()]
+            [t.set_visible(True) for t in ax.get_yticklabels()]
             ax.tick_params(width=2)  # FIXME: ticks are below grid lines!
             ax.ticklabel_format(style='scientific', axis='y',
                                 scilimits=(-1, 1))
@@ -160,15 +159,8 @@ def plot_traces(config, st, ncols=4, block=True):
 
     # Show the x-labels only for the last row
     for ax in axes[-ncols:]:
-        plt.setp(ax.get_xticklabels(), visible=True)
+        [t.set_visible(True) for t in ax.get_xticklabels()]
         ax.set_xlabel('Time (s)')
-    # Show the y-labels only for the first column
-    for i in range(0, len(axes)+ncols, ncols):
-        try:
-            ax = axes[i]
-        except IndexError:
-            continue
-        plt.setp(ax.get_yticklabels(), visible=True)
 
     if config.PLOT_SHOW:
         plt.show(block=block)
@@ -177,6 +169,10 @@ def plot_traces(config, st, ncols=4, block=True):
         evid = st.traces[0].stats.hypo.evid
         figurefile = os.path.join(config.options.outdir, evid +
                                   '.traces.' + config.PLOT_SAVE_FORMAT)
-        fig.savefig(figurefile, bbox_inches='tight')
+        if config.PLOT_SHOW:
+            fig.savefig(figurefile, bbox_inches='tight')
+        else:
+            canvas = FigureCanvasAgg(fig)
+            canvas.print_figure(figurefile, bbox_inches='tight')
         logging.info('Trace plots saved to: ' + figurefile)
     fig.clf()

@@ -55,7 +55,6 @@ else:
 # global variables
 OS = os.name
 DEBUG = False
-matplotlib_unloaded = False
 oldlogfile = None
 plot_pool = None
 ssp_exit_called = False
@@ -66,21 +65,6 @@ def dprint(string):
     if DEBUG:
         sys.stderr.write(string)
         sys.stderr.write('\n')
-
-
-def unload_matplotlib():
-    global matplotlib_unloaded
-    if matplotlib_unloaded:
-        return
-    # Source:
-    #   http://stackoverflow.com/q/3285193
-    modules = []
-    for module in sys.modules:
-        if module.startswith('matplotlib'):
-            modules.append(module)
-    for module in modules:
-        sys.modules.pop(module)
-    matplotlib_unloaded = True
 
 
 def _parse_values(value_str):
