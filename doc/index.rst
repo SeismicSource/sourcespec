@@ -6,22 +6,23 @@
 SourceSpec documentation
 ========================
 
-SourceSpec is a collection of Python programs to determine earthquake source parameters
-(seismic moment :math:`M_0`, corner frequency :math:`f_c`) and the anelastic attenuation
-term (:math:`t^*`), from the modelization of waveform spectra.
+SourceSpec is a collection of Python programs to determine earthquake source
+parameters (seismic moment :math:`M_0`, corner frequency :math:`f_c`) and the
+anelastic attenuation term (:math:`t^*`), from the modelization of waveform
+spectra.
 
-Other parameters (source radius :math:`r_0`, stress drop :math:`\Delta \sigma`) are
-computed from the inverted ones. The quality factor :math:`Q` is determined from
-:math:`t^*`.
+Other parameters (source radius :math:`r_0`, stress drop :math:`\Delta \sigma`)
+are computed from the inverted ones. The quality factor :math:`Q` is determined
+from :math:`t^*`.
 
 As a bonus, local magnitude :math:`Ml` is computed as well.
 
 SourceSpec is composed of the following programs:
 
-* ``source_spec.py``: inverts the S-wave displacement spectra from station recordings of
-  a single event.
-* ``ssp_residuals.py``: computes station residuals from source_spec.py output.
-* ``source_model.py``: direct spectral modelling.
+* ``source_spec``: inverts the S-wave displacement spectra from station
+  recordings of a single event.
+* ``ssp_residuals``: computes station residuals from source_spec.py output.
+* ``source_model``: direct spectral modelling.
 
 
 Contents:
@@ -39,4 +40,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

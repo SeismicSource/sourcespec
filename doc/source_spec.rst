@@ -7,7 +7,7 @@ source_spec
 Overview
 ========
 
-``source_spec.py`` inverts the S-wave displacement spectra from
+``source_spec`` inverts the S-wave displacement spectra from
 station recordings of a single event.
 
 Spectral model

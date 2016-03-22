@@ -1,4 +1,4 @@
-# source_spec
+# SourceSpec
 **Earthquake source parameters from S-wave displacement spectra**
 
 (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
@@ -11,7 +11,7 @@
 
 
 ## Description
-The source_spec package is made of three codes:
+The SourceSpec package is made of three codes:
 
  - source_spec
  - source_model
