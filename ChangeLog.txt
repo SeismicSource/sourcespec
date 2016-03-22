@@ -1,14 +1,17 @@
-source_spec
-Python code to invert S-wave displacement spectra
+SourceSpec
+Earthquake source parameters from S-wave displacement spectra
 (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
 (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnès Chounet <chounet@ipgp.fr>
 (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
-Derived from sspec_v1.0.sh by Aldo Zollo and Claudio Satriano
 
 v0.9 - 2016-XX-XX
-  - Only compatible with ObsPy >= 1.0.0
+  - Project reorganization:
+    - Project renamed to SourceSpec
+    - ssp_residuals renamed to source_residuals
+    - New installable package (e.g., via pip)
+    - Only compatible with ObsPy >= 1.0.0
 	- Traces are filtered before computing S/N ratio
 	- Trace clipping detection
 	- Traces are always plotted, even if no inversion is performed
@@ -25,15 +28,15 @@ v0.8 - 2014-07-11
 	- Code cleaning and optimization
 v0.7 - 2014-04-07
 	- Code reorganization:
-		- inversion code splitted to its own functions
+		- inversion code split to its own functions
 	- Option to use bounded inversion
 	- Station residuals, through ssp_residuals.py
 	- source_model can now output tables of trade-off
 		between parameters
-	- Fix in the way nois trace is computed and processed
+	- Fix in the way noise trace is computed and processed
 	- Documentation!
 v0.6 - 2013-06-05 - Several improvements:
-	- Signal to noise weighitng
+	- Signal to noise weighting
 	- Improved local magnitude computation
 	- New options:
 		- time domain integration
@@ -48,7 +51,7 @@ v0.5 - 2013-02-10 - Several improvements:
 	- Local magnitude computation
 	- konnoOhmachiSmoothing
 v0.4 - 2012-04-10 - Several improvements:
-	- Logging infastructure
+	- Logging infrastructure
 	- Code reorganization
 v0.3 - 2012-02-10 - Several improvements:
 	- Output is no more printed at screen, but to file
@@ -56,11 +59,3 @@ v0.3 - 2012-02-10 - Several improvements:
 	- We differentiate between short periods and broad bands
 v0.2 - 2012-02-06 - Extended and generalized for the CRL application
 v0.1 - 2012-01-17 - Initial Python port
-
-
-Original changelog:
-Original csh version by Aldo Zollo <zollo@unina.it>
-Bash version by Claudio Satriano <satriano@na.infn.it>
-v1.0 - 2008-10-29 - Ported to bash
-	- Added more handling of exceptions to run safely in
-		automatic mode
