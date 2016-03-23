@@ -7,15 +7,18 @@
 #               Agnes Chounet <chounet@ipgp.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 """Spectral inversion routines for source_spec."""
-from __future__ import division
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import logging
 import math
 import numpy as np
 from scipy.optimize import curve_fit, minimize
-from ssp_setup import dprint
-from ssp_spectral_model import spectral_model, objective_func, callback
-from ssp_util import mag_to_moment, select_trace
 from obspy.geodetics import gps2dist_azimuth
+from sourcespec.ssp_setup import dprint
+from sourcespec.ssp_spectral_model import (spectral_model, objective_func,
+                                           callback)
+from sourcespec.ssp_util import mag_to_moment, select_trace
 
 
 class InitialValues():

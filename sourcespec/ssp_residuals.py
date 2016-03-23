@@ -5,12 +5,18 @@
 #               Agnes Chounet <chounet@ipgp.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 """Spectral residual routine for source_spec."""
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import os
 import logging
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 from obspy.core import Stream
-from ssp_spectral_model import spectral_model
-from ssp_util import mag_to_moment
+from sourcespec.ssp_spectral_model import spectral_model
+from sourcespec.ssp_util import mag_to_moment
 
 
 def spectral_residuals(config, spec_st, evid, sourcepar_mean):

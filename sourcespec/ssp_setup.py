@@ -7,19 +7,22 @@
 #               Agnes Chounet <chounet@ipgp.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 """Setup functions for source_spec."""
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import sys
 import os
 import shutil
 import logging
 import signal
 import numpy as np
-from configobj import ConfigObj
-from validate import Validator
-from config import Config
 from argparse import ArgumentParser, RawTextHelpFormatter
-from version import get_git_version
 from datetime import datetime
-from AsyncPlotter import AsyncPlotter
+from sourcespec.configobj import ConfigObj
+from sourcespec.configobj.validate import Validator
+from sourcespec.config import Config
+from sourcespec.version import get_git_version
+from sourcespec.AsyncPlotter import AsyncPlotter
 
 # check ObsPy version
 import obspy
@@ -36,15 +39,15 @@ if OBSPY_VERSION < MIN_OBSPY_VERSION:
 if sys.stdout.isatty():
     try:
         import IPython
-        IP_VERSION = map(int, IPython.__version__.split('.')[:3])
+        IP_VERSION = tuple(map(int, IPython.__version__.split('.')[:3]))
         len(IP_VERSION) > 2 or IP_VERSION.append(0)
-        if IP_VERSION < [0, 11, 0]:
+        if IP_VERSION < (0, 11, 0):
             from IPython.Shell import IPShellEmbed
             ipshell = IPShellEmbed()
-        if [0, 11, 0] <= IP_VERSION < [1, 0, 0]:
+        if (0, 11, 0) <= IP_VERSION < (1, 0, 0):
             from IPython.frontend.terminal.embed import InteractiveShellEmbed
             ipshell = InteractiveShellEmbed()
-        elif IP_VERSION >= [1, 0, 0]:
+        elif IP_VERSION >= (1, 0, 0):
             from IPython.terminal.embed import InteractiveShellEmbed
             ipshell = InteractiveShellEmbed()
     except ImportError:
@@ -248,12 +251,12 @@ def _parse_configspec():
         configspec = ConfigObj(configspec_file, interpolation=False,
                                list_values=False, _inspec=True,
                                file_error=True)
-    except IOError, message:
-        sys.stderr.write('%s\n' % message)
+    except IOError as err:
+        sys.stderr.write('%s\n' % err)
         sys.exit(1)
-    except Exception, message:
+    except Exception as err:
         sys.stderr.write('Unable to read "%s": %s\n' %
-                         (configspec_file, message))
+                         (configspec_file, err))
         sys.exit(1)
     return configspec
 
@@ -268,7 +271,7 @@ def _write_sample_config(configspec, progname):
     configfile = progname + '.conf'
     with open(configfile, 'w') as fp:
         c.write(fp)
-    print 'Sample config file written to: ' + configfile
+    print('Sample config file written to: ' + configfile)
 
 
 def configure(progname='source_spec'):
@@ -285,11 +288,11 @@ def configure(progname='source_spec'):
         config_file = options.config_file
         config_obj = ConfigObj(config_file, configspec=configspec,
                                file_error=True)
-    except IOError, message:
-        sys.stderr.write('%s\n' % message)
+    except IOError as err:
+        sys.stderr.write('%s\n' % err)
         sys.exit(1)
-    except Exception, message:
-        sys.stderr.write('Unable to read "%s": %s\n' % (config_file, message))
+    except Exception as err:
+        sys.stderr.write('Unable to read "%s": %s\n' % (config_file, err))
         sys.exit(1)
 
     val = Validator()
@@ -390,7 +393,7 @@ def ssp_exit(retval=0, abort=False):
         return
     ssp_exit_called = True
     if abort:
-        print '\nAborting.'
+        print('\nAborting.')
         logging.debug('source_spec ABORTED')
     else:
         logging.debug('source_spec END')

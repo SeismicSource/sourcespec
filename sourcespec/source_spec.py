@@ -7,16 +7,20 @@
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
-from ssp_setup import configure, setup_logging, init_plotting, ssp_exit
-from ssp_read_traces import read_traces
-from ssp_process_traces import process_traces
-from ssp_build_spectra import build_spectra
-from ssp_local_magnitude import local_magnitude
-from ssp_inversion import spectral_inversion
-from ssp_output import write_output
-from ssp_residuals import spectral_residuals
-from ssp_plot_spectra import plot_spectra
-from ssp_plot_traces import plot_traces
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
+from sourcespec.ssp_setup import (configure, setup_logging,
+                                  init_plotting, ssp_exit)
+from sourcespec.ssp_read_traces import read_traces
+from sourcespec.ssp_process_traces import process_traces
+from sourcespec.ssp_build_spectra import build_spectra
+from sourcespec.ssp_local_magnitude import local_magnitude
+from sourcespec.ssp_inversion import spectral_inversion
+from sourcespec.ssp_output import write_output
+from sourcespec.ssp_residuals import spectral_residuals
+from sourcespec.ssp_plot_spectra import plot_spectra
+from sourcespec.ssp_plot_traces import plot_traces
 
 
 def main():

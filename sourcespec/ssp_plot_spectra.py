@@ -6,11 +6,13 @@
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 """Spectral plotting routine."""
-from __future__ import division
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import os
 import math
 import logging
-from ssp_util import spec_minmax, moment_to_mag, mag_to_moment
+from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
 
 synth_colors = [
     '#201F1F',

@@ -5,20 +5,23 @@
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import math
 import numpy as np
 #import cPickle as pickle
 from copy import deepcopy
 from obspy.core import Stream
-from ssp_setup import configure, ssp_exit
-from ssp_read_traces import read_traces
-from ssp_process_traces import process_traces
-from ssp_build_spectra import build_spectra
-from ssp_spectral_model import spectral_model, objective_func
-from ssp_util import mag_to_moment, moment_to_mag
-from ssp_plot_spectra import plot_spectra
-from ssp_plot_traces import plot_traces
-from spectrum import Spectrum
+from sourcespec.spectrum import Spectrum
+from sourcespec.ssp_setup import configure, ssp_exit
+from sourcespec.ssp_read_traces import read_traces
+from sourcespec.ssp_process_traces import process_traces
+from sourcespec.ssp_build_spectra import build_spectra
+from sourcespec.ssp_spectral_model import spectral_model, objective_func
+from sourcespec.ssp_util import mag_to_moment, moment_to_mag
+from sourcespec.ssp_plot_spectra import plot_spectra
+from sourcespec.ssp_plot_traces import plot_traces
 
 
 def make_synth(config, spec_st, trace_spec=None):
@@ -58,8 +61,8 @@ def make_synth(config, spec_st, trace_spec=None):
         if trace_spec:
             objective_func2 = objective_func(freq, trace_spec.data_mag,
                                              np.ones_like(trace_spec.data_mag))
-            print Mo, mag, fc, t_star, alpha, objective_func2((mag, fc,
-                                                               t_star, alpha))
+            print(Mo, mag, fc, t_star, alpha,
+                  objective_func2((mag, fc, t_star, alpha)))
             residuals.append([Mo, mag, fc, t_star,
                              objective_func2((mag, fc, t_star, alpha))])
 

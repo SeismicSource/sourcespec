@@ -15,7 +15,7 @@ class Config(dict):
         """Make Config keys accessible as attributes."""
         try:
             return self.__getitem__(key)
-        except KeyError, message:
-            raise AttributeError(message)
+        except KeyError as err:
+            raise AttributeError(err)
 
     __setattr__ = __setitem__

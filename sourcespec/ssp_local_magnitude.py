@@ -6,7 +6,9 @@
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 """Local magnitude calculation for source_spec."""
-from __future__ import division
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import logging
 import numpy as np
 from scipy.integrate import cumtrapz
@@ -15,7 +17,7 @@ from obspy.signal.filter import envelope
 from obspy.signal.invsim import estimate_magnitude
 from obspy.signal.util import smooth
 from obspy.signal.trigger import trigger_onset
-from ssp_util import wave_arrival, cosine_taper
+from sourcespec.ssp_util import wave_arrival, cosine_taper
 
 
 def local_magnitude(config, st, deconvolve=False):

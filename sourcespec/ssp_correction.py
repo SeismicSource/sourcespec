@@ -5,9 +5,15 @@
 #               Agnes Chounet <chounet@ipgp.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 """Spectral station correction calculated from ssp_residuals."""
-import cPickle as pickle
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import logging
-from ssp_util import moment_to_mag, mag_to_moment
+from sourcespec.ssp_util import moment_to_mag, mag_to_moment
 
 
 def station_correction(spec_st, config):

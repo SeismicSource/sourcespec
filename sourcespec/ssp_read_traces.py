@@ -7,7 +7,9 @@
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 """Read traces in multiple formats of data and metadata."""
-from __future__ import division
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import sys
 import os
 import re
@@ -15,7 +17,10 @@ import logging
 import shutil
 import tarfile
 import tempfile
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import json
 from datetime import datetime
 from obspy.core import Stream, read, UTCDateTime
@@ -24,7 +29,7 @@ from obspy.io.xseed import Parser
 from obspy.io.xseed.utils import SEEDParserException
 from obspy.io.sac import attach_paz
 from obspy.core import Trace
-from ssp_setup import ssp_exit
+from sourcespec.ssp_setup import ssp_exit
 
 
 class Pick(AttribDict):
@@ -99,8 +104,8 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
                 coords = AttribDict(sp.get_coordinates(traceid, time))
                 # elevation is in meters in the dataless
                 coords.elevation /= 1000.
-            except SEEDParserException, message:
-                logging.error("%s time: %s" % (message, str(time)))
+            except SEEDParserException as err:
+                logging.error("%s time: %s" % (err, str(time)))
                 pass
     try:
         trace.stats.paz = paz
@@ -429,8 +434,8 @@ def _parse_hypocenter(hypo_file):
                 # characters in the first 10 digits:
                 if any(c.isalpha() for c in line[0:10]):
                     line = fp.readline()
-        except IOError, message:
-            logging.error(message)
+        except IOError as err:
+            logging.error(err)
             ssp_exit(1)
 
         timestr = line[0:17]
@@ -563,8 +568,8 @@ def _parse_picks(config):
                     picks.append(pick2)
             else:
                 raise IOError('%s: Not a phase file' % pick_file)
-    except IOError, message:
-        logging.error(message)
+    except IOError as err:
+        logging.error(err)
         ssp_exit(1)
     return picks
 
@@ -578,8 +583,8 @@ def _build_filelist(path, filelist, tmpdir):
     else:
         try:
             open(path)
-        except IOError, message:
-            logging.error(message)
+        except IOError as err:
+            logging.error(err)
             return
         if tarfile.is_tarfile(path) and tmpdir is not None:
             tar = tarfile.open(path)
@@ -652,8 +657,8 @@ def read_traces(config):
                     continue
             try:
                 tmpst = read(trace.trace_file, fsize=False)
-            except Exception, error:
-                print error
+            except Exception as err:
+                logging.error(err)
                 continue
             for trace in tmpst.traces:
                 st.append(trace)

@@ -6,13 +6,15 @@
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 """Trace processing for source_spec."""
-from __future__ import division
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import logging
 import numpy as np
 from copy import deepcopy, copy
 from obspy.core import Stream
-from ssp_setup import dprint, ssp_exit
-from ssp_util import remove_instr_response, hypo_dist, wave_arrival
+from sourcespec.ssp_setup import dprint, ssp_exit
+from sourcespec.ssp_util import remove_instr_response, hypo_dist, wave_arrival
 
 
 def filter_trace(config, trace):

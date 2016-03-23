@@ -6,14 +6,16 @@
 #               Emanuela Matrullo <matrullo@geologie.ens.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 """Output functions for source_spec."""
-from __future__ import division
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import os
 import logging
 import sqlite3
 import numpy as np
 from scipy.stats.mstats import gmean
-from ssp_setup import ssp_exit
-from ssp_util import mag_to_moment
+from sourcespec.ssp_setup import ssp_exit
+from sourcespec.ssp_util import mag_to_moment
 
 
 def gstd(array):

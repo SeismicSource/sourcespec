@@ -5,6 +5,9 @@
 # (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
 #               Agnes Chounet <chounet@ipgp.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -15,8 +18,8 @@ from collections import defaultdict
 import cPickle as pickle
 from optparse import OptionParser
 from obspy.core import Stream
-from ssp_util import moment_to_mag, mag_to_moment
-from spectrum import Spectrum
+from sourcespec.ssp_util import moment_to_mag, mag_to_moment
+from sourcespec.spectrum import Spectrum
 
 
 usage = 'usage: %prog [options] residuals_dir'
@@ -48,7 +51,7 @@ residual_mean = Stream()
 for stat_id in sorted(residual_dict.keys()):
     if len(residual_dict[stat_id]) < min_spectra:
         continue
-    print stat_id
+    print(stat_id)
 
     res = residual_dict[stat_id]
 

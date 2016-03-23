@@ -3,7 +3,9 @@
 #
 # (c) 2012-2016 Claudio Satriano <satriano@ipgp.fr>
 """Utility functions for source_spec."""
-from __future__ import division
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import logging
 import warnings
 import math

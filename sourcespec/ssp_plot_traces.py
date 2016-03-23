@@ -3,7 +3,9 @@
 #
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 """Trace plotting routine."""
-from __future__ import division
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import os
 import math
 import logging

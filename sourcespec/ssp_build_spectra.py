@@ -7,21 +7,21 @@
 #               Agnes Chounet <chounet@ipgp.fr>
 # (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
 """Build spectral objects."""
-from __future__ import division
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import logging
 import numpy as np
 import math
 from scipy.integrate import cumtrapz
 from copy import deepcopy, copy
 from obspy.core import Stream
-from ssp_setup import dprint
-from ssp_util import wave_arrival, cosine_taper,\
-        moment_to_mag
-from ssp_process_traces import filter_trace
-from ssp_correction import station_correction
-import spectrum
-from obspy.signal.konnoohmachismoothing import \
-        konno_ohmachi_smoothing
+from obspy.signal.konnoohmachismoothing import konno_ohmachi_smoothing
+from sourcespec import spectrum
+from sourcespec.ssp_setup import dprint
+from sourcespec.ssp_util import wave_arrival, cosine_taper, moment_to_mag
+from sourcespec.ssp_process_traces import filter_trace
+from sourcespec.ssp_correction import station_correction
 
 
 def _time_integrate(config, trace):
