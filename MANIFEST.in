@@ -1,0 +1,3 @@
+include ChangeLog.txt
+include README.md
+include sourcespec/configspec.conf
