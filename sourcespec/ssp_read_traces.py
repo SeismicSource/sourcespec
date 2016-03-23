@@ -22,6 +22,8 @@ from obspy.core import Stream, read, UTCDateTime
 from obspy.core.util import AttribDict
 from obspy.io.xseed import Parser
 from obspy.io.xseed.utils import SEEDParserException
+from obspy.io.sac import attach_paz
+from obspy.core import Trace
 from ssp_setup import ssp_exit
 
 
@@ -366,8 +368,6 @@ def _read_paz(path):
     if path is None:
         return None
 
-    from obspy.sac.sacio import attach_paz
-    from obspy.core import Trace
     logging.info('Reading PAZ...')
     paz = dict()
     if os.path.isdir(path):
