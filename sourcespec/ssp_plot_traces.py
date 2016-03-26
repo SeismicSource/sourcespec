@@ -61,7 +61,7 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
     for station in sorted(set(x.stats.station for x in st.traces)):
         st_sel = st.select(station=station)
         # 'code' is band+instrument code
-        for code in set(x.stats.channel[0:2] for x in st_sel):
+        for code in sorted(set(x.stats.channel[0:2] for x in st_sel)):
             plotn += 1
             ax_text = False
 

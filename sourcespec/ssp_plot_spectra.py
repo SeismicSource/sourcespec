@@ -79,7 +79,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     for station in sorted(set(x.stats.station for x in spec_st.traces)):
         spec_st_sel = spec_st.select(station=station)
         # 'code' is band+instrument code
-        for code in set(x.stats.channel[0:2] for x in spec_st_sel):
+        for code in sorted(set(x.stats.channel[0:2] for x in spec_st_sel)):
             plotn += 1
             ax_text = False
 
