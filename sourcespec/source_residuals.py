@@ -15,7 +15,10 @@ import sys
 import os
 from glob import glob
 from collections import defaultdict
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 from optparse import OptionParser
 from obspy.core import Stream
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
