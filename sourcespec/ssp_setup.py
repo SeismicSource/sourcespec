@@ -18,6 +18,10 @@ import signal
 import numpy as np
 from argparse import ArgumentParser, RawTextHelpFormatter
 from datetime import datetime
+try:
+    from itertools import izip_longest as zip_longest
+except ImportError:
+    from itertools import zip_longest
 from sourcespec.configobj import ConfigObj
 from sourcespec.configobj.validate import Validator
 from sourcespec.config import Config
@@ -223,14 +227,14 @@ def _parse_args(progname):
                       for Mo in options.Mo
                       for t_star in options.t_star
                       for alpha in options.alpha]
-            oplist = map(list, zip(*oplist))
+            oplist = list(map(list, zip(*oplist)))
         else:
             # Add trailing "None" to shorter lists and zip:
             oplist = [options.fc, options.mag, options.Mo,
                       options.t_star, options.alpha]
-            oplist = map(None, *oplist)
+            oplist = list(zip_longest(*oplist))
             # Unzip and convert tuple to lists:
-            oplist = map(list, zip(*oplist))
+            oplist = list(map(list, zip(*oplist)))
             for l in oplist:
                 for n, x in enumerate(l):
                     if x is None:
