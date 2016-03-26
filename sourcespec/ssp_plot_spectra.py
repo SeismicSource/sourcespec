@@ -252,4 +252,5 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             else:
                 canvas.print_figure(figurefile, bbox_inches='tight')
         logging.info(message + ' plots saved to: ' + figurefile)
-    fig.clf()
+    if not config.PLOT_SHOW:
+        fig.clf()

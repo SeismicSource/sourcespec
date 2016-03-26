@@ -180,4 +180,5 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
             else:
                 canvas.print_figure(figurefile, bbox_inches='tight')
         logging.info('Trace plots saved to: ' + figurefile)
-    fig.clf()
+    if not config.PLOT_SHOW:
+        fig.clf()
