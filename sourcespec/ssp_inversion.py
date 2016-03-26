@@ -246,7 +246,9 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
     # or with anomalous corner frequencies
     f1 = config.min_corner_freq
     f2 = config.max_corner_freq
-    for statId in sourcepar.keys():
+    # Make a copy of sourcepar.keys() since the dictionary
+    # may change during iteration
+    for statId in list(sourcepar.keys()):
         par = sourcepar[statId]
         t_star = par['t_star']
         if t_star < 0:
