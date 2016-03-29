@@ -19,7 +19,7 @@ with open('README.md', 'rb') as f:
 
 setup(
     name='sourcespec',
-    packages=['sourcespec'],
+    packages=['sourcespec', 'sourcespec.configobj'],
     include_package_data=True,
     entry_points={
         'console_scripts': ['source_spec = sourcespec.source_spec:main',
