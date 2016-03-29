@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 """Wrapper to run source_spec.py from source tree."""
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import sys
 import os
 import inspect
 
+# Make sure we use current-dir version over installed one
 path = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(
-    inspect.currentframe())), os.pardir, 'sourcespec'))
+    inspect.currentframe())), os.pardir))
 sys.path.insert(0, path)
-from source_spec import main
+from sourcespec.source_spec import main
 
 if __name__ == '__main__':
     main()
