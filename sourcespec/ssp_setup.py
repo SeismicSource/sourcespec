@@ -386,7 +386,11 @@ def setup_logging(config, basename=None):
 
 def init_plotting():
     global plotter
-    plotter = AsyncPlotter()
+    if OS == 'nt':
+        # AsyncPlotter() doesn't work on Windows. TODO: fix this
+        plotter = None
+    else:
+        plotter = AsyncPlotter()
     return plotter
 
 
