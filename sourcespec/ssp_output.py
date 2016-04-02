@@ -117,7 +117,7 @@ def write_output(config, evid, sourcepar):
         bsd_array = 0.4375 * Mo_array / np.power(ra_array, 3) * 1e-6
         bsd_mean = bsd_array.mean()
         bsd_std = bsd_array.std()
-        parfile.write('Brune stress drop: %.3f +/- %.3f MPa\n' %
+        parfile.write('Brune stress drop: %.3e +/- %.3e MPa\n' %
                       (bsd_mean, bsd_std))
 
         # Ml
