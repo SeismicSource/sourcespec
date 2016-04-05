@@ -247,7 +247,13 @@ def _add_hypocenter(trace, hypo):
                 hypo.evid = hypo.origin_time.strftime("%Y%m%d_%H%M%S")
             except AttributeError:
                 hypo.origin_time = None
-                hypo.evid = trace.stats.starttime.strftime("%Y%m%d_%H%M%S")
+                # round to the nearest minute
+                _time = UTCDateTime(trace.stats.starttime)
+                if _time.second >= 30:
+                    _time.minute += 1
+                _time.second = 0
+                _time.microsecond = 0
+                hypo.evid = _time.strftime("%Y%m%d_%H%M%S")
             hypo.latitude = evla
             hypo.longitude = evlo
             hypo.depth = evdp
