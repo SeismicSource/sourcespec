@@ -2,7 +2,6 @@
 #
 # SourceSpec documentation build configuration file, created by
 # sphinx-quickstart on Fri Oct 25 17:47:32 2013.
-
 import sys
 import os
 import inspect
@@ -18,6 +17,30 @@ from version import get_git_version
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.join(os.path.abspath('..'), 'sourcespec'))
+
+
+# Mock modules which are not installed by Read the Docs
+# (Source: http://docs.readthedocs.org/en/latest/faq.html)
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock
+
+
+MOCK_MODULES = ['numpy',
+                'scipy',
+                'scipy.integrate', 'scipy.optimize',
+                'scipy.stats', 'scipy.stats.mstats',
+                'obspy',
+                'obspy.core', 'obspy.core.util',
+                'obspy.io', 'obspy.io.sac',
+                'obspy.io.xseed', 'obspy.io.xseed.utils',
+                'obspy.signal', 'obspy.signal.invsim',
+                'obspy.signal.konnoohmachismoothing', 'obspy.signal.filter',
+                'obspy.signal.util', 'obspy.signal.trigger',
+                'obspy.geodetics']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 
 # -- General configuration ----------------------------------------------------
 
