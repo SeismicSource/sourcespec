@@ -39,5 +39,18 @@ To get help:
     source_residuals -h
 
 
+## Installation
+Simply uncompress the archive and run the codes from `bin` directory.
+Optionally, you can install the codes by running:
+
+    pip install .
+
+(use `pip install -e .` to install in developer mode), or:
+
+    pip install sourcespec-x.x.tar.gz
+
+(where `x.x` is the version number).
+
+
 ## Sample runs
 Several sample runs are available in the `sourcespec_testruns` package.
