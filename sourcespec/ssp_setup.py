@@ -35,17 +35,6 @@ from sourcespec.config import Config
 from sourcespec.ssp_version import get_git_version
 from sourcespec.AsyncPlotter import AsyncPlotter
 
-# check ObsPy version
-import obspy
-MIN_OBSPY_VERSION = (1, 0, 0)
-OBSPY_VERSION_STR = obspy.__version__
-OBSPY_VERSION = tuple(map(int, OBSPY_VERSION_STR.split('.')[:3]))
-if OBSPY_VERSION < MIN_OBSPY_VERSION:
-    msg = 'ERROR: ObsPy >= %s.%s.%s is required.' % MIN_OBSPY_VERSION
-    msg += ' You have version: %s\n' % OBSPY_VERSION_STR
-    sys.stderr.write(msg)
-    sys.exit(1)
-
 # define ipshell(), if possible
 if sys.stdout.isatty():
     try:
@@ -291,6 +280,17 @@ def configure(progname='source_spec'):
 
     Returns a ``Config`` object.
     """
+    # check ObsPy version
+    import obspy
+    MIN_OBSPY_VERSION = (1, 0, 0)
+    OBSPY_VERSION_STR = obspy.__version__
+    OBSPY_VERSION = tuple(map(int, OBSPY_VERSION_STR.split('.')[:3]))
+    if OBSPY_VERSION < MIN_OBSPY_VERSION:
+        msg = 'ERROR: ObsPy >= %s.%s.%s is required.' % MIN_OBSPY_VERSION
+        msg += ' You have version: %s\n' % OBSPY_VERSION_STR
+        sys.stderr.write(msg)
+        sys.exit(1)
+
     global DEBUG
     options = _parse_args(progname)
 
