@@ -99,8 +99,3 @@ Finally coming to the following model used for the inversion:
 
 Where :math:`Mw \equiv \frac{2}{3} (\log_{10} M_0 - 9.1)`
 and :math:`t^* \equiv \frac{r}{Q_O V_S}`
-
-
-
-.. automodule:: source_spec
-   :members:
