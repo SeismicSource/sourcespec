@@ -32,7 +32,7 @@ except ImportError:
 from sourcespec.configobj import ConfigObj
 from sourcespec.configobj.validate import Validator
 from sourcespec.config import Config
-from sourcespec.version import get_git_version
+from sourcespec.ssp_version import get_git_version
 from sourcespec.AsyncPlotter import AsyncPlotter
 
 # check ObsPy version

@@ -10,7 +10,7 @@ import inspect
 path = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(
     inspect.currentframe())), os.pardir, 'sourcespec'))
 sys.path.insert(0, path)
-from version import get_git_version
+from ssp_version import get_git_version
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

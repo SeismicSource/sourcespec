@@ -10,7 +10,7 @@ import sys
 path = os.path.join(os.path.abspath(os.path.dirname(inspect.getfile(
     inspect.currentframe()))), 'sourcespec')
 sys.path.insert(0, path)
-from version import get_git_version
+from ssp_version import get_git_version
 
 
 with open('README.md', 'rb') as f:
