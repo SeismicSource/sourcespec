@@ -32,7 +32,23 @@ setup(
                 'displacement spectra',
     long_description=long_descr,
     author='Claudio Satriano',
-    author_email='satriano@gmail.com',
-    url='',
+    author_email='satriano@ipgp.fr',
+    url='http://www.ipgp.fr/~satriano',
+    license='CeCILL Free Software License Agreement, Version 2.1',
+    platforms='OS Independent',
+    classifiers=[
+            'Development Status :: 5 - Production/Stable',
+            'Environment :: Console',
+            'Intended Audience :: Science/Research',
+            'License :: OSI Approved :: CeCILL Free Software License '
+                'Agreement, Version 2.1',
+            'Operating System :: OS Independent',
+            'Programming Language :: Python',
+            'Programming Language :: Python :: 2',
+            'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.5',
+            'Topic :: Scientific/Engineering',
+            'Topic :: Scientific/Engineering :: Physics'],
     install_requires=['obspy>=1.0.0']
     )

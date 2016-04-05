@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
-"""Wrapper to run source_residuals.py from source tree."""
+"""
+Wrapper to run source_residuals.py from source tree.
+
+:copyright:
+    2016 Claudio Satriano <satriano@ipgp.fr>
+:license:
+    CeCILL Free Software License Agreement, Version 2.1
+    (http://www.cecill.info/index.en.html)
+"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 

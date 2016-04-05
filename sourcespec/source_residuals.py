@@ -1,10 +1,16 @@
 # -*- coding: utf8 -*-
-# source_residuals.py
-#
-# Computes station residuals from source_spec.py output
-# (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
-#               Agnes Chounet <chounet@ipgp.fr>
-# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
+"""
+Compute station residuals from source_spec.py output.
+
+:copyright:
+    2013-2014 Claudio Satriano <satriano@ipgp.fr>,
+              Agnes Chounet <chounet@ipgp.fr>
+
+    2015-2016 Claudio Satriano <satriano@ipgp.fr>
+:license:
+    CeCILL Free Software License Agreement, Version 2.1
+    (http://www.cecill.info/index.en.html)
+"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 

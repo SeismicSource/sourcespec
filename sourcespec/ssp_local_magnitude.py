@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
-# ssp_local_magnitude.py
-#
-# (c) 2012 Claudio Satriano <satriano@ipgp.fr>
-# (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
-#               Emanuela Matrullo <matrullo@geologie.ens.fr>
-# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
-"""Local magnitude calculation for source_spec."""
+"""
+Local magnitude calculation for sourcespec.
+
+:copyright:
+    2012 Claudio Satriano <satriano@ipgp.fr>
+
+    2013-2014 Claudio Satriano <satriano@ipgp.fr>,
+              Emanuela Matrullo <matrullo@geologie.ens.fr>
+
+    2015-2016 Claudio Satriano <satriano@ipgp.fr>
+:license:
+    CeCILL Free Software License Agreement, Version 2.1
+    (http://www.cecill.info/index.en.html)
+"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 

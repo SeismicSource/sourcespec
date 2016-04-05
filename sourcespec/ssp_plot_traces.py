@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
-# ssp_plot_traces.py
-#
-# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
-"""Trace plotting routine."""
+"""
+Trace plotting routine.
+
+:copyright:
+    2015-2016 Claudio Satriano <satriano@ipgp.fr>
+:license:
+    CeCILL Free Software License Agreement, Version 2.1
+    (http://www.cecill.info/index.en.html)
+"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 

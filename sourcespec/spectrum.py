@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
-# spectrum.py
-# Introduces the class Spectrum as a modification of the ObsPy class Trace()
-# Provides the high-level function do_spectrum()
-# and the low-level funciton do_fft()
-#
-# (c) 2012-2016 Claudio Satriano <satriano@ipgp.fr>
+"""
+A Spectrum() class defined as a modification of the ObsPy class Trace().
+
+Provides the high-level function do_spectrum()
+and the low-level funciton do_fft().
+
+:copyright:
+    2012-2016 Claudio Satriano <satriano@ipgp.fr>
+:license:
+    CeCILL Free Software License Agreement, Version 2.1
+    (http://www.cecill.info/index.en.html)
+"""
 import numpy as np
 from copy import copy, deepcopy
 from obspy.core import Trace

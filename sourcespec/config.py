@@ -1,10 +1,17 @@
 # -*- coding: utf8 -*-
-#
-# (c) 2013-2016 Claudio Satriano <satriano@ipgp.fr>
+"""
+Config class for sourcespec.
+
+:copyright:
+    2013-2016 Claudio Satriano <satriano@ipgp.fr>
+:license:
+    CeCILL Free Software License Agreement, Version 2.1
+    (http://www.cecill.info/index.en.html)
+"""
 
 
 class Config(dict):
-    """Config class for source_spec."""
+    """Config class for sourcespec."""
 
     def __setitem__(self, key, value):
         """Make Config keys accessible as attributes."""

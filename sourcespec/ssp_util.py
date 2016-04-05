@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
-# ssp_util.py
-#
-# (c) 2012-2016 Claudio Satriano <satriano@ipgp.fr>
-"""Utility functions for source_spec."""
+"""
+Utility functions for sourcespec.
+
+:copyright:
+    2012-2016 Claudio Satriano <satriano@ipgp.fr>
+:license:
+    CeCILL Free Software License Agreement, Version 2.1
+    (http://www.cecill.info/index.en.html)
+"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 

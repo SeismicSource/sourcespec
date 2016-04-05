@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
-# ssp_read_traces.py
-#
-# All the functions whose name starts with "_" are intended to be private
-# (c) 2012 Claudio Satriano <satriano@ipgp.fr>
-# (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
-#               Emanuela Matrullo <matrullo@geologie.ens.fr>
-# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
-"""Read traces in multiple formats of data and metadata."""
+"""
+Read traces in multiple formats of data and metadata.
+
+:copyright:
+    2012 Claudio Satriano <satriano@ipgp.fr>
+
+    2013-2014 Claudio Satriano <satriano@ipgp.fr>,
+              Emanuela Matrullo <matrullo@geologie.ens.fr>
+
+    2015-2016 Claudio Satriano <satriano@ipgp.fr>
+:license:
+    CeCILL Free Software License Agreement, Version 2.1
+    (http://www.cecill.info/index.en.html)
+"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 

@@ -1,12 +1,19 @@
 # -*- coding: utf8 -*-
-# ssp_inversion.py
-#
-# (c) 2012 Claudio Satriano <satriano@ipgp.fr>
-# (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
-#               Emanuela Matrullo <matrullo@geologie.ens.fr>,
-#               Agnes Chounet <chounet@ipgp.fr>
-# (c) 2015-2016 Claudio Satriano <satriano@ipgp.fr>
-"""Spectral inversion routines for source_spec."""
+"""
+Spectral inversion routines for sourcespec.
+
+:copyright:
+    2012 Claudio Satriano <satriano@ipgp.fr>
+
+    2013-2014 Claudio Satriano <satriano@ipgp.fr>,
+              Emanuela Matrullo <matrullo@geologie.ens.fr>,
+              Agnes Chounet <chounet@ipgp.fr>
+
+    2015-2016 Claudio Satriano <satriano@ipgp.fr>
+:license:
+    CeCILL Free Software License Agreement, Version 2.1
+    (http://www.cecill.info/index.en.html)
+"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
