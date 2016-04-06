@@ -137,6 +137,11 @@ def _init_parser(description, epilog, nargs):
     parser.add_argument('-p', '--pickfile', dest='pick_file',
                         action='store', default=None,
                         help='get picks from FILE', metavar='FILE')
+    parser.add_argument('-q', '--qmlfile', dest='qml_file',
+                        action='store', default=None,
+                        help='get picks and hypocenter information from '
+                        'QuakeML FILE',
+                        metavar='FILE')
     parser.add_argument('-e', '--evid', dest='evid',
                         action='store', default=None,
                         help='get evid from catalog', metavar='EVID')

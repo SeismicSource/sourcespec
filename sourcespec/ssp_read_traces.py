@@ -8,7 +8,8 @@ Read traces in multiple formats of data and metadata.
     2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>
 
-    2015-2016 Claudio Satriano <satriano@ipgp.fr>
+    2015-2016 Claudio Satriano <satriano@ipgp.fr>,
+              Sophie Lambotte <sophie.lambotte@unistra.fr>
 :license:
     CeCILL Free Software License Agreement, Version 2.1
     (http://www.cecill.info/index.en.html)
@@ -38,6 +39,7 @@ from obspy import read_inventory
 from obspy.core.inventory import Inventory
 from obspy.io.sac import attach_paz
 from obspy.core import Trace
+from obspy import read_events
 from sourcespec.ssp_setup import ssp_exit
 
 
@@ -444,7 +446,10 @@ def _read_paz(path):
     return paz
 
 
-def _parse_hypocenter(hypo_file):
+def _parse_qml(qml_file, evid=None):
+    if qml_file is None:
+        return None, None
+
     hypo = AttribDict()
     hypo.latitude = None
     hypo.longitude = None
@@ -452,8 +457,59 @@ def _parse_hypocenter(hypo_file):
     hypo.origin_time = None
     hypo.evid = None
 
+    try:
+        cat = read_events(qml_file)
+    except Exception as err:
+        logging.error(err)
+        ssp_exit(1)
+
+    if evid is not None:
+        ev = [e for e in cat if evid in str(e.resource_id)][0]
+    else:
+        # just take the first event
+        ev = cat[0]
+    hypo.origin_time = ev.origins[0].time
+    hypo.latitude = ev.origins[0].latitude
+    hypo.longitude = ev.origins[0].longitude
+    hypo.depth = ev.origins[0].depth/1000.
+    hypo.evid = ev.resource_id.id.split('/')[-1]
+
+    picks = []
+
+    for pck in ev.picks:
+        pick = Pick()
+        pick.station = pck.waveform_id.station_code
+        pick.network = pck.waveform_id.network_code
+        pick.channel = pck.waveform_id.channel_code
+        if pck.waveform_id.location_code is not None:
+            pick.location = pck.waveform_id.location_code
+        else:
+            pick.location = ''
+        if pck.onset == 'emergent':
+            pick.flag = 'E'
+        elif pck.onset == 'impulsive':
+            pick.flag = 'I'
+        pick.phase = pck.phase_hint[0:1]
+        if pck.polarity == 'positive':
+            pick.polarity = 'U'
+        elif pck.polarity == 'negative':
+            pick.polarity = 'D'
+        pick.time = pck.time
+        picks.append(pick)
+
+    return hypo, picks
+
+
+def _parse_hypocenter(hypo_file):
     if hypo_file is None:
         return None
+
+    hypo = AttribDict()
+    hypo.latitude = None
+    hypo.longitude = None
+    hypo.depth = None
+    hypo.origin_time = None
+    hypo.evid = None
 
     if isinstance(hypo_file, str):
         try:
@@ -672,6 +728,11 @@ def read_traces(config):
     # parse pick file
     _set_pick_file_path(config)
     picks = _parse_picks(config)
+
+    # parse QML file
+    if hypo is None:
+        hypo, picks = _parse_qml(config.options.qml_file,
+                                 config.options.evid)
 
     # finally, read traces
     # traces can be defined in a pickle catalog (Antilles format)...
