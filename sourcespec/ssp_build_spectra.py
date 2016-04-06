@@ -119,7 +119,8 @@ def build_spectra(config, st, noise_weight=False):
         stats = trace.stats
 
         # S time window
-        s_arrival_time = wave_arrival(trace, config.vs, 'S')
+        s_arrival_time = wave_arrival(trace, config.vs, 'S',
+                                      config.s_arrival_tollerance)
         t1 = s_arrival_time - config.pre_s_time
         t2 = t1 + config.s_win_length
         trace.stats.arrivals['S1'] = ('S1', t1 - trace.stats.starttime)
@@ -153,7 +154,8 @@ def build_spectra(config, st, noise_weight=False):
 
         if noise_weight:
             # Noise time window for weighting function:
-            p_arrival_time = wave_arrival(trace, config.vp, 'P')
+            p_arrival_time = wave_arrival(trace, config.vp, 'P',
+                                          config.p_arrival_tollerance)
             noise_start_t = p_arrival_time - config.pre_p_time
             noise_end_t = noise_start_t + config.s_win_length
             trace.stats.arrivals['N1'] = \

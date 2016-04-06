@@ -69,8 +69,10 @@ def process_traces(config, st):
         orig_trace.stats.hypo_dist = hd
 
         # retrieve arrival times
-        p_arrival_time = wave_arrival(orig_trace, config.vp, 'P')
-        s_arrival_time = wave_arrival(orig_trace, config.vs, 'S')
+        p_arrival_time = wave_arrival(orig_trace, config.vp, 'P',
+                                      config.p_arrival_tollerance)
+        s_arrival_time = wave_arrival(orig_trace, config.vs, 'S',
+                                      config.s_arrival_tollerance)
         if (p_arrival_time is None or s_arrival_time is None):
             logging.warning('%s: Unable to get arrival times: '
                             'skipping trace' % orig_trace.id)
