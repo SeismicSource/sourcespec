@@ -18,6 +18,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import sys
 import os
+import io
 import re
 import logging
 import shutil
@@ -33,6 +34,8 @@ from obspy.core import Stream, read, UTCDateTime
 from obspy.core.util import AttribDict
 from obspy.io.xseed import Parser
 from obspy.io.xseed.utils import SEEDParserException
+from obspy import read_inventory
+from obspy.core.inventory import Inventory
 from obspy.io.sac import attach_paz
 from obspy.core import Trace
 from sourcespec.ssp_setup import ssp_exit
@@ -100,21 +103,31 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
     traceid = trace.get_id()
     time = trace.stats.starttime
     # We first look into the dataless dictionary, if available
-    if dataless is not None:
+    if isinstance(dataless, dict):
         for sp in dataless.values():
             # Check first if our traceid is in the dataless file
             if traceid not in str(sp):
                 continue
             try:
-                paz = sp.get_paz(traceid, time)
+                paz = AttribDict(sp.get_paz(traceid, time))
                 coords = AttribDict(sp.get_coordinates(traceid, time))
-                # elevation is in meters in the dataless
-                coords.elevation /= 1000.
             except SEEDParserException as err:
-                logging.error("%s time: %s" % (err, str(time)))
+                logging.error('%s time: %s' % (err, str(time)))
                 pass
+    elif isinstance(dataless, Inventory):
+        try:
+            sacpz = dataless.get_response(traceid, time).get_sacpz()
+            attach_paz(trace, io.StringIO(sacpz))
+            paz = trace.stats.paz
+            coords = AttribDict(dataless.get_coordinates(traceid, time))
+        except Exception as err:
+            logging.error('%s traceid: %s time: %s' %
+                          (err, traceid, str(time)))
+            pass
     try:
         trace.stats.paz = paz
+        # elevation is in meters in the dataless
+        coords.elevation /= 1000.
         trace.stats.coords = coords
     except:
         pass
@@ -354,6 +367,13 @@ def _read_dataless(path):
     if path is None:
         return None
 
+    # Try to read the file as StationXML
+    try:
+        inv = read_inventory(path)
+        return inv
+    except TypeError:
+        pass
+
     logging.info('Reading dataless...')
     dataless = dict()
     if os.path.isdir(path):
@@ -361,9 +381,8 @@ def _read_dataless(path):
         for filename in listing:
             fullpath = os.path.join(path, filename)
             try:
-                sp = Parser(fullpath)
-                dataless[filename] = sp
-            except IOError:
+                dataless[filename] = Parser(fullpath)
+            except:
                 continue
         #TODO: manage the case in which "path" is a file name
     logging.info('Reading dataless: done')
