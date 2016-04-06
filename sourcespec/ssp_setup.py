@@ -121,9 +121,9 @@ def _init_parser(description, epilog, nargs):
                             epilog=epilog,
                             formatter_class=RawTextHelpFormatter)
     parser.add_argument('-c', '--configfile', dest='config_file',
-                        action='store', default='config.py',
+                        action='store', default='source_spec.conf',
                         help='load configuration from FILE '
-                        '(default: config.py)', metavar='FILE')
+                        '(default: source_spec.conf)', metavar='FILE')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-t', '--trace_path', nargs=nargs,
                        help='path to trace file(s) or trace dir')
