@@ -4,3 +4,4 @@ include LICENSE.txt
 include CONTRIBUTORS.txt
 include sourcespec/configspec.conf
 include sourcespec/RELEASE-VERSION
+include bin/*.py
