@@ -21,7 +21,6 @@ import logging
 import numpy as np
 import math
 from scipy.integrate import cumtrapz
-from copy import deepcopy, copy
 from obspy.core import Stream
 from obspy.signal.konnoohmachismoothing import konno_ohmachi_smoothing
 from sourcespec import spectrum
@@ -126,8 +125,7 @@ def build_spectra(config, st, noise_weight=False):
         trace.stats.arrivals['S1'] = ('S1', t1 - trace.stats.starttime)
         trace.stats.arrivals['S2'] = ('S2', t2 - trace.stats.starttime)
 
-        trace_cut = copy(trace)
-        trace_cut.stats = deepcopy(trace.stats)
+        trace_cut = trace.copy()
 
         # Do a preliminary trim, in order to check if there is enough
         # data within the selected time window
@@ -145,8 +143,7 @@ def build_spectra(config, st, noise_weight=False):
 
         # If the check is ok, recover the full trace
         # (it will be cutted later on)
-        trace_cut = copy(trace)
-        trace_cut.stats = deepcopy(trace.stats)
+        trace_cut = trace.copy()
 
         # Integrate in time domain, if required.
         # (otherwhise frequency-domain integration is
@@ -165,8 +162,7 @@ def build_spectra(config, st, noise_weight=False):
                 ('N2', noise_end_t - trace.stats.starttime)
             # We inherit the same processing of trace_cut
             # (which, despite its name, has not been yet cut!)
-            trace_noise = copy(trace_cut)
-            trace_noise.stats = deepcopy(trace_cut.stats)
+            trace_noise = trace_cut.copy()
 
         # trim...
         trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
@@ -282,11 +278,8 @@ def build_spectra(config, st, noise_weight=False):
 
                 # Weighting function is the ratio between "H" components
                 # of signal and noise
-                weight = copy(spec_h)
-                weight.stats = deepcopy(spec_h.stats)
-                weight.data = deepcopy(spec_h.data)
+                weight = spec_h.copy()
                 if specnoise_h is not None:
-                    weight.data = deepcopy(spec_h.data)
                     weight.data /= specnoise_h.data
                     # smooth weight
                     weight.data = konno_ohmachi_smoothing(weight.data,
