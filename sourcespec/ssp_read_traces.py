@@ -726,6 +726,9 @@ def read_traces(config):
                                 'skipping' % filename)
                 continue
             for trace in tmpst.traces:
+                if config.options.station is not None:
+                    if not trace.stats.station == config.options.station:
+                        continue
                 st.append(trace)
                 trace.stats.format = config.trace_format
                 _correct_traceid(trace, config.traceids)
