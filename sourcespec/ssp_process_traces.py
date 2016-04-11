@@ -70,9 +70,9 @@ def process_traces(config, st):
 
         # retrieve arrival times
         p_arrival_time = wave_arrival(orig_trace, config.vp, 'P',
-                                      config.p_arrival_tollerance)
+                                      config.p_arrival_tolerance)
         s_arrival_time = wave_arrival(orig_trace, config.vs, 'S',
-                                      config.s_arrival_tollerance)
+                                      config.s_arrival_tolerance)
         if (p_arrival_time is None or s_arrival_time is None):
             logging.warning('%s: Unable to get arrival times: '
                             'skipping trace' % orig_trace.id)
@@ -104,16 +104,16 @@ def process_traces(config, st):
             continue
 
         # check if trace is clipped
-        clip_tollerance = config.clip_tollerance
-        clip_max = (1 - clip_tollerance/100.) * trace.data.max()
-        clip_min = (1 - clip_tollerance/100.) * trace.data.min()
+        clip_tolerance = config.clip_tolerance
+        clip_max = (1 - clip_tolerance/100.) * trace.data.max()
+        clip_min = (1 - clip_tolerance/100.) * trace.data.min()
         nclips = (trace.data > clip_max).sum()
         nclips += (trace.data < clip_min).sum()
         clip_nmax = config.clip_nmax
         if float(nclips)/trace.stats.npts > clip_nmax/100.:
             logging.warning('%s %s: Trace is clipped for more than %.2f%% '
-                            'with %.2f%% tollerance: skipping trace' %
-                            (trace.id, instrtype, clip_nmax, clip_tollerance))
+                            'with %.2f%% tolerance: skipping trace' %
+                            (trace.id, instrtype, clip_nmax, clip_tolerance))
             continue
 
         # Remove instrument response

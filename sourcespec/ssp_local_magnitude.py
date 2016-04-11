@@ -81,7 +81,7 @@ def local_magnitude(config, st, deconvolve=False):
         trace_signal.stats = deepcopy(trace_env.stats)
 
         p_arrival_time = wave_arrival(trace, config.vp, 'P',
-                                      config.p_arrival_tollerance)
+                                      config.p_arrival_tolerance)
         t1 = p_arrival_time - config.pre_mag_time
         t2 = p_arrival_time + config.pre_mag_time
 

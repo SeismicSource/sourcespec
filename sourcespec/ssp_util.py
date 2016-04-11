@@ -41,7 +41,7 @@ def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
     return amp_minmax, freq_minmax
 
 
-def wave_arrival(trace, vel, phase, tollerance=4.):
+def wave_arrival(trace, vel, phase, tolerance=4.):
     """
     Obtain arrival time for a given phase and a given trace.
 
@@ -64,7 +64,7 @@ def wave_arrival(trace, vel, phase, tollerance=4.):
         if pick.phase == phase:
             if theo_pick_time is not None:
                 delta_t = pick.time - theo_pick_time
-                if abs(delta_t) > tollerance:  # seconds
+                if abs(delta_t) > tolerance:  # seconds
                     msg = '%s: measured %s pick time - theoretical time ' %\
                           (trace.id, phase)
                     msg += '= %.1f s. Using theoretical.' % delta_t
