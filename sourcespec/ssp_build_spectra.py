@@ -101,163 +101,133 @@ def _compute_h(spec_st, code):
     return spec_h
 
 
-def build_spectra(config, st, noise_weight=False):
-    """
-    Build spectra and the spec_st object.
+def _is_enough_data(config, trace):
+    traceId = trace.get_id()
 
-    Computes S-wave (displacement) spectra from
-    accelerometers and velocimeters, uncorrected for attenuation,
-    corrected for instrumental constants, normalized by
-    hypocentral distance.
+    s_arrival_time = trace.stats.arrivals['S'][1]
+    t1 = s_arrival_time - config.pre_s_time
+    t2 = t1 + config.s_win_length
+    trace.stats.arrivals['S1'] = ('S1', t1)
+    trace.stats.arrivals['S2'] = ('S2', t2)
+
+    trace_cut = trace.copy()
+    trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+    npts = len(trace_cut.data)
+    if npts == 0:
+        logging.warning('%s: No data for the selected cut interval: '
+                        'skipping trace' % traceId)
+        return False
+    nzeros = len(np.where(trace_cut.data == 0)[0])
+    if nzeros > npts/4:
+        logging.warning('%s: Too many gaps for the selected cut '
+                        'interval: skipping trace' % traceId)
+        return False
+    return True
+
+
+def _cut_signal_noise(config, trace):
+    trace_signal = trace.copy()
+    trace_noise = trace.copy()
+
+    # Integrate in time domain, if required.
+    # (otherwhise frequency-domain integration is
+    # performed later)
+    if config.time_domain_int:
+        _time_integrate(config, trace_signal)
+        _time_integrate(config, trace_noise)
+
+    # trim...
+    t1 = trace.stats.arrivals['S1'][1]
+    t2 = trace.stats.arrivals['S2'][1]
+    trace_signal.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+    # Noise time window for weighting function:
+    p_arrival_time = trace.stats.arrivals['P'][1]
+    noise_t1 = p_arrival_time - config.pre_p_time
+    noise_t2 = noise_t1 + config.s_win_length
+    trace.stats.arrivals['N1'] = ('N1', noise_t1)
+    trace.stats.arrivals['N2'] = ('N2', noise_t2)
+    trace_noise.trim(starttime=noise_t1, endtime=noise_t2, pad=True,
+                     fill_value=0)
+    # ...taper...
+    cosine_taper(trace_signal.data, width=config.taper_halfwidth)
+    cosine_taper(trace_noise.data, width=config.taper_halfwidth)
+    if not math.isnan(config.spectral_win_length):
+        # ...and zero pad to spectral_win_length
+        trace_signal.trim(starttime=t1,
+                          endtime=t1+config.spectral_win_length,
+                          pad=True,
+                          fill_value=0)
+        trace_noise.trim(starttime=noise_t1,
+                         endtime=noise_t1+config.spectral_win_length,
+                         pad=True,
+                         fill_value=0)
+
+    return trace_signal, trace_noise
+
+
+def _is_noise_low(trace_signal, trace_noise):
+    traceId = trace_signal.get_id()
+    trace_signal_rms = ((trace_signal.data**2).sum())**0.5
+    trace_noise_rms = ((trace_noise.data**2).sum())**0.5
+    if trace_noise_rms/trace_signal_rms < 1e-6:
+        logging.warning('%s: Noise level is too low or zero: '
+                        'ignoring for noise weighting' % traceId)
+        return True
+    return False
+
+
+def _build_spectrum(config, trace):
+    stats = trace.stats
+
+    # normalization for the hypocentral distance
+    trace.data *= trace.stats.hypo_dist * 1000
+
+    # calculate fft
+    spec = spectrum.do_spectrum(trace)
+    spec.stats.instrtype = stats.instrtype
+    spec.stats.coords = stats.coords
+    spec.stats.hypo = stats.hypo
+    spec.stats.hypo_dist = stats.hypo_dist
+
+    # Integrate in frequency domain, if no time-domain
+    # integration has been performed
+    if not config.time_domain_int:
+        _frequency_integrate(config, spec)
+
+    # smooth the abs of fft
+    spec.data = konno_ohmachi_smoothing(spec.data, spec.get_freq(),
+                                        40, normalize=True)
+
+    # TODO: parameterize
+    # coefficient for converting displ spectrum
+    # to seismic moment (Aki&Richards,1980)
+    vs_m = config.vs*1000
+    vs3 = pow(vs_m, 3)
+    coeff = 4 * math.pi * vs3 * config.rho / config.rps / 2.
+    dprint('coeff= %f' % coeff)
+
+    # convert to seismic moment
+    spec.data *= coeff
+
+    # Cut the spectrum
+    spec_cut = _cut_spectrum(config, spec)
+    return spec_cut
+
+
+def _build_H_and_weight(spec_st, specnoise_st):
     """
-    spec_st = Stream()
-    specnoise_st = Stream()
+    Add to spec_st the "H" component.
+
+    H component is obtained from the modulus of all the available components.
+
+    The same for noise, if requested. In this case we compute
+    weighting function as well.
+    """
+    if specnoise_st:
+        noise_weight = True
+    else:
+        noise_weight = False
     weight_st = Stream()
-
-    for trace in st.traces:
-        traceId = trace.get_id()
-        stats = trace.stats
-
-        # S time window
-        s_arrival_time = trace.stats.arrivals['S'][1]
-        t1 = s_arrival_time - config.pre_s_time
-        t2 = t1 + config.s_win_length
-        trace.stats.arrivals['S1'] = ('S1', t1)
-        trace.stats.arrivals['S2'] = ('S2', t2)
-
-        trace_cut = trace.copy()
-
-        # Do a preliminary trim, in order to check if there is enough
-        # data within the selected time window
-        trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
-        npts = len(trace_cut.data)
-        if npts == 0:
-            logging.warning('%s: No data for the selected cut interval: '
-                            'skipping trace' % traceId)
-            continue
-        nzeros = len(np.where(trace_cut.data == 0)[0])
-        if nzeros > npts/4:
-            logging.warning('%s: Too many gaps for the selected cut '
-                            'interval: skipping trace' % traceId)
-            continue
-
-        # If the check is ok, recover the full trace
-        # (it will be cutted later on)
-        trace_cut = trace.copy()
-
-        # Integrate in time domain, if required.
-        # (otherwhise frequency-domain integration is
-        # performed later)
-        if config.time_domain_int:
-            _time_integrate(config, trace_cut)
-
-        if noise_weight:
-            # Noise time window for weighting function:
-            p_arrival_time = trace.stats.arrivals['P'][1]
-            noise_start_t = p_arrival_time - config.pre_p_time
-            noise_end_t = noise_start_t + config.s_win_length
-            trace.stats.arrivals['N1'] = ('N1', noise_start_t)
-            trace.stats.arrivals['N2'] = ('N2', noise_end_t)
-            # We inherit the same processing of trace_cut
-            # (which, despite its name, has not been yet cut!)
-            trace_noise = trace_cut.copy()
-
-        # trim...
-        trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
-        # ...taper...
-        cosine_taper(trace_cut.data, width=config.taper_halfwidth)
-        if not math.isnan(config.spectral_win_length):
-            # ...and zero pad to spectral_win_length
-            trace_cut.trim(starttime=t1,
-                           endtime=t1+config.spectral_win_length,
-                           pad=True,
-                           fill_value=0)
-
-        if noise_weight:
-            # ...trim...
-            trace_noise.trim(starttime=noise_start_t, endtime=noise_end_t,
-                             pad=True, fill_value=0)
-            # ...taper...
-            cosine_taper(trace_noise.data, width=config.taper_halfwidth)
-            if not math.isnan(config.spectral_win_length):
-                # ...and zero pad to spectral_win_length
-                trace_noise.trim(starttime=noise_start_t,
-                                 endtime=noise_start_t +
-                                 config.spectral_win_length,
-                                 pad=True,
-                                 fill_value=0)
-                trace_noise_rms = ((trace_noise.data**2).sum())**0.5
-                trace_cut_rms = ((trace_cut.data**2).sum())**0.5
-                if trace_noise_rms/trace_cut_rms < 1e-6:
-                    logging.warning('%s: Noise level is too low or zero: '
-                                    'ignoring for noise weighting' % traceId)
-                    trace_noise = None
-
-        # normalization for the hypocentral distance
-        trace_cut.data *= trace_cut.stats.hypo_dist * 1000
-
-        # calculate fft
-        spec = spectrum.do_spectrum(trace_cut)
-        spec.stats.instrtype = stats.instrtype
-        spec.stats.coords = stats.coords
-        spec.stats.hypo = stats.hypo
-        spec.stats.hypo_dist = stats.hypo_dist
-
-        # same processing for noise, if requested
-        if noise_weight and trace_noise is not None:
-            cosine_taper(trace_noise.data, width=config.taper_halfwidth)
-            trace_noise.data *= trace_noise.stats.hypo_dist * 1000
-            specnoise = spectrum.do_spectrum(trace_noise)
-            specnoise.stats.instrtype = stats.instrtype
-            specnoise.stats.coords = stats.coords
-            specnoise.stats.hypo = stats.hypo
-            specnoise.stats.hypo_dist = stats.hypo_dist
-        else:
-            specnoise = None
-
-        # Integrate in frequency domain, if no time-domain
-        # integration has been performed
-        if not config.time_domain_int:
-            _frequency_integrate(config, spec)
-            if noise_weight and specnoise is not None:
-                _frequency_integrate(config, specnoise)
-
-        # smooth the abs of fft
-        spec.data = konno_ohmachi_smoothing(spec.data, spec.get_freq(),
-                                            40, normalize=True)
-
-        # TODO: parameterize
-        # coefficient for converting displ spectrum
-        # to seismic moment (Aki&Richards,1980)
-        vs_m = config.vs*1000
-        vs3 = pow(vs_m, 3)
-        coeff = 4 * math.pi * vs3 * config.rho / config.rps / 2.
-        dprint('coeff= %f' % coeff)
-
-        # convert to seismic moment
-        spec.data *= coeff
-
-        # same processing for noise, if requested
-        if noise_weight and specnoise is not None:
-            specnoise.data = konno_ohmachi_smoothing(specnoise.data,
-                                                     specnoise.get_freq(),
-                                                     40, normalize=True)
-            specnoise.data *= coeff
-
-        # Cut the spectrum
-        spec_cut = _cut_spectrum(config, spec)
-        # append to spec streams
-        spec_st.append(spec_cut)
-
-        if noise_weight and specnoise is not None:
-            specnoise_cut = _cut_spectrum(config, specnoise)
-            specnoise_st.append(specnoise_cut)
-    # end of loop on traces
-
-    # Add to spec_st the "H" component, obtained from the
-    # modulus of all the available components.
-    # The same for noise, if requested. In this case we compute
-    # weighting function as well.
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
         if noise_weight:
@@ -291,6 +261,35 @@ def build_spectra(config, st, noise_weight=False):
                                     'a uniform weight will be applied')
                     weight.data = np.ones(len(spec_h.data))
                 weight_st.append(weight)
+    return weight_st
+
+
+def build_spectra(config, st, noise_weight=False):
+    """
+    Build spectra and the spec_st object.
+
+    Computes S-wave (displacement) spectra from
+    accelerometers and velocimeters, uncorrected for attenuation,
+    corrected for instrumental constants, normalized by
+    hypocentral distance.
+    """
+    spec_st = Stream()
+    specnoise_st = Stream()
+
+    for trace in st:
+        if not _is_enough_data(config, trace):
+            continue
+        trace_signal, trace_noise = _cut_signal_noise(config, trace)
+        if _is_noise_low(trace_signal, trace_noise):
+            continue
+        spec = _build_spectrum(config, trace_signal)
+        spec_st.append(spec)
+        if noise_weight:
+            specnoise = _build_spectrum(config, trace_noise)
+            specnoise_st.append(specnoise)
+
+    # build H component and weight_st
+    weight_st = _build_H_and_weight(spec_st, specnoise_st)
 
     # convert the spectral amplitudes to moment magnitude
     for spec in spec_st:
