@@ -87,7 +87,7 @@ def _is_clipped(config, trace):
 
 def _has_low_sn_ratio(config, trace):
     # noise time window for s/n ratio
-    p_arrival_time = trace.stats.starttime + trace.stats.arrivals['P'][1]
+    p_arrival_time = trace.stats.arrivals['P'][1]
     noise_start_t = p_arrival_time - config.pre_p_time
     noise_end_t = noise_start_t + config.noise_win_length
 
@@ -100,7 +100,7 @@ def _has_low_sn_ratio(config, trace):
                      pad=True, fill_value=0)
 
     # S window for s/n ratio
-    s_arrival_time = trace.stats.starttime + trace.stats.arrivals['S'][1]
+    s_arrival_time = trace.stats.arrivals['S'][1]
     s_start_t = s_arrival_time - config.pre_s_time
     s_end_t = s_start_t + config.noise_win_length
     trace_cutS = trace.copy()

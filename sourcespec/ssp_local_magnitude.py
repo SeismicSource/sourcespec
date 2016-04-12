@@ -24,7 +24,7 @@ from obspy.signal.filter import envelope
 from obspy.signal.invsim import estimate_magnitude
 from obspy.signal.util import smooth
 from obspy.signal.trigger import trigger_onset
-from sourcespec.ssp_util import wave_arrival, cosine_taper
+from sourcespec.ssp_util import cosine_taper
 
 
 def local_magnitude(config, st, deconvolve=False):
@@ -41,11 +41,6 @@ def local_magnitude(config, st, deconvolve=False):
             trace.stats.hypo_dist
         except (KeyError, AttributeError):
             continue
-
-        # S time window
-        #s_arrival_time = wave_arrival(trace, config.vs, 'S')
-        #t1 = s_arrival_time - config.pre_s_time
-        #t2 = t1 + config.s_win_length
 
         trace_env = copy(trace)
         trace_env.stats = deepcopy(trace.stats)
@@ -80,8 +75,7 @@ def local_magnitude(config, st, deconvolve=False):
         trace_signal = copy(trace_env)
         trace_signal.stats = deepcopy(trace_env.stats)
 
-        p_arrival_time = wave_arrival(trace, config.vp, 'P',
-                                      config.p_arrival_tolerance)
+        p_arrival_time = trace.stats.arrivals['P'][1]
         t1 = p_arrival_time - config.pre_mag_time
         t2 = p_arrival_time + config.pre_mag_time
 

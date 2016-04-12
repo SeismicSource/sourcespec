@@ -49,15 +49,14 @@ def wave_arrival(trace, vel, phase, tolerance=4.):
     or if the pick is too different from the theoretical arrival.
     """
     try:
-        arrival_secs = trace.stats.arrivals[phase][1]
-        return trace.stats.starttime + arrival_secs
+        arrival = trace.stats.arrivals[phase][1]
+        return arrival
     except KeyError:
         pass
     if trace.stats.hypo.origin_time is not None:
         theo_pick_time =\
             trace.stats.hypo.origin_time + trace.stats.hypo_dist / vel
-        trace.stats.arrivals[phase] = \
-            (phase + 'theo', theo_pick_time - trace.stats.starttime)
+        trace.stats.arrivals[phase] = (phase + 'theo', theo_pick_time)
     else:
         theo_pick_time = None
     for pick in trace.stats.picks:
@@ -71,8 +70,7 @@ def wave_arrival(trace, vel, phase, tolerance=4.):
                     logging.warning(msg)
                     continue
             logging.info('%s: found %s pick' % (trace.id, phase))
-            trace.stats.arrivals[phase] = \
-                (phase, pick.time - trace.stats.starttime)
+            trace.stats.arrivals[phase] = (phase, pick.time)
             return pick.time
     logging.info('%s: using theoretical %s pick' % (trace.id, phase))
     return theo_pick_time

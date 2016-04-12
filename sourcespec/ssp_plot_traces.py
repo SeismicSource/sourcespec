@@ -104,13 +104,9 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
             for trace in st_sel.traces:
                 if trace.stats.channel[0:2] != code:
                     continue
-                starttime = trace.stats.starttime
-                t1 = (starttime + trace.stats.arrivals['P'][1] -
-                      config.pre_p_time)
-                t2 = (starttime + trace.stats.arrivals['S'][1] +
-                      3 * config.s_win_length)
+                t1 = (trace.stats.arrivals['P'][1] - config.pre_p_time)
+                t2 = (trace.stats.arrivals['S'][1] + 3 * config.s_win_length)
                 trace.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
-                delta_stime = trace.stats.starttime - starttime
                 orientation = trace.stats.channel[-1]
                 if orientation in ['Z', '1']:
                     color = 'purple'
@@ -126,17 +122,16 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
                 ax.text(0.05, trace.data.mean(), trace.stats.channel,
                         color=color, transform=trans3, zorder=22)
                 for phase in 'P', 'S':
-                    arrival = trace.stats.arrivals[phase][1] - delta_stime
+                    a = trace.stats.arrivals[phase][1] - trace.stats.starttime
                     text = trace.stats.arrivals[phase][0]
-                    ax.axvline(arrival, linestyle='--',
+                    ax.axvline(a, linestyle='--',
                                color=phase_label_color[phase], zorder=21)
-                    ax.text(arrival, phase_label_pos[phase],
-                            text, transform=trans,
+                    ax.text(a, phase_label_pos[phase], text, transform=trans,
                             zorder=22)
                 # Noise window
                 try:
-                    N1 = trace.stats.arrivals['N1'][1] - delta_stime
-                    N2 = trace.stats.arrivals['N2'][1] - delta_stime
+                    N1 = trace.stats.arrivals['N1'][1] - trace.stats.starttime
+                    N2 = trace.stats.arrivals['N2'][1] - trace.stats.starttime
                     rect = patches.Rectangle((N1, 0), width=N2-N1, height=1,
                                              transform=trans, color='#eeeeee',
                                              alpha=0.5, zorder=-1)
@@ -144,8 +139,8 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
                 except KeyError:
                     pass
                 # S-wave window
-                S1 = trace.stats.arrivals['S1'][1] - delta_stime
-                S2 = trace.stats.arrivals['S2'][1] - delta_stime
+                S1 = trace.stats.arrivals['S1'][1] - trace.stats.starttime
+                S2 = trace.stats.arrivals['S2'][1] - trace.stats.starttime
                 rect = patches.Rectangle((S1, 0), width=S2-S1, height=1,
                                          transform=trans, color='yellow',
                                          alpha=0.5, zorder=-1)

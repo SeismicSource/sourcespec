@@ -25,7 +25,7 @@ from obspy.core import Stream
 from obspy.signal.konnoohmachismoothing import konno_ohmachi_smoothing
 from sourcespec import spectrum
 from sourcespec.ssp_setup import dprint
-from sourcespec.ssp_util import wave_arrival, cosine_taper, moment_to_mag
+from sourcespec.ssp_util import cosine_taper, moment_to_mag
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
 
@@ -119,12 +119,11 @@ def build_spectra(config, st, noise_weight=False):
         stats = trace.stats
 
         # S time window
-        s_arrival_time = wave_arrival(trace, config.vs, 'S',
-                                      config.s_arrival_tolerance)
+        s_arrival_time = trace.stats.arrivals['S'][1]
         t1 = s_arrival_time - config.pre_s_time
         t2 = t1 + config.s_win_length
-        trace.stats.arrivals['S1'] = ('S1', t1 - trace.stats.starttime)
-        trace.stats.arrivals['S2'] = ('S2', t2 - trace.stats.starttime)
+        trace.stats.arrivals['S1'] = ('S1', t1)
+        trace.stats.arrivals['S2'] = ('S2', t2)
 
         trace_cut = trace.copy()
 
@@ -154,14 +153,11 @@ def build_spectra(config, st, noise_weight=False):
 
         if noise_weight:
             # Noise time window for weighting function:
-            p_arrival_time = wave_arrival(trace, config.vp, 'P',
-                                          config.p_arrival_tolerance)
+            p_arrival_time = trace.stats.arrivals['P'][1]
             noise_start_t = p_arrival_time - config.pre_p_time
             noise_end_t = noise_start_t + config.s_win_length
-            trace.stats.arrivals['N1'] = \
-                ('N1', noise_start_t - trace.stats.starttime)
-            trace.stats.arrivals['N2'] = \
-                ('N2', noise_end_t - trace.stats.starttime)
+            trace.stats.arrivals['N1'] = ('N1', noise_start_t)
+            trace.stats.arrivals['N2'] = ('N2', noise_end_t)
             # We inherit the same processing of trace_cut
             # (which, despite its name, has not been yet cut!)
             trace_noise = trace_cut.copy()
