@@ -40,6 +40,8 @@ def filter_trace(config, trace):
         bp_freqmin = config.bp_freqmin_broadb
         bp_freqmax = config.bp_freqmax_broadb
     else:
+        logging.warning('%s: Unknown instrument type: %s: '
+                        'skipping trace' % (trace.id, instrtype))
         raise ValueError
     # remove the mean...
     trace.detrend(type='constant')
@@ -55,7 +57,7 @@ def filter_trace(config, trace):
     trace.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
 
 
-def _has_not_signal(config, trace):
+def _check_signal_level(config, trace):
     rms2 = np.power(trace.data, 2).sum()
     rms = np.sqrt(rms2)
     rms_min = config.rmsmin
@@ -63,12 +65,10 @@ def _has_not_signal(config, trace):
         logging.warning('%s %s: Trace RMS smaller than %g: '
                         'skipping trace' % (trace.id, trace.stats.instrtype,
                                             rms_min))
-        return True
-    else:
-        return False
+        raise RuntimeError
 
 
-def _is_clipped(config, trace):
+def _check_clipping(config, trace):
     clip_tolerance = config.clip_tolerance
     clip_max = (1 - clip_tolerance/100.) * trace.data.max()
     clip_min = (1 - clip_tolerance/100.) * trace.data.min()
@@ -80,36 +80,29 @@ def _is_clipped(config, trace):
                         'with %.2f%% tolerance: skipping trace' %
                         (trace.id, trace.stats.instrtype, clip_nmax,
                          clip_tolerance))
-        return True
-    else:
-        return False
+        raise RuntimeError
 
 
-def _has_low_sn_ratio(config, trace):
+def _check_sn_ratio(config, trace):
     # noise time window for s/n ratio
-    p_arrival_time = trace.stats.arrivals['P'][1]
-    noise_start_t = p_arrival_time - config.pre_p_time
-    noise_end_t = noise_start_t + config.noise_win_length
-
     trace_noise = trace.copy()
     # remove the mean...
     trace_noise.detrend(type='constant')
     # ...and the linear trend...
     trace_noise.detrend(type='linear')
-    trace_noise.trim(starttime=noise_start_t, endtime=noise_end_t,
-                     pad=True, fill_value=0)
+    t1 = trace_noise.stats.arrivals['NN1'][1]
+    t2 = trace_noise.stats.arrivals['NN2'][1]
+    trace_noise.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
 
     # S window for s/n ratio
-    s_arrival_time = trace.stats.arrivals['S'][1]
-    s_start_t = s_arrival_time - config.pre_s_time
-    s_end_t = s_start_t + config.noise_win_length
     trace_cutS = trace.copy()
     # remove the mean...
     trace_cutS.detrend(type='constant')
     # ...and the linear trend...
     trace_cutS.detrend(type='linear')
-    trace_cutS.trim(starttime=s_start_t, endtime=s_end_t,
-                    pad=True, fill_value=0)
+    t1 = trace_cutS.stats.arrivals['SN1'][1]
+    t2 = trace_cutS.stats.arrivals['SN2'][1]
+    trace_cutS.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
 
     rmsnoise2 = np.power(trace_noise.data, 2).sum()
     rmsnoise = np.sqrt(rmsnoise2)
@@ -124,43 +117,23 @@ def _has_low_sn_ratio(config, trace):
     if sn_ratio < snratio_min:
         logging.warning('%s %s: S/N smaller than %g: skipping trace' %
                         (trace.id, trace.stats.instrtype, snratio_min))
-        return True
-    else:
-        return False
+        raise RuntimeError
 
 
 def _process_trace(config, trace):
-    # compute hypocentral distance
-    if hypo_dist(trace) is None:
-        logging.warning('%s: Unable to compute hypocentral distance: '
-                        'skipping trace' % trace.id)
-        return None
-
-    # retrieve arrival times
-    p_arrival_time = wave_arrival(trace, config.vp, 'P',
-                                  config.p_arrival_tolerance)
-    s_arrival_time = wave_arrival(trace, config.vs, 'S',
-                                  config.s_arrival_tolerance)
-    if (p_arrival_time is None or s_arrival_time is None):
-        logging.warning('%s: Unable to get arrival times: '
-                        'skipping trace' % trace.id)
-        return None
-
     # copy trace for manipulation
     trace_process = trace.copy()
 
     comp = trace_process.stats.channel
     instrtype = trace_process.stats.instrtype
     if config.ignore_vertical and comp[-1] in ['Z', '1']:
-        return None
+        raise RuntimeError
 
     # check if the trace has (significant) signal
-    if _has_not_signal(config, trace_process):
-        return None
+    _check_signal_level(config, trace_process)
 
     # check if trace is clipped
-    if _is_clipped(config, trace_process):
-        return None
+    _check_clipping(config, trace_process)
 
     # Remove instrument response
     if remove_instr_response(trace_process,
@@ -168,36 +141,78 @@ def _process_trace(config, trace):
                              config.pre_filt) is None:
         logging.warning('%s %s: Unable to remove instrument response: '
                         'skipping trace' % (trace_process.id, instrtype))
-        return None
+        raise RuntimeError
 
-    try:
-        filter_trace(config, trace_process)
-    except ValueError:
-        logging.warning('%s: Unknown instrument type: %s: '
-                        'skipping trace' % (trace_process.id, instrtype))
-        return None
+    filter_trace(config, trace_process)
 
     # Check if the trace has significant signal to noise ratio
-    if _has_low_sn_ratio(config, trace_process):
-        return None
+    _check_sn_ratio(config, trace_process)
 
     return trace_process
 
 
-def process_traces(config, st):
-    """Remove mean, deconvolve and ignore unwanted components."""
+def _merge_stream(st):
     # Since the count value is generally huge, we need to demean twice
     # to take into account for the rounding error
     st.detrend(type='constant')
     st.detrend(type='constant')
     # Merge stream to remove gaps and overlaps
     # Gaps are detected later as zero values
-    st.merge(fill_value=0)
-    out_st = Stream()
+    return st.merge(fill_value=0)[0]
+
+
+def _add_hypo_dist_and_arrivals(config, st):
     for trace in st:
-        trace_process = _process_trace(config, trace)
-        if trace_process is not None:
+        # compute hypocentral distance
+        if hypo_dist(trace) is None:
+            logging.warning('%s: Unable to compute hypocentral distance: '
+                            'skipping trace' % trace.id)
+            raise RuntimeError
+
+        p_arrival_time = wave_arrival(trace, config.vp, 'P',
+                                      config.p_arrival_tolerance)
+        s_arrival_time = wave_arrival(trace, config.vs, 'S',
+                                      config.s_arrival_tolerance)
+        if p_arrival_time is None or s_arrival_time is None:
+            logging.warning('%s: Unable to get arrival times: '
+                            'skipping trace' % trace.id)
+            raise RuntimeError
+        # Signal window for spectral analysis
+        t1 = s_arrival_time - config.pre_s_time
+        t2 = t1 + config.s_win_length
+        trace.stats.arrivals['S1'] = ('S1', t1)
+        trace.stats.arrivals['S2'] = ('S2', t2)
+        # Noise window for spectral analysis
+        t1 = p_arrival_time - config.pre_p_time
+        t2 = t1 + config.s_win_length
+        trace.stats.arrivals['N1'] = ('N1', t1)
+        trace.stats.arrivals['N2'] = ('N2', t2)
+        # Signal window for S/N ratio
+        t1 = s_arrival_time - config.pre_s_time
+        t2 = t1 + config.noise_win_length
+        trace.stats.arrivals['SN1'] = ('SN1', t1)
+        trace.stats.arrivals['SN2'] = ('SN2', t2)
+        # Noise window for S/N ratio
+        t1 = p_arrival_time - config.pre_p_time
+        t2 = t1 + config.noise_win_length
+        trace.stats.arrivals['NN1'] = ('NN1', t1)
+        trace.stats.arrivals['NN2'] = ('NN2', t2)
+
+
+def process_traces(config, st):
+    """Remove mean, deconvolve and ignore unwanted components."""
+    out_st = Stream()
+    for id in set(tr.id for tr in st):
+        # We still use a stream, since the trace can have
+        # gaps or overlaps
+        st_sel = st.select(id=id)
+        try:
+            _add_hypo_dist_and_arrivals(config, st_sel)
+            trace = _merge_stream(st_sel)
+            trace_process = _process_trace(config, trace)
             out_st.append(trace_process)
+        except (ValueError, RuntimeError):
+            continue
 
     if len(out_st) == 0:
         logging.error('No traces left! Exiting.')

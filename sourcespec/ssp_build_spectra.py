@@ -101,28 +101,23 @@ def _compute_h(spec_st, code):
     return spec_h
 
 
-def _is_enough_data(config, trace):
+def _check_data_len(config, trace):
     traceId = trace.get_id()
 
-    s_arrival_time = trace.stats.arrivals['S'][1]
-    t1 = s_arrival_time - config.pre_s_time
-    t2 = t1 + config.s_win_length
-    trace.stats.arrivals['S1'] = ('S1', t1)
-    trace.stats.arrivals['S2'] = ('S2', t2)
-
     trace_cut = trace.copy()
+    t1 = trace.stats.arrivals['S1'][1]
+    t2 = trace.stats.arrivals['S2'][1]
     trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     npts = len(trace_cut.data)
     if npts == 0:
         logging.warning('%s: No data for the selected cut interval: '
                         'skipping trace' % traceId)
-        return False
+        raise RuntimeError
     nzeros = len(np.where(trace_cut.data == 0)[0])
     if nzeros > npts/4:
         logging.warning('%s: Too many gaps for the selected cut '
                         'interval: skipping trace' % traceId)
-        return False
-    return True
+        raise RuntimeError
 
 
 def _cut_signal_noise(config, trace):
@@ -141,11 +136,8 @@ def _cut_signal_noise(config, trace):
     t2 = trace.stats.arrivals['S2'][1]
     trace_signal.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     # Noise time window for weighting function:
-    p_arrival_time = trace.stats.arrivals['P'][1]
-    noise_t1 = p_arrival_time - config.pre_p_time
-    noise_t2 = noise_t1 + config.s_win_length
-    trace.stats.arrivals['N1'] = ('N1', noise_t1)
-    trace.stats.arrivals['N2'] = ('N2', noise_t2)
+    noise_t1 = trace.stats.arrivals['N1'][1]
+    noise_t2 = trace.stats.arrivals['N2'][1]
     trace_noise.trim(starttime=noise_t1, endtime=noise_t2, pad=True,
                      fill_value=0)
     # ...taper...
@@ -165,15 +157,14 @@ def _cut_signal_noise(config, trace):
     return trace_signal, trace_noise
 
 
-def _is_noise_low(trace_signal, trace_noise):
+def _check_noise_level(trace_signal, trace_noise):
     traceId = trace_signal.get_id()
     trace_signal_rms = ((trace_signal.data**2).sum())**0.5
     trace_noise_rms = ((trace_noise.data**2).sum())**0.5
     if trace_noise_rms/trace_signal_rms < 1e-6:
         logging.warning('%s: Noise level is too low or zero: '
                         'ignoring for noise weighting' % traceId)
-        return True
-    return False
+        raise RuntimeError
 
 
 def _build_spectrum(config, trace):
@@ -277,10 +268,11 @@ def build_spectra(config, st, noise_weight=False):
     specnoise_st = Stream()
 
     for trace in st:
-        if not _is_enough_data(config, trace):
-            continue
-        trace_signal, trace_noise = _cut_signal_noise(config, trace)
-        if _is_noise_low(trace_signal, trace_noise):
+        try:
+            _check_data_len(config, trace)
+            trace_signal, trace_noise = _cut_signal_noise(config, trace)
+            _check_noise_level(trace_signal, trace_noise)
+        except (ValueError, RuntimeError):
             continue
         spec = _build_spectrum(config, trace_signal)
         spec_st.append(spec)
@@ -302,8 +294,6 @@ def build_spectra(config, st, noise_weight=False):
     if noise_weight:
         for specnoise in specnoise_st:
             specnoise.data_mag = moment_to_mag(specnoise.data)
-
-    if noise_weight:
         return spec_st, specnoise_st, weight_st
     else:
         return spec_st
