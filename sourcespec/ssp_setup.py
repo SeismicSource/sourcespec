@@ -74,13 +74,13 @@ def _parse_values(value_str):
     if value_str[0] == 'i':
         value_str = value_str[1:]
         val_min, val_max, val_step =\
-            map(float, value_str.rstrip(',').split(','))
+            tuple(map(float, value_str.rstrip(',').split(',')))
         # we add a small number to val_max to make sure
         # it is included by np.arange()
         output = tuple(np.arange(val_min, val_max + 1e-9, val_step))
     else:
         try:
-            output = map(float, value_str.rstrip(',').split(','))
+            output = tuple(map(float, value_str.rstrip(',').split(',')))
         except ValueError:
             sys.stderr.write('ERROR: Invalid value: %s\n' % value_str)
             sys.exit(1)
