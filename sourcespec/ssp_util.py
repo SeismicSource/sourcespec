@@ -16,6 +16,8 @@ import warnings
 import math
 import numpy as np
 from obspy.signal.invsim import cosine_taper as _cos_taper
+from obspy.taup import TauPyModel
+model = TauPyModel(model="iasp91")
 
 
 # MISC ------------------------------------------------------------------------
@@ -41,7 +43,7 @@ def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
     return amp_minmax, freq_minmax
 
 
-def wave_arrival(trace, vel, phase, tolerance=4.):
+def wave_arrival(trace, phase, tolerance=4., vel=None):
     """
     Obtain arrival time for a given phase and a given trace.
 
@@ -54,8 +56,17 @@ def wave_arrival(trace, vel, phase, tolerance=4.):
     except KeyError:
         pass
     if trace.stats.hypo.origin_time is not None:
-        theo_pick_time =\
-            trace.stats.hypo.origin_time + trace.stats.hypo_dist / vel
+        if vel is not None:
+            theo_pick_time =\
+                trace.stats.hypo.origin_time + trace.stats.hypo_dist / vel
+        else:
+            phase_list = [phase.lower(), phase]
+            arrivals = model.get_travel_times(
+                        source_depth_in_km=trace.stats.hypo.depth,
+                        distance_in_degree=trace.stats.gcarc,
+                        phase_list=phase_list)
+            times = [a.time for a in arrivals]
+            theo_pick_time = trace.stats.hypo.origin_time + min(times)
         trace.stats.arrivals[phase] = (phase + 'theo', theo_pick_time)
     else:
         theo_pick_time = None

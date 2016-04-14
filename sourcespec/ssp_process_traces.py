@@ -200,10 +200,10 @@ def _add_hypo_dist_and_arrivals(config, st):
                             'skipping trace' % trace.id)
             raise RuntimeError
 
-        p_arrival_time = wave_arrival(trace, config.vp, 'P',
-                                      config.p_arrival_tolerance)
-        s_arrival_time = wave_arrival(trace, config.vs, 'S',
-                                      config.s_arrival_tolerance)
+        p_arrival_time = wave_arrival(trace, 'P', config.p_arrival_tolerance,
+                                      config.vp_tt)
+        s_arrival_time = wave_arrival(trace, 'S', config.s_arrival_tolerance,
+                                      config.vs_tt)
         if p_arrival_time is None or s_arrival_time is None:
             logging.warning('%s: Unable to get arrival times: '
                             'skipping trace' % trace.id)

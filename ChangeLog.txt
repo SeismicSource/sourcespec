@@ -17,6 +17,7 @@ v0.9 - 2016-XX-XX
 	- Traces are filtered before computing S/N ratio
 	- Trace clipping detection
 	- Traces are always plotted, even if no inversion is performed
+  - Use by default a global model for theoretical travel time calculation
   - New options for P and S arrival time tolerance
 	- Use json format for traceid correction file
 	- Code cleaning and optimization:
