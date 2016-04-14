@@ -54,11 +54,11 @@ class Bounds():
         self.spec = spec
         self.hd = spec.stats.hypo_dist
         self.ini_values = initial_values
-        self.Mw_min, self.Mw_max = self._nan_to_none(config.Mw_min_max)
-        self.fc_min, self.fc_max = self._nan_to_none(config.fc_min_max)
-        if any(math.isnan(x) for x in config.Qo_min_max):
+        self.Mw_min, self.Mw_max = self._check_minmax(config.Mw_min_max)
+        self.fc_min, self.fc_max = self._check_minmax(config.fc_min_max)
+        if config.Qo_min_max is None:
             self.t_star_min, self.t_star_max =\
-                self._nan_to_none(config.t_star_min_max)
+                self._check_minmax(config.t_star_min_max)
         else:
             self.t_star_min, self.t_star_max = self._Qo_to_t_star()
         self.bounds = ((self.Mw_min, self.Mw_max),
@@ -75,9 +75,11 @@ class Bounds():
             tuple(round(x, 4) if x is not None else x for x in self.bounds[2])
         return s
 
-    def _nan_to_none(self, val):
-        ret = [None if math.isnan(x) else x for x in tuple(val)]
-        return tuple(ret)
+    def _check_minmax(self, minmax):
+        if minmax is None:
+            return (None, None)
+        else:
+            return minmax
 
     def _Qo_to_t_star(self):
         t_star_max, t_star_min =\
@@ -155,7 +157,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             # We try to retrieve fc_0 from the configuration...
             fc_0 = config.fc_0
             # ...if it is not available, we calculate it
-            if math.isnan(fc_0):
+            if fc_0 is None:
                 log_m0 = math.log10(mag_to_moment(Mw_0))
                 log_beta = math.log10(vs_m)
                 log_bsd = math.log10(config.bsd)

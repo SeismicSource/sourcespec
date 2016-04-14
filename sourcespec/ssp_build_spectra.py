@@ -143,7 +143,7 @@ def _cut_signal_noise(config, trace):
     # ...taper...
     cosine_taper(trace_signal.data, width=config.taper_halfwidth)
     cosine_taper(trace_noise.data, width=config.taper_halfwidth)
-    if not math.isnan(config.spectral_win_length):
+    if config.spectral_win_length is not None:
         # ...and zero pad to spectral_win_length
         trace_signal.trim(starttime=t1,
                           endtime=t1+config.spectral_win_length,

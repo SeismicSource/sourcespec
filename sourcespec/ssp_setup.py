@@ -311,6 +311,11 @@ def configure(progname='source_spec'):
         sys.stderr.write('Unable to read "%s": %s\n' % (config_file, err))
         sys.exit(1)
 
+    # Set to None all the 'None' strings
+    for key, value in config_obj.dict().iteritems():
+        if value == 'None':
+            config_obj[key] = None
+
     val = Validator()
     test = config_obj.validate(val)
     if isinstance(test, dict):
@@ -322,11 +327,6 @@ def configure(progname='source_spec'):
     if not test:
         sys.stderr.write('No configuration value present!\n')
         sys.exit(1)
-
-    # Set to None all the 'None' strings
-    for key, value in config_obj.dict().iteritems():
-        if value == 'None':
-            config_obj[key] = None
 
     # Create a Config object
     config = Config(config_obj.dict().copy())
