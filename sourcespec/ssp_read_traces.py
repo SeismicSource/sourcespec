@@ -375,6 +375,9 @@ def _read_dataless(path):
         return inv
     except TypeError:
         pass
+    except IOError as err:
+        logging.error(err)
+        ssp_exit()
 
     logging.info('Reading dataless...')
     dataless = dict()
