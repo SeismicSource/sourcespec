@@ -152,12 +152,43 @@ def _process_trace(config, trace):
 
 
 def _merge_stream(st):
+    traceid = st[0].id
+    # First, compute gap/overlap statistics for the whole trace.
+    gaps_olaps = st.get_gaps()
+    gaps = [g for g in gaps_olaps if g[6] >= 0]
+    overlaps = [g for g in gaps_olaps if g[6] < 0]
+    gap_duration = sum(g[6] for g in gaps)
+    if gap_duration > 0:
+        logging.info('%s: trace has %.3f seconds of gaps.' %
+                     (traceid, gap_duration))
+    overlap_duration = -1 * sum(g[6] for g in overlaps)
+    if overlap_duration > 0:
+        logging.info('%s: trace has %.3f seconds of overlaps.' %
+                     (traceid, overlap_duration))
+    # Then, compute the same statisics for the S-wave window.
+    st_cut = st.copy()
+    t1 = st[0].stats.arrivals['S1'][1]
+    t2 = st[0].stats.arrivals['S2'][1]
+    st_cut.trim(starttime=t1, endtime=t2)
+    gaps_olaps = st_cut.get_gaps()
+    gaps = [g for g in gaps_olaps if g[6] >= 0]
+    overlaps = [g for g in gaps_olaps if g[6] < 0]
+    duration = st_cut[-1].stats.endtime - st_cut[0].stats.starttime
+    gap_duration = sum(g[6] for g in gaps)
+    if gap_duration > duration/4:
+        logging.warning('%s: Too many gaps for the selected cut '
+                        'interval: skipping trace' % traceid)
+        raise RuntimeError
+    overlap_duration = -1 * sum(g[6] for g in overlaps)
+    if overlap_duration > 0:
+        logging.info('%s: S-wave window has %.3f seconds of overlaps.' %
+                     (traceid, overlap_duration))
+    # Finally, demean and remove gaps and overlaps.
     # Since the count value is generally huge, we need to demean twice
     # to take into account for the rounding error
     st.detrend(type='constant')
     st.detrend(type='constant')
     # Merge stream to remove gaps and overlaps
-    # Gaps are detected later as zero values
     return st.merge(fill_value=0)[0]
 
 
