@@ -471,10 +471,15 @@ def _parse_qml(qml_file, evid=None):
     else:
         # just take the first event
         ev = cat[0]
-    hypo.origin_time = ev.origins[0].time
-    hypo.latitude = ev.origins[0].latitude
-    hypo.longitude = ev.origins[0].longitude
-    hypo.depth = ev.origins[0].depth/1000.
+    # See if there is a preferred origin...
+    origin = ev.preferred_origin()
+    # ...or just use the first one
+    if origin is None:
+        origin = ev.origins[0]
+    hypo.origin_time = origin.time
+    hypo.latitude = origin.latitude
+    hypo.longitude = origin.longitude
+    hypo.depth = origin.depth/1000.
     hypo.evid = ev.resource_id.id.split('/')[-1]
 
     picks = []
