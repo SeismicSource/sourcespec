@@ -258,6 +258,7 @@ def _parse_args(progname):
             oplist
         # Add unused options (required by source_spec):
         options.correction = False
+        options.outdir = '.'
 
     return options
 
@@ -301,6 +302,17 @@ def _write_sample_config(configspec, progname):
         print('Sample config file written to: ' + configfile)
 
 
+def _write_config(config_obj, progname, outdir):
+    if progname != 'source_spec':
+        return
+    configfile = progname + '.conf'
+    configfile = os.path.join(outdir, configfile)
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    with open(configfile, 'w') as fp:
+        config_obj.write(fp)
+
+
 def configure(progname='source_spec'):
     """
     Parse command line arguments and read config file.
@@ -341,6 +353,8 @@ def configure(progname='source_spec'):
         sys.stderr.write('No configuration value present!\n')
         sys.exit(1)
 
+    _write_config(config_obj, progname, options.outdir)
+
     # Create a Config object
     config = Config(config_obj.dict().copy())
     DEBUG = config.DEBUG
@@ -349,6 +363,14 @@ def configure(progname='source_spec'):
     config.options = options
 
     return config
+
+
+def save_config(config, evid):
+    """Save config file to output dir."""
+    # Actually, it renames the file already existing.
+    src = os.path.join(config.options.outdir, 'source_spec.conf')
+    dst = os.path.join(config.options.outdir, '%s.ssp.conf' % evid)
+    os.rename(src, dst)
 
 
 def setup_logging(config, basename=None):

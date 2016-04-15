@@ -17,7 +17,7 @@ Earthquake source parameters from inversion of S-wave spectra.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from sourcespec.ssp_setup import (configure, setup_logging,
+from sourcespec.ssp_setup import (configure, setup_logging, save_config,
                                   init_plotting, ssp_exit)
 from sourcespec.ssp_read_traces import read_traces
 from sourcespec.ssp_process_traces import process_traces
@@ -42,6 +42,9 @@ def main():
     #TODO: improve this:
     evid = st.traces[0].stats.hypo.evid
     setup_logging(config, evid)
+
+    # Save config to out dir
+    save_config(config, evid)
 
     # Deconvolve, filter, cut traces:
     proc_st = process_traces(config, st)
