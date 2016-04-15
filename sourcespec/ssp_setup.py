@@ -63,6 +63,19 @@ plotter = None
 ssp_exit_called = False
 
 
+def _check_obspy_version():
+    # check ObsPy version
+    import obspy
+    MIN_OBSPY_VERSION = (1, 0, 0)
+    OBSPY_VERSION_STR = obspy.__version__
+    OBSPY_VERSION = tuple(map(int, OBSPY_VERSION_STR.split('.')[:3]))
+    if OBSPY_VERSION < MIN_OBSPY_VERSION:
+        msg = 'ERROR: ObsPy >= %s.%s.%s is required.' % MIN_OBSPY_VERSION
+        msg += ' You have version: %s\n' % OBSPY_VERSION_STR
+        sys.stderr.write(msg)
+        sys.exit(1)
+
+
 def dprint(string):
     """Print debug information."""
     if DEBUG:
@@ -274,9 +287,18 @@ def _write_sample_config(configspec, progname):
     c.initial_comment = configspec.initial_comment
     c.comments = configspec.comments
     configfile = progname + '.conf'
-    with open(configfile, 'w') as fp:
-        c.write(fp)
-    print('Sample config file written to: ' + configfile)
+    write_file = True
+    if os.path.exists(configfile):
+        ans = raw_input('%s already exists. '
+                        'Do you want to overwrite it? [y/N] ' % configfile)
+        if ans in ['y', 'Y']:
+            write_file = True
+        else:
+            write_file = False
+    if write_file:
+        with open(configfile, 'w') as fp:
+            c.write(fp)
+        print('Sample config file written to: ' + configfile)
 
 
 def configure(progname='source_spec'):
@@ -285,16 +307,7 @@ def configure(progname='source_spec'):
 
     Returns a ``Config`` object.
     """
-    # check ObsPy version
-    import obspy
-    MIN_OBSPY_VERSION = (1, 0, 0)
-    OBSPY_VERSION_STR = obspy.__version__
-    OBSPY_VERSION = tuple(map(int, OBSPY_VERSION_STR.split('.')[:3]))
-    if OBSPY_VERSION < MIN_OBSPY_VERSION:
-        msg = 'ERROR: ObsPy >= %s.%s.%s is required.' % MIN_OBSPY_VERSION
-        msg += ' You have version: %s\n' % OBSPY_VERSION_STR
-        sys.stderr.write(msg)
-        sys.exit(1)
+    _check_obspy_version()
 
     global DEBUG
     options = _parse_args(progname)
