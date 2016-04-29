@@ -83,7 +83,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     # Plot!
     axes = []
     plotn = 0
-    for station in sorted(set(x.stats.station for x in spec_st.traces)):
+    stalist = [s[1] for s in sorted(set((t.stats.hypo_dist, t.stats.station)
+                                        for t in spec_st))]
+    for station in stalist:
         spec_st_sel = spec_st.select(station=station)
         # 'code' is band+instrument code
         for code in sorted(set(x.stats.channel[0:2] for x in spec_st_sel)):
@@ -180,7 +182,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     else:
                         text_y = 0.1
                         color = 'black'
-                    ax_text = '%s %s' % (spec.id[0:-1], spec.stats.instrtype)
+                    ax_text = '%s %s %.1f km' % (spec.id[0:-1],
+                                                 spec.stats.instrtype,
+                                                 spec.stats.hypo_dist)
                     ax.text(0.05, text_y, ax_text,
                             horizontalalignment='left',
                             verticalalignment='bottom',

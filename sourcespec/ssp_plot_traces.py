@@ -63,7 +63,9 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
     # Plot!
     axes = []
     plotn = 0
-    for station in sorted(set(x.stats.station for x in st.traces)):
+    stalist = [s[1] for s in sorted(set((t.stats.hypo_dist, t.stats.station)
+                                        for t in st))]
+    for station in stalist:
         st_sel = st.select(station=station)
         # 'code' is band+instrument code
         for code in sorted(set(x.stats.channel[0:2] for x in st_sel)):
@@ -149,8 +151,10 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
                 if not ax_text:
                     text_y = 0.1
                     color = 'black'
-                    ax.text(0.05, text_y, '%s %s' %
-                            (trace.stats.station, trace.stats.instrtype),
+                    ax_text = '%s %s %.1f km' % (trace.id[0:-4],
+                                                 trace.stats.instrtype,
+                                                 trace.stats.hypo_dist)
+                    ax.text(0.05, text_y, ax_text,
                             horizontalalignment='left',
                             verticalalignment='bottom',
                             color=color,
