@@ -68,12 +68,14 @@ def main():
     spectral_residuals(config, spec_st, evid, sourcepar_mean)
 
     # Plotting
+    nspec = len(set(s.id[:-1] for s in spec_st))
+    ncols = 4 if nspec > 6 else 3
     plot_spectra(config, spec_st, specnoise_st, plottype='regular',
-                 async_plotter=plotter)
+                 ncols=ncols, async_plotter=plotter)
     plot_spectra(config, specnoise_st, plottype='noise',
-                 async_plotter=plotter)
+                 ncols=ncols, async_plotter=plotter)
     plot_spectra(config, weight_st, plottype='weight',
-                 async_plotter=plotter)
+                 ncols=ncols, async_plotter=plotter)
 
     ssp_exit()
 
