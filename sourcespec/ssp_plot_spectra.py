@@ -47,6 +47,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     else:
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_agg import FigureCanvasAgg
+    import matplotlib.patheffects as PathEffects
 
     # Determine the number of plots and axes min and max:
     nplots = 0
@@ -79,6 +80,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     else:
         fig = Figure(figsize=figsize)
     fig.subplots_adjust(hspace=.025, wspace=.03)
+
+    # Path effect to contour text in white
+    path_effects = [PathEffects.withStroke(linewidth=3, foreground="white")]
 
     # Plot!
     axes = []
@@ -189,9 +193,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                             horizontalalignment='left',
                             verticalalignment='bottom',
                             color=color,
-                            #backgroundcolor=(1, 1, 1, 0.7),
                             transform=ax.transAxes,
-                            zorder=50)
+                            zorder=50,
+                            path_effects=path_effects)
                     ax_text = True
 
                 if orientation == 'S':
@@ -209,12 +213,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                             (Mo, Mw, fc, t_star),
                             horizontalalignment='left',
                             verticalalignment='bottom',
-                            #FIXME: does not work in interactive plots
-                            #backgroundcolor = (1, 1, 1, 0.7),
                             color=color,
                             fontsize=9,
                             transform=ax.transAxes,
-                            zorder=50)
+                            zorder=50,
+                            path_effects=path_effects)
 
     # Show the x-labels only for the last row
     for ax, ax2 in axes[-ncols:]:

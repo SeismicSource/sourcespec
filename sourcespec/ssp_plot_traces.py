@@ -37,6 +37,7 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
         from matplotlib.backends.backend_agg import FigureCanvasAgg
     import matplotlib.transforms as transforms
     import matplotlib.patches as patches
+    import matplotlib.patheffects as PathEffects
 
     # Determine the number of plots and axes min and max:
     nplots = 0
@@ -59,6 +60,9 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
     else:
         fig = Figure(figsize=figsize)
     fig.subplots_adjust(hspace=.1, wspace=.15)
+
+    # Path effect to contour text in white
+    path_effects = [PathEffects.withStroke(linewidth=3, foreground="white")]
 
     # Plot!
     axes = []
@@ -122,14 +126,15 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
                         trace.data = (trace.data / tmax + 1) * tmax
                 ax.plot(trace.times(), trace, color=color, zorder=20)
                 ax.text(0.05, trace.data.mean(), trace.stats.channel,
-                        color=color, transform=trans3, zorder=22)
+                        color=color, transform=trans3, zorder=22,
+                        path_effects=path_effects)
                 for phase in 'P', 'S':
                     a = trace.stats.arrivals[phase][1] - trace.stats.starttime
                     text = trace.stats.arrivals[phase][0]
                     ax.axvline(a, linestyle='--',
                                color=phase_label_color[phase], zorder=21)
                     ax.text(a, phase_label_pos[phase], text, transform=trans,
-                            zorder=22)
+                            zorder=22, path_effects=path_effects)
                 # Noise window
                 try:
                     N1 = trace.stats.arrivals['N1'][1] - trace.stats.starttime
@@ -158,9 +163,9 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
                             horizontalalignment='left',
                             verticalalignment='bottom',
                             color=color,
-                            #backgroundcolor=(1, 1, 1, 0.7),
                             transform=ax.transAxes,
-                            zorder=50)
+                            zorder=50,
+                            path_effects=path_effects)
                     ax_text = True
 
     # Show the x-labels only for the last row
