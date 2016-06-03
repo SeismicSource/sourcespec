@@ -92,7 +92,7 @@ class Bounds():
             (self.ini_values.Mw_0 is None or
              self.ini_values.Mw_0 <= self.Mw_min or
              self.ini_values.Mw_0 >= self.Mw_max)):
-            Mw_0 = (self.Mw_max - self.Mw_min) / 2.
+            Mw_0 = (self.Mw_max + self.Mw_min) / 2.
             logging.warning('%s %s: initial Mw value: %s outside '
                             'bounds. Using bound average: %s' %
                             (self.spec.id, self.spec.stats.instrtype,
@@ -103,7 +103,7 @@ class Bounds():
             (self.ini_values.fc_0 is None or
              self.ini_values.fc_0 <= self.fc_min or
              self.ini_values.fc_0 >= self.fc_max)):
-            fc_0 = (self.fc_max - self.fc_min) / 2.
+            fc_0 = (self.fc_max + self.fc_min) / 2.
             logging.warning('%s %s: initial fc value: %s outside '
                             'bounds. Using bound average: %s' %
                             (self.spec.id, self.spec.stats.instrtype,
@@ -114,7 +114,7 @@ class Bounds():
             (self.ini_values.t_star_0 is None or
              self.ini_values.t_star_0 <= self.t_star_min or
              self.ini_values.t_star_0 >= self.t_star_max)):
-            t_star_0 = (self.t_star_max - self.t_star_min) / 2.
+            t_star_0 = (self.t_star_max + self.t_star_min) / 2.
             logging.warning('%s %s: initial t_star value: %s outside '
                             'bounds. Using bound average: %s' %
                             (self.spec.id, self.spec.stats.instrtype,
