@@ -194,10 +194,16 @@ def _merge_stream(st):
 
 def _add_hypo_dist_and_arrivals(config, st):
     for trace in st:
-        # compute hypocentral distance
         if hypo_dist(trace) is None:
             logging.warning('%s: Unable to compute hypocentral distance: '
                             'skipping trace' % trace.id)
+            raise RuntimeError
+        if config.max_epi_dist is not None and \
+                trace.stats.epi_dist > config.max_epi_dist:
+            logging.warning('%s: Epicentral distance (%.1f) '
+                            'larger than max_epi_dist (%.1f): skipping trace' %
+                            (trace.id, trace.stats.epi_dist,
+                             config.max_epi_dist))
             raise RuntimeError
 
         p_arrival_time = wave_arrival(trace, 'P', config.p_arrival_tolerance,
