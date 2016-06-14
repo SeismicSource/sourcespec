@@ -20,15 +20,31 @@ import os
 import logging
 import sqlite3
 import numpy as np
-from scipy.stats.mstats import gmean
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import mag_to_moment
 
 
-def gstd(array):
-    mean = gmean(array)
-    arg = np.power(np.log(array/mean), 2).sum() / len(array)
-    return np.exp(np.sqrt(arg))
+def logmean(array):
+    """Logarithmic mean of a numpy array."""
+    return 10**(np.log10(array).mean())
+
+
+def log_error(array):
+    """Asymmetric logarithmic error bars."""
+    log_array = np.log10(array)
+    mean = log_array.mean()
+    std = log_array.std()
+    minus = logmean(array) - 10**(mean-std)
+    plus = 10**(mean+std) - logmean(array)
+    return minus, plus
+
+
+def format_exponent(value, reference):
+    """Format `value` to a string having the same exponent than `reference`."""
+    # get the exponent of reference value
+    xp = int(np.log10(reference))
+    # format value to print it with the same exponent of reference value
+    return '%5.3fe%+03d' % (value/10**xp, xp)
 
 
 def write_output(config, evid, sourcepar):
@@ -97,15 +113,20 @@ def write_output(config, evid, sourcepar):
 
         # Mo (N.m)
         Mo_array = mag_to_moment(Mw_array)
-        Mo_mean = gmean(Mo_array)
-        Mo_std = gstd(Mo_array)
-        parfile.write('Mo: %.3e +/- %.3e N.m\n' % (Mo_mean, Mo_std))
+        Mo_mean = logmean(Mo_array)
+        Mo_minus, Mo_plus = log_error(Mo_array)
+        # format Mo_plus and Mo_minus to print it with the same exponent of Mo
+        Mo_plus_str = format_exponent(Mo_plus, Mo_mean)
+        Mo_minus_str = format_exponent(Mo_minus, Mo_mean)
+        parfile.write('Mo: %.3e /- %s /+ %s N.m\n' %
+                      (Mo_mean, Mo_minus_str, Mo_plus_str))
 
         # fc , hertz
         fc_array = np.array([x['fc'] for x in sourcepar.values()])
-        fc_mean = fc_array.mean()
-        fc_std = fc_array.std()
-        parfile.write('fc: %.3f +/- %.3f Hz\n' % (fc_mean, fc_std))
+        fc_mean = logmean(fc_array)
+        fc_minus, fc_plus = log_error(fc_array)
+        parfile.write('fc: %.3f /- %.3f /+ %.3f Hz\n' %
+                      (fc_mean, fc_minus, fc_plus))
 
         # t_star
         t_star_array = np.array([x['t_star'] for x in sourcepar.values()])
@@ -116,16 +137,19 @@ def write_output(config, evid, sourcepar):
         # ra, radius (meters)
         vs_m = config.vs*1000
         ra_array = 0.37 * vs_m / fc_array
-        ra_mean = ra_array.mean()
-        ra_std = ra_array.std()
-        parfile.write('Source radius: %.3f +/- %.3f m\n' % (ra_mean, ra_std))
+        ra_mean = logmean(ra_array)
+        ra_minus, ra_plus = log_error(ra_array)
+        parfile.write('Source radius: %.3f /- %.3f /+ %.3f m\n' %
+                      (ra_mean, ra_minus, ra_plus))
 
         # bsd, Brune stress drop (MPa)
         bsd_array = 0.4375 * Mo_array / np.power(ra_array, 3) * 1e-6
         bsd_mean = bsd_array.mean()
         bsd_std = bsd_array.std()
-        parfile.write('Brune stress drop: %.3e +/- %.3e MPa\n' %
-                      (bsd_mean, bsd_std))
+        # format Mo_std to print it with the same exponent of Mo
+        bsd_std_str = format_exponent(bsd_std, bsd_mean)
+        parfile.write('Brune stress drop: %.3e +/- %s MPa\n' %
+                      (bsd_mean, bsd_std_str))
 
         # Ml
         Ml_array = np.array([x['Ml'] for x in sourcepar.values()])
