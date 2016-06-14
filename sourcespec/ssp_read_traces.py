@@ -215,7 +215,7 @@ def _add_instrtype(trace):
     if instr_code in ['H', 'L']:
         if band_code in ['E', 'S']:
             instrtype = 'shortp'
-        if band_code == 'H':
+        if band_code in ['B', 'H']:
             instrtype = 'broadb'
     if instr_code in ['N', 'L']:
         instrtype = 'acc'
