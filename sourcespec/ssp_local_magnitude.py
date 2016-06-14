@@ -75,7 +75,11 @@ def local_magnitude(config, st, deconvolve=False):
         trace_signal = copy(trace_env)
         trace_signal.stats = deepcopy(trace_env.stats)
 
-        p_arrival_time = trace.stats.arrivals['P'][1]
+        # Skip traces which do not have arrivals
+        try:
+            p_arrival_time = trace.stats.arrivals['P'][1]
+        except:
+            continue
         t1 = p_arrival_time - config.pre_mag_time
         t2 = p_arrival_time + config.pre_mag_time
 
