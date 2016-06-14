@@ -179,6 +179,7 @@ def _build_spectrum(config, trace):
     spec.stats.coords = stats.coords
     spec.stats.hypo = stats.hypo
     spec.stats.hypo_dist = stats.hypo_dist
+    spec.stats.epi_dist = stats.epi_dist
 
     # Integrate in frequency domain, if no time-domain
     # integration has been performed

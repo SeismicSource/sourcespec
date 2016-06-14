@@ -156,9 +156,10 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
                 if not ax_text:
                     text_y = 0.1
                     color = 'black'
-                    ax_text = '%s %s %.1f km' % (trace.id[0:-4],
+                    ax_text = '%s %s %.1f km (%.1f km)' % (trace.id[0:-4],
                                                  trace.stats.instrtype,
-                                                 trace.stats.hypo_dist)
+                                                 trace.stats.hypo_dist,
+                                                 trace.stats.epi_dist)
                     ax.text(0.05, text_y, ax_text,
                             horizontalalignment='left',
                             verticalalignment='bottom',

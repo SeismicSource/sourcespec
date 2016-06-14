@@ -181,14 +181,15 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                                   color=color, zorder=20)
 
                 if not ax_text:
+                    ax_text = '%s %s' % (spec.id[0:-1], spec.stats.instrtype)
                     if stack_plots:
                         text_y = 0.05 + (plotn-1) * 0.05
                     else:
                         text_y = 0.1
                         color = 'black'
-                    ax_text = '%s %s %.1f km' % (spec.id[0:-1],
-                                                 spec.stats.instrtype,
-                                                 spec.stats.hypo_dist)
+                        ax_text += '\n%.1f km (%.1f km)' % (
+                                                        spec.stats.hypo_dist,
+                                                        spec.stats.epi_dist)
                     ax.text(0.05, text_y, ax_text,
                             horizontalalignment='left',
                             verticalalignment='bottom',

@@ -224,6 +224,7 @@ def hypo_dist(trace):
         return None
     epi_dist, gcarc = calc_dist(stla, stlo, evla, evlo)
     hypo_dist = math.sqrt(epi_dist**2 + (stel+evdp)**2)
+    trace.stats.epi_dist = epi_dist
     trace.stats.hypo_dist = hypo_dist
     trace.stats.gcarc = gcarc
     return hypo_dist
