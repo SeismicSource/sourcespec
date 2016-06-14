@@ -170,6 +170,10 @@ def _merge_stream(st):
     t1 = st[0].stats.arrivals['S1'][1]
     t2 = st[0].stats.arrivals['S2'][1]
     st_cut.trim(starttime=t1, endtime=t2)
+    if not st_cut:
+        logging.warning('%s: Not enough signal for the selected cut '
+                        'interval: skipping trace' % traceid)
+        raise RuntimeError
     gaps_olaps = st_cut.get_gaps()
     gaps = [g for g in gaps_olaps if g[6] >= 0]
     overlaps = [g for g in gaps_olaps if g[6] < 0]
