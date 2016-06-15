@@ -90,7 +90,7 @@ def write_output(config, evid, sourcepar):
         # Compute and write average source parameters
         parfile.write('*** Average source parameters ***\n')
         # Mw
-        Mw_array = np.array(list(x['Mw'] for x in sourcepar.values()))
+        Mw_array = np.array([x['Mw'] for x in sourcepar.values()])
         Mw_mean = Mw_array.mean()
         Mw_std = Mw_array.std()
         parfile.write('Mw: %.2f +/- %.2f\n' % (Mw_mean, Mw_std))
@@ -102,13 +102,13 @@ def write_output(config, evid, sourcepar):
         parfile.write('Mo: %.3e +/- %.3e N.m\n' % (Mo_mean, Mo_std))
 
         # fc , hertz
-        fc_array = np.array(list(x['fc'] for x in sourcepar.values()))
+        fc_array = np.array([x['fc'] for x in sourcepar.values()])
         fc_mean = fc_array.mean()
         fc_std = fc_array.std()
         parfile.write('fc: %.3f +/- %.3f Hz\n' % (fc_mean, fc_std))
 
         # t_star
-        t_star_array = np.array(list(x['t_star'] for x in sourcepar.values()))
+        t_star_array = np.array([x['t_star'] for x in sourcepar.values()])
         t_star_mean = t_star_array.mean()
         t_star_std = t_star_array.std()
         parfile.write('t_star: %.3f +/- %.3f Hz\n' % (t_star_mean, t_star_std))
@@ -128,7 +128,7 @@ def write_output(config, evid, sourcepar):
                       (bsd_mean, bsd_std))
 
         # Ml
-        Ml_array = np.array(list(x['Ml'] for x in sourcepar.values()))
+        Ml_array = np.array([x['Ml'] for x in sourcepar.values()])
         Ml_mean = Ml_array.mean()
         Ml_std = Ml_array.std()
         parfile.write('Ml: %.3f +/- %.3f \n' % (Ml_mean, Ml_std))
