@@ -260,26 +260,35 @@ def _add_hypocenter(trace, hypo):
             evlo = trace.stats.sac.evlo
             evdp = trace.stats.sac.evdp
             begin = trace.stats.sac.b
-
-            hypo = AttribDict()
-            try:
-                tori = trace.stats.sac.o
-                hypo.origin_time = trace.stats.starttime + tori - begin
-                hypo.evid = hypo.origin_time.strftime("%Y%m%d_%H%M%S")
-            except AttributeError:
-                hypo.origin_time = None
-                # round to the nearest minute
-                _time = UTCDateTime(trace.stats.starttime)
-                if _time.second >= 30:
-                    _time.minute += 1
-                _time.second = 0
-                _time.microsecond = 0
-                hypo.evid = _time.strftime("%Y%m%d_%H%M%S")
-            hypo.latitude = evla
-            hypo.longitude = evlo
-            hypo.depth = evdp
         except AttributeError:
             return
+
+        try:
+            tori = trace.stats.sac.o
+            origin_time = trace.stats.starttime + tori - begin
+        except AttributeError:
+            origin_time = None
+
+        if origin_time is not None:
+            # make a copy of origin_time and round it to the nearest second
+            _evid_time = UTCDateTime(origin_time)
+            if _evid_time.microsecond >= 500000:
+                _evid_time.second += 1
+            _evid_time.microsecond = 0
+        else:
+            # make a copy of starttime and round it to the nearest minute
+            _evid_time = UTCDateTime(trace.stats.starttime)
+            if _evid_time.second >= 30:
+                _evid_time.minute += 1
+            _evid_time.second = 0
+            _evid_time.microsecond = 0
+
+        hypo = AttribDict()
+        hypo.origin_time = origin_time
+        hypo.evid = _evid_time.strftime('%Y%m%d_%H%M%S')
+        hypo.latitude = evla
+        hypo.longitude = evlo
+        hypo.depth = evdp
     trace.stats.hypo = hypo
 
 
