@@ -24,22 +24,22 @@ from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import mag_to_moment
 
 
-def logmean(array):
+def _logmean(array):
     """Logarithmic mean of a numpy array."""
     return 10**(np.log10(array).mean())
 
 
-def log_error(array):
+def _log_error(array):
     """Asymmetric logarithmic error bars."""
     log_array = np.log10(array)
     mean = log_array.mean()
     std = log_array.std()
-    minus = logmean(array) - 10**(mean-std)
-    plus = 10**(mean+std) - logmean(array)
+    minus = _logmean(array) - 10**(mean-std)
+    plus = 10**(mean+std) - _logmean(array)
     return minus, plus
 
 
-def format_exponent(value, reference):
+def _format_exponent(value, reference):
     """Format `value` to a string having the same exponent than `reference`."""
     # get the exponent of reference value
     xp = int(np.log10(reference))
@@ -47,45 +47,8 @@ def format_exponent(value, reference):
     return '%5.3fe%+03d' % (value/10**xp, xp)
 
 
-def write_output(config, evid, sourcepar):
-    """Write results to a plain text file and/or to a SQLite database file."""
-    if len(sourcepar) == 0:
-        logging.info('No source parameter calculated')
-        ssp_exit()
-
-    # Optional: write station source parameters to SQLite database
-    try:
-        database_file = config.database_file
-    except KeyError:
-        database_file = None
-
-    if database_file:
-        # Open SQLite database
-        conn = sqlite3.connect(database_file)
-        c = conn.cursor()
-
-        # Init database schema
-        c.execute('create table if not exists Stations '
-                  '(stid, evid, Mo, Mw, fc, t_star, dist, azimuth);')
-
-        # Write station source parameters to database
-        for statId in sorted(sourcepar.keys()):
-            par = sourcepar[statId]
-
-            # Remove existing line, if present
-            t = (statId, evid)
-            c.execute('delete from Stations where stid=? and evid=?;', t)
-
-            # Insert new line
-            t = (statId, evid, par['Mo'], par['Mw'], par['fc'], par['t_star'],
-                 par['hyp_dist'], par['az'])
-            c.execute('insert into Stations values(?, ?, ?, ?, ?, ?, ?, ?);',
-                      t)
-
-        # Commit changes
-        conn.commit()
-
-    # Write station source parameters to file
+def _write_parfile(config, evid, sourcepar):
+    """Write station source parameters to file."""
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
     parfilename = os.path.join(config.options.outdir, '%s.ssp.out' % evid)
@@ -93,6 +56,8 @@ def write_output(config, evid, sourcepar):
     with open(parfilename, 'w') as parfile:
         parfile.write('*** Station source parameters ***\n')
         for statId in sorted(sourcepar.keys()):
+            if statId in ['means', 'errors']:
+                continue
             par = sourcepar[statId]
             parfile.write('%s\t' % statId)
             for key in par:
@@ -101,105 +66,193 @@ def write_output(config, evid, sourcepar):
                 else:
                     parfile.write('  %s %6.3f ' % (key, par[key]))
             parfile.write('\n')
-        parfile.write('\n')
 
-        # Compute and write average source parameters
-        parfile.write('*** Average source parameters ***\n')
-        # Mw
-        Mw_array = np.array([x['Mw'] for x in sourcepar.values()])
-        Mw_mean = Mw_array.mean()
-        Mw_std = Mw_array.std()
-        parfile.write('Mw: %.2f +/- %.2f\n' % (Mw_mean, Mw_std))
+        means = sourcepar['means']
+        errors = sourcepar['errors']
 
-        # Mo (N.m)
-        Mo_array = mag_to_moment(Mw_array)
-        Mo_mean = logmean(Mo_array)
-        Mo_minus, Mo_plus = log_error(Mo_array)
+        parfile.write('\n*** Average source parameters ***\n')
+
+        Mw_mean = means['Mw']
+        Mw_error = errors['Mw']
+        parfile.write('Mw: %.2f +/- %.2f\n' % (Mw_mean, Mw_error))
+
+        Mo_mean = means['Mo']
+        Mo_minus, Mo_plus = errors['Mo']
         # format Mo_plus and Mo_minus to print it with the same exponent of Mo
-        Mo_plus_str = format_exponent(Mo_plus, Mo_mean)
-        Mo_minus_str = format_exponent(Mo_minus, Mo_mean)
+        Mo_minus_str = _format_exponent(Mo_minus, Mo_mean)
+        Mo_plus_str = _format_exponent(Mo_plus, Mo_mean)
         parfile.write('Mo: %.3e /- %s /+ %s N.m\n' %
                       (Mo_mean, Mo_minus_str, Mo_plus_str))
 
-        # fc , hertz
-        fc_array = np.array([x['fc'] for x in sourcepar.values()])
-        fc_mean = logmean(fc_array)
-        fc_minus, fc_plus = log_error(fc_array)
+        fc_mean = means['fc']
+        fc_minus, fc_plus = errors['fc']
         parfile.write('fc: %.3f /- %.3f /+ %.3f Hz\n' %
                       (fc_mean, fc_minus, fc_plus))
 
-        # t_star
-        t_star_array = np.array([x['t_star'] for x in sourcepar.values()])
-        t_star_mean = t_star_array.mean()
-        t_star_std = t_star_array.std()
-        parfile.write('t_star: %.3f +/- %.3f Hz\n' % (t_star_mean, t_star_std))
+        t_star_mean = means['t_star']
+        t_star_error = errors['t_star']
+        parfile.write('t_star: %.3f +/- %.3f Hz\n' %
+                      (t_star_mean, t_star_error))
 
-        # ra, radius (meters)
-        vs_m = config.vs*1000
-        ra_array = 0.37 * vs_m / fc_array
-        ra_mean = logmean(ra_array)
-        ra_minus, ra_plus = log_error(ra_array)
+        ra_mean = means['ra']
+        ra_minus, ra_plus = errors['ra']
         parfile.write('Source radius: %.3f /- %.3f /+ %.3f m\n' %
                       (ra_mean, ra_minus, ra_plus))
 
-        # bsd, Brune stress drop (MPa)
-        bsd_array = 0.4375 * Mo_array / np.power(ra_array, 3) * 1e-6
-        bsd_mean = bsd_array.mean()
-        bsd_std = bsd_array.std()
+        bsd_mean = means['bsd']
+        bsd_error = errors['bsd']
         # format Mo_std to print it with the same exponent of Mo
-        bsd_std_str = format_exponent(bsd_std, bsd_mean)
+        bsd_error_str = _format_exponent(bsd_error, bsd_mean)
         parfile.write('Brune stress drop: %.3e +/- %s MPa\n' %
-                      (bsd_mean, bsd_std_str))
+                      (bsd_mean, bsd_error_str))
 
-        # Ml
-        Ml_array = np.array([x['Ml'] for x in sourcepar.values()])
-        Ml_mean = Ml_array.mean()
-        Ml_std = Ml_array.std()
-        parfile.write('Ml: %.3f +/- %.3f \n' % (Ml_mean, Ml_std))
+        Ml_mean = means['Ml']
+        Ml_error = errors['Ml']
+        parfile.write('Ml: %.3f +/- %.3f \n' % (Ml_mean, Ml_error))
 
     logging.info('Output written to file: ' + parfilename)
 
-    # Write average source parameters to database
-    if database_file:
-        c.execute('create table if not exists Events '
-                  '(evid, Mw_mean, Mo_mean, fc_mean, t_star_mean, '
-                  'ra_mean, bsd_mean, Ml_mean);')
-        t = (evid, Mw_mean)
-        c.execute('delete from Events where evid=? and Mw_mean=?;', t)
-        t = (evid, Mw_mean, Mo_mean, fc_mean, t_star_mean, ra_mean,
-             bsd_mean, Ml_mean)
-        c.execute('insert into Events values(?, ?, ?, ?, ?, ?, ?, ?);', t)
-        # Commit changes and close database
-        conn.commit()
-        conn.close()
-        logging.info('Output written to database: ' + database_file)
 
-    if config.options.hypo_file:
-        with open(config.options.hypo_file, 'r') as fp:
+def _write_db(config, evid, sourcepar):
+    try:
+        database_file = config.database_file
+    except KeyError:
+        database_file = None
+    if not database_file:
+        return
+
+    # Open SQLite database
+    conn = sqlite3.connect(database_file)
+    c = conn.cursor()
+
+    # Init database schema
+    c.execute('create table if not exists Stations '
+              '(stid, evid, Mo, Mw, fc, t_star, dist, azimuth);')
+
+    # Write station source parameters to database
+    for statId in sorted(sourcepar.keys()):
+        if statId in ['means', 'errors']:
+            continue
+        par = sourcepar[statId]
+
+        # Remove existing line, if present
+        t = (statId, evid)
+        c.execute('delete from Stations where stid=? and evid=?;', t)
+
+        # Insert new line
+        t = (statId, evid, par['Mo'], par['Mw'], par['fc'], par['t_star'],
+             par['hyp_dist'], par['az'])
+        c.execute('insert into Stations values(?, ?, ?, ?, ?, ?, ?, ?);', t)
+
+    # Commit changes
+    conn.commit()
+
+    means = sourcepar['means']
+
+    c.execute('create table if not exists Events '
+              '(evid, Mo_mean, Mw_mean, fc_mean, t_star_mean, '
+              'ra_mean, bsd_mean, Ml_mean);')
+    t = (evid, means['Mw'])
+    c.execute('delete from Events where evid=? and Mw_mean=?;', t)
+    t = (evid, means['Mo'], means['Mw'], means['fc'], means['t_star'],
+         means['ra'], means['bsd'], means['Ml'])
+    c.execute('insert into Events values(?, ?, ?, ?, ?, ?, ?, ?);', t)
+    # Commit changes and close database
+    conn.commit()
+    conn.close()
+    logging.info('Output written to database: ' + database_file)
+
+
+def _write_hypo(config, evid, sourcepar):
+    if not config.options.hypo_file:
+        return
+    with open(config.options.hypo_file, 'r') as fp:
+        line = fp.readline()
+        # Check if first 10 digits of the line contain characters
+        if any(c.isalpha() for c in line[0:10]):
+            line1 = line
             line = fp.readline()
-            # Check if first 10 digits of the line contain characters
-            if any(c.isalpha() for c in line[0:10]):
-                line1 = line
-                line = fp.readline()
-            line = list(line)
-        mw_str = '%03.2f' % Mw_mean
-        ml_str = '%03.2f' % Ml_mean
-        for i in range(0, 4):
-            line[49+i] = mw_str[0+i]
-            #line[45+i] = mw_str[0+i]
-            line[69+i] = ml_str[0+i]
-        outline = ''.join(line)
-        hypo_file_out = os.path.join(config.options.outdir, '%s.ssp.h' % evid)
-        with open(hypo_file_out, 'w') as fp:
-            try:
-                fp.write(line1)
-            except:
-                pass
-            fp.write(outline)
-        logging.info('Hypo file written to: ' + hypo_file_out)
+        line = list(line)
+
+    means = sourcepar['means']
+    mw_str = '%03.2f' % means['Mw']
+    ml_str = '%03.2f' % means['Ml']
+    for i in range(0, 4):
+        line[49+i] = mw_str[0+i]
+        #line[45+i] = mw_str[0+i]
+        line[69+i] = ml_str[0+i]
+    outline = ''.join(line)
+    hypo_file_out = os.path.join(config.options.outdir, '%s.ssp.h' % evid)
+    with open(hypo_file_out, 'w') as fp:
+        try:
+            fp.write(line1)
+        except:
+            pass
+        fp.write(outline)
+    logging.info('Hypo file written to: ' + hypo_file_out)
+
+
+def write_output(config, evid, sourcepar):
+    """Write results to a plain text file and/or to a SQLite database file."""
+    if len(sourcepar) == 0:
+        logging.info('No source parameter calculated')
+        ssp_exit()
+
+    means = dict()
+    errors = dict()
+
+    # Compute average source parameters
+    # Mw
+    Mw_array = np.array([x['Mw'] for x in sourcepar.values()])
+    means['Mw'] = Mw_array.mean()
+    errors['Mw'] = Mw_array.std()
+
+    # Mo (N.m)
+    Mo_array = mag_to_moment(Mw_array)
+    means['Mo'] = _logmean(Mo_array)
+    errors['Mo'] = _log_error(Mo_array)
+
+    # fc , hertz
+    fc_array = np.array([x['fc'] for x in sourcepar.values()])
+    means['fc'] = _logmean(fc_array)
+    errors['fc'] = _log_error(fc_array)
+
+    # t_star
+    t_star_array = np.array([x['t_star'] for x in sourcepar.values()])
+    means['t_star'] = t_star_array.mean()
+    errors['t_star'] = t_star_array.std()
+
+    # ra, radius (meters)
+    vs_m = config.vs*1000
+    ra_array = 0.37 * vs_m / fc_array
+    means['ra'] = _logmean(ra_array)
+    errors['ra'] = _log_error(ra_array)
+
+    # bsd, Brune stress drop (MPa)
+    bsd_array = 0.4375 * Mo_array / np.power(ra_array, 3) * 1e-6
+    means['bsd'] = bsd_array.mean()
+    errors['bsd'] = bsd_array.std()
+
+    # Ml
+    Ml_array = np.array([x['Ml'] for x in sourcepar.values()])
+    means['Ml'] = Ml_array.mean()
+    errors['Ml'] = Ml_array.std()
+
+    sourcepar['means'] = means
+    sourcepar['errors'] = errors
+
+    # Write to parfile
+    _write_parfile(config, evid, sourcepar)
+
+    # Write to database, if requested
+    _write_db(config, evid, sourcepar)
+
+    # Write to hypo file, if requested
+    _write_hypo(config, evid, sourcepar)
 
     params_name = ('Mw', 'fc', 't_star')
-    sourcepar_mean = dict(zip(params_name, [Mw_mean, fc_mean, t_star_mean]))
+    sourcepar_mean = dict(zip(params_name,
+                              [means['Mw'], means['fc'], means['t_star']]))
     logging.info('params_mean: %s' % (sourcepar_mean))
 
     return sourcepar_mean
