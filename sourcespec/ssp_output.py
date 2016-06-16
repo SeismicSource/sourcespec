@@ -20,7 +20,14 @@ import sqlite3
 import numpy as np
 from datetime import datetime
 from tzlocal import get_localzone
+from socket import gethostname
+from getpass import getuser
+from obspy import read_events, UTCDateTime
+from obspy.core.event import (Magnitude, StationMagnitude,
+                              StationMagnitudeContribution, ResourceIdentifier,
+                              WaveformStreamID, QuantityError, CreationInfo)
 from sourcespec.ssp_setup import ssp_exit
+from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -397,6 +404,80 @@ def _write_hypo(config, sourcepar):
     logger.info('Hypo file written to: ' + hypo_file_out)
 
 
+def _write_qml(config, sourcepar):
+    if not config.options.qml_file:
+        return
+    qml_file = config.options.qml_file
+    cat = read_events(qml_file)
+    evid = config.hypo.evid
+    try:
+        ev = [e for e in cat if evid in str(e.resource_id)][0]
+    except Exception:
+        logging.warning('Unable to find evid "%s" in QuakeML file. '
+                        'QuakeML output will not be written.' % evid)
+
+    origin = ev.preferred_origin()
+    if origin is None:
+        origin = ev.origins[0]
+    origin_id = origin.resource_id
+    origin_id_strip = origin_id.id.split('/')[-1]
+    origin_id_strip = origin_id_strip.replace('Origin', '')
+
+    means = sourcepar.means
+    errors = sourcepar.errors
+    stationpar = sourcepar.station_parameters
+
+    mag = Magnitude()
+    _id = 'smi:scs/0.7/Magnitude' + origin_id_strip + '.sourcespec'
+    mag.resource_id = ResourceIdentifier(id=_id)
+    ssp_version = get_versions()['version']
+    _id = 'smi:scs/0.7/sourcespec/' + ssp_version
+    mag.method_id = ResourceIdentifier(id=_id)
+    mag.origin_id = origin_id
+    mag.magnitude_type = 'Mw'
+    mag.mag = means['Mw']
+    mag_err = QuantityError()
+    mag_err.uncertainty = errors['Mw']
+    mag_err.confidence_level = 68.2
+    mag.mag_errors = mag_err
+    mag.station_count = len([_s for _s in stationpar.keys()])
+    mag.evaluation_mode = 'automatic'
+    cr_info = CreationInfo()
+    cr_info.agency_id = config.agency_id
+    if config.author is None:
+        author = '%s@%s' % (getuser(), gethostname())
+    else:
+        author = config.author
+    cr_info.author = author
+    cr_info.creation_time = UTCDateTime()
+    mag.creation_info = cr_info
+    # Station magnitudes
+    for statId in sorted(stationpar.keys()):
+        par = stationpar[statId]
+        st_mag = StationMagnitude()
+        seed_id = statId.split()[0]
+        _id = mag.resource_id.id + '#' + seed_id
+        st_mag.resource_id = ResourceIdentifier(id=_id)
+        st_mag.origin_id = origin_id
+        st_mag.mag = par['Mw']
+        st_mag.station_magnitude_type = 'Mw'
+        st_mag.method_id = mag.method_id
+        st_mag.creation_info = cr_info
+        st_mag.waveform_id = WaveformStreamID(seed_string=seed_id)
+        ev.station_magnitudes.append(st_mag)
+        st_mag_contrib = StationMagnitudeContribution()
+        st_mag_contrib.station_magnitude_id = st_mag.resource_id
+        mag.station_magnitude_contributions.append(st_mag_contrib)
+    ev.magnitudes.append(mag)
+
+    # if config.set_preferred_magnitude:
+    #     ev.preferred_magnitude_id = mag.resource_id.id
+
+    qml_file_out = os.path.join(config.options.outdir, evid + '.xml')
+    ev.write(qml_file_out, format='QUAKEML')
+    logging.info('QuakeML file written to: ' + qml_file_out)
+
+
 def write_output(config, sourcepar):
     """Write results to a plain text file and/or to a SQLite database file."""
     # Write to parfile
@@ -405,3 +486,5 @@ def write_output(config, sourcepar):
     _write_db(config, sourcepar)
     # Write to hypo file, if requested
     _write_hypo(config, sourcepar)
+    # Write to quakeml file, if requested
+    _write_qml(config, sourcepar)
