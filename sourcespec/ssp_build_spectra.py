@@ -241,10 +241,16 @@ def _build_H_and_weight(spec_st, specnoise_st):
                 weight = spec_h.copy()
                 if specnoise_h is not None:
                     weight.data /= specnoise_h.data
+                    # The inversion is done in magnitude units,
+                    # so let's take log10 of weight
+                    weight.data = np.log10(weight.data)
+                    # Make sure weight is positive,
+                    # i.e put weight to zero when S/N < 1
+                    weight.data[weight.data < 0] = 0
                     # smooth weight
                     weight.data = konno_ohmachi_smoothing(weight.data,
                                                           weight.get_freq(),
-                                                          10, normalize=True)
+                                                          20, normalize=True)
                     # normalization
                     weight.data /= np.max(weight.data)
                 else:
