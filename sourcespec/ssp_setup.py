@@ -298,7 +298,7 @@ def _write_sample_config(configspec, progname):
         else:
             write_file = False
     if write_file:
-        with open(configfile, 'w') as fp:
+        with open(configfile, 'wb') as fp:
             c.write(fp)
         print('Sample config file written to: ' + configfile)
 
@@ -310,7 +310,7 @@ def _write_config(config_obj, progname, outdir):
     configfile = os.path.join(outdir, configfile)
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    with open(configfile, 'w') as fp:
+    with open(configfile, 'wb') as fp:
         config_obj.write(fp)
 
 
