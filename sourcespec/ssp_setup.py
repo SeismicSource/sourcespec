@@ -291,6 +291,11 @@ def _write_sample_config(configspec, progname):
     configfile = progname + '.conf'
     write_file = True
     if os.path.exists(configfile):
+        # Workaround for python2/3 compatibility
+        try:
+            raw_input = input
+        except NameError:
+            pass
         ans = raw_input('%s already exists. '
                         'Do you want to overwrite it? [y/N] ' % configfile)
         if ans in ['y', 'Y']:
