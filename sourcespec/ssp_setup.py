@@ -16,6 +16,7 @@ Setup functions for sourcespec.
 """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from future.utils import iteritems
 
 import sys
 import os
@@ -337,7 +338,7 @@ def configure(progname='source_spec'):
         sys.exit(1)
 
     # Set to None all the 'None' strings
-    for key, value in config_obj.dict().iteritems():
+    for key, value in iteritems(config_obj.dict()):
         if value == 'None':
             config_obj[key] = None
 
