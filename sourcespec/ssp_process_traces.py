@@ -72,8 +72,8 @@ def _check_clipping(config, trace):
     clip_tolerance = config.clip_tolerance
     clip_max = (1 - clip_tolerance/100.) * trace.data.max()
     clip_min = (1 - clip_tolerance/100.) * trace.data.min()
-    nclips = (trace.data > clip_max).sum()
-    nclips += (trace.data < clip_min).sum()
+    nclips = (trace.data >= clip_max).sum()
+    nclips += (trace.data <= clip_min).sum()
     clip_nmax = config.clip_nmax
     if float(nclips)/trace.stats.npts > clip_nmax/100.:
         logging.warning('%s %s: Trace is clipped for more than %.2f%% '
