@@ -206,6 +206,32 @@ def _build_spectrum(config, trace):
     return spec_cut
 
 
+def _build_weight(spec, specnoise):
+    weight = spec.copy()
+    if specnoise is not None:
+        weight.data /= specnoise.data
+        # save data to raw_data
+        weight.data_raw = weight.data.copy()
+        # The inversion is done in magnitude units,
+        # so let's take log10 of weight
+        weight.data = np.log10(weight.data)
+        # Make sure weight is positive,
+        # i.e put weight to zero when S/N < 1
+        weight.data[weight.data < 0] = 0
+        # smooth weight
+        weight.data = konno_ohmachi_smoothing(weight.data,
+                                              weight.get_freq(),
+                                              20, normalize=True)
+        # normalization
+        weight.data /= np.max(weight.data)
+    else:
+        logging.warning('%s: No available noise window: '
+                        % weight.get_id()[0:-1] +
+                        'a uniform weight will be applied')
+        weight.data = np.ones(len(spec.data))
+    return weight
+
+
 def _build_H_and_weight(spec_st, specnoise_st):
     """
     Add to spec_st the "H" component.
@@ -238,26 +264,7 @@ def _build_H_and_weight(spec_st, specnoise_st):
 
                 # Weighting function is the ratio between "H" components
                 # of signal and noise
-                weight = spec_h.copy()
-                if specnoise_h is not None:
-                    weight.data /= specnoise_h.data
-                    # The inversion is done in magnitude units,
-                    # so let's take log10 of weight
-                    weight.data = np.log10(weight.data)
-                    # Make sure weight is positive,
-                    # i.e put weight to zero when S/N < 1
-                    weight.data[weight.data < 0] = 0
-                    # smooth weight
-                    weight.data = konno_ohmachi_smoothing(weight.data,
-                                                          weight.get_freq(),
-                                                          20, normalize=True)
-                    # normalization
-                    weight.data /= np.max(weight.data)
-                else:
-                    logging.warning('%s: No available noise window: '
-                                    % weight.get_id()[0:-1] +
-                                    'a uniform weight will be applied')
-                    weight.data = np.ones(len(spec_h.data))
+                weight = _build_weight(spec_h, specnoise_h)
                 weight_st.append(weight)
     return weight_st
 
@@ -282,10 +289,22 @@ def build_spectra(config, st, noise_weight=False):
         except (ValueError, RuntimeError):
             continue
         spec = _build_spectrum(config, trace_signal)
-        spec_st.append(spec)
         if noise_weight:
             specnoise = _build_spectrum(config, trace_noise)
+            weight = _build_weight(spec, specnoise)
+            spectral_ssn =\
+                weight.data_raw.sum()/len(weight.data_raw)
+            logging.info('%s: spectral S/N: %.2f' %
+                         (spec.get_id(), spectral_ssn))
+            if config.spectral_sn_min:
+                ssnmin = config.spectral_sn_min
+                if spectral_ssn < ssnmin:
+                    logging.warning('%s: spectral S/N smaller than %.2f: '
+                                    'skipping spectrum' %
+                                    (spec.get_id(), ssnmin))
+                    continue
             specnoise_st.append(specnoise)
+        spec_st.append(spec)
 
     # build H component and weight_st
     weight_st = _build_H_and_weight(spec_st, specnoise_st)
