@@ -132,7 +132,17 @@ class Bounds():
         return tmin and tmax
 
     def get_bounds(self):
+        """Bounds for minimize()."""
         return self.bounds
+
+    def get_bounds_curve_fit(self):
+        """Bounds for curve-fit()."""
+        bnds = np.array(self.bounds, dtype=float).T
+        if np.all(np.isnan(bnds)):
+            return None
+        bnds[0, np.isnan(bnds[0])] = -1e100
+        bnds[1, np.isnan(bnds[1])] = 1e100
+        return bnds
 
 
 def spectral_inversion(config, spec_st, weight_st, Ml):
@@ -144,7 +154,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
     if config.inv_algorithm == 'TNC':
         logging.info('Using truncated Newton algorithm for inversion.')
     elif config.inv_algorithm == 'LM':
-        logging.info('Using Levenburg-Marquardt algorithm for inversion.')
+        logging.info('Using Levenberg-Marquardt algorithm for inversion.')
     elif config.inv_algorithm == 'BH':
         logging.info('Using basin-hopping algorithm for inversion.')
     else:
@@ -218,16 +228,17 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
                 yerr[xdata <= config.f_weight] = 1./math.sqrt(config.weight)
                 weight = 1./np.power(yerr, 2)
 
-            # Curve fitting using the Levenburg-Marquardt algorithm
-            # or the truncated Newton algorithm (TNC), with bounds.
+            # Curve fitting using "curve_fit()" (Levenberg-Marquardt algorithm
+            # if no bounds or Trust Region Reflective algorithm if bounds)
+            # or the truncated Newton algorithm (TNC) with bounds.
+            logging.info('%s %s: initial values: %s' %
+                         (spec.id, spec.stats.instrtype,
+                          str(initial_values)))
+            bounds = Bounds(config, spec, initial_values)
+            logging.info('%s %s: bounds: %s' %
+                         (spec.id, spec.stats.instrtype, str(bounds)))
             try:
                 if config.inv_algorithm == 'TNC':
-                    bounds = Bounds(config, spec, initial_values)
-                    logging.info('%s %s: initial values: %s' %
-                                 (spec.id, spec.stats.instrtype,
-                                  str(initial_values)))
-                    logging.info('%s %s: bounds: %s' %
-                                 (spec.id, spec.stats.instrtype, str(bounds)))
                     minimize_func = objective_func(xdata, ydata, weight)
                     res =\
                         minimize(minimize_func,
@@ -238,15 +249,20 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
                     logging.info('%s %s: initial values: %s' %
                                  (spec.id, spec.stats.instrtype,
                                   str(initial_values)))
+                    bnds = bounds.get_bounds_curve_fit()
+                    if bnds is not None:
+                        logging.info('Trying to use using Levenberg-Marquardt '
+                                     'algorithm with bounds. Switching to the '
+                                     'Trust Region Reflective algorithm.')
                     params_opt, params_cov =\
                         curve_fit(spectral_model,
                                   xdata, ydata,
                                   p0=initial_values.get_params0(),
-                                  sigma=yerr)
+                                  sigma=yerr,
+                                  bounds=bounds.get_bounds_curve_fit())
                 elif config.inv_algorithm == 'BH':
                     from scipy.optimize import basinhopping
                     minimize_func = objective_func(xdata, ydata, weight)
-                    bounds = Bounds(config, spec, initial_values)
                     res = basinhopping(minimize_func,
                                        x0=initial_values.get_params0(),
                                        niter=100, accept_test=bounds)
