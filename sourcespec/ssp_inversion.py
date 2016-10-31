@@ -64,6 +64,9 @@ class Bounds():
         self.bounds = ((self.Mw_min, self.Mw_max),
                        (self.fc_min, self.fc_max),
                        (self.t_star_min, self.t_star_max))
+        self.params_min = (self.Mw_min, self.fc_min, self.t_star_min)
+        self.params_max = (self.Mw_max or 1e300, self.fc_max or 1e300,
+                           self.t_star_max or 1e300)
         self._fix_initial_values()
 
     def __str__(self):
@@ -121,6 +124,13 @@ class Bounds():
                              self.ini_values.t_star_0, round(t_star_0, 4)))
             self.ini_values.t_star_0 = t_star_0
 
+    def __call__(self, **kwargs):
+        """Interface for basin-hopping."""
+        params = kwargs['x_new']
+        tmin = bool(np.all(params >= self.params_min))
+        tmax = bool(np.all(params <= self.params_max))
+        return tmin and tmax
+
     def get_bounds(self):
         return self.bounds
 
@@ -135,6 +145,8 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
         logging.info('Using truncated Newton algorithm for inversion.')
     elif config.inv_algorithm == 'LM':
         logging.info('Using Levenburg-Marquardt algorithm for inversion.')
+    elif config.inv_algorithm == 'BH':
+        logging.info('Using basin-hopping algorithm for inversion.')
     else:
         raise ValueError('Invalid choice of inversion algorithm.')
 
@@ -231,6 +243,14 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
                                   xdata, ydata,
                                   p0=initial_values.get_params0(),
                                   sigma=yerr)
+                elif config.inv_algorithm == 'BH':
+                    from scipy.optimize import basinhopping
+                    minimize_func = objective_func(xdata, ydata, weight)
+                    bounds = Bounds(config, spec, initial_values)
+                    res = basinhopping(minimize_func,
+                                       x0=initial_values.get_params0(),
+                                       niter=100, accept_test=bounds)
+                    params_opt = res.x
             except RuntimeError:
                 logging.warning('%s %s: unable to fit spectral model' %
                                 (spec.id, spec.stats.instrtype))
