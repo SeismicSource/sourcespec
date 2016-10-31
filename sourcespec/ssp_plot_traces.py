@@ -19,7 +19,8 @@ phase_label_pos = {'P': 0.9, 'S': 0.93}
 phase_label_color = {'P': 'black', 'S': 'black'}
 
 
-def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
+def plot_traces(config, st, spec_st=None, ncols=4, block=True,
+                async_plotter=None):
     """
     Plot displacement traces.
 
@@ -124,7 +125,14 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
                     color = 'blue'
                     if ntraces > 1:
                         trace.data = (trace.data / tmax + 1) * tmax
-                ax.plot(trace.times(), trace, color=color, zorder=20)
+                alpha = 1.0
+                # if spec_st is given, grey out traces that have no spectrum
+                # (i.e., low spectral S/N)
+                if spec_st:
+                    if not spec_st.select(id=trace.get_id()):
+                        alpha = 0.3
+                ax.plot(trace.times(), trace, color=color,
+                        alpha=alpha, zorder=20)
                 ax.text(0.05, trace.data.mean(), trace.stats.channel,
                         color=color, transform=trans3, zorder=22,
                         path_effects=path_effects)
@@ -156,10 +164,11 @@ def plot_traces(config, st, ncols=4, block=True, async_plotter=None):
                 if not ax_text:
                     text_y = 0.1
                     color = 'black'
-                    ax_text = '%s %s %.1f km (%.1f km)' % (trace.id[0:-4],
-                                                 trace.stats.instrtype,
-                                                 trace.stats.hypo_dist,
-                                                 trace.stats.epi_dist)
+                    ax_text = '%s %s %.1f km (%.1f km)' %\
+                              (trace.id[0:-4],
+                               trace.stats.instrtype,
+                               trace.stats.hypo_dist,
+                               trace.stats.epi_dist)
                     ax.text(0.05, text_y, ax_text,
                             horizontalalignment='left',
                             verticalalignment='bottom',

@@ -54,7 +54,8 @@ def main():
         build_spectra(config, proc_st, noise_weight=True)
 
     plotter = init_plotting()
-    plot_traces(config, proc_st, ncols=2, async_plotter=plotter)
+    plot_traces(config, proc_st, spec_st=spec_st, ncols=2,
+                async_plotter=plotter)
 
     Ml = local_magnitude(config, st, deconvolve=True)
 
