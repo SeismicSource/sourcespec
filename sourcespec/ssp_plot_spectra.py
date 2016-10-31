@@ -150,8 +150,19 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     ax.loglog(spec.get_freq(), spec.data, color=color,
                               zorder=20)
                     if orientation == 'S':
-                        ax.axvline(spec.stats.par['fc'], color='#999999',
+                        fc = spec.stats.par['fc']
+                        fc_err = spec.stats.par_err['fc']
+                        fc_min = fc-fc_err
+                        if fc_min < 0:
+                            fc_min = 0.01
+                        ax.axvspan(fc_min, fc+fc_err, color='#bbbbbb',
+                                   alpha=0.3, zorder=1)
+                        ax.axvline(fc, color='#999999',
                                    linewidth=2., zorder=1)
+                        Mw = spec.stats.par['Mw']
+                        Mw_err = spec.stats.par_err['Mw']
+                        ax2.axhspan(Mw-Mw_err, Mw+Mw_err, color='#bbbbbb',
+                                    alpha=0.3, zorder=1)
                 elif plottype == 'weight':
                     ax.semilogx(spec.get_freq(), spec.data, color=color,
                                 zorder=20)
@@ -206,12 +217,16 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                         text_y2 = 0.04
                         color = 'black'
                     fc = spec.stats.par['fc']
+                    fc_err = spec.stats.par_err['fc']
                     Mw = spec.stats.par['Mw']
+                    Mw_err = spec.stats.par_err['Mw']
                     Mo = mag_to_moment(Mw)
                     t_star = spec.stats.par['t_star']
+                    t_star_err = spec.stats.par_err['t_star']
                     ax.text(0.05, text_y2,
-                            'Mo: %.2g Mw: %.1f fc: %.2fHz t*: %.2fs' %
-                            (Mo, Mw, fc, t_star),
+                            'Mo: %.2g Mw: %.2f±%.2f\n'
+                            'fc: %.2f±%.2f Hz t*: %.2f±%.2fs' %
+                            (Mo, Mw, Mw_err, fc, fc_err, t_star, t_star_err),
                             horizontalalignment='left',
                             verticalalignment='bottom',
                             color=color,

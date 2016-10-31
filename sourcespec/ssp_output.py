@@ -192,7 +192,7 @@ def _write_hypo(config, evid, sourcepar):
     logging.info('Hypo file written to: ' + hypo_file_out)
 
 
-def write_output(config, evid, sourcepar):
+def write_output(config, evid, sourcepar, sourcepar_err):
     """Write results to a plain text file and/or to a SQLite database file."""
     if len(sourcepar) == 0:
         logging.info('No source parameter calculated')

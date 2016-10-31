@@ -60,10 +60,11 @@ def main():
     Ml = local_magnitude(config, st, deconvolve=True)
 
     # Spectral inversion
-    sourcepar = spectral_inversion(config, spec_st, weight_st, Ml)
+    sourcepar, sourcepar_err =\
+        spectral_inversion(config, spec_st, weight_st, Ml)
 
     # Save output
-    sourcepar_mean = write_output(config, evid, sourcepar)
+    sourcepar_mean = write_output(config, evid, sourcepar, sourcepar_err)
 
     # Save residuals
     spectral_residuals(config, spec_st, evid, sourcepar_mean)

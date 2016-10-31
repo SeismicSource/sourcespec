@@ -161,6 +161,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
         raise ValueError('Invalid choice of inversion algorithm.')
 
     sourcepar = dict()
+    sourcepar_err = dict()
     vs_m = config.vs*1000
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
@@ -245,6 +246,12 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
                                  x0=initial_values.get_params0(), method='TNC',
                                  callback=callback, bounds=bounds.get_bounds())
                     params_opt = res.x
+                    # trick: use curve_fit() bounded to params_opt
+                    # to get the covariance
+                    _, params_cov = curve_fit(spectral_model, xdata, ydata,
+                                              p0=params_opt, sigma=yerr,
+                                              bounds=(params_opt-(1e-10),
+                                                      params_opt+(1e-10)))
                 elif config.inv_algorithm == 'LM':
                     logging.info('%s %s: initial values: %s' %
                                  (spec.id, spec.stats.instrtype,
@@ -277,12 +284,18 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             par['hyp_dist'] = hd
             par['az'] = az
             par['Ml'] = Ml  # FIXME: this is the network magnitude!
+
+            error = np.sqrt(params_cov.diagonal())
+            par_err = dict(zip(params_name, error))
+
             statId = '%s %s' % (spec.id, spec.stats.instrtype)
             sourcepar[statId] = par
+            sourcepar_err[statId] = par_err
 
             spec_synth = spec.copy()
             spec_synth.stats.channel = spec.stats.channel[0:2] + 'S'
             spec_synth.stats.par = par
+            spec_synth.stats.par_err = par_err
             spec_synth.data_mag = spectral_model(xdata, *params_opt)
             spec_synth.data = mag_to_moment(spec_synth.data_mag)
             spec_st.append(spec_synth)
@@ -305,4 +318,4 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             logging.warning('Ignoring station: %s fc: %f' % (statId, fc))
             sourcepar.pop(statId, None)
 
-    return sourcepar
+    return sourcepar, sourcepar_err
