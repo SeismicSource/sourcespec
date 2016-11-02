@@ -292,8 +292,14 @@ def build_spectra(config, st, noise_weight=False):
         if noise_weight:
             specnoise = _build_spectrum(config, trace_noise)
             weight = _build_weight(spec, specnoise)
+            if config.spectral_sn_freq_range is not None:
+                sn_fmin, sn_fmax = config.spectral_sn_freq_range
+                freqs = weight.get_freq()
+                idx = np.where((sn_fmin <= freqs)*(freqs <= sn_fmax))
+            else:
+                idx = range(len(weight.data_raw))
             spectral_ssn =\
-                weight.data_raw.sum()/len(weight.data_raw)
+                weight.data_raw[idx].sum()/len(weight.data_raw[idx])
             logging.info('%s: spectral S/N: %.2f' %
                          (spec.get_id(), spectral_ssn))
             if config.spectral_sn_min:
