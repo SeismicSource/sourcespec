@@ -151,7 +151,7 @@ def _process_trace(config, trace):
     return trace_process
 
 
-def _merge_stream(st):
+def _merge_stream(config, st):
     traceid = st[0].id
     # First, compute gap/overlap statistics for the whole trace.
     gaps_olaps = st.get_gaps()
@@ -161,10 +161,21 @@ def _merge_stream(st):
     if gap_duration > 0:
         logging.info('%s: trace has %.3f seconds of gaps.' %
                      (traceid, gap_duration))
+        gap_max = config.gap_max
+        if gap_max is not None and gap_duration > gap_max:
+            logging.warning('%s: Gap duration larger than gap_max (%.1f): '
+                            'skipping trace' % (traceid, gap_max))
+            raise RuntimeError
     overlap_duration = -1 * sum(g[6] for g in overlaps)
     if overlap_duration > 0:
         logging.info('%s: trace has %.3f seconds of overlaps.' %
                      (traceid, overlap_duration))
+        overlap_max = config.overlap_max
+        if overlap_max is not None and overlap_duration > overlap_max:
+            logging.warning('%s: Overlap duration larger than '
+                            'overlap_max (%.1f): skipping trace' %
+                            (traceid, overlap_max))
+            raise RuntimeError
     # Then, compute the same statisics for the S-wave window.
     st_cut = st.copy()
     t1 = st[0].stats.arrivals['S1'][1]
@@ -249,7 +260,7 @@ def process_traces(config, st):
         st_sel = st.select(id=id)
         try:
             _add_hypo_dist_and_arrivals(config, st_sel)
-            trace = _merge_stream(st_sel)
+            trace = _merge_stream(config, st_sel)
             trace_process = _process_trace(config, trace)
             out_st.append(trace_process)
         except (ValueError, RuntimeError):
