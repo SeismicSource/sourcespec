@@ -281,7 +281,7 @@ def build_spectra(config, st, noise_weight=False):
     spec_st = Stream()
     specnoise_st = Stream()
 
-    for trace in st:
+    for trace in st.sort():
         try:
             _check_data_len(config, trace)
             trace_signal, trace_noise = _cut_signal_noise(config, trace)
