@@ -61,10 +61,17 @@ def wave_arrival(trace, phase, tolerance=4., vel=None):
                 trace.stats.hypo.origin_time + trace.stats.hypo_dist / vel
         else:
             phase_list = [phase.lower(), phase]
-            arrivals = model.get_travel_times(
-                        source_depth_in_km=trace.stats.hypo.depth,
-                        distance_in_degree=trace.stats.gcarc,
-                        phase_list=phase_list)
+            try:
+                arrivals = model.get_travel_times(
+                            source_depth_in_km=trace.stats.hypo.depth,
+                            distance_in_degree=trace.stats.gcarc,
+                            phase_list=phase_list)
+            except:
+                trace.stats.hypo.depth = 0.
+                arrivals = model.get_travel_times(
+                            source_depth_in_km=trace.stats.hypo.depth,
+                            distance_in_degree=trace.stats.gcarc,
+                            phase_list=phase_list)
             times = [a.time for a in arrivals]
             theo_pick_time = trace.stats.hypo.origin_time + min(times)
         trace.stats.arrivals[phase] = (phase + 'theo', theo_pick_time)
