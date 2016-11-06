@@ -264,6 +264,11 @@ def process_traces(config, st):
         # We still use a stream, since the trace can have
         # gaps or overlaps
         st_sel = st.select(id=id)
+        if config.ignore_stations is not None:
+            station = st_sel[0].stats.station
+            if station in config.ignore_stations:
+                logging.warning('%s: station ignored' % station)
+                continue
         try:
             _add_hypo_dist_and_arrivals(config, st_sel)
             trace = _merge_stream(config, st_sel)
