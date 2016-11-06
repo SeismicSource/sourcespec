@@ -24,25 +24,31 @@ from sourcespec.ssp_util import remove_instr_response, hypo_dist, wave_arrival
 
 
 def filter_trace(config, trace):
-    instrtype = trace.stats.instrtype
-    if instrtype == 'acc':
-        # band-pass frequencies:
-        # TODO: calculate from sampling rate?
-        bp_freqmin = config.bp_freqmin_acc
-        bp_freqmax = config.bp_freqmax_acc
-    elif instrtype == 'shortp':
-        # band-pass frequencies:
-        # TODO: calculate from sampling rate?
-        bp_freqmin = config.bp_freqmin_shortp
-        bp_freqmax = config.bp_freqmax_shortp
-    elif instrtype == 'broadb':
-        # band-pass frequencies:
-        bp_freqmin = config.bp_freqmin_broadb
-        bp_freqmax = config.bp_freqmax_broadb
-    else:
-        logging.warning('%s: Unknown instrument type: %s: '
-                        'skipping trace' % (trace.id, instrtype))
-        raise ValueError
+    # see of there is a station-specfic filter
+    station = trace.stats.station
+    try:
+        bp_freqmin = float(config['bp_freqmin_' + station])
+        bp_freqmax = float(config['bp_freqmax_' + station])
+    except KeyError:
+        instrtype = trace.stats.instrtype
+        if instrtype == 'acc':
+            # band-pass frequencies:
+            # TODO: calculate from sampling rate?
+            bp_freqmin = config.bp_freqmin_acc
+            bp_freqmax = config.bp_freqmax_acc
+        elif instrtype == 'shortp':
+            # band-pass frequencies:
+            # TODO: calculate from sampling rate?
+            bp_freqmin = config.bp_freqmin_shortp
+            bp_freqmax = config.bp_freqmax_shortp
+        elif instrtype == 'broadb':
+            # band-pass frequencies:
+            bp_freqmin = config.bp_freqmin_broadb
+            bp_freqmax = config.bp_freqmax_broadb
+        else:
+            logging.warning('%s: Unknown instrument type: %s: '
+                            'skipping trace' % (trace.id, instrtype))
+            raise ValueError
     # remove the mean...
     trace.detrend(type='constant')
     # ...and the linear trend...
