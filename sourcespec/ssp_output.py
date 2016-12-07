@@ -61,7 +61,7 @@ def _write_parfile(config, evid, sourcepar):
             par = sourcepar[statId]
             parfile.write('%s\t' % statId)
             for key in par:
-                if key == 'Mo':
+                if key in ['Mo', 'Er']:
                     parfile.write('  %s %.3e ' % (key, par[key]))
                 else:
                     parfile.write('  %s %6.3f ' % (key, par[key]))
@@ -109,6 +109,14 @@ def _write_parfile(config, evid, sourcepar):
         Ml_mean = means['Ml']
         Ml_error = errors['Ml']
         parfile.write('Ml: %.3f +/- %.3f \n' % (Ml_mean, Ml_error))
+
+        Er_mean = means['Er']
+        Er_minus, Er_plus = errors['Er']
+        # format Er_plus and Er_minus to print it with the same exponent of Er
+        Er_minus_str = _format_exponent(Er_minus, Er_mean)
+        Er_plus_str = _format_exponent(Er_plus, Er_mean)
+        parfile.write('Er: %.3e /- %s /+ %s N.m\n' %
+                      (Er_mean, Er_minus_str, Er_plus_str))
 
     logging.info('Output written to file: ' + parfilename)
 
@@ -237,6 +245,11 @@ def write_output(config, evid, sourcepar, sourcepar_err):
     Ml_array = np.array([x['Ml'] for x in sourcepar.values()])
     means['Ml'] = Ml_array.mean()
     errors['Ml'] = Ml_array.std()
+
+    # Er
+    Er_array = np.array([x['Er'] for x in sourcepar.values()])
+    means['Er'] = _logmean(Er_array)
+    errors['Er'] = _log_error(Er_array)
 
     sourcepar['means'] = means
     sourcepar['errors'] = errors

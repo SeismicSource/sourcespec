@@ -26,6 +26,7 @@ from sourcespec.ssp_setup import dprint
 from sourcespec.ssp_spectral_model import (spectral_model, objective_func,
                                            callback)
 from sourcespec.ssp_util import mag_to_moment, select_trace
+from sourcespec.ssp_radiated_energy import radiated_energy
 
 
 class InitialValues():
@@ -317,5 +318,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
         if fc < f1 or fc > f2:
             logging.warning('Ignoring station: %s fc: %f' % (statId, fc))
             sourcepar.pop(statId, None)
+
+    radiated_energy(config, spec_st, sourcepar)
 
     return sourcepar, sourcepar_err
