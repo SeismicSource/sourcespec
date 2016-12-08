@@ -25,7 +25,10 @@ def radiated_energy(config, spec_st, sourcepar):
     # Loop on '??H' spectra
     for spec in [spec for spec in spec_st if (spec.stats.channel[-1] == 'H')]:
         statId = '%s %s' % (spec.id, spec.stats.instrtype)
-        par = sourcepar[statId]
+        try:
+            par = sourcepar[statId]
+        except KeyError:
+            continue
         t_star = par['t_star']
         deltaf = spec.stats.delta
         freq = spec.get_freq()
