@@ -506,7 +506,11 @@ def _parse_qml(qml_file, evid=None):
             pick.flag = 'E'
         elif pck.onset == 'impulsive':
             pick.flag = 'I'
-        pick.phase = pck.phase_hint[0:1]
+        try:
+            pick.phase = pck.phase_hint[0:1]
+        except:
+            # ignore picks with no phase hint
+            continue
         if pck.polarity == 'positive':
             pick.polarity = 'U'
         elif pck.polarity == 'negative':
