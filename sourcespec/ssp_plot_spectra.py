@@ -196,7 +196,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     if stack_plots:
                         text_y = 0.05 + (plotn-1) * 0.05
                     else:
-                        text_y = 0.1
+                        text_y = 0.15
                         color = 'black'
                         ax_text += '\n%.1f km (%.1f km)' % (
                                                         spec.stats.hypo_dist,
