@@ -22,12 +22,17 @@ import numpy as np
 import math
 from scipy.integrate import cumtrapz
 from obspy.core import Stream
-from obspy.signal.konnoohmachismoothing import konno_ohmachi_smoothing
+from obspy.signal.konnoohmachismoothing import (calculate_smoothing_matrix,
+                                                apply_smoothing_matrix)
+
 from sourcespec import spectrum
 from sourcespec.ssp_setup import dprint
 from sourcespec.ssp_util import cosine_taper, moment_to_mag
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
+
+smoothing_matrix = None
+smoothing_matrix_weight = None
 
 
 def _time_integrate(config, trace):
@@ -187,8 +192,20 @@ def _build_spectrum(config, trace):
         _frequency_integrate(config, spec)
 
     # smooth the abs of fft
-    spec.data = konno_ohmachi_smoothing(spec.data, spec.get_freq(),
-                                        40, normalize=True)
+    global smoothing_matrix
+    compute_smoothing_matrix = False
+    if smoothing_matrix is None:
+        logging.info('Computing Konno-Ohmachi smoothing matrix for spectra. '
+                     'This might take a while but is done only once.')
+        compute_smoothing_matrix = True
+    elif spec.data.shape[0] != smoothing_matrix.shape[0]:
+        logging.info('Re-computing Konno-Ohmachi smoothing matrix for spectra '
+                     'with different shape.')
+        compute_smoothing_matrix = True
+    if compute_smoothing_matrix:
+        smoothing_matrix = calculate_smoothing_matrix(
+            spec.get_freq(), bandwidth=40, normalize=True)
+    spec.data = apply_smoothing_matrix(spec.data, smoothing_matrix)
 
     # TODO: parameterize
     # coefficient for converting displ spectrum
@@ -219,9 +236,22 @@ def _build_weight(spec, specnoise):
         # i.e put weight to zero when S/N < 1
         weight.data[weight.data < 0] = 0
         # smooth weight
-        weight.data = konno_ohmachi_smoothing(weight.data,
-                                              weight.get_freq(),
-                                              20, normalize=True)
+        global smoothing_matrix_weight
+        compute_smoothing_matrix = False
+        if smoothing_matrix_weight is None:
+            logging.info('Computing Konno-Ohmachi smoothing matrix for '
+                         'weights. This might take a while but is done '
+                         'only once.')
+            compute_smoothing_matrix = True
+        elif weight.data.shape[0] != smoothing_matrix_weight.shape[0]:
+            logging.info('Re-computing Konno-Ohmachi smoothing matrix for '
+                         'weights with different shape.')
+            compute_smoothing_matrix = True
+        if compute_smoothing_matrix:
+            smoothing_matrix_weight = calculate_smoothing_matrix(
+                spec.get_freq(), bandwidth=20, normalize=True)
+        weight.data = apply_smoothing_matrix(
+            weight.data, smoothing_matrix_weight)
         # normalization
         weight.data /= np.max(weight.data)
     else:
@@ -246,7 +276,7 @@ def _build_H_and_weight(spec_st, specnoise_st):
     else:
         noise_weight = False
     weight_st = Stream()
-    for station in set(x.stats.station for x in spec_st.traces):
+    for station in set(x.stats.station for x in spec_st.sort()):
         spec_st_sel = spec_st.select(station=station)
         if noise_weight:
             specnoise_st_sel = specnoise_st.select(station=station)
