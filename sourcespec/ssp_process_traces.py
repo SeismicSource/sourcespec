@@ -18,6 +18,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import logging
 import numpy as np
+import re
 from obspy.core import Stream
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import remove_instr_response, hypo_dist, wave_arrival
@@ -264,10 +265,26 @@ def process_traces(config, st):
         # We still use a stream, since the trace can have
         # gaps or overlaps
         st_sel = st.select(id=id)
+        network, station, location, channel = id.split('.')
+        # build a list of all possible ids, from station only
+        # to full net.sta.loc.chan
+        ss = [station, ]
+        ss.append('.'.join((network, station)))
+        ss.append('.'.join((network, station, location)))
+        ss.append('.'.join((network, station, location, channel)))
+        if config.use_stations is not None:
+            combined = (
+                "(" + ")|(".join(config.use_stations) + ")"
+                ).replace('.', '\.')
+            if not any(re.match(combined, s) for s in ss):
+                logging.warning('%s: ignored from config file' % id)
+                continue
         if config.ignore_stations is not None:
-            station = st_sel[0].stats.station
-            if station in config.ignore_stations:
-                logging.warning('%s: station ignored' % station)
+            combined = (
+                "(" + ")|(".join(config.ignore_stations) + ")"
+                ).replace('.', '\.')
+            if any(re.match(combined, s) for s in ss):
+                logging.warning('%s: ignored from config file' % id)
                 continue
         try:
             _add_hypo_dist_and_arrivals(config, st_sel)
