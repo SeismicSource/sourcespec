@@ -83,7 +83,7 @@ def _cut_spectrum(config, spec):
     return spec.slice(freq1, freq2)
 
 
-def _compute_h(spec_st, code):
+def _compute_h(spec_st, code, wave_type='S'):
     """
     Compute the component 'H' from geometric mean of the stream components.
 
@@ -93,7 +93,14 @@ def _compute_h(spec_st, code):
     for spec in spec_st.traces:
         # this avoids taking a component from co-located station:
         # ('code' is band+instrument code)
-        if spec.stats.channel[0:2] != code:
+        channel = spec.stats.channel
+        if channel[0:2] != code:
+            continue
+        # only use transverse component for SH
+        if wave_type == 'SH' and channel[-1] != 'T':
+            continue
+        # only use radial and, optionally, vertical component for SV
+        if wave_type == 'SV' and channel[-1] == 'T':
             continue
         if spec_h is None:
             spec_h = spec.copy()
@@ -262,7 +269,7 @@ def _build_weight(spec, specnoise):
     return weight
 
 
-def _build_H_and_weight(spec_st, specnoise_st):
+def _build_H_and_weight(spec_st, specnoise_st, wave_type='S'):
     """
     Add to spec_st the "H" component.
 
@@ -282,13 +289,13 @@ def _build_H_and_weight(spec_st, specnoise_st):
             specnoise_st_sel = specnoise_st.select(station=station)
         # 'code' is band+instrument code
         for code in set(x.stats.channel[0:2] for x in spec_st_sel):
-            spec_h = _compute_h(spec_st_sel, code)
+            spec_h = _compute_h(spec_st_sel, code, wave_type)
             spec_st.append(spec_h)
 
             # Compute "H" component for noise, if requested,
             # and weighting function.
             if noise_weight:
-                specnoise_h = _compute_h(specnoise_st_sel, code)
+                specnoise_h = _compute_h(specnoise_st_sel, code, wave_type)
                 if specnoise_h is not None:
                     specnoise_st.append(specnoise_h)
 
@@ -343,7 +350,7 @@ def build_spectra(config, st, noise_weight=False):
         spec_st.append(spec)
 
     # build H component and weight_st
-    weight_st = _build_H_and_weight(spec_st, specnoise_st)
+    weight_st = _build_H_and_weight(spec_st, specnoise_st, config.wave_type)
 
     # convert the spectral amplitudes to moment magnitude
     for spec in spec_st:

@@ -135,9 +135,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 orientation = spec.stats.channel[2]
                 if orientation in ['Z', '1']:
                     color = 'purple'
-                if orientation in ['N', '2']:
+                if orientation in ['N', '2', 'R']:
                     color = 'green'
-                if orientation in ['E', '3']:
+                if orientation in ['E', '3', 'T']:
                     color = 'blue'
                 if orientation == 'H':
                     color = 'red'

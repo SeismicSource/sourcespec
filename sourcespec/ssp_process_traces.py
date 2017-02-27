@@ -261,7 +261,7 @@ def _add_hypo_dist_and_arrivals(config, st):
 def process_traces(config, st):
     """Remove mean, deconvolve and ignore unwanted components."""
     out_st = Stream()
-    for id in set(tr.id for tr in st):
+    for id in sorted(set(tr.id for tr in st)):
         # We still use a stream, since the trace can have
         # gaps or overlaps
         st_sel = st.select(id=id)
@@ -297,5 +297,16 @@ def process_traces(config, st):
     if len(out_st) == 0:
         logging.error('No traces left! Exiting.')
         ssp_exit()
+
+    # Rotate traces, if SH or SV is requested
+    if config.wave_type in ['SH', 'SV']:
+        for id in sorted(set(tr.id[:-1] for tr in out_st)):
+            net, sta, loc, chan = id.split('.')
+            st_sel = out_st.select(network=net, station=sta,
+                                   location=loc, channel=chan+'?')
+            t0 = max(tr.stats.starttime for tr in st_sel)
+            t1 = min(tr.stats.endtime for tr in st_sel)
+            st_sel.trim(t0, t1)
+            st_sel.rotate('NE->RT')
 
     return out_st

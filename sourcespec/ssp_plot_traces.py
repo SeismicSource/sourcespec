@@ -117,11 +117,11 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
                 orientation = trace.stats.channel[-1]
                 if orientation in ['Z', '1']:
                     color = 'purple'
-                if orientation in ['N', '2']:
+                if orientation in ['N', '2', 'R']:
                     color = 'green'
                     if ntraces > 1:
                         trace.data = (trace.data / tmax - 1) * tmax
-                if orientation in ['E', '3']:
+                if orientation in ['E', '3', 'T']:
                     color = 'blue'
                     if ntraces > 1:
                         trace.data = (trace.data / tmax + 1) * tmax

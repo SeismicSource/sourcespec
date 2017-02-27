@@ -39,6 +39,7 @@ from obspy import read_inventory
 from obspy.core.inventory import Inventory
 from obspy.io.sac import attach_paz
 from obspy.core import Trace
+from obspy.geodetics import gps2dist_azimuth
 from obspy import read_events
 from sourcespec.ssp_setup import ssp_exit
 
@@ -290,6 +291,10 @@ def _add_hypocenter(trace, hypo):
         hypo.longitude = evlo
         hypo.depth = evdp
     trace.stats.hypo = hypo
+    _, _, baz = gps2dist_azimuth(
+        hypo.latitude, hypo.longitude,
+        trace.stats.coords.latitude, trace.stats.coords.longitude)
+    trace.stats.back_azimuth = baz
 
 
 def _add_picks(trace, picks):
