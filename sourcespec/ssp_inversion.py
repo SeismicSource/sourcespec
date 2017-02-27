@@ -38,6 +38,7 @@ class InitialValues():
         self.t_star_0 = t_star_0
 
     def __str__(self):
+        """String representation."""
         s = 'Mw_0: %s; ' % round(self.Mw_0, 4)
         s += 'fc_0: %s; ' % round(self.fc_0, 4)
         s += 't_star_0: %s' % round(self.t_star_0, 4)
@@ -71,6 +72,7 @@ class Bounds():
         self._fix_initial_values()
 
     def __str__(self):
+        """String representation."""
         s = 'Mw: %s, %s; ' %\
             tuple(round(x, 4) if x is not None else x for x in self.bounds[0])
         s += 'fc: %s, %s; ' %\
@@ -133,11 +135,11 @@ class Bounds():
         return tmin and tmax
 
     def get_bounds(self):
-        """Bounds for minimize()."""
+        """Get bounds for minimize()."""
         return self.bounds
 
     def get_bounds_curve_fit(self):
-        """Bounds for curve-fit()."""
+        """Get bounds for curve-fit()."""
         bnds = np.array(self.bounds, dtype=float).T
         if np.all(np.isnan(bnds)):
             return None
@@ -194,7 +196,6 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             t_star_0 = config.t_star_0
 
             hd = spec.stats.hypo_dist
-            hd_m = hd*1000
 
             # azimuth computation
             coords = spec.stats.coords
@@ -206,9 +207,6 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             geod = gps2dist_azimuth(evla, evlo, stla, stlo)
             az = geod[1]
             dprint('%s %s %f %f' % (station, spec.stats.instrtype, hd, az))
-            loge = math.log10(math.e)
-            coeff = math.pi*loge*hd_m/vs_m
-            dprint('coeff= %f' % coeff)
 
             params_name = ('Mw', 'fc', 't_star')
             initial_values = InitialValues(Mw_0, fc_0, t_star_0)
