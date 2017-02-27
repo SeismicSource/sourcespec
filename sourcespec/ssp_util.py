@@ -17,7 +17,7 @@ import math
 import numpy as np
 from obspy.signal.invsim import cosine_taper as _cos_taper
 from obspy.taup import TauPyModel
-model = TauPyModel(model="iasp91")
+model = TauPyModel(model='iasp91')
 
 
 # MISC ------------------------------------------------------------------------
@@ -129,7 +129,7 @@ def smooth(x, window_len=11, window='hanning'):
     if window_len < 3:
         return x
     if window not in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
-        raise ValueError("Window is on of 'flat', 'hanning', 'hamming', "
+        raise ValueError("Window is one of 'flat', 'hanning', 'hamming', "
                          "'bartlett', 'blackman'")
     s = np.r_[2*x[0]-x[window_len-1::-1], x, 2*x[-1]-x[-1:-window_len:-1]]
     if window == 'flat':  # moving average
@@ -218,7 +218,7 @@ def hypo_dist(trace):
         hypo = trace.stats.hypo
     except (KeyError, AttributeError):
         return None
-    if coords is None or hypo is None:
+    if None in (coords, hypo):
         return None
     stla = coords.latitude
     stlo = coords.longitude
@@ -226,8 +226,7 @@ def hypo_dist(trace):
     evla = hypo.latitude
     evlo = hypo.longitude
     evdp = hypo.depth
-    if (stla is None or stlo is None or stel is None or
-       evla is None or evlo is None or evdp is None):
+    if None in (stla, stlo, stel, evla, evlo, evdp):
         return None
     epi_dist, gcarc = calc_dist(stla, stlo, evla, evlo)
     hypo_dist = math.sqrt(epi_dist**2 + (stel+evdp)**2)
