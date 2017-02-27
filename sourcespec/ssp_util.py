@@ -11,10 +11,13 @@ Utility functions for sourcespec.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import os
+from glob import glob
 import logging
 import warnings
 import math
 import numpy as np
+from sourcespec.ssp_setup import ssp_exit
 from obspy.signal.invsim import cosine_taper as _cos_taper
 from obspy.taup import TauPyModel
 model = TauPyModel(model='iasp91')
@@ -43,7 +46,74 @@ def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
     return amp_minmax, freq_minmax
 
 
-def wave_arrival(trace, phase, tolerance=4., vel=None):
+def _wave_arrival_nll(trace, phase, NLL_time_dir):
+    """Arrival time using a NLL grid."""
+    if trace.stats.hypo.origin_time is None:
+        return
+    if NLL_time_dir is None:
+        return
+    try:
+        from nllgrid import NLLGrid
+    except ImportError:
+        logging.error('Error: the "nllgrid" python module is required '
+                      'for "NLL_time_dir".')
+        ssp_exit()
+    grdfile = '*.{}.{}.time.hdr'.format(phase, trace.stats.station)
+    grdfile = os.path.join(NLL_time_dir, grdfile)
+    try:
+        grdfile = glob(grdfile)[0]
+    except IndexError:
+        return
+    print(grdfile)
+    grd = NLLGrid(grdfile)
+    hypo_x, hypo_y = grd.project(trace.stats.hypo.longitude,
+                                 trace.stats.hypo.latitude)
+    hypo_z = trace.stats.hypo.depth
+    tt = grd.get_value(hypo_x, hypo_y, hypo_z)
+    return trace.stats.hypo.origin_time + tt
+
+
+def _wave_arrival_vel(trace, phase, vel):
+    """Arrival time using a constant velocity."""
+    if trace.stats.hypo.origin_time is None:
+        return
+    if vel is None:
+        return
+    tt = trace.stats.hypo_dist / vel
+    return trace.stats.hypo.origin_time + tt
+
+
+def _wave_arrival_taup(trace, phase):
+    """Arrival time using taup."""
+    phase_list = [phase.lower(), phase]
+    try:
+        arrivals = model.get_travel_times(
+                    source_depth_in_km=trace.stats.hypo.depth,
+                    distance_in_degree=trace.stats.gcarc,
+                    phase_list=phase_list)
+    except:
+        trace.stats.hypo.depth = 0.
+        arrivals = model.get_travel_times(
+                    source_depth_in_km=trace.stats.hypo.depth,
+                    distance_in_degree=trace.stats.gcarc,
+                    phase_list=phase_list)
+    tt = min(a.time for a in arrivals)
+    return trace.stats.hypo.origin_time + tt
+
+
+def _validate_pick(pick, theo_pick_time, tolerance, trace_id):
+    if theo_pick_time is None:
+        return True
+    delta_t = pick.time - theo_pick_time
+    if abs(delta_t) > tolerance:  # seconds
+        msg = '%s: measured %s pick time - theoretical time = %.1f s.' %\
+              (trace_id, pick.phase, delta_t)
+        logging.warning(msg)
+        return False
+    return True
+
+
+def wave_arrival(trace, phase, tolerance=4., vel=None, NLL_time_dir=None):
     """
     Obtain arrival time for a given phase and a given trace.
 
@@ -55,42 +125,18 @@ def wave_arrival(trace, phase, tolerance=4., vel=None):
         return arrival
     except KeyError:
         pass
-    if trace.stats.hypo.origin_time is not None:
-        if vel is not None:
-            theo_pick_time =\
-                trace.stats.hypo.origin_time + trace.stats.hypo_dist / vel
-        else:
-            phase_list = [phase.lower(), phase]
-            try:
-                arrivals = model.get_travel_times(
-                            source_depth_in_km=trace.stats.hypo.depth,
-                            distance_in_degree=trace.stats.gcarc,
-                            phase_list=phase_list)
-            except:
-                trace.stats.hypo.depth = 0.
-                arrivals = model.get_travel_times(
-                            source_depth_in_km=trace.stats.hypo.depth,
-                            distance_in_degree=trace.stats.gcarc,
-                            phase_list=phase_list)
-            times = [a.time for a in arrivals]
-            theo_pick_time = trace.stats.hypo.origin_time + min(times)
-        trace.stats.arrivals[phase] = (phase + 'theo', theo_pick_time)
-    else:
-        theo_pick_time = None
-    for pick in trace.stats.picks:
-        if pick.phase == phase:
-            if theo_pick_time is not None:
-                delta_t = pick.time - theo_pick_time
-                if abs(delta_t) > tolerance:  # seconds
-                    msg = '%s: measured %s pick time - theoretical time ' %\
-                          (trace.id, phase)
-                    msg += '= %.1f s. Using theoretical.' % delta_t
-                    logging.warning(msg)
-                    continue
+    theo_pick_time = _wave_arrival_nll(trace, phase, NLL_time_dir)
+    if theo_pick_time is None:
+        theo_pick_time = _wave_arrival_vel(trace, phase, vel)
+    if theo_pick_time is None:
+        theo_pick_time = _wave_arrival_taup(trace, phase)
+    for pick in (p for p in trace.stats.picks if p.phase == phase):
+        if _validate_pick(pick, theo_pick_time, tolerance, trace.id):
             logging.info('%s: found %s pick' % (trace.id, phase))
             trace.stats.arrivals[phase] = (phase, pick.time)
             return pick.time
     logging.info('%s: using theoretical %s pick' % (trace.id, phase))
+    trace.stats.arrivals[phase] = (phase + 'theo', theo_pick_time)
     return theo_pick_time
 
 
