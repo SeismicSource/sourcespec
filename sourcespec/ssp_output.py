@@ -64,7 +64,10 @@ def _write_parfile(config, evid, sourcepar):
                 if key in ['Mo', 'Er']:
                     parfile.write('  %s %.3e ' % (key, par[key]))
                 else:
-                    parfile.write('  %s %6.3f ' % (key, par[key]))
+                    if par[key] is not None:
+                        parfile.write('  %s %6.3f ' % (key, par[key]))
+                    else:
+                        parfile.write('  %s %s ' % (key, par[key]))
             parfile.write('\n')
 
         means = sourcepar['means']
@@ -106,9 +109,10 @@ def _write_parfile(config, evid, sourcepar):
         parfile.write('Brune stress drop: %.3e +/- %s MPa\n' %
                       (bsd_mean, bsd_error_str))
 
-        Ml_mean = means['Ml']
-        Ml_error = errors['Ml']
-        parfile.write('Ml: %.3f +/- %.3f \n' % (Ml_mean, Ml_error))
+        if means['Ml'] is not None:
+            Ml_mean = means['Ml']
+            Ml_error = errors['Ml']
+            parfile.write('Ml: %.3f +/- %.3f \n' % (Ml_mean, Ml_error))
 
         Er_mean = means['Er']
         Er_minus, Er_plus = errors['Er']
@@ -184,7 +188,10 @@ def _write_hypo(config, evid, sourcepar):
 
     means = sourcepar['means']
     mw_str = '%03.2f' % means['Mw']
-    ml_str = '%03.2f' % means['Ml']
+    if means['Ml'] is not None:
+        ml_str = '%03.2f' % means['Ml']
+    else:
+        ml_str = ' '*4
     for i in range(0, 4):
         line[49+i] = mw_str[0+i]
         #line[45+i] = mw_str[0+i]
@@ -242,9 +249,14 @@ def write_output(config, evid, sourcepar, sourcepar_err):
     errors['bsd'] = bsd_array.std()
 
     # Ml
-    Ml_array = np.array([x['Ml'] for x in sourcepar.values()])
-    means['Ml'] = Ml_array.mean()
-    errors['Ml'] = Ml_array.std()
+    Ml_array = np.array([x['Ml'] for x in sourcepar.values()
+                         if x['Ml'] is not None])
+    if Ml_array.size:
+        means['Ml'] = Ml_array.mean()
+        errors['Ml'] = Ml_array.std()
+    else:
+        means['Ml'] = None
+        errors['Ml'] = None
 
     # Er
     Er_array = np.array([x['Er'] for x in sourcepar.values()])

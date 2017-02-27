@@ -57,7 +57,10 @@ def main():
     plot_traces(config, proc_st, spec_st=spec_st, ncols=2,
                 async_plotter=plotter)
 
-    Ml = local_magnitude(config, st, deconvolve=True)
+    if config.compute_local_magnitude:
+        Ml = local_magnitude(config, st, deconvolve=True)
+    else:
+        Ml = None
 
     # Spectral inversion
     sourcepar, sourcepar_err =\
