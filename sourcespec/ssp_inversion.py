@@ -89,7 +89,7 @@ class Bounds():
 
     def _Qo_to_t_star(self):
         t_star_max, t_star_min =\
-            self.hd/(self.config.vs*np.array(self.config.Qo_min_max))
+            self.hd/(self.config.hypo.vs*np.array(self.config.Qo_min_max))
         return self._nan_to_none((t_star_min, t_star_max))
 
     def _fix_initial_values(self):
@@ -165,7 +165,6 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
 
     sourcepar = dict()
     sourcepar_err = dict()
-    vs_m = config.vs*1000
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
         for spec in spec_st_sel.traces:
@@ -185,7 +184,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             # ...if it is not available, we calculate it
             if fc_0 is None:
                 log_m0 = math.log10(mag_to_moment(Mw_0))
-                log_beta = math.log10(vs_m)
+                log_beta = math.log10(config.hypo.vs*1000.)
                 log_bsd = math.log10(config.bsd)
                 log_fc = log_bsd - log_m0 + 3*log_beta - 0.935
                 log_fc /= 3.

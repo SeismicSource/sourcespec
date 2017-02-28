@@ -33,7 +33,7 @@ def radiated_energy(config, spec_st, sourcepar):
         deltaf = spec.stats.delta
         freq = spec.get_freq()
         rho = config.rho
-        vs = config.vs * 1000.
+        vs = config.hypo.vs * 1000.
         rps = config.rps
         # Data is in moment units. Let's put it back to displacement units,
         # and derive it to velocity through multiplication by 2*pi*freq:

@@ -42,6 +42,7 @@ from obspy.core import Trace
 from obspy.geodetics import gps2dist_azimuth
 from obspy import read_events
 from sourcespec.ssp_setup import ssp_exit
+from sourcespec.ssp_util import get_vel
 
 
 class Pick(AttribDict):
@@ -687,6 +688,14 @@ def _parse_picks(config):
     return picks
 
 
+def _hypo_vel(hypo, config):
+    vs = get_vel(hypo.longitude, hypo.latitude, hypo.depth,
+                 'S', config.NLL_model_dir)
+    if vs is None:
+        vs = config.vs
+    hypo.vs = vs
+
+
 def _build_filelist(path, filelist, tmpdir):
     if os.path.isdir(path):
         listing = os.listdir(path)
@@ -832,5 +841,18 @@ def read_traces(config):
         ssp_exit()
 
     _complete_picks(st)
+
+    # if hypo is still None, get it from first trace
+    if hypo is None:
+        try:
+            hypo = st[0].stats.hypo
+        except AttributeError:
+            logging.error('No hypocenter information found')
+            ssp_exit()
+    # add vs to hypo
+    _hypo_vel(hypo, config)
+    # add hypo to config file
+    config.hypo = hypo
+
     st.sort()
     return st

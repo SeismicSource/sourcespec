@@ -11,11 +11,14 @@ Utility functions for sourcespec.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import os
+from glob import glob
 import logging
 import warnings
 import math
 import numpy as np
 from obspy.signal.invsim import cosine_taper as _cos_taper
+from sourcespec.ssp_setup import ssp_exit
 
 
 # MISC ------------------------------------------------------------------------
@@ -55,6 +58,27 @@ def select_trace(stream, traceid, instrtype):
     """Select trace from stream using traceid and instrument type."""
     return [tr for tr in stream.select(id=traceid)
             if tr.stats.instrtype == instrtype][0]
+
+
+def get_vel(lon, lat, depth, wave, NLL_model_dir):
+    try:
+        from nllgrid import NLLGrid
+    except ImportError:
+        logging.error('Error: the "nllgrid" python module is required '
+                      'for "NLL_model_dir".')
+        ssp_exit()
+    grdfile = '*.{}.mod.hdr'.format(wave)
+    grdfile = os.path.join(NLL_model_dir, grdfile)
+    try:
+        grdfile = glob(grdfile)[0]
+    except IndexError:
+        return
+    grd = NLLGrid(grdfile)
+    x, y = grd.project(lon, lat)
+    if grd.type == 'SLOW_LEN':
+        slow_len = grd.get_value(lon, lat, depth)
+        return grd.dx / slow_len
+    return
 # -----------------------------------------------------------------------------
 
 

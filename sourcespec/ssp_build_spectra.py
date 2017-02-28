@@ -26,8 +26,7 @@ from obspy.signal.konnoohmachismoothing import (calculate_smoothing_matrix,
                                                 apply_smoothing_matrix)
 
 from sourcespec import spectrum
-from sourcespec.ssp_setup import dprint
-from sourcespec.ssp_util import cosine_taper, moment_to_mag
+from sourcespec.ssp_util import cosine_taper, moment_to_mag, get_vel
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
 
@@ -179,6 +178,24 @@ def _check_noise_level(trace_signal, trace_noise):
         raise RuntimeError
 
 
+def _displacement_to_moment(stats, config):
+    """
+    Return the coefficient for converting displacement to seismic moment.
+
+    From Aki&Richards,1980
+    """
+    vs_hypo = config.hypo.vs
+    vs_station = get_vel(
+        stats.coords.longitude, stats.coords.latitude, -stats.coords.elevation,
+        'S', config.NLL_model_dir)
+    if vs_station is None:
+        vs_station = config.vs
+    vs_hypo *= 1000.
+    vs_station *= 1000.
+    vs3 = vs_hypo**(5./2) * vs_station**(1./2)
+    return 4 * math.pi * vs3 * config.rho / (2 * config.rps)
+
+
 def _build_spectrum(config, trace):
     stats = trace.stats
 
@@ -214,15 +231,8 @@ def _build_spectrum(config, trace):
             spec.get_freq(), bandwidth=40, normalize=True)
     spec.data = apply_smoothing_matrix(spec.data, smoothing_matrix)
 
-    # TODO: parameterize
-    # coefficient for converting displ spectrum
-    # to seismic moment (Aki&Richards,1980)
-    vs_m = config.vs*1000
-    vs3 = pow(vs_m, 3)
-    coeff = 4 * math.pi * vs3 * config.rho / config.rps / 2.
-    dprint('coeff= %f' % coeff)
-
     # convert to seismic moment
+    coeff = _displacement_to_moment(stats, config)
     spec.data *= coeff
 
     # Cut the spectrum

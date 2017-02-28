@@ -238,7 +238,7 @@ def write_output(config, evid, sourcepar, sourcepar_err):
     errors['t_star'] = t_star_array.std()
 
     # ra, radius (meters)
-    vs_m = config.vs*1000
+    vs_m = config.hypo.vs*1000
     ra_array = 0.37 * vs_m / fc_array
     means['ra'] = _logmean(ra_array)
     errors['ra'] = _log_error(ra_array)
