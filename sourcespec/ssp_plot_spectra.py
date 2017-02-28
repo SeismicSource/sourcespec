@@ -146,6 +146,8 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                         color = synth_colors[(plotn-1) % len(synth_colors)]
                     else:
                         color = 'black'
+                if orientation == 's':
+                    color = 'gray'
                 if plottype in ['regular', 'noise']:
                     ax.loglog(spec.get_freq(), spec.data, color=color,
                               zorder=20)

@@ -298,6 +298,15 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             spec_synth.data = mag_to_moment(spec_synth.data_mag)
             spec_st.append(spec_synth)
 
+            # Add an extra spectrum with no attenuation
+            if config.plot_spectra_no_attenuation:
+                spec_synth = spec.copy()
+                spec_synth.stats.channel = spec.stats.channel[0:2] + 's'
+                params_opt[-1] = 0
+                spec_synth.data_mag = spectral_model(xdata, *params_opt)
+                spec_synth.data = mag_to_moment(spec_synth.data_mag)
+                spec_st.append(spec_synth)
+
     # Filter stations with negative t_star
     # or with anomalous corner frequencies
     f1 = config.min_corner_freq
