@@ -56,6 +56,12 @@ def _write_parfile(config, sourcepar):
         config.options.outdir, '{}.ssp.out'.format(evid))
 
     with open(parfilename, 'w') as parfile:
+        hypo = config.hypo
+        parfile.write(
+            '{} lon {:8.3f} lat {:7.3f} depth {:5.1f} km '
+            'orig_time {}\n\n'.format(
+                hypo.evid, hypo.longitude, hypo.latitude, hypo.depth,
+                hypo.origin_time))
         parfile.write('*** Station source parameters ***\n')
         for statId in sorted(sourcepar.keys()):
             if statId in ['means', 'errors']:
