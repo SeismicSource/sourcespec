@@ -37,8 +37,9 @@ def _wave_arrival_nll(trace, phase, NLL_time_dir):
         grdfile = glob(grdfile)[0]
     except IndexError:
         return
-    print(grdfile)
     grd = NLLGrid(grdfile)
+    if grd.type != 'TIME':
+        return
     hypo_x, hypo_y = grd.project(trace.stats.hypo.longitude,
                                  trace.stats.hypo.latitude)
     hypo_z = trace.stats.hypo.depth
