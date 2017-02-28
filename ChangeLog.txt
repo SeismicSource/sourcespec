@@ -6,7 +6,7 @@ Earthquake source parameters from S-wave displacement spectra
               Agnès Chounet <chounet@ipgp.fr>
 (c) 2015-2017 Claudio Satriano <satriano@ipgp.fr>
 
-v0.9 - 2016-06-XX
+v0.9 - 2017-03-XX
 	- Support for QuakeML and StationXML
 	- Support for Python 3.5
 	- Only compatible with ObsPy >= 1.0.0
@@ -18,14 +18,20 @@ v0.9 - 2016-06-XX
 	- Trace clipping detection
 	- Traces are always plotted, even if no inversion is performed
 	- Use by default a global model for theoretical travel time calculation
+  - Possibility of using NonLinLoc travel time grids (requires nllgrid)
 	- New options for P and S arrival time tolerance
 	- New option for maximum epicentral distance for trace processing
+  - Possibility of using a NonLinLoc model grid for obtaining vs at the
+    source and at the receiver (requires nllgrid)
 	- Use log10 of weighting function, since the inversion is done in
 		mangitude units
 	- Use json format for traceid correction file
 	- Save config file to output dir (only for source_spec)
 	- Logarithmic average and logarithmic (asymmetric) error bars for Mo, fc
 		and source radius
+  - Computation of radiated energy
+  - Station-specific filters
+  - New parameters: gap_max, overlap_max
 	- Code cleaning and optimization:
 		- Switch from optparse (deprecated) to argparse
 		- Code style fixes and refactoring
