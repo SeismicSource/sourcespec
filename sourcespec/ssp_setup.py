@@ -9,7 +9,7 @@ Setup functions for sourcespec.
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnes Chounet <chounet@ipgp.fr>
 
-    2015-2016 Claudio Satriano <satriano@ipgp.fr>
+    2015-2017 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement, Version 2.1
     (http://www.cecill.info/index.en.html)

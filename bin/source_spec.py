@@ -4,7 +4,7 @@
 Wrapper to run source_spec.py from source tree.
 
 :copyright:
-    2016 Claudio Satriano <satriano@ipgp.fr>
+    2016-2017 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement, Version 2.1
     (http://www.cecill.info/index.en.html)
