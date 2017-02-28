@@ -47,10 +47,11 @@ def _format_exponent(value, reference):
     return '{:5.3f}e{:+03d}'.format(value/10**xp, xp)
 
 
-def _write_parfile(config, evid, sourcepar):
+def _write_parfile(config, sourcepar):
     """Write station source parameters to file."""
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
+    evid = config.hypo.evid
     parfilename = os.path.join(
         config.options.outdir, '{}.ssp.out'.format(evid))
 
@@ -128,13 +129,15 @@ def _write_parfile(config, evid, sourcepar):
     logging.info('Output written to file: ' + parfilename)
 
 
-def _write_db(config, evid, sourcepar):
+def _write_db(config, sourcepar):
     try:
         database_file = config.database_file
     except KeyError:
         database_file = None
     if not database_file:
         return
+
+    evid = config.hypo.evid
 
     # Open SQLite database
     conn = sqlite3.connect(database_file)
@@ -178,7 +181,7 @@ def _write_db(config, evid, sourcepar):
     logging.info('Output written to database: ' + database_file)
 
 
-def _write_hypo(config, evid, sourcepar):
+def _write_hypo(config, sourcepar):
     if not config.options.hypo_file:
         return
     with open(config.options.hypo_file, 'r') as fp:
@@ -200,18 +203,19 @@ def _write_hypo(config, evid, sourcepar):
         #line[45+i] = mw_str[0+i]
         line[69+i] = ml_str[0+i]
     outline = ''.join(line)
+    evid = config.hypo.evid
     hypo_file_out = os.path.join(
         config.options.outdir, '{}.ssp.h'.format(evid))
     with open(hypo_file_out, 'w') as fp:
         try:
             fp.write(line1)
-        except:
+        except Exception:
             pass
         fp.write(outline)
     logging.info('Hypo file written to: ' + hypo_file_out)
 
 
-def write_output(config, evid, sourcepar, sourcepar_err):
+def write_output(config, sourcepar, sourcepar_err):
     """Write results to a plain text file and/or to a SQLite database file."""
     if len(sourcepar) == 0:
         logging.info('No source parameter calculated')
@@ -271,13 +275,13 @@ def write_output(config, evid, sourcepar, sourcepar_err):
     sourcepar['errors'] = errors
 
     # Write to parfile
-    _write_parfile(config, evid, sourcepar)
+    _write_parfile(config, sourcepar)
 
     # Write to database, if requested
-    _write_db(config, evid, sourcepar)
+    _write_db(config, sourcepar)
 
     # Write to hypo file, if requested
-    _write_hypo(config, evid, sourcepar)
+    _write_hypo(config, sourcepar)
 
     params_name = ('Mw', 'fc', 't_star')
     sourcepar_mean = dict(zip(params_name,

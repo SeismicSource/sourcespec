@@ -25,7 +25,7 @@ from sourcespec.ssp_spectral_model import spectral_model
 from sourcespec.ssp_util import mag_to_moment
 
 
-def spectral_residuals(config, spec_st, evid, sourcepar_mean):
+def spectral_residuals(config, spec_st, sourcepar_mean):
     """
     Compute spectral residuals with respect to an average spectral model.
 
@@ -47,6 +47,7 @@ def spectral_residuals(config, spec_st, evid, sourcepar_mean):
             residuals.append(res)
 
     # Save residuals as pickle file
+    evid = config.hypo.evid
     res_file = os.path.join(config.options.outdir, evid + '-residuals.pickle')
     logging.info('Spectral residuals saved to: %s' % res_file)
     with open(res_file, 'wb') as fp:

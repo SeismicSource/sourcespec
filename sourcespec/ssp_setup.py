@@ -371,10 +371,11 @@ def configure(progname='source_spec'):
     return config
 
 
-def save_config(config, evid):
+def save_config(config):
     """Save config file to output dir."""
     # Actually, it renames the file already existing.
     src = os.path.join(config.options.outdir, 'source_spec.conf')
+    evid = config.hypo.evid
     dst = os.path.join(config.options.outdir, '%s.ssp.conf' % evid)
     os.rename(src, dst)
 
@@ -420,7 +421,7 @@ def setup_logging(config, basename=None):
     # captureWarnings is not supported in old versions of python
     try:
         logging.captureWarnings(True)
-    except:
+    except Exception:
         pass
     log.setLevel(logging.DEBUG)
     filehand = logging.FileHandler(filename=logfile, mode=filemode)
@@ -475,4 +476,6 @@ def ssp_exit(retval=0, abort=False):
 
 def sigint_handler(sig, frame):
     ssp_exit(1, abort=True)
+
+
 signal.signal(signal.SIGINT, sigint_handler)

@@ -37,12 +37,10 @@ def main():
 
     st = read_traces(config)
 
-    # Now that we have the evid we rename the logfile to use the evid
-    evid = config.hypo.evid
-    setup_logging(config, evid)
+    setup_logging(config, config.hypo.evid)
 
     # Save config to out dir
-    save_config(config, evid)
+    save_config(config)
 
     # Deconvolve, filter, cut traces:
     proc_st = process_traces(config, st)
@@ -65,10 +63,10 @@ def main():
         spectral_inversion(config, spec_st, weight_st, Ml)
 
     # Save output
-    sourcepar_mean = write_output(config, evid, sourcepar, sourcepar_err)
+    sourcepar_mean = write_output(config, sourcepar, sourcepar_err)
 
     # Save residuals
-    spectral_residuals(config, spec_st, evid, sourcepar_mean)
+    spectral_residuals(config, spec_st, sourcepar_mean)
 
     # Plotting
     nspec = len(set(s.id[:-1] for s in spec_st))
