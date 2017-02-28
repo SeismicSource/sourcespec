@@ -21,7 +21,8 @@ import numpy as np
 import re
 from obspy.core import Stream
 from sourcespec.ssp_setup import ssp_exit
-from sourcespec.ssp_util import remove_instr_response, hypo_dist, wave_arrival
+from sourcespec.ssp_util import remove_instr_response, hypo_dist
+from sourcespec.ssp_wave_arrival import wave_arrival
 
 
 def filter_trace(config, trace):
