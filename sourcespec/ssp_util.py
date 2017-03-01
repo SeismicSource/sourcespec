@@ -44,14 +44,14 @@ def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
     return amp_minmax, freq_minmax
 
 
-def moment_to_mag(data):
+def moment_to_mag(moment):
     """Convert moment to magnitude."""
-    return (np.log10(data) - 9.1) / 1.5
+    return (np.log10(moment) - 9.1) / 1.5
 
 
-def mag_to_moment(data):
+def mag_to_moment(magnitude):
     """Convert magnitude to moment."""
-    return np.power(10, (1.5 * data + 9.1))
+    return np.power(10, (1.5 * magnitude + 9.1))
 
 
 def select_trace(stream, traceid, instrtype):
