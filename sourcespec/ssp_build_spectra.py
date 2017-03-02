@@ -30,8 +30,8 @@ from sourcespec.ssp_util import cosine_taper, moment_to_mag, get_vel
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
 
-smoothing_matrix = None
-smoothing_matrix_weight = None
+# dictionary of smoothing_matrices (organized by shape)
+smoothing_matrices = {}
 
 
 def _time_integrate(config, trace):
@@ -215,29 +215,28 @@ def _build_spectrum(config, trace):
     if not config.time_domain_int:
         _frequency_integrate(config, spec)
 
-    # smooth the abs of fft
-    global smoothing_matrix
-    compute_smoothing_matrix = False
-    if smoothing_matrix is None:
-        logging.info('Computing Konno-Ohmachi smoothing matrix for spectra. '
+    # cut the spectrum
+    spec = _cut_spectrum(config, spec)
+
+    # smooth the spectrum
+    shape = spec.data.shape
+    global smoothing_matrices
+    try:
+        smoothing_matrix = smoothing_matrices[shape]
+    except KeyError:
+        logging.info('Computing Konno-Ohmachi smoothing matrix for spectra '
+                     'with shape {}. '.format(shape) +
                      'This might take a while but is done only once.')
-        compute_smoothing_matrix = True
-    elif spec.data.shape[0] != smoothing_matrix.shape[0]:
-        logging.info('Re-computing Konno-Ohmachi smoothing matrix for spectra '
-                     'with different shape.')
-        compute_smoothing_matrix = True
-    if compute_smoothing_matrix:
         smoothing_matrix = calculate_smoothing_matrix(
             spec.get_freq(), bandwidth=40, normalize=True)
+        smoothing_matrices[shape] = smoothing_matrix
     spec.data = apply_smoothing_matrix(spec.data, smoothing_matrix)
 
     # convert to seismic moment
     coeff = _displacement_to_moment(stats, config)
     spec.data *= coeff
 
-    # Cut the spectrum
-    spec_cut = _cut_spectrum(config, spec)
-    return spec_cut
+    return spec
 
 
 def _build_weight(spec, specnoise):
@@ -252,23 +251,20 @@ def _build_weight(spec, specnoise):
         # Make sure weight is positive,
         # i.e put weight to zero when S/N < 1
         weight.data[weight.data < 0] = 0
+
         # smooth weight
-        global smoothing_matrix_weight
-        compute_smoothing_matrix = False
-        if smoothing_matrix_weight is None:
+        shape = weight.data.shape
+        global smoothing_matrices
+        try:
+            smoothing_matrix = smoothing_matrices[shape]
+        except KeyError:
             logging.info('Computing Konno-Ohmachi smoothing matrix for '
-                         'weights. This might take a while but is done '
-                         'only once.')
-            compute_smoothing_matrix = True
-        elif weight.data.shape[0] != smoothing_matrix_weight.shape[0]:
-            logging.info('Re-computing Konno-Ohmachi smoothing matrix for '
-                         'weights with different shape.')
-            compute_smoothing_matrix = True
-        if compute_smoothing_matrix:
-            smoothing_matrix_weight = calculate_smoothing_matrix(
+                         'weights with shape {}. '.format(shape) +
+                         'This might take a while but is done only once.')
+            smoothing_matrix = calculate_smoothing_matrix(
                 spec.get_freq(), bandwidth=20, normalize=True)
-        weight.data = apply_smoothing_matrix(
-            weight.data, smoothing_matrix_weight)
+            smoothing_matrices[shape] = smoothing_matrix
+        weight.data = apply_smoothing_matrix(weight.data, smoothing_matrix)
         # normalization
         weight.data /= np.max(weight.data)
     else:
@@ -328,7 +324,9 @@ def build_spectra(config, st, noise_weight=False):
     spec_st = Stream()
     specnoise_st = Stream()
 
-    for trace in st.sort():
+    # sort by sampling rate: this limits the number of times on which
+    # konno-ohmachi smoothing matrix is recomputed
+    for trace in st.sort(keys=['sampling_rate', 'station']):
         try:
             _check_data_len(config, trace)
             trace_signal, trace_noise = _cut_signal_noise(config, trace)
