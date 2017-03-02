@@ -53,4 +53,5 @@ Optionally, you can install the codes by running:
 
 
 ## Sample runs
-Several sample runs are available in the `sourcespec_testruns` package.
+Several sample runs are available in the
+[sourcespec_testruns](https://gitlab.com/claudiodsf/sourcespec_testruns) package.
