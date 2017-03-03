@@ -30,6 +30,59 @@ from sourcespec.ssp_radiated_energy import radiated_energy
 from sourcespec.ssp_inversion_types import InitialValues, Bounds
 
 
+def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
+    """
+    Curve fitting.
+
+    Uses "curve_fit()" (Levenberg-Marquardt algorithm if no bounds
+    or Trust Region Reflective algorithm if bounds)
+    or the truncated Newton algorithm (TNC) with bounds.
+    """
+    freq_log = spec.freq_log
+    ydata = spec.data_log_mag
+    try:
+        if config.inv_algorithm == 'TNC':
+            minimize_func = objective_func(freq_log, ydata, weight)
+            res =\
+                minimize(minimize_func,
+                         x0=initial_values.get_params0(), method='TNC',
+                         callback=callback, bounds=bounds.bounds)
+            params_opt = res.x
+            # trick: use curve_fit() bounded to params_opt
+            # to get the covariance
+            _, params_cov = curve_fit(spectral_model, freq_log, ydata,
+                                      p0=params_opt, sigma=yerr,
+                                      bounds=(params_opt-(1e-10),
+                                              params_opt+(1e-10)))
+        elif config.inv_algorithm == 'LM':
+            logging.info('%s %s: initial values: %s' %
+                         (spec.id, spec.stats.instrtype,
+                          str(initial_values)))
+            bnds = bounds.get_bounds_curve_fit()
+            if bnds is not None:
+                logging.info('Trying to use using Levenberg-Marquardt '
+                             'algorithm with bounds. Switching to the '
+                             'Trust Region Reflective algorithm.')
+            params_opt, params_cov =\
+                curve_fit(spectral_model,
+                          freq_log, ydata,
+                          p0=initial_values.get_params0(),
+                          sigma=yerr,
+                          bounds=bounds.get_bounds_curve_fit())
+        elif config.inv_algorithm == 'BH':
+            from scipy.optimize import basinhopping
+            minimize_func = objective_func(freq_log, ydata, weight)
+            res = basinhopping(minimize_func,
+                               x0=initial_values.get_params0(),
+                               niter=100, accept_test=bounds)
+            params_opt = res.x
+    except RuntimeError:
+        logging.warning('%s %s: unable to fit spectral model' %
+                        (spec.id, spec.stats.instrtype))
+        return None, None
+    return params_opt, params_cov
+
+
 def spectral_inversion(config, spec_st, weight_st, Ml):
     """Inversion of displacement spectra."""
     if config.weighting == 'noise':
@@ -49,7 +102,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
 
     sourcepar = dict()
     sourcepar_err = dict()
-    stations = set(x.stats.station for x in spec_st.traces)
+    stations = set(x.stats.station for x in spec_st)
     spectra = [sp for sta in stations for sp in spec_st.select(station=sta)]
     for spec in spectra:
         if spec.stats.channel[2] != 'H':
@@ -124,48 +177,9 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
         logging.info('%s %s: bounds: %s' %
                      (spec.id, spec.stats.instrtype, str(bounds)))
 
-        # Curve fitting using "curve_fit()" (Levenberg-Marquardt algorithm
-        # if no bounds or Trust Region Reflective algorithm if bounds)
-        # or the truncated Newton algorithm (TNC) with bounds.
-        try:
-            if config.inv_algorithm == 'TNC':
-                minimize_func = objective_func(freq_log, ydata, weight)
-                res =\
-                    minimize(minimize_func,
-                             x0=initial_values.get_params0(), method='TNC',
-                             callback=callback, bounds=bounds.bounds)
-                params_opt = res.x
-                # trick: use curve_fit() bounded to params_opt
-                # to get the covariance
-                _, params_cov = curve_fit(spectral_model, freq_log, ydata,
-                                          p0=params_opt, sigma=yerr,
-                                          bounds=(params_opt-(1e-10),
-                                                  params_opt+(1e-10)))
-            elif config.inv_algorithm == 'LM':
-                logging.info('%s %s: initial values: %s' %
-                             (spec.id, spec.stats.instrtype,
-                              str(initial_values)))
-                bnds = bounds.get_bounds_curve_fit()
-                if bnds is not None:
-                    logging.info('Trying to use using Levenberg-Marquardt '
-                                 'algorithm with bounds. Switching to the '
-                                 'Trust Region Reflective algorithm.')
-                params_opt, params_cov =\
-                    curve_fit(spectral_model,
-                              freq_log, ydata,
-                              p0=initial_values.get_params0(),
-                              sigma=yerr,
-                              bounds=bounds.get_bounds_curve_fit())
-            elif config.inv_algorithm == 'BH':
-                from scipy.optimize import basinhopping
-                minimize_func = objective_func(freq_log, ydata, weight)
-                res = basinhopping(minimize_func,
-                                   x0=initial_values.get_params0(),
-                                   niter=100, accept_test=bounds)
-                params_opt = res.x
-        except RuntimeError:
-            logging.warning('%s %s: unable to fit spectral model' %
-                            (spec.id, spec.stats.instrtype))
+        params_opt, params_cov = _curve_fit(
+            config, spec, weight, yerr, initial_values, bounds)
+        if params_opt is None:
             continue
 
         params_name = ('Mw', 'fc', 't_star')
