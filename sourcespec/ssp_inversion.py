@@ -156,7 +156,6 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
         fc_0 = config.fc_0
         # ...if it is not available, we calculate it
         if fc_0 is None:
-            # fc_0 = freq_log[idx1]
             log_m0 = math.log10(mag_to_moment(Mw_0))
             log_beta = math.log10(config.hypo.vs*1000.)
             log_bsd = math.log10(config.bsd)

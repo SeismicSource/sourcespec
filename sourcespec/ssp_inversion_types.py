@@ -43,13 +43,13 @@ class Bounds(object):
         self.hd = spec.stats.hypo_dist
         self.ini_values = initial_values
         self.Mw_min = self.Mw_max = None
-        self.fc_min, self.fc_max = self._check_minmax(config.fc_min_max)
+        self._set_fc_min_max(config)
         if config.Qo_min_max is None:
             self.t_star_min, self.t_star_max =\
                 self._check_minmax(config.t_star_min_max)
         else:
             self.t_star_min, self.t_star_max = self._Qo_to_t_star()
-        self._fix_initial_values()
+        self._fix_initial_values_t_star()
 
     def __str__(self):
         """String representation."""
@@ -61,6 +61,17 @@ class Bounds(object):
             *[round(x, 4) if x is not None else x for x in self.bounds[2]])
         return s
 
+    def _set_fc_min_max(self, config):
+        if config.fc_min_max is None:
+            # If no bound is given, set it to a decade around fc_0
+            scale = 10**0.5  # half a decade
+            scale = 10**1.  # half a decade
+            fc_0 = self.ini_values.fc_0
+            self.fc_min = fc_0/scale
+            self.fc_max = fc_0*scale
+        else:
+            self.fc_min, self.fc_max = config.fc_min_max
+
     def _check_minmax(self, minmax):
         if minmax is None:
             return (None, None)
@@ -71,34 +82,6 @@ class Bounds(object):
         t_star_max, t_star_min =\
             self.hd/(self.config.hypo.vs*np.array(self.config.Qo_min_max))
         return self._nan_to_none((t_star_min, t_star_max))
-
-    def _fix_initial_values_Mw(self):
-        if self.ini_values.Mw_0 is not None:
-            return
-        if None in self.bounds[0]:
-            return
-        if self.Mw_min < self.ini_values.Mw_0 < self.Mw_max:
-            return
-        Mw_0 = (self.Mw_max + self.Mw_min) / 2.
-        logging.warning('%s %s: initial Mw value: %s outside '
-                        'bounds. Using bound average: %s' %
-                        (self.spec.id, self.spec.stats.instrtype,
-                         self.ini_values.Mw_0, round(Mw_0, 4)))
-        self.ini_values.Mw_0 = Mw_0
-
-    def _fix_initial_values_fc(self):
-        if self.ini_values.fc_0 is not None:
-            return
-        if None in self.bounds[1]:
-            return
-        if self.fc_min < self.ini_values.fc_0 < self.fc_max:
-            return
-        fc_0 = (self.fc_max + self.fc_min) / 2.
-        logging.warning('%s %s: initial fc value: %s outside '
-                        'bounds. Using bound average: %s' %
-                        (self.spec.id, self.spec.stats.instrtype,
-                         self.ini_values.fc_0, round(fc_0, 4)))
-        self.ini_values.fc_0 = fc_0
 
     def _fix_initial_values_t_star(self):
         if self.ini_values.t_star_0 is not None:
@@ -113,11 +96,6 @@ class Bounds(object):
                         (self.spec.id, self.spec.stats.instrtype,
                          self.ini_values.t_star_0, round(t_star_0, 4)))
         self.ini_values.t_star_0 = t_star_0
-
-    def _fix_initial_values(self):
-        self._fix_initial_values_Mw()
-        self._fix_initial_values_fc()
-        self._fix_initial_values_t_star()
 
     def __call__(self, **kwargs):
         """Interface for basin-hopping."""
