@@ -16,7 +16,7 @@ v0.9 - 2017-03-XX
 		- New installable package (e.g., via pip)
   - Spectra are smoothed in log-freq (no more Konno-Ohmachi)
   - Inversion is performed in a log-freq space
-  - Mw is inverted separately and then fixed
+  - Multi-step inversion: first Mw, then fc, then t*
 	- Traces are filtered before computing S/N ratio
 	- Trace clipping detection
 	- Traces are always plotted, even if no inversion is performed

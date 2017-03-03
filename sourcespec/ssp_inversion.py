@@ -165,17 +165,37 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             logging.info('%s fc_0 autoset to: %.2f' % (spec.id, fc_0))
         # initial value for t_star
         t_star_0 = config.t_star_0
-        initial_values = InitialValues(Mw_0, fc_0, t_star_0)
-        logging.info('%s %s: initial values: %s' %
+
+        # FIRST RUN
+        initial_values = InitialValues(Mw_0, fc_0, 0.)
+        logging.info('%s %s: first run: initial values: %s' %
                      (spec.id, spec.stats.instrtype,
                       str(initial_values)))
-
         bounds = Bounds(config, spec, initial_values)
         bounds.Mw_min = Mw_0 - 0.1
         bounds.Mw_max = Mw_0 + 0.1
-        logging.info('%s %s: bounds: %s' %
+        bounds.t_star_min = 0.
+        bounds.t_star_max = 1e-99
+        logging.info('%s %s: first run: bounds: %s' %
                      (spec.id, spec.stats.instrtype, str(bounds)))
+        params_opt, params_cov = _curve_fit(
+            config, spec, weight, yerr, initial_values, bounds)
+        if params_opt is None:
+            continue
+        params_name = ('Mw', 'fc', 't_star')
+        par = dict(zip(params_name, params_opt))
+        fc_0 = par['fc']
 
+        # SECOND RUN
+        initial_values = InitialValues(Mw_0, fc_0, t_star_0)
+        logging.info('%s %s: second run: initial values: %s' %
+                     (spec.id, spec.stats.instrtype,
+                      str(initial_values)))
+        bounds = Bounds(config, spec, initial_values)
+        bounds.fc_min = fc_0 * 0.99
+        bounds.fc_max = fc_0 * 1.01
+        logging.info('%s %s: second run: bounds: %s' %
+                     (spec.id, spec.stats.instrtype, str(bounds)))
         params_opt, params_cov = _curve_fit(
             config, spec, weight, yerr, initial_values, bounds)
         if params_opt is None:
