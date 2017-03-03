@@ -21,17 +21,12 @@ import logging
 import numpy as np
 import math
 from scipy.integrate import cumtrapz
+from scipy.interpolate import interp1d
 from obspy.core import Stream
-from obspy.signal.konnoohmachismoothing import (calculate_smoothing_matrix,
-                                                apply_smoothing_matrix)
-
 from sourcespec import spectrum
-from sourcespec.ssp_util import cosine_taper, moment_to_mag, get_vel
+from sourcespec.ssp_util import smooth, cosine_taper, moment_to_mag, get_vel
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
-
-# dictionary of smoothing_matrices (organized by shape)
-smoothing_matrices = {}
 
 
 def _time_integrate(config, trace):
@@ -104,11 +99,14 @@ def _compute_h(spec_st, code, wave_type='S'):
         if spec_h is None:
             spec_h = spec.copy()
             spec_h.data = np.power(spec_h.data, 2)
+            spec_h.data_log = np.power(spec_h.data_log, 2)
             spec_h.stats.channel = code + 'H'
         else:
             spec_h.data += np.power(spec.data, 2)
+            spec_h.data_log += np.power(spec.data_log, 2)
     if spec_h is not None:
         spec_h.data = np.sqrt(spec_h.data)
+        spec_h.data_log = np.sqrt(spec_h.data_log)
     return spec_h
 
 
@@ -196,12 +194,22 @@ def _displacement_to_moment(stats, config):
     return 4 * math.pi * vs3 * config.rho / (2 * config.rps)
 
 
+def _smooth_spectrum(spec, npts=5):
+    """Smooth spectrum in a log_freq space."""
+    freq = spec.get_freq()
+    f = interp1d(freq, spec.data, fill_value='extrapolate')
+    freq_log = np.logspace(np.log10(freq[0]), np.log10(freq[-1]))
+    spec.freq_log = freq_log
+    spec.data_log = f(freq_log)
+    spec.data_log = smooth(spec.data_log, window_len=npts)
+    f = interp1d(freq_log, spec.data_log, fill_value='extrapolate')
+    spec.data = f(freq)
+
+
 def _build_spectrum(config, trace):
     stats = trace.stats
-
     # normalization for the hypocentral distance
     trace.data *= trace.stats.hypo_dist * 1000
-
     # calculate fft
     spec = spectrum.do_spectrum(trace)
     spec.stats.instrtype = stats.instrtype
@@ -209,33 +217,17 @@ def _build_spectrum(config, trace):
     spec.stats.hypo = stats.hypo
     spec.stats.hypo_dist = stats.hypo_dist
     spec.stats.epi_dist = stats.epi_dist
-
     # Integrate in frequency domain, if no time-domain
     # integration has been performed
     if not config.time_domain_int:
         _frequency_integrate(config, spec)
-
     # cut the spectrum
     spec = _cut_spectrum(config, spec)
-
-    # smooth the spectrum
-    shape = spec.data.shape
-    global smoothing_matrices
-    try:
-        smoothing_matrix = smoothing_matrices[shape]
-    except KeyError:
-        logging.info('Computing Konno-Ohmachi smoothing matrix for spectra '
-                     'with shape {}. '.format(shape) +
-                     'This might take a while but is done only once.')
-        smoothing_matrix = calculate_smoothing_matrix(
-            spec.get_freq(), bandwidth=40, normalize=True)
-        smoothing_matrices[shape] = smoothing_matrix
-    spec.data = apply_smoothing_matrix(spec.data, smoothing_matrix)
-
     # convert to seismic moment
     coeff = _displacement_to_moment(stats, config)
     spec.data *= coeff
-
+    # smooth
+    _smooth_spectrum(spec, npts=5)
     return spec
 
 
@@ -248,24 +240,9 @@ def _build_weight(spec, specnoise):
         # The inversion is done in magnitude units,
         # so let's take log10 of weight
         weight.data = np.log10(weight.data)
-        # Make sure weight is positive,
-        # i.e put weight to zero when S/N < 1
-        weight.data[weight.data < 0] = 0
-
-        # smooth weight
-        shape = weight.data.shape
-        global smoothing_matrices
-        try:
-            smoothing_matrix = smoothing_matrices[shape]
-        except KeyError:
-            logging.info('Computing Konno-Ohmachi smoothing matrix for '
-                         'weights with shape {}. '.format(shape) +
-                         'This might take a while but is done only once.')
-            smoothing_matrix = calculate_smoothing_matrix(
-                spec.get_freq(), bandwidth=20, normalize=True)
-            smoothing_matrices[shape] = smoothing_matrix
-        weight.data = apply_smoothing_matrix(weight.data, smoothing_matrix)
-        # normalization
+        # Make sure weight is positive
+        weight.data[weight.data <= 0] = 0.001
+        _smooth_spectrum(weight, npts=11)
         weight.data /= np.max(weight.data)
     else:
         logging.warning('%s: No available noise window: '
@@ -363,6 +340,7 @@ def build_spectra(config, st, noise_weight=False):
     # convert the spectral amplitudes to moment magnitude
     for spec in spec_st:
         spec.data_mag = moment_to_mag(spec.data)
+        spec.data_log_mag = moment_to_mag(spec.data_log)
 
     # optionally, apply station correction
     if config.options.correction:
