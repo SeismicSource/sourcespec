@@ -61,6 +61,8 @@ def select_trace(stream, traceid, instrtype):
 
 
 def get_vel(lon, lat, depth, wave, NLL_model_dir):
+    if NLL_model_dir is None:
+        return
     try:
         from nllgrid import NLLGrid
     except ImportError:
