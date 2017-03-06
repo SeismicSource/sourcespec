@@ -135,21 +135,38 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 orientation = spec.stats.channel[2]
                 if orientation in ['Z', '1']:
                     color = 'purple'
+                    linestyle = 'solid'
+                    linewidth = 1
                 if orientation in ['N', '2', 'R']:
                     color = 'green'
+                    linestyle = 'solid'
+                    linewidth = 1
                 if orientation in ['E', '3', 'T']:
                     color = 'blue'
+                    linestyle = 'solid'
+                    linewidth = 1
                 if orientation == 'H':
                     color = 'red'
+                    linestyle = 'solid'
+                    linewidth = 1
                 if orientation == 'S':
                     if stack_plots:
                         color = synth_colors[(plotn-1) % len(synth_colors)]
                     else:
                         color = 'black'
+                    linestyle = 'solid'
+                    linewidth = 2
                 if orientation == 's':
                     color = 'gray'
+                    linestyle = 'solid'
+                    linewidth = 1
+                if orientation == 't':
+                    color = 'gray'
+                    linestyle = 'dashed'
+                    linewidth = 1
                 if plottype in ['regular', 'noise']:
                     ax.loglog(spec.get_freq(), spec.data, color=color,
+                              linestyle=linestyle, linewidth=linewidth,
                               zorder=20)
                     if orientation == 'S':
                         fc = spec.stats.par['fc']

@@ -227,8 +227,18 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
         if config.plot_spectra_no_attenuation:
             spec_synth = spec.copy()
             spec_synth.stats.channel = spec.stats.channel[0:2] + 's'
-            params_opt[-1] = 0
-            spec_synth.data_mag = spectral_model(freq, *params_opt)
+            _params = list(params_opt)
+            _params[-1] = 0
+            spec_synth.data_mag = spectral_model(freq, *_params)
+            spec_synth.data = mag_to_moment(spec_synth.data_mag)
+            spec_st.append(spec_synth)
+
+        if config.plot_spectra_no_fc:
+            spec_synth = spec.copy()
+            spec_synth.stats.channel = spec.stats.channel[0:2] + 't'
+            _params = list(params_opt)
+            _params[1] = 1e999
+            spec_synth.data_mag = spectral_model(freq, *_params)
             spec_synth.data = mag_to_moment(spec_synth.data_mag)
             spec_st.append(spec_synth)
 
