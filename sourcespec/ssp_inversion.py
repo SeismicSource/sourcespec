@@ -25,7 +25,7 @@ from scipy.signal import argrelmax
 from obspy.geodetics import gps2dist_azimuth
 from sourcespec.ssp_spectral_model import (spectral_model, objective_func,
                                            callback)
-from sourcespec.ssp_util import mag_to_moment, select_trace
+from sourcespec.ssp_util import mag_to_moment, select_trace, smooth
 from sourcespec.ssp_radiated_energy import radiated_energy
 from sourcespec.ssp_inversion_types import InitialValues, Bounds
 
@@ -141,7 +141,7 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
         elif config.weighting is None:
             weight = yerr = np.ones(len(ydata))
 
-        # Find the frequency range to compute Mw_0:
+        # Find the frequency range to compute Mw_0 and, possibly, t_star_0:
         # we start where signal-to-noise becomes strong
         idx0 = np.where(noise_weight > 0.5)[0][0]
         # we stop at the first max of signal-to-noise (proxy for fc)
@@ -152,55 +152,50 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
         if idx1 == idx0:
             idx1 = idx_max[1]
 
-        # We calculate the initial value for Mw as an average
-        Mw_0 = np.nanmean(ydata[idx0: idx1])
-        # We try to retrieve fc_0 from the configuration...
-        fc_0 = config.fc_0
-        # ...if it is not available, we calculate it
-        if fc_0 is None:
-            log_m0 = math.log10(mag_to_moment(Mw_0))
-            log_beta = math.log10(config.hypo.vs*1000.)
-            log_bsd = math.log10(config.bsd)
-            log_fc = log_bsd - log_m0 + 3*log_beta - 0.935
-            log_fc /= 3.
-            fc_0 = math.pow(10, log_fc)
-            logging.info('%s fc_0 autoset to: %.2f' % (spec.id, fc_0))
-        # initial value for t_star
-        t_star_0 = config.t_star_0
+        # first maximum is a proxy for fc, we use it for fc_0:
+        fc_0 = freq_log[idx1]
 
-        # FIRST RUN
-        initial_values = InitialValues(Mw_0, fc_0, 0.)
-        logging.info('%s %s: first run: initial values: %s' %
+        if config.invert_t_star_0:
+            # fit t_star_0 and Mw on the initial part of the spectrum,
+            # corrected for the effect of fc
+            ydata_corr = ydata - spectral_model(
+                freq_log, Mw=0, fc=fc_0, t_star=0)
+            ydata_corr = smooth(ydata_corr, window_len=18)
+            slope, Mw_0 = np.polyfit(
+                freq_log[idx0: idx1], ydata_corr[idx0: idx1], deg=1)
+            t_star_0 = -3./2 * slope / (np.pi * np.log10(np.e))
+            t_star_min = t_star_0 * (1 - config.t_star_0_variability)
+            t_star_max = t_star_0 * (1 + config.t_star_0_variability)
+            # import matplotlib.pyplot as plt
+            # plt.semilogx(freq_log, ydata_corr, '.')
+            # plt.axvline(fc_0)
+            # plt.semilogx(freq_log[idx0: idx1],
+            #              slope*freq_log[idx0: idx1] + Mw_0)
+            # plt.title(spec.id)
+            # plt.show()
+        if not config.invert_t_star_0 or t_star_0 < 0:
+            # we calculate the initial value for Mw as an average
+            Mw_0 = np.nanmean(ydata[idx0: idx1])
+            t_star_0 = config.t_star_0
+            t_star_min = config.t_star_min_max[0]
+            t_star_max = config.t_star_min_max[1]
+
+        initial_values = InitialValues(Mw_0, fc_0, t_star_0)
+        logging.info('%s %s: initial values: %s' %
                      (spec.id, spec.stats.instrtype,
                       str(initial_values)))
         bounds = Bounds(config, spec, initial_values)
         bounds.Mw_min = Mw_0 - 0.1
         bounds.Mw_max = Mw_0 + 0.1
-        bounds.t_star_min = 0.
-        bounds.t_star_max = 1e-99
-        logging.info('%s %s: first run: bounds: %s' %
+        bounds.t_star_min = t_star_min
+        bounds.t_star_max = t_star_max
+        logging.info('%s %s: bounds: %s' %
                      (spec.id, spec.stats.instrtype, str(bounds)))
         params_opt, params_cov = _curve_fit(
             config, spec, weight, yerr, initial_values, bounds)
         if params_opt is None:
-            continue
-        params_name = ('Mw', 'fc', 't_star')
-        par = dict(zip(params_name, params_opt))
-        fc_0 = par['fc']
-
-        # SECOND RUN
-        initial_values = InitialValues(Mw_0, fc_0, t_star_0)
-        logging.info('%s %s: second run: initial values: %s' %
-                     (spec.id, spec.stats.instrtype,
-                      str(initial_values)))
-        bounds = Bounds(config, spec, initial_values)
-        bounds.fc_min = fc_0 * 0.99
-        bounds.fc_max = fc_0 * 1.01
-        logging.info('%s %s: second run: bounds: %s' %
-                     (spec.id, spec.stats.instrtype, str(bounds)))
-        params_opt, params_cov = _curve_fit(
-            config, spec, weight, yerr, initial_values, bounds)
-        if params_opt is None:
+            logging.warning('%s %s: unable to fit a spectral model' %
+                            (spec.id, spec.stats.instrtype))
             continue
 
         params_name = ('Mw', 'fc', 't_star')
