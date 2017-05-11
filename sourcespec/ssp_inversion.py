@@ -149,6 +149,8 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
         # just keep the indexes for maxima > 0.5
         idx_max = [idx for idx in idx_max if noise_weight[idx] > 0.5]
         idx1 = idx_max[0]
+        if idx1 == idx0:
+            idx1 = idx_max[1]
 
         # We calculate the initial value for Mw as an average
         Mw_0 = np.nanmean(ydata[idx0: idx1])
