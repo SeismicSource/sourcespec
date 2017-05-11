@@ -212,7 +212,13 @@ def _merge_stream(config, st):
     st.detrend(type='constant')
     st.detrend(type='constant')
     # Merge stream to remove gaps and overlaps
-    return st.merge(fill_value=0)[0]
+    try:
+        st.merge(fill_value=0)
+        # st.merge raises a generic Exception if traces have
+        # different sampling rates
+    except Exception:
+        raise RuntimeError
+    return st[0]
 
 
 def _add_hypo_dist_and_arrivals(config, st):
