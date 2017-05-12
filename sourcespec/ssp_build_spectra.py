@@ -249,6 +249,9 @@ def _build_weight(spec, specnoise):
                         % weight.get_id()[0:-1] +
                         'a uniform weight will be applied')
         weight.data = np.ones(len(spec.data))
+    # interpolate to log-frequencies
+    f = interp1d(weight.get_freq(), weight.data, fill_value='extrapolate')
+    weight.data_log = f(weight.freq_log)
     return weight
 
 
