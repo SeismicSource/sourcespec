@@ -20,6 +20,7 @@ except ImportError:
     import pickle
 import logging
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
+from scipy.interpolate import interp1d
 
 
 def station_correction(spec_st, config):
@@ -40,13 +41,20 @@ def station_correction(spec_st, config):
     for spec in [spec for spec in spec_st if (spec.stats.channel[-1] == 'H')]:
         station = spec.stats.station
         if station in set(x.stats.station for x in residual):
+            # apply correction
             corr = residual.select(station=station)[0]
-            fmin = spec.get_freq().min()
-            fmax = spec.get_freq().max()
+            freq = spec.get_freq()
+            fmin = freq.min()
+            fmax = freq.max()
             corr = corr.slice(fmin, fmax)
             corr.data_mag = moment_to_mag(corr.data)
             spec.data_mag -= corr.data_mag
+            # interpolate the corrected data_mag to log frequencies
+            f = interp1d(freq, spec.data_mag, fill_value='extrapolate')
+            spec.data_log_mag = f(spec.freq_log)
+            # convert mag to moment
             spec.data = mag_to_moment(spec.data_mag)
+            spec.data_log = mag_to_moment(spec.data_log_mag)
 
             logging.info('%s corrected, frequency range is: %f %f'
                          % (spec.id, fmin, fmax))
