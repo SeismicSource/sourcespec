@@ -69,7 +69,10 @@ def _check_obspy_version():
     import obspy
     MIN_OBSPY_VERSION = (1, 0, 0)
     OBSPY_VERSION_STR = obspy.__version__
-    OBSPY_VERSION = tuple(map(int, OBSPY_VERSION_STR.split('.')[:3]))
+    OBSPY_VERSION = OBSPY_VERSION_STR.split('.')[:3]
+    # special case for "rc" versions:
+    OBSPY_VERSION[2] = OBSPY_VERSION[2].split('rc')[0]
+    OBSPY_VERSION = tuple(map(int, OBSPY_VERSION))
     if OBSPY_VERSION < MIN_OBSPY_VERSION:
         msg = 'ERROR: ObsPy >= %s.%s.%s is required.' % MIN_OBSPY_VERSION
         msg += ' You have version: %s\n' % OBSPY_VERSION_STR
