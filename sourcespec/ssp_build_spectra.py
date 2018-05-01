@@ -162,6 +162,11 @@ def _cut_signal_noise(config, trace):
                          endtime=noise_t1+config.spectral_win_length,
                          pad=True,
                          fill_value=0)
+    # Be sure that both traces have same length:
+    if len(trace_signal) != len(trace_noise):
+        npts = min(len(trace_signal), len(trace_noise))
+        trace_signal.data = trace_signal.data[:npts]
+        trace_noise.data = trace_noise.data[:npts]
 
     return trace_signal, trace_noise
 
