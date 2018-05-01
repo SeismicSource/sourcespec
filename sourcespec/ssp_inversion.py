@@ -118,6 +118,14 @@ def _spec_inversion(config, spec, noise_weight):
     idx_max = argrelmax(noise_weight)[0]
     # just keep the indexes for maxima > 0.5
     idx_max = [idx for idx in idx_max if noise_weight[idx] > 0.5]
+    if not idx_max:
+        # if idx_max is empty, then the source and/or noise spectrum
+        # is most certainly "strange". In this case, we simply give up.
+        logging.warning('%s: unable to find a frequency range to compute '
+                        'Mw_0' % spec.id)
+        logging.warning('   This is possibly due to an uncommon '
+                        'spectrum for the trace (e.g., a resonance).')
+        raise RuntimeError
     idx1 = idx_max[0]
     if idx1 == idx0:
         idx1 = idx_max[1]
