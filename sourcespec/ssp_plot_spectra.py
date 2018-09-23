@@ -187,8 +187,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                                 zorder=20)
                 else:
                     raise ValueError('Unknown plot type: %s' % plottype)
-                #leg = ax.legend(('N', 'E', 'H'),
-                #    'lower right')
+                # leg = ax.legend(('N', 'E', 'H'), 'lower right')
 
                 if specnoise_st:
                     if spec.stats.channel[2] != 'S':
@@ -279,7 +278,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     if config.PLOT_SHOW:
         plt.show()
     if config.PLOT_SAVE:
-        #TODO: improve this:
+        # TODO: improve this:
         evid = spec_st.traces[0].stats.hypo.evid
         if plottype == 'regular':
             suffix = '.ssp.'

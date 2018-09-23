@@ -133,7 +133,7 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
         # elevation is in meters in the dataless
         coords.elevation /= 1000.
         trace.stats.coords = coords
-    except:
+    except Exception:
         pass
     # If we couldn't find any PAZ in the dataless dictionary,
     # we try to attach paz from the paz dictionary passed
@@ -402,9 +402,9 @@ def _read_dataless(path):
             fullpath = os.path.join(path, filename)
             try:
                 dataless[filename] = Parser(fullpath)
-            except:
+            except Exception:
                 continue
-        #TODO: manage the case in which "path" is a file name
+        # TODO: manage the case in which "path" is a file name
     logging.info('Reading dataless: done')
     return dataless
 
@@ -428,7 +428,7 @@ def _read_paz(path):
     paz = dict()
     if os.path.isdir(path):
         listing = os.listdir(path)
-        #check if files have a common prefix: we will strip it later
+        # check if files have a common prefix: we will strip it later
         prefix = os.path.commonprefix(listing)
         for filename in listing:
             fullpath = os.path.join(path, filename)
@@ -514,7 +514,7 @@ def _parse_qml(qml_file, evid=None):
             pick.flag = 'I'
         try:
             pick.phase = pck.phase_hint[0:1]
-        except:
+        except Exception:
             # ignore picks with no phase hint
             continue
         if pck.polarity == 'positive':
@@ -604,7 +604,7 @@ def _is_hypo_format(fp):
             return False
 
 
-#TODO: def _is_NLL_format(fp):
+# TODO: def _is_NLL_format(fp):
 
 
 def _parse_picks(config):
@@ -653,7 +653,7 @@ def _parse_picks(config):
 
                     try:
                         stime = line[31:36]
-                    except:
+                    except Exception:
                         continue
                     if stime.strip() == '':
                         continue
@@ -729,7 +729,7 @@ def _set_hypo_file_path(config):
         try:
             open(hypo_file)
             config.options.hypo_file = hypo_file
-        except:
+        except Exception:
             pass
     return
 
@@ -743,7 +743,7 @@ def _set_pick_file_path(config):
         try:
             open(pick_file)
             config.options.pick_file = pick_file
-        except:
+        except Exception:
             pass
     return
 # -----------------------------------------------------------------------------
@@ -793,7 +793,7 @@ def read_traces(config):
                 _add_paz_and_coords(trace, dataless, paz)
                 _add_hypocenter(trace, hypo)
                 _add_picks(trace, picks)  # FIXME: actually add picks!
-                #_add_instrtype(trace)
+                # _add_instrtype(trace)
                 trace.stats.instrtype = 'acc'  # FIXME
     # ...or in standard files (CRL and ISNet)
     else:
@@ -817,7 +817,7 @@ def read_traces(config):
         for filename in filelist:
             try:
                 tmpst = read(filename, fsize=False)
-            except:
+            except Exception:
                 logging.warning('%s: Unable to read file as a trace: '
                                 'skipping' % filename)
                 continue

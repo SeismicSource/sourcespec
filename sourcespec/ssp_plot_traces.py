@@ -186,7 +186,7 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
     if config.PLOT_SHOW:
         plt.show(block=block)
     if config.PLOT_SAVE:
-        #TODO: improve this:
+        # TODO: improve this:
         evid = st.traces[0].stats.hypo.evid
         figurefile = os.path.join(config.options.outdir, evid +
                                   '.traces.' + config.PLOT_SAVE_FORMAT)

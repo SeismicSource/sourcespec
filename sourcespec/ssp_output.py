@@ -206,7 +206,7 @@ def _write_hypo(config, sourcepar):
         ml_str = ' '*4
     for i in range(0, 4):
         line[49+i] = mw_str[0+i]
-        #line[45+i] = mw_str[0+i]
+        # line[45+i] = mw_str[0+i]
         line[69+i] = ml_str[0+i]
     outline = ''.join(line)
     evid = config.hypo.evid

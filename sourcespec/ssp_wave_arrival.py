@@ -65,7 +65,7 @@ def _wave_arrival_taup(trace, phase):
                     source_depth_in_km=trace.stats.hypo.depth,
                     distance_in_degree=trace.stats.gcarc,
                     phase_list=phase_list)
-    except:
+    except Exception:
         trace.stats.hypo.depth = 0.
         arrivals = model.get_travel_times(
                     source_depth_in_km=trace.stats.hypo.depth,

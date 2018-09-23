@@ -15,7 +15,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('Agg')  # NOQA
 import matplotlib.pyplot as plt
 import sys
 import os

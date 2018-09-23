@@ -82,7 +82,7 @@ class Spectrum(Trace):
         if delta_t > 0:
             spec_slice.stats.begin = begin - delta_t
         else:
-            #find the closest frequency to fmin:
+            # find the closest frequency to fmin:
             idx = (np.abs(spec_slice.get_freq()-fmin)).argmin()
             spec_slice.stats.begin = freq[idx]
         return spec_slice

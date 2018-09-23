@@ -65,10 +65,10 @@ def local_magnitude(config, st, deconvolve=False):
         trace_env.data = smooth(trace_env.data, 100)
 
         # Uncomment these lines to see the effect of envelope and smoothing
-        #plt.figure()
-        #plt.plot(trace_env, color='gray')
-        #plt.grid(True)
-        #plt.show()
+        # plt.figure()
+        # plt.plot(trace_env, color='gray')
+        # plt.grid(True)
+        # plt.show()
 
         trace_noise = copy(trace_env)
         trace_noise.stats = deepcopy(trace_env.stats)
@@ -78,7 +78,7 @@ def local_magnitude(config, st, deconvolve=False):
         # Skip traces which do not have arrivals
         try:
             p_arrival_time = trace.stats.arrivals['P'][1]
-        except:
+        except Exception:
             continue
         t1 = p_arrival_time - config.pre_mag_time
         t2 = p_arrival_time + config.pre_mag_time
@@ -99,9 +99,9 @@ def local_magnitude(config, st, deconvolve=False):
 
         df = trace.stats.sampling_rate
         triggeron = trigger[0]/df
-        #triggeroff = trigger[1]/df  #Not used --C.S.
-        #start_trace = trace.stats['starttime']
-        #t_end = start_trace + triggeroff
+        # triggeroff = trigger[1]/df  #Not used --C.S.
+        # start_trace = trace.stats['starttime']
+        # t_end = start_trace + triggeroff
         t1_end = p_arrival_time + triggeron
         if t1_end <= p_arrival_time:
             t_end = p_arrival_time + config.mag_win_length
@@ -113,13 +113,13 @@ def local_magnitude(config, st, deconvolve=False):
 
         # Do a preliminary trim, in order to check if there is enough
         # data within the selected time window
-        #trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+        # trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
         trace_cut.trim(starttime=p_arrival_time, endtime=t_end,
                        pad=True, fill_value=0)
-        #plt.figure()
-        #plt.plot(trace_cut, color='gray')
-        #plt.grid(True)
-        #plt.show()
+        # plt.figure()
+        # plt.plot(trace_cut, color='gray')
+        # plt.grid(True)
+        # plt.show()
 
         npts = len(trace_cut.data)
         if npts == 0:
@@ -152,7 +152,7 @@ def local_magnitude(config, st, deconvolve=False):
             trace_cut.stats.npts -= 1
 
         # trim...
-        #trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+        # trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
         trace_cut.trim(starttime=p_arrival_time, endtime=t_end,
                        pad=True, fill_value=0)
 

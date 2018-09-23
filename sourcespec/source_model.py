@@ -16,7 +16,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import math
 import numpy as np
-#import cPickle as pickle
+# import cPickle as pickle
 from copy import deepcopy
 from obspy.core import Stream
 from sourcespec.spectrum import Spectrum
@@ -72,11 +72,11 @@ def make_synth(config, spec_st, trace_spec=None):
             residuals.append([Mo, mag, fc, t_star,
                              objective_func2((mag, fc, t_star, alpha))])
 
-    #figurefile = config.options.station+'-'+config.options.evid+'-res.pickle'
-    #fp = open(figurefile,'wb')
-    #pickle.dump(residuals,fp)
-    #fp.close()
-    #print 'residuals caculated. exit code'
+    # figurefile = config.options.station+'-'+config.options.evid+'-res.pickle'
+    # fp = open(figurefile,'wb')
+    # pickle.dump(residuals,fp)
+    # fp.close()
+    # print 'residuals caculated. exit code'
 
 
 def main():

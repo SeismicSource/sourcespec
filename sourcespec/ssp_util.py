@@ -86,7 +86,7 @@ def get_vel(lon, lat, depth, wave, NLL_model_dir):
 
 # SIGNAL ANALYSIS -------------------------------------------------------------
 def cosine_taper(signal, width):
-    #TODO: this taper looks more like a hanning...
+    # TODO: this taper looks more like a hanning...
     npts = len(signal)
     p = 2 * width
     tap = _cos_taper(npts, p)

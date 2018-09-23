@@ -414,7 +414,7 @@ def setup_logging(config, basename=None):
         filemode = 'w'
     oldlogfile = logfile
 
-    #logging.basicConfig(
+    # logging.basicConfig(
     #        level=logging.DEBUG,
     #        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
     #        filename=logfile,

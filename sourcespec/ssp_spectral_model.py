@@ -48,7 +48,7 @@ def objective_func(xdata, ydata, weight):
     errsum = np.sum(weight)
 
     def _objective_func(params):
-        #params components should be np.float
+        # params components should be np.float
         if len(params) == 4:
             model = spectral_model(xdata, params[0], params[1],
                                    params[2], params[3])
@@ -63,4 +63,4 @@ def objective_func(xdata, ydata, weight):
 
 def callback(x):
     pass
-    #print 'parameters:', x
+    # print 'parameters:', x
