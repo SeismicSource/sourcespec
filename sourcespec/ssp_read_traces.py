@@ -615,83 +615,82 @@ def _parse_picks(config):
         return None
 
     try:
-        with open(pick_file) as fp:
-            picks = []
-            if _is_hypo_format(fp):
-                # Corinth phase file format is hypo
-                for line in fp.readlines():
-                    # remove newline
-                    line = line.replace('\n', '')
-                    # skip separator and empty lines
-                    stripped_line = line.strip()
-                    if stripped_line == '10' or stripped_line == '':
-                        continue
-                    # Check if it is a pick line
-                    # 6th character should be alpha (phase name: P or S)
-                    # other character should be digits (date/time)
-                    if not (line[5].isalpha() and
-                            line[9].isdigit() and
-                            line[20].isdigit()):
-                        continue
-
-                    pick = Pick()
-                    pick.station = line[0:4].strip()
-                    pick.station = \
-                        _correct_station_name(pick.station, config.traceids)
-                    pick.flag = line[4:5]
-                    pick.phase = line[5:6]
-                    pick.polarity = line[6:7]
-                    try:
-                        pick.quality = int(line[7:8])
-                    except ValueError:
-                        # If we cannot read pick quality,
-                        # we give the pick the lowest quality
-                        pick.quality = 4
-                    timestr = line[9:24]
-                    dt = datetime.strptime(timestr, '%y%m%d%H%M%S.%f')
-                    pick.time = UTCDateTime(dt)
-
-                    picks.append(pick)
-
-                    try:
-                        stime = line[31:36]
-                    except Exception:
-                        continue
-                    if stime.strip() == '':
-                        continue
-
-                    pick2 = Pick()
-                    pick2.station = pick.station
-                    pick2.flag = line[36:37]
-                    pick2.phase = line[37:38]
-                    pick2.polarity = line[38:39]
-                    try:
-                        pick2.quality = int(line[39:40])
-                    except ValueError:
-                        # If we cannot read pick quality,
-                        # we give the pick the lowest quality
-                        pick2.quality = 4
-                    # pick2.time has the same date, hour and minutes
-                    # than pick.time
-                    # We therefore make a copy of pick.time,
-                    # and set seconds and miscorseconds to 0
-                    if OBSPY_VERSION >= (1, 1, 1):
-                        # UTCDateTime objects will become immutable in future
-                        # versions of ObsPy
-                        pick2.time = pick.time.replace(second=0, microsecond=0)
-                    else:
-                        # For old versions, UTCDateTime objects are mutable
-                        pick2.time = UTCDateTime(pick.time)
-                        pick2.time.second = 0
-                        pick2.time.microsecond = 0
-                    # finally we add stime
-                    pick2.time += float(stime)
-                    picks.append(pick2)
-            else:
-                raise IOError('%s: Not a phase file' % pick_file)
-    except IOError as err:
+        fp = open(pick_file)
+        if not _is_hypo_format(fp):
+            raise Exception('%s: Not a phase file' % pick_file)
+        lines = fp.readlines()
+        fp.close()
+    except Exception as err:
         logging.error(err)
         ssp_exit(1)
+    picks = []
+    for line in lines:
+        # remove newline
+        line = line.replace('\n', '')
+        # skip separator and empty lines
+        stripped_line = line.strip()
+        if stripped_line == '10' or stripped_line == '':
+            continue
+        # Check if it is a pick line
+        # 6th character should be alpha (phase name: P or S)
+        # other character should be digits (date/time)
+        if not (line[5].isalpha() and
+                line[9].isdigit() and
+                line[20].isdigit()):
+            continue
+
+        pick = Pick()
+        pick.station = line[0:4].strip()
+        pick.station = \
+            _correct_station_name(pick.station, config.traceids)
+        pick.flag = line[4:5]
+        pick.phase = line[5:6]
+        pick.polarity = line[6:7]
+        try:
+            pick.quality = int(line[7:8])
+        except ValueError:
+            # If we cannot read pick quality,
+            # we give the pick the lowest quality
+            pick.quality = 4
+        timestr = line[9:24]
+        dt = datetime.strptime(timestr, '%y%m%d%H%M%S.%f')
+        pick.time = UTCDateTime(dt)
+        picks.append(pick)
+
+        try:
+            stime = line[31:36]
+        except Exception:
+            continue
+        if stime.strip() == '':
+            continue
+
+        pick2 = Pick()
+        pick2.station = pick.station
+        pick2.flag = line[36:37]
+        pick2.phase = line[37:38]
+        pick2.polarity = line[38:39]
+        try:
+            pick2.quality = int(line[39:40])
+        except ValueError:
+            # If we cannot read pick quality,
+            # we give the pick the lowest quality
+            pick2.quality = 4
+        # pick2.time has the same date, hour and minutes
+        # than pick.time
+        # We therefore make a copy of pick.time,
+        # and set seconds and miscorseconds to 0
+        if OBSPY_VERSION >= (1, 1, 1):
+            # UTCDateTime objects will become immutable in future
+            # versions of ObsPy
+            pick2.time = pick.time.replace(second=0, microsecond=0)
+        else:
+            # For old versions, UTCDateTime objects are mutable
+            pick2.time = UTCDateTime(pick.time)
+            pick2.time.second = 0
+            pick2.time.microsecond = 0
+        # finally we add stime
+        pick2.time += float(stime)
+        picks.append(pick2)
     return picks
 
 
