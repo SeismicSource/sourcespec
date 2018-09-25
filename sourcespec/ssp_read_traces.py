@@ -198,6 +198,10 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
             trace.stats.coords = coords
         except AttributeError:
             pass
+    # Still no coords? Raise an exception
+    if trace.stats.coords is None:
+        raise Exception(
+            '%s: could not find coords for trace: skipping trace' % traceid)
 
 
 def _add_instrtype(trace):
@@ -820,7 +824,7 @@ def read_traces(config):
 
         # phase 2: build a stream object from the file list
         st = Stream()
-        for filename in filelist:
+        for filename in sorted(filelist):
             try:
                 tmpst = read(filename, fsize=False)
             except Exception:
@@ -831,13 +835,17 @@ def read_traces(config):
                 if config.options.station is not None:
                     if not trace.stats.station == config.options.station:
                         continue
-                st.append(trace)
                 trace.stats.format = config.trace_format
                 _correct_traceid(trace, config.traceids)
-                _add_paz_and_coords(trace, dataless, paz)
-                _add_instrtype(trace)
-                _add_hypocenter(trace, hypo)
-                _add_picks(trace, picks)
+                try:
+                    _add_paz_and_coords(trace, dataless, paz)
+                    _add_instrtype(trace)
+                    _add_hypocenter(trace, hypo)
+                    _add_picks(trace, picks)
+                except Exception as err:
+                    logging.warning(err)
+                    continue
+                st.append(trace)
 
         shutil.rmtree(tmpdir)
 
