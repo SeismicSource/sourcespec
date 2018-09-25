@@ -608,6 +608,8 @@ def _is_hypo_format(fp):
 
 
 def _parse_picks(config):
+    # we need to lazy-import here, so that OBSPY_VERSION is defined
+    from sourcespec.ssp_setup import OBSPY_VERSION
     pick_file = config.options.pick_file
     if pick_file is None:
         return None
@@ -671,14 +673,19 @@ def _parse_picks(config):
                         pick2.quality = 4
                     # pick2.time has the same date, hour and minutes
                     # than pick.time
-                    # We therefore make first a copy of pick.time...
-                    pick2.time = UTCDateTime(pick.time)
-                    # ...then set seconds and miscorseconds to 0...
-                    pick2.time.second = 0
-                    pick2.time.microsecond = 0
-                    # ...and finally add stime
+                    # We therefore make a copy of pick.time,
+                    # and set seconds and miscorseconds to 0
+                    if OBSPY_VERSION >= (1, 1, 1):
+                        # UTCDateTime objects will become immutable in future
+                        # versions of ObsPy
+                        pick2.time = pick.time.replace(second=0, microsecond=0)
+                    else:
+                        # For old versions, UTCDateTime objects are mutable
+                        pick2.time = UTCDateTime(pick.time)
+                        pick2.time.second = 0
+                        pick2.time.microsecond = 0
+                    # finally we add stime
                     pick2.time += float(stime)
-
                     picks.append(pick2)
             else:
                 raise IOError('%s: Not a phase file' % pick_file)

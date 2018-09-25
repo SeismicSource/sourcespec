@@ -62,9 +62,11 @@ DEBUG = False
 oldlogfile = None
 plotter = None
 ssp_exit_called = False
+OBSPY_VERSION = None
 
 
 def _check_obspy_version():
+    global OBSPY_VERSION
     # check ObsPy version
     import obspy
     MIN_OBSPY_VERSION = (1, 0, 0)
