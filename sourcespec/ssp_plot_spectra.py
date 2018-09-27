@@ -300,5 +300,8 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             else:
                 canvas.print_figure(figurefile, bbox_inches='tight')
         logging.info(message + ' plots saved to: ' + figurefile)
-    if not config.PLOT_SHOW:
-        fig.clf()
+    # Commenting this out, since it throws a warning on recent versions
+    # of Matplotlib (https://github.com/matplotlib/matplotlib/issues/9970)
+    # By the way, do we really need to call clf()?
+    # if not config.PLOT_SHOW:
+    #     fig.clf()
