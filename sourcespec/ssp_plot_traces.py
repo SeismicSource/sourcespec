@@ -31,6 +31,9 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
         return
     import matplotlib
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
+    # Reduce logging level for Matplotlib to avoid DEBUG messages
+    mpl_logger = logging.getLogger('matplotlib')
+    mpl_logger.setLevel(logging.WARNING)
     if config.PLOT_SHOW:
         import matplotlib.pyplot as plt
     else:
