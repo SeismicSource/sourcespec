@@ -59,6 +59,8 @@ def _wave_arrival_vel(trace, phase, vel):
 
 def _wave_arrival_taup(trace, phase):
     """Arrival time using taup."""
+    if trace.stats.hypo.origin_time is None:
+        return
     phase_list = [phase.lower(), phase]
     try:
         arrivals = model.get_travel_times(
