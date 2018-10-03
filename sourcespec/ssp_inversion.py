@@ -20,6 +20,7 @@ from __future__ import (absolute_import, division, print_function,
 import logging
 import math
 import numpy as np
+from collections import OrderedDict
 from scipy.optimize import curve_fit, minimize
 from scipy.signal import argrelmax
 from obspy import Stream
@@ -168,13 +169,13 @@ def _spec_inversion(config, spec, noise_weight):
         raise
 
     params_name = ('Mw', 'fc', 't_star')
-    par = dict(zip(params_name, params_opt))
+    par = OrderedDict(zip(params_name, params_opt))
     par['Mo'] = mag_to_moment(par['Mw'])
     par['hyp_dist'] = spec.stats.hypo_dist
     par['az'] = az
 
     error = np.sqrt(params_cov.diagonal())
-    par_err = dict(zip(params_name, error))
+    par_err = OrderedDict(zip(params_name, error))
     return par, par_err
 
 
@@ -228,8 +229,8 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
     }
     logging.info(algorithm_messages[config.inv_algorithm])
 
-    sourcepar = dict()
-    sourcepar_err = dict()
+    sourcepar = OrderedDict()
+    sourcepar_err = OrderedDict()
     stations = set(x.stats.station for x in spec_st)
     spectra = [sp for sta in stations for sp in spec_st.select(station=sta)]
     for spec in spectra:
