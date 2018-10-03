@@ -24,19 +24,38 @@ from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import mag_to_moment
 
 
-def _logmean(array):
-    """Logarithmic mean of a numpy array."""
-    return 10**(np.log10(array).mean())
+def _avg_and_std(values, errors=None, logarithmic=False):
+    """
+    Return the average and standard deviation.
+
+    Optionally:
+    - errors can be specfied for weighted statistics
+    - logarithmic average and standard deviation
+    """
+    if logarithmic:
+        values = np.log10(values)
+    if errors is None:
+        weights = None
+    else:
+        weights = 1./(errors**2.)
+    average = np.average(values, weights=weights)
+    variance = np.average((values-average)**2, weights=weights)
+    std = np.sqrt(variance)
+    if logarithmic:
+        log_average = 10.**average
+        minus = log_average - 10.**(average-std)
+        plus = 10.**(average+std) - log_average
+        return log_average, (minus, plus)
+    else:
+        return average, std
 
 
-def _log_error(array):
-    """Asymmetric logarithmic error bars."""
-    log_array = np.log10(array)
-    mean = log_array.mean()
-    std = log_array.std()
-    minus = _logmean(array) - 10**(mean-std)
-    plus = 10**(mean+std) - _logmean(array)
-    return minus, plus
+def _M0_avg_and_std(Mw_mean, Mw_error):
+    """Compute average and standard deviation for Mo starting from Mw."""
+    Mo_mean = mag_to_moment(Mw_mean)
+    Mo_min = mag_to_moment(Mw_mean - Mw_error)
+    Mo_max = mag_to_moment(Mw_mean + Mw_error)
+    return Mo_mean, (Mo_mean - Mo_min, Mo_max - Mo_mean)
 
 
 def _format_exponent(value, reference):
@@ -84,7 +103,7 @@ def _write_parfile(config, sourcepar, sourcepar_err):
             Ml='  {} {:>6} '
         )
         for statId in sorted(sourcepar.keys()):
-            if statId in ['means', 'errors']:
+            if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
                 continue
             par = sourcepar[statId]
             parfile.write('{:>14} {:>6}\t'.format(*statId.split()))
@@ -107,12 +126,18 @@ def _write_parfile(config, sourcepar, sourcepar_err):
 
         means = sourcepar['means']
         errors = sourcepar['errors']
+        means_weight = sourcepar['means_weight']
+        errors_weight = sourcepar['errors_weight']
 
         parfile.write('\n*** Average source parameters ***\n')
 
         Mw_mean = means['Mw']
         Mw_error = errors['Mw']
         parfile.write('Mw: {:.2f} +/- {:.2f}\n'.format(Mw_mean, Mw_error))
+        Mw_mean_weight = means_weight['Mw']
+        Mw_error_weight = errors_weight['Mw']
+        parfile.write('Mw (weighted): {:.2f} +/- {:.2f}\n'.format(
+            Mw_mean_weight, Mw_error_weight))
 
         Mo_mean = means['Mo']
         Mo_minus, Mo_plus = errors['Mo']
@@ -121,16 +146,31 @@ def _write_parfile(config, sourcepar, sourcepar_err):
         Mo_plus_str = _format_exponent(Mo_plus, Mo_mean)
         parfile.write('Mo: {:.3e} /- {} /+ {} N.m\n'.format(
             Mo_mean, Mo_minus_str, Mo_plus_str))
+        Mo_mean_weight = means_weight['Mo']
+        Mo_minus_weight, Mo_plus_weight = errors_weight['Mo']
+        # format Mo_plus and Mo_minus to print it with the same exponent of Mo
+        Mo_minus_str = _format_exponent(Mo_minus_weight, Mo_mean_weight)
+        Mo_plus_str = _format_exponent(Mo_plus_weight, Mo_mean_weight)
+        parfile.write('Mo (weighted): {:.3e} /- {} /+ {} N.m\n'.format(
+            Mo_mean_weight, Mo_minus_str, Mo_plus_str))
 
         fc_mean = means['fc']
         fc_minus, fc_plus = errors['fc']
         parfile.write('fc: {:.3f} /- {:.3f} /+ {:.3f} Hz\n'.format(
             fc_mean, fc_minus, fc_plus))
+        fc_mean_weight = means_weight['fc']
+        fc_minus_weight, fc_plus_weight = errors_weight['fc']
+        parfile.write('fc (weighted): {:.3f} /- {:.3f} /+ {:.3f} Hz\n'.format(
+            fc_mean_weight, fc_minus_weight, fc_plus_weight))
 
         t_star_mean = means['t_star']
         t_star_error = errors['t_star']
-        parfile.write('t_star: {:.3f} +/- {:.3f} Hz\n'.format(
+        parfile.write('t_star: {:.3f} +/- {:.3f} s\n'.format(
             t_star_mean, t_star_error))
+        t_star_mean_weight = means_weight['t_star']
+        t_star_error_weight = errors_weight['t_star']
+        parfile.write('t_star (weighted): {:.3f} +/- {:.3f} s\n'.format(
+            t_star_mean_weight, t_star_error_weight))
 
         ra_mean = means['ra']
         ra_minus, ra_plus = errors['ra']
@@ -180,7 +220,7 @@ def _write_db(config, sourcepar):
 
     # Write station source parameters to database
     for statId in sorted(sourcepar.keys()):
-        if statId in ['means', 'errors']:
+        if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
             continue
         par = sourcepar[statId]
 
@@ -254,56 +294,63 @@ def write_output(config, sourcepar, sourcepar_err):
 
     means = dict()
     errors = dict()
+    means_weight = dict()
+    errors_weight = dict()
 
     # Compute average source parameters
     # Mw
-    Mw_array = np.array([x['Mw'] for x in sourcepar.values()])
-    means['Mw'] = Mw_array.mean()
-    errors['Mw'] = Mw_array.std()
+    Mw_values = np.array([x['Mw'] for x in sourcepar.values()])
+    Mw_err = np.array([x['Mw'] for x in sourcepar_err.values()])
+    means['Mw'], errors['Mw'] = _avg_and_std(Mw_values)
+    means_weight['Mw'], errors_weight['Mw'] = \
+        _avg_and_std(Mw_values, errors=Mw_err)
 
     # Mo (N.m)
-    Mo_array = mag_to_moment(Mw_array)
-    means['Mo'] = _logmean(Mo_array)
-    errors['Mo'] = _log_error(Mo_array)
+    means['Mo'], errors['Mo'] = _M0_avg_and_std(means['Mw'], errors['Mw'])
+    means_weight['Mo'], errors_weight['Mo'] = \
+        _M0_avg_and_std(means_weight['Mw'], errors_weight['Mw'])
 
     # fc , hertz
-    fc_array = np.array([x['fc'] for x in sourcepar.values()])
-    means['fc'] = _logmean(fc_array)
-    errors['fc'] = _log_error(fc_array)
+    fc_values = np.array([x['fc'] for x in sourcepar.values()])
+    fc_err = np.array([x['fc'] for x in sourcepar_err.values()])
+    means['fc'], errors['fc'] = _avg_and_std(fc_values, logarithmic=True)
+    means_weight['fc'], errors_weight['fc'] = \
+        _avg_and_std(fc_values, errors=fc_err, logarithmic=True)
 
     # t_star
-    t_star_array = np.array([x['t_star'] for x in sourcepar.values()])
-    means['t_star'] = t_star_array.mean()
-    errors['t_star'] = t_star_array.std()
+    t_star_values = np.array([x['t_star'] for x in sourcepar.values()])
+    t_star_err = np.array([x['t_star'] for x in sourcepar_err.values()])
+    means['t_star'], errors['t_star'] = _avg_and_std(t_star_values)
+    means_weight['t_star'], errors_weight['t_star'] = \
+        _avg_and_std(t_star_values, errors=t_star_err)
 
     # ra, radius (meters)
     vs_m = config.hypo.vs*1000
-    ra_array = 0.37 * vs_m / fc_array
-    means['ra'] = _logmean(ra_array)
-    errors['ra'] = _log_error(ra_array)
+    ra_values = 0.37 * vs_m / fc_values
+    means['ra'], errors['ra'] = _avg_and_std(ra_values, logarithmic=True)
 
     # bsd, Brune stress drop (MPa)
-    bsd_array = 0.4375 * Mo_array / np.power(ra_array, 3) * 1e-6
-    means['bsd'] = bsd_array.mean()
-    errors['bsd'] = bsd_array.std()
+    Mo_values = mag_to_moment(Mw_values)
+    bsd_values = 0.4375 * Mo_values / np.power(ra_values, 3) * 1e-6
+    means['bsd'], errors['bsd'] = _avg_and_std(bsd_values)
 
     # Ml
-    Ml_array = np.array([x['Ml'] for x in sourcepar.values()
+    Ml_values = np.array([x['Ml'] for x in sourcepar.values()
                          if x['Ml'] is not None])
-    if Ml_array.size:
-        means['Ml'] = Ml_array.mean()
-        errors['Ml'] = Ml_array.std()
+    if Ml_values.size:
+        means['Ml'], errors['Ml'] = _avg_and_std(Ml_values)
     else:
         means['Ml'] = None
         errors['Ml'] = None
 
     # Er
-    Er_array = np.array([x['Er'] for x in sourcepar.values()])
-    means['Er'] = _logmean(Er_array)
-    errors['Er'] = _log_error(Er_array)
+    Er_values = np.array([x['Er'] for x in sourcepar.values()])
+    means['Er'], errors['Er'] = _avg_and_std(Er_values, logarithmic=True)
 
     sourcepar['means'] = means
     sourcepar['errors'] = errors
+    sourcepar['means_weight'] = means_weight
+    sourcepar['errors_weight'] = errors_weight
 
     # Write to parfile
     _write_parfile(config, sourcepar, sourcepar_err)
@@ -315,8 +362,12 @@ def write_output(config, sourcepar, sourcepar_err):
     _write_hypo(config, sourcepar)
 
     params_name = ('Mw', 'fc', 't_star')
-    sourcepar_mean = dict(zip(params_name,
-                              [means['Mw'], means['fc'], means['t_star']]))
+    sourcepar_mean = dict(
+        zip(params_name, [means['Mw'], means['fc'], means['t_star']]))
     logging.info('params_mean: {}'.format(sourcepar_mean))
+    sourcepar_mean_weight = dict(
+        zip(params_name,
+            [means_weight['Mw'], means_weight['fc'], means_weight['t_star']]))
+    logging.info('params_mean_weighted: {}'.format(sourcepar_mean_weight))
 
     return sourcepar_mean
