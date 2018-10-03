@@ -133,6 +133,7 @@ def _spec_inversion(config, spec, noise_weight):
     # first maximum is a proxy for fc, we use it for fc_0:
     fc_0 = freq_log[idx1]
 
+    t_star_min = t_star_max = None
     if config.invert_t_star_0:
         # fit t_star_0 and Mw on the initial part of the spectrum,
         # corrected for the effect of fc
@@ -147,8 +148,6 @@ def _spec_inversion(config, spec, noise_weight):
         # we calculate the initial value for Mw as an average
         Mw_0 = np.nanmean(ydata[idx0: idx1])
         t_star_0 = config.t_star_0
-        t_star_min = config.t_star_min_max[0]
-        t_star_max = config.t_star_min_max[1]
 
     initial_values = InitialValues(Mw_0, fc_0, t_star_0)
     logging.info('%s %s: initial values: %s' %
@@ -156,8 +155,10 @@ def _spec_inversion(config, spec, noise_weight):
     bounds = Bounds(config, spec, initial_values)
     bounds.Mw_min = Mw_0 - 0.1
     bounds.Mw_max = Mw_0 + 0.1
-    bounds.t_star_min = t_star_min
-    bounds.t_star_max = t_star_max
+    if t_star_min is not None:
+        bounds.t_star_min = t_star_min
+    if t_star_max is not None:
+        bounds.t_star_max = t_star_max
     logging.info('%s %s: bounds: %s' %
                  (spec.id, spec.stats.instrtype, str(bounds)))
     try:
@@ -260,10 +261,12 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
             logging.warning('Ignoring station: %s t_star: %f' %
                             (statId, t_star))
             sourcepar.pop(statId, None)
+            sourcepar_err.pop(statId, None)
         fc = par['fc']
         if fc < f1 or fc > f2:
             logging.warning('Ignoring station: %s fc: %f' % (statId, fc))
             sourcepar.pop(statId, None)
+            sourcepar_err.pop(statId, None)
 
     radiated_energy(config, spec_st, sourcepar)
 
