@@ -47,7 +47,7 @@ def _format_exponent(value, reference):
     return '{:5.3f}e{:+03d}'.format(value/10**xp, xp)
 
 
-def _write_parfile(config, sourcepar):
+def _write_parfile(config, sourcepar, sourcepar_err):
     """Write station source parameters to file."""
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
@@ -63,21 +63,46 @@ def _write_parfile(config, sourcepar):
                 hypo.evid, hypo.longitude, hypo.latitude, hypo.depth,
                 hypo.origin_time))
         parfile.write('*** Station source parameters ***\n')
+        formats = dict(
+            Mo='  {} {:.3e} ',
+            Er='  {} {:.3e} ',
+            hyp_dist='  {} {:7.3f} ',
+            az='  {} {:7.3f} ',
+            Mw='  {} {:6.3f} ',
+            fc='  {} {:6.3f} ',
+            t_star='  {} {:6.3f} ',
+            Ml='  {} {:6.3f} '
+        )
+        formats_none = dict(
+            Mo='  {} {:>9} ',
+            Er='  {} {:>9} ',
+            hyp_dist='  {} {:>7} ',
+            az='  {} {:>7} ',
+            Mw='  {} {:>6} ',
+            fc='  {} {:>6} ',
+            t_star='  {} {:>6} ',
+            Ml='  {} {:>6} '
+        )
         for statId in sorted(sourcepar.keys()):
             if statId in ['means', 'errors']:
                 continue
             par = sourcepar[statId]
-            parfile.write('{:>14} {}\t'.format(*statId.split()))
+            parfile.write('{:>14} {:>6}\t'.format(*statId.split()))
             for key in par:
-                if key in ['Mo', 'Er']:
-                    parfile.write('  {} {:.3e} '.format(key, par[key]))
-                elif key in ['hyp_dist', 'az']:
-                    parfile.write('  {} {:7.3f} '.format(key, par[key]))
+                val = par[key]
+                if val is not None:
+                    parfile.write(formats[key].format(key, val))
                 else:
-                    if par[key] is not None:
-                        parfile.write('  {} {:6.3f} '.format(key, par[key]))
-                    else:
-                        parfile.write('  {} {} '.format(key, par[key]))
+                    parfile.write(formats_none[key].format(key, 'nan'))
+            parfile.write('\n')
+            err = sourcepar_err[statId]
+            parfile.write('{:>21}\t'.format('--- errors'))
+            for key in par:
+                try:
+                    val = err[key]
+                    parfile.write(formats[key].format(key, val))
+                except KeyError:
+                    parfile.write(formats_none[key].format(key, 'nan'))
             parfile.write('\n')
 
         means = sourcepar['means']
@@ -281,7 +306,7 @@ def write_output(config, sourcepar, sourcepar_err):
     sourcepar['errors'] = errors
 
     # Write to parfile
-    _write_parfile(config, sourcepar)
+    _write_parfile(config, sourcepar, sourcepar_err)
 
     # Write to database, if requested
     _write_db(config, sourcepar)
