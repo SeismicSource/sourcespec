@@ -215,7 +215,7 @@ def _synth_spec(config, spec, par, par_err):
     return spec_st
 
 
-def spectral_inversion(config, spec_st, weight_st, Ml):
+def spectral_inversion(config, spec_st, weight_st):
     """Inversion of displacement spectra."""
     weighting_messages = {
         'noise': 'Using noise weighting for inversion.',
@@ -243,7 +243,6 @@ def spectral_inversion(config, spec_st, weight_st, Ml):
         except RuntimeError:
             continue
         spec_st += _synth_spec(config, spec, par, par_err)
-        par['Ml'] = Ml  # FIXME: this is the network magnitude!
         statId = '%s %s' % (spec.id, spec.stats.instrtype)
         sourcepar[statId] = par
         sourcepar_err[statId] = par_err

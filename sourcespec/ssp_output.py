@@ -335,8 +335,9 @@ def write_output(config, sourcepar, sourcepar_err):
     means['bsd'], errors['bsd'] = _avg_and_std(bsd_values)
 
     # Ml
-    Ml_values = np.array([x['Ml'] for x in sourcepar.values()
-                         if x['Ml'] is not None])
+    # build Ml_values: use np.nan for missing values
+    Ml_values = np.array([x.get('Ml', np.nan) for x in sourcepar.values()])
+    Ml_values = Ml_values[~np.isnan(Ml_values)]
     if Ml_values.size:
         means['Ml'], errors['Ml'] = _avg_and_std(Ml_values)
     else:
