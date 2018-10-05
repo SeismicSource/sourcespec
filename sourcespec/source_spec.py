@@ -58,7 +58,8 @@ def main():
         spectral_inversion(config, spec_st, weight_st)
 
     # Local magnitude
-    local_magnitude(config, st, proc_st, sourcepar, sourcepar_err)
+    if config.compute_local_magnitude:
+        local_magnitude(config, st, proc_st, sourcepar, sourcepar_err)
 
     # Save output
     sourcepar_mean = write_output(config, sourcepar, sourcepar_err)
