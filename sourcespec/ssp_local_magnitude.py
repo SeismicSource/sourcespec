@@ -44,6 +44,7 @@ def _get_cut_times(config, tr):
         msg += 'in local magnitude computation is larger than or equal '
         msg += 'to Nyquist. Setting it to %s Hz' % freqmax
         logging.warning(msg)
+    cosine_taper(tr_env.data, width=config.taper_halfwidth)
     tr_env.filter(type='bandpass', freqmin=freqmin, freqmax=freqmax)
     tr_env.data = envelope(tr_env.data)
     tr_env.data = smooth(tr_env.data, 100)
@@ -54,8 +55,8 @@ def _get_cut_times(config, tr):
     except Exception:
         logging.warning('%s: Trace has no P arrival: skipping trace' % tr.id)
         raise RuntimeError
-    t1 = p_arrival_time - config.pre_mag_time
-    t2 = p_arrival_time + config.pre_mag_time
+    t1 = p_arrival_time - config.s_win_length
+    t2 = p_arrival_time + config.s_win_length
 
     tr_noise = tr_env.copy()
     tr_signal = tr_env.copy()
