@@ -135,8 +135,18 @@ def _process_trace(config, tr, t0, t1):
     return tr_process
 
 
+def _compute_local_magnitude(config, amp, h_dist):
+    """Compute local magnitude using the Richter formula."""
+    a = config.a
+    b = config.b
+    c = config.c
+    ml = np.log10(amp) +\
+        a * np.log10(h_dist/100.) + b * (h_dist-100.) + c
+    return ml
+
+
 def local_magnitude(config, st, proc_st, sourcepar, sourcepar_err):
-    """Compute local magnitude from min/max amplitude."""
+    """Compute local magnitude from max absolute W-A amplitude."""
     # We only use traces selected for proc_st
     trace_ids = set(tr.id for tr in proc_st)
     for tr_id in sorted(trace_ids):
@@ -160,14 +170,11 @@ def local_magnitude(config, st, proc_st, sourcepar, sourcepar_err):
         except RuntimeError:
             continue
 
-        # a_max must be in millimiters for local magnitude computation
-        a_max = np.abs(tr_process.max())*1000.
-        h_dist = tr_process.stats.hypo_dist
-
         # Local magnitude
-        ml = np.log10(a_max) + np.log10(h_dist / 100.0) + \
-            0.00301 * (h_dist - 100.0) + 3.0
-
+        # amp must be in millimiters for local magnitude computation
+        amp = np.abs(tr_process.max())*1000.
+        h_dist = tr_process.stats.hypo_dist
+        ml = _compute_local_magnitude(config, amp, h_dist)
         statId = '%s %s' % (tr_id, tr.stats.instrtype)
         logging.info('%s: Ml %.1f' % (statId,  ml))
         try:
