@@ -259,6 +259,8 @@ def _add_instrtype(trace):
 
 
 def _add_hypocenter(trace, hypo):
+    # we need to lazy-import here, so that OBSPY_VERSION is defined
+    from sourcespec.ssp_setup import OBSPY_VERSION
     if hypo is None:
         # Try to get hypocenter information from the SAC header
         try:
@@ -277,17 +279,39 @@ def _add_hypocenter(trace, hypo):
 
         if origin_time is not None:
             # make a copy of origin_time and round it to the nearest second
-            _evid_time = UTCDateTime(origin_time)
-            if _evid_time.microsecond >= 500000:
-                _evid_time.second += 1
-            _evid_time.microsecond = 0
+            _second = origin_time.second
+            if origin_time.microsecond >= 500000:
+                _second += 1
+            _microsecond = 0
+            if OBSPY_VERSION >= (1, 1, 1):
+                # UTCDateTime objects will become immutable in future
+                # versions of ObsPy
+                _evid_time = origin_time.replace(
+                    second=_second, microsecond=_microsecond)
+            else:
+                # For old versions, UTCDateTime objects are mutable
+                _evid_time = UTCDateTime(origin_time)
+                _evid_time.second = _second
+                _evid_time.microsecond = _microsecond
         else:
             # make a copy of starttime and round it to the nearest minute
-            _evid_time = UTCDateTime(trace.stats.starttime)
-            if _evid_time.second >= 30:
-                _evid_time.minute += 1
-            _evid_time.second = 0
-            _evid_time.microsecond = 0
+            _starttime = trace.stats.starttime
+            _minute = _starttime.minute
+            if _starttime.second >= 30:
+                _minute += 1
+            _second = 0
+            _microsecond = 0
+            if OBSPY_VERSION >= (1, 1, 1):
+                # UTCDateTime objects will become immutable in future
+                # versions of ObsPy
+                _evid_time = _starttime.replace(
+                    minute=_minute, second=_second, microsecond=_microsecond)
+            else:
+                # For old versions, UTCDateTime objects are mutable
+                _evid_time = UTCDateTime(_starttime)
+                _evid_time.minute = _minute
+                _evid_time.second = _second
+                _evid_time.microsecond = _microsecond
 
         hypo = AttribDict()
         hypo.origin_time = origin_time
