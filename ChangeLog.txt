@@ -4,7 +4,7 @@ Earthquake source parameters from S-wave displacement spectra
 (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnès Chounet <chounet@ipgp.fr>
-(c) 2015-2017 Claudio Satriano <satriano@ipgp.fr>
+(c) 2015-2018 Claudio Satriano <satriano@ipgp.fr>
 
 v0.9 - 2018-10-XX
 	- Support for QuakeML input and StationXML
@@ -14,27 +14,34 @@ v0.9 - 2018-10-XX
 		- Project renamed to SourceSpec
 		- ssp_residuals renamed to source_residuals
 		- New installable package (e.g., via pip)
-  - Spectra are smoothed in log-freq (no more Konno-Ohmachi)
-  - Inversion is performed in a log-freq space
-  - Option to invert for t_star_0 on the plateau level
+	- Spectra are smoothed in log-freq (no more Konno-Ohmachi)
+	- Inversion is performed in a log-freq space
+	- Option to invert for t_star_0 on the plateau level
 	- Traces are filtered before computing S/N ratio
 	- Trace clipping detection
 	- Traces are always plotted, even if no inversion is performed
 	- Use by default a global model for theoretical travel time calculation
-  - Possibility of using NonLinLoc travel time grids (requires nllgrid)
+	- Possibility of using NonLinLoc travel time grids (requires nllgrid)
 	- New options for P and S arrival time tolerance
 	- New option for maximum epicentral distance for trace processing
-  - Possibility of using a NonLinLoc model grid for obtaining vs at the
-    source and at the receiver (requires nllgrid)
+	- Possibility of using a NonLinLoc model grid for obtaining vs at the
+		source and at the receiver (requires nllgrid)
 	- Use log10 of weighting function, since the inversion is done in
 		magnitude units
 	- Use json format for traceid correction file
 	- Save config file to output dir (only for source_spec)
 	- Logarithmic average and logarithmic (asymmetric) error bars for Mo, fc
 		and source radius
-  - Computation of radiated energy
-  - Station-specific filters
-  - New parameters: gap_max, overlap_max
+	- Computation of radiated energy
+	- Station-specific filters
+	- New parameters: gap_max, overlap_max
+	- Refactoring of local magnitude computation code:
+		- Wood-Anderson amplitude is computed from the whole trace converted
+			to W-A and not converting only the min and max peaks (which is
+			the default in ObsPy)
+		- Trace windowing is computed on HF envelopes
+		- New option for custom Ml coefficients
+		- Remove unnecessary Ml options
 	- Code cleaning and optimization:
 		- Switch from optparse (deprecated) to argparse
 		- Code style fixes and refactoring
