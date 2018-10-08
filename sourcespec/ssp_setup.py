@@ -63,10 +63,14 @@ oldlogfile = None
 plotter = None
 ssp_exit_called = False
 OBSPY_VERSION = None
+OBSPY_VERSION_STR = None
+NUMPY_VERSION_STR = None
+SCIPY_VERSION_STR = None
+MATPLOTLIB_VERSION_STR = None
 
 
 def _check_obspy_version():
-    global OBSPY_VERSION
+    global OBSPY_VERSION, OBSPY_VERSION_STR
     # check ObsPy version
     import obspy
     MIN_OBSPY_VERSION = (1, 0, 0)
@@ -80,6 +84,18 @@ def _check_obspy_version():
         msg += ' You have version: %s\n' % OBSPY_VERSION_STR
         sys.stderr.write(msg)
         sys.exit(1)
+
+
+def _check_library_versions():
+    global NUMPY_VERSION_STR
+    global SCIPY_VERSION_STR
+    global MATPLOTLIB_VERSION_STR
+    import numpy
+    NUMPY_VERSION_STR = numpy.__version__
+    import scipy
+    SCIPY_VERSION_STR = scipy.__version__
+    import matplotlib
+    MATPLOTLIB_VERSION_STR = matplotlib.__version__
 
 
 def dprint(string):
@@ -331,6 +347,7 @@ def configure(progname='source_spec'):
     Returns a ``Config`` object.
     """
     _check_obspy_version()
+    _check_library_versions()
 
     global DEBUG
     options = _parse_args(progname)
@@ -388,6 +405,10 @@ def save_config(config):
 def setup_logging(config, basename=None):
     """Setup the logging infrastructure."""
     global oldlogfile
+    global OBSPY_VERSION_STR
+    global NUMPY_VERSION_STR
+    global SCIPY_VERSION_STR
+    global MATPLOTLIB_VERSION_STR
     # Create outdir
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
@@ -442,7 +463,11 @@ def setup_logging(config, basename=None):
 
     if not basename:
         logging.debug('source_spec START')
-        logging.debug('Version: ' + get_git_version())
+        logging.debug('SourceSpec version: ' + get_git_version())
+        logging.debug('ObsPy version: ' + OBSPY_VERSION_STR)
+        logging.debug('NumPy version: ' + NUMPY_VERSION_STR)
+        logging.debug('SciPy version: ' + SCIPY_VERSION_STR)
+        logging.debug('Matplotlib version: ' + MATPLOTLIB_VERSION_STR)
         # write running arguments
         logging.debug('Running arguments:')
         logging.debug(' '.join(sys.argv))
