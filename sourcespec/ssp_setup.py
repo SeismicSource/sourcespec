@@ -67,6 +67,7 @@ OBSPY_VERSION_STR = None
 NUMPY_VERSION_STR = None
 SCIPY_VERSION_STR = None
 MATPLOTLIB_VERSION_STR = None
+PYTHON_VERSION_STR = None
 
 
 def _check_obspy_version():
@@ -87,9 +88,11 @@ def _check_obspy_version():
 
 
 def _check_library_versions():
+    global PYTHON_VERSION_STR
     global NUMPY_VERSION_STR
     global SCIPY_VERSION_STR
     global MATPLOTLIB_VERSION_STR
+    PYTHON_VERSION_STR = '{}.{}.{}'.format(*sys.version_info[0:3])
     import numpy
     NUMPY_VERSION_STR = numpy.__version__
     import scipy
@@ -405,6 +408,7 @@ def save_config(config):
 def setup_logging(config, basename=None):
     """Setup the logging infrastructure."""
     global oldlogfile
+    global PYTHON_VERSION_STR
     global OBSPY_VERSION_STR
     global NUMPY_VERSION_STR
     global SCIPY_VERSION_STR
@@ -464,6 +468,7 @@ def setup_logging(config, basename=None):
     if not basename:
         logging.debug('source_spec START')
         logging.debug('SourceSpec version: ' + get_git_version())
+        logging.debug('Python version: ' + PYTHON_VERSION_STR)
         logging.debug('ObsPy version: ' + OBSPY_VERSION_STR)
         logging.debug('NumPy version: ' + NUMPY_VERSION_STR)
         logging.debug('SciPy version: ' + SCIPY_VERSION_STR)
