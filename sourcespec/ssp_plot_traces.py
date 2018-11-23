@@ -73,6 +73,7 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
     plotn = 0
     stalist = [s[1] for s in sorted(set((t.stats.hypo_dist, t.stats.station)
                                         for t in st))]
+    stalist = set(stalist)
     for station in stalist:
         st_sel = st.select(station=station)
         # 'code' is band+instrument code

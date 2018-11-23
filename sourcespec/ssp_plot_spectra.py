@@ -92,6 +92,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     plotn = 0
     stalist = [s[1] for s in sorted(set((t.stats.hypo_dist, t.stats.station)
                                         for t in spec_st))]
+    stalist = set(stalist)
     for station in stalist:
         spec_st_sel = spec_st.select(station=station)
         # 'code' is band+instrument code
