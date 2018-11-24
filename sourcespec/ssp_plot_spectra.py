@@ -90,172 +90,172 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     # Plot!
     axes = []
     plotn = 0
-    stalist = [s[1] for s in sorted(set((t.stats.hypo_dist, t.stats.station)
-                                        for t in spec_st))]
-    stalist = set(stalist)
-    for station in stalist:
-        spec_st_sel = spec_st.select(station=station)
+    stalist = sorted(set(
+        (t.stats.hypo_dist, t.stats.station, t.stats.channel[0:2])
+        for t in spec_st))
+    for t in stalist:
+        plotn += 1
         # 'code' is band+instrument code
-        for code in sorted(set(x.stats.channel[0:2] for x in spec_st_sel)):
-            plotn += 1
-            ax_text = False
+        _, station, code = t
+        spec_st_sel = spec_st.select(station=station)
+        ax_text = False
 
-            # ax1 has moment units (or weight)
-            if plotn == 1:
+        # ax1 has moment units (or weight)
+        if plotn == 1:
+            if stack_plots:
+                ax = fig.add_subplot(1, 1, 1)
+            else:
+                ax = fig.add_subplot(nlines, ncols, plotn)
+        else:
+            if not stack_plots:
+                ax = fig.add_subplot(nlines, ncols, plotn,
+                                     sharex=axes[0][0], sharey=axes[0][0])
+        ax.set_xlim(freq_minmax)
+        ax.set_ylim(moment_minmax)
+        ax.grid(True, which='both', linestyle='solid', color='#DDDDDD',
+                zorder=0)
+        ax.set_axisbelow(True)
+        [t.set_visible(False) for t in ax.get_xticklabels()]
+        [t.set_visible(False) for t in ax.get_yticklabels()]
+        ax.tick_params(width=2)  # FIXME: ticks are below grid lines!
+
+        # ax2 has magnitude units
+        if plottype != 'weight':
+            if ((stack_plots and plotn == 1) or not stack_plots):
+                ax2 = ax.twinx()
+                ax2.set_ylim(mag_minmax)
+                [t.set_visible(False) for t in ax2.get_xticklabels()]
+                for tick in ax2.yaxis.get_major_ticks():
+                    tick.set_pad(-2)
+                    tick.label2.set_horizontalalignment('right')
+                ax2.yaxis.set_tick_params(width=0)
+        else:
+            ax2 = None
+        axes.append((ax, ax2))
+
+        for spec in spec_st_sel.traces:
+            if spec.stats.channel[0:2] != code:
+                continue
+            orientation = spec.stats.channel[2]
+            if orientation in ['Z', '1']:
+                color = 'purple'
+                linestyle = 'solid'
+                linewidth = 1
+            if orientation in ['N', '2', 'R']:
+                color = 'green'
+                linestyle = 'solid'
+                linewidth = 1
+            if orientation in ['E', '3', 'T']:
+                color = 'blue'
+                linestyle = 'solid'
+                linewidth = 1
+            if orientation == 'H':
+                color = 'red'
+                linestyle = 'solid'
+                linewidth = 1
+            if orientation == 'S':
                 if stack_plots:
-                    ax = fig.add_subplot(1, 1, 1)
+                    color = synth_colors[(plotn-1) % len(synth_colors)]
                 else:
-                    ax = fig.add_subplot(nlines, ncols, plotn)
-            else:
-                if not stack_plots:
-                    ax = fig.add_subplot(nlines, ncols, plotn,
-                                         sharex=axes[0][0], sharey=axes[0][0])
-            ax.set_xlim(freq_minmax)
-            ax.set_ylim(moment_minmax)
-            ax.grid(True, which='both', linestyle='solid', color='#DDDDDD',
-                    zorder=0)
-            ax.set_axisbelow(True)
-            [t.set_visible(False) for t in ax.get_xticklabels()]
-            [t.set_visible(False) for t in ax.get_yticklabels()]
-            ax.tick_params(width=2)  # FIXME: ticks are below grid lines!
-
-            # ax2 has magnitude units
-            if plottype != 'weight':
-                if ((stack_plots and plotn == 1) or not stack_plots):
-                    ax2 = ax.twinx()
-                    ax2.set_ylim(mag_minmax)
-                    [t.set_visible(False) for t in ax2.get_xticklabels()]
-                    for tick in ax2.yaxis.get_major_ticks():
-                        tick.set_pad(-2)
-                        tick.label2.set_horizontalalignment('right')
-                    ax2.yaxis.set_tick_params(width=0)
-            else:
-                ax2 = None
-            axes.append((ax, ax2))
-
-            for spec in spec_st_sel.traces:
-                if spec.stats.channel[0:2] != code:
-                    continue
-                orientation = spec.stats.channel[2]
-                if orientation in ['Z', '1']:
-                    color = 'purple'
-                    linestyle = 'solid'
-                    linewidth = 1
-                if orientation in ['N', '2', 'R']:
-                    color = 'green'
-                    linestyle = 'solid'
-                    linewidth = 1
-                if orientation in ['E', '3', 'T']:
-                    color = 'blue'
-                    linestyle = 'solid'
-                    linewidth = 1
-                if orientation == 'H':
-                    color = 'red'
-                    linestyle = 'solid'
-                    linewidth = 1
+                    color = 'black'
+                linestyle = 'solid'
+                linewidth = 2
+            if orientation == 's':
+                color = 'gray'
+                linestyle = 'solid'
+                linewidth = 1
+            if orientation == 't':
+                color = 'gray'
+                linestyle = 'dashed'
+                linewidth = 1
+            if plottype in ['regular', 'noise']:
+                ax.loglog(spec.get_freq(), spec.data, color=color,
+                          linestyle=linestyle, linewidth=linewidth,
+                          zorder=20)
                 if orientation == 'S':
-                    if stack_plots:
-                        color = synth_colors[(plotn-1) % len(synth_colors)]
-                    else:
-                        color = 'black'
-                    linestyle = 'solid'
-                    linewidth = 2
-                if orientation == 's':
-                    color = 'gray'
-                    linestyle = 'solid'
-                    linewidth = 1
-                if orientation == 't':
-                    color = 'gray'
-                    linestyle = 'dashed'
-                    linewidth = 1
-                if plottype in ['regular', 'noise']:
-                    ax.loglog(spec.get_freq(), spec.data, color=color,
-                              linestyle=linestyle, linewidth=linewidth,
-                              zorder=20)
-                    if orientation == 'S':
-                        fc = spec.stats.par['fc']
-                        fc_err = spec.stats.par_err['fc']
-                        fc_min = fc-fc_err
-                        if fc_min < 0:
-                            fc_min = 0.01
-                        ax.axvspan(fc_min, fc+fc_err, color='#bbbbbb',
-                                   alpha=0.3, zorder=1)
-                        ax.axvline(fc, color='#999999',
-                                   linewidth=2., zorder=1)
-                        Mw = spec.stats.par['Mw']
-                        Mw_err = spec.stats.par_err['Mw']
-                        ax2.axhspan(Mw-Mw_err, Mw+Mw_err, color='#bbbbbb',
-                                    alpha=0.3, zorder=1)
-                elif plottype == 'weight':
-                    ax.semilogx(spec.get_freq(), spec.data, color=color,
-                                zorder=20)
-                else:
-                    raise ValueError('Unknown plot type: %s' % plottype)
-                # leg = ax.legend(('N', 'E', 'H'), 'lower right')
-
-                if specnoise_st:
-                    if spec.stats.channel[2] != 'S':
-                        specid = spec.get_id()
-                        try:
-                            sp_noise = specnoise_st.select(id=specid)[0]
-                        except IndexError:
-                            continue
-                        orientation = sp_noise.stats.channel[2]
-                        if orientation in ['Z', '1']:
-                            color = 'purple'
-                        if orientation in ['N', '2']:
-                            color = 'green'
-                        if orientation in ['E', '3']:
-                            color = 'blue'
-                        if orientation == 'H':
-                            color = 'red'
-                        ax.loglog(sp_noise.get_freq(), sp_noise.data,
-                                  linestyle=':', linewidth=2.,
-                                  color=color, zorder=20)
-
-                if not ax_text:
-                    ax_text = '%s %s' % (spec.id[0:-1], spec.stats.instrtype)
-                    if stack_plots:
-                        text_y = 0.05 + (plotn-1) * 0.05
-                    else:
-                        text_y = 0.15
-                        color = 'black'
-                        ax_text += '\n%.1f km (%.1f km)' % (
-                                                        spec.stats.hypo_dist,
-                                                        spec.stats.epi_dist)
-                    ax.text(0.05, text_y, ax_text,
-                            horizontalalignment='left',
-                            verticalalignment='bottom',
-                            color=color,
-                            transform=ax.transAxes,
-                            zorder=50,
-                            path_effects=path_effects)
-                    ax_text = True
-
-                if orientation == 'S':
-                    if stack_plots:
-                        text_y2 = text_y - 0.02
-                    else:
-                        text_y2 = 0.04
-                        color = 'black'
                     fc = spec.stats.par['fc']
                     fc_err = spec.stats.par_err['fc']
+                    fc_min = fc-fc_err
+                    if fc_min < 0:
+                        fc_min = 0.01
+                    ax.axvspan(fc_min, fc+fc_err, color='#bbbbbb',
+                               alpha=0.3, zorder=1)
+                    ax.axvline(fc, color='#999999',
+                               linewidth=2., zorder=1)
                     Mw = spec.stats.par['Mw']
                     Mw_err = spec.stats.par_err['Mw']
-                    Mo = mag_to_moment(Mw)
-                    t_star = spec.stats.par['t_star']
-                    t_star_err = spec.stats.par_err['t_star']
-                    ax.text(0.05, text_y2,
-                            'Mo: %.2g Mw: %.2f±%.2f\n'
-                            'fc: %.2f±%.2f Hz t*: %.2f±%.2fs' %
-                            (Mo, Mw, Mw_err, fc, fc_err, t_star, t_star_err),
-                            horizontalalignment='left',
-                            verticalalignment='bottom',
-                            color=color,
-                            fontsize=9,
-                            transform=ax.transAxes,
-                            zorder=50,
-                            path_effects=path_effects)
+                    ax2.axhspan(Mw-Mw_err, Mw+Mw_err, color='#bbbbbb',
+                                alpha=0.3, zorder=1)
+            elif plottype == 'weight':
+                ax.semilogx(spec.get_freq(), spec.data, color=color,
+                            zorder=20)
+            else:
+                raise ValueError('Unknown plot type: %s' % plottype)
+            # leg = ax.legend(('N', 'E', 'H'), 'lower right')
+
+            if specnoise_st:
+                if spec.stats.channel[2] != 'S':
+                    specid = spec.get_id()
+                    try:
+                        sp_noise = specnoise_st.select(id=specid)[0]
+                    except IndexError:
+                        continue
+                    orientation = sp_noise.stats.channel[2]
+                    if orientation in ['Z', '1']:
+                        color = 'purple'
+                    if orientation in ['N', '2']:
+                        color = 'green'
+                    if orientation in ['E', '3']:
+                        color = 'blue'
+                    if orientation == 'H':
+                        color = 'red'
+                    ax.loglog(sp_noise.get_freq(), sp_noise.data,
+                              linestyle=':', linewidth=2.,
+                              color=color, zorder=20)
+
+            if not ax_text:
+                ax_text = '%s %s' % (spec.id[0:-1], spec.stats.instrtype)
+                if stack_plots:
+                    text_y = 0.05 + (plotn-1) * 0.05
+                else:
+                    text_y = 0.15
+                    color = 'black'
+                    ax_text += '\n%.1f km (%.1f km)' % (
+                                                    spec.stats.hypo_dist,
+                                                    spec.stats.epi_dist)
+                ax.text(0.05, text_y, ax_text,
+                        horizontalalignment='left',
+                        verticalalignment='bottom',
+                        color=color,
+                        transform=ax.transAxes,
+                        zorder=50,
+                        path_effects=path_effects)
+                ax_text = True
+
+            if orientation == 'S':
+                if stack_plots:
+                    text_y2 = text_y - 0.02
+                else:
+                    text_y2 = 0.04
+                    color = 'black'
+                fc = spec.stats.par['fc']
+                fc_err = spec.stats.par_err['fc']
+                Mw = spec.stats.par['Mw']
+                Mw_err = spec.stats.par_err['Mw']
+                Mo = mag_to_moment(Mw)
+                t_star = spec.stats.par['t_star']
+                t_star_err = spec.stats.par_err['t_star']
+                ax.text(0.05, text_y2,
+                        'Mo: %.2g Mw: %.2f±%.2f\n'
+                        'fc: %.2f±%.2f Hz t*: %.2f±%.2fs' %
+                        (Mo, Mw, Mw_err, fc, fc_err, t_star, t_star_err),
+                        horizontalalignment='left',
+                        verticalalignment='bottom',
+                        color=color,
+                        fontsize=9,
+                        transform=ax.transAxes,
+                        zorder=50,
+                        path_effects=path_effects)
 
     # Show the x-labels only for the last row
     for ax, ax2 in axes[-ncols:]:
