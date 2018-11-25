@@ -30,28 +30,31 @@ synth_colors = [
 ]
 
 
-def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
-                 stack_plots=False, plottype='regular', async_plotter=None):
-    """
-    Plot spectra for signal and noise.
-
-    Display to screen and/or save to file.
-    """
-    # Check config, if we need to plot at all
-    if not config.PLOT_SHOW and not config.PLOT_SAVE:
-        return
+def _import_mpl(config):
     import matplotlib
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
     # Reduce logging level for Matplotlib to avoid DEBUG messages
     mpl_logger = logging.getLogger('matplotlib')
     mpl_logger.setLevel(logging.WARNING)
     if config.PLOT_SHOW:
+        global plt
         import matplotlib.pyplot as plt
     else:
+        global Figure
+        global FigureCanvasAgg
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_agg import FigureCanvasAgg
+    global PdfPages
+    from matplotlib.backends.backend_pdf import PdfPages
+    global transforms
+    global patches
+    global PathEffects
+    import matplotlib.transforms as transforms
+    import matplotlib.patches as patches
     import matplotlib.patheffects as PathEffects
 
+
+def _nplots(spec_st, specnoise_st, maxlines, ncols, plottype):
     # Determine the number of plots and axes min and max:
     nplots = 0
     moment_minmax = None
@@ -69,11 +72,18 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         for code in set(x.stats.channel[0:2] for x in spec_st_sel):
             nplots += 1
     nlines = int(math.ceil(nplots/ncols))
+    if nlines > maxlines:
+        nlines = maxlines
     if plottype != 'weight':
         moment_minmax[1] *= 10
         mag_minmax = moment_to_mag(moment_minmax)
+    else:
+        mag_minmax = None
+    return nlines, ncols, freq_minmax, moment_minmax, mag_minmax
 
-    # OK, now we can plot!
+
+def _make_fig(config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
+              stack_plots, plottype):
     if nlines <= 3 or stack_plots:
         figsize = (16, 9)
     else:
@@ -82,24 +92,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         fig = plt.figure(figsize=figsize)
     else:
         fig = Figure(figsize=figsize)
-    fig.subplots_adjust(hspace=.025, wspace=.03)
-
-    # Path effect to contour text in white
-    path_effects = [PathEffects.withStroke(linewidth=3, foreground="white")]
-
-    # Plot!
     axes = []
-    plotn = 0
-    stalist = sorted(set(
-        (t.stats.hypo_dist, t.stats.station, t.stats.channel[0:2])
-        for t in spec_st))
-    for t in stalist:
-        plotn += 1
-        # 'code' is band+instrument code
-        _, station, code = t
-        spec_st_sel = spec_st.select(station=station)
-        ax_text = False
-
+    for n in range(nlines*ncols):
+        plotn = n+1
         # ax1 has moment units (or weight)
         if plotn == 1:
             if stack_plots:
@@ -118,7 +113,6 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         [t.set_visible(False) for t in ax.get_xticklabels()]
         [t.set_visible(False) for t in ax.get_yticklabels()]
         ax.tick_params(width=2)  # FIXME: ticks are below grid lines!
-
         # ax2 has magnitude units
         if plottype != 'weight':
             if ((stack_plots and plotn == 1) or not stack_plots):
@@ -132,60 +126,190 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         else:
             ax2 = None
         axes.append((ax, ax2))
+    fig.subplots_adjust(hspace=.025, wspace=.03)
+    return fig, axes
 
+
+def _savefig(config, plottype, figures, async_plotter):
+    evid = config.hypo.evid
+    if plottype == 'regular':
+        suffix = '.ssp.'
+        message = 'Spectral'
+    elif plottype == 'noise':
+        suffix = '.sspnoise.'
+        message = 'Noise'
+    elif plottype == 'weight':
+        suffix = '.sspweight.'
+        message = 'Weight'
+    figfile_base = os.path.join(config.options.outdir, evid + suffix)
+    fmt = config.PLOT_SAVE_FORMAT
+    if fmt == 'pdf_multipage':
+        figfile = figfile_base + 'pdf'
+        with PdfPages(figfile) as pdf:
+            for fig in figures:
+                pdf.savefig(fig)
+            # Temporary commented out (see below)
+            # if not config.PLOT_SHOW:
+            #     fig.clf()
+        logging.info(message + ' plots saved to: ' + figfile)
+        return
+    for n, fig in enumerate(figures):
+        if len(figures) == 1:
+            figfile = figfile_base + fmt
+        else:
+            figfile = figfile_base + '{:02d}.{}'.format(n, fmt)
+        if config.PLOT_SHOW:
+            fig.savefig(figfile, bbox_inches='tight')
+        else:
+            canvas = FigureCanvasAgg(fig)
+            if async_plotter is not None:
+                async_plotter.save(canvas, figfile, bbox_inches='tight')
+            else:
+                canvas.print_figure(figfile, bbox_inches='tight')
+        logging.info(message + ' plots saved to: ' + figfile)
+        # Commenting this out, since it throws a warning on recent versions
+        # of Matplotlib (https://github.com/matplotlib/matplotlib/issues/9970)
+        # By the way, do we really need to call clf()?
+        # if not config.PLOT_SHOW:
+        #     fig.clf()
+
+
+def _add_labels(axes, plotn, ncols, plottype):
+    # Show the x-labels only for the last "ncols" plots
+    n0 = plotn-ncols if plotn-ncols > 0 else 0
+    for ax, ax2 in axes[n0:plotn]:
+        [t.set_visible(True) for t in ax.get_xticklabels()]
+        ax.set_xlabel('Frequency (Hz)')
+    # Show the y-labels only for the first column
+    for i in range(0, len(axes)+ncols, ncols):
+        try:
+            ax = axes[i][0]
+        except IndexError:
+            continue
+        try:
+            # for ax2 we take the last column
+            ax2 = axes[i-1][1]
+        except IndexError:
+            continue
+        [t.set_visible(True) for t in ax.get_yticklabels()]
+        ax.set_ylabel('Weight')
+        if plottype != 'weight':
+            ax.set_ylabel('Seismic moment (Nm)')
+            if ax2:
+                [t.set_visible(True) for t in ax2.get_yticklabels()]
+                ax2.set_ylabel('Magnitude')
+    # still some work to do on the last plot
+    ax, ax2 = axes[plotn-1]
+    if ax2:
+        [t.set_visible(True) for t in ax2.get_yticklabels()]
+        ax2.set_ylabel('Magnitude')
+
+
+def _color_lines(orientation, plotn, stack_plots):
+    if orientation in ['Z', '1']:
+        color = 'purple'
+        linestyle = 'solid'
+        linewidth = 1
+    if orientation in ['N', '2', 'R']:
+        color = 'green'
+        linestyle = 'solid'
+        linewidth = 1
+    if orientation in ['E', '3', 'T']:
+        color = 'blue'
+        linestyle = 'solid'
+        linewidth = 1
+    if orientation == 'H':
+        color = 'red'
+        linestyle = 'solid'
+        linewidth = 1
+    if orientation == 'S':
+        if stack_plots:
+            color = synth_colors[(plotn-1) % len(synth_colors)]
+        else:
+            color = 'black'
+        linestyle = 'solid'
+        linewidth = 2
+    if orientation == 's':
+        color = 'gray'
+        linestyle = 'solid'
+        linewidth = 1
+    if orientation == 't':
+        color = 'gray'
+        linestyle = 'dashed'
+        linewidth = 1
+    return color, linestyle, linewidth
+
+
+def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
+                 stack_plots=False, plottype='regular', async_plotter=None):
+    """
+    Plot spectra for signal and noise.
+
+    Display to screen and/or save to file.
+    """
+    # Check config, if we need to plot at all
+    if not config.PLOT_SHOW and not config.PLOT_SAVE:
+        return
+    _import_mpl(config)
+
+    nlines, ncols, freq_minmax, moment_minmax, mag_minmax =\
+        _nplots(spec_st, specnoise_st,
+                config.plot_spectra_maxrows, ncols, plottype)
+    figures = []
+    fig, axes = _make_fig(
+            config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
+            stack_plots, plottype)
+    figures.append(fig)
+
+    # Path effect to contour text in white
+    path_effects = [PathEffects.withStroke(linewidth=3, foreground="white")]
+
+    # Plot!
+    plotn = 0
+    stalist = sorted(set(
+        (t.stats.hypo_dist, t.stats.station, t.stats.channel[0:2])
+        for t in spec_st))
+    for t in stalist:
+        plotn += 1
+        # 'code' is band+instrument code
+        _, station, code = t
+        spec_st_sel = spec_st.select(station=station)
+        if plotn > nlines*ncols:
+            _add_labels(axes, plotn-1, ncols, plottype)
+            fig, axes = _make_fig(
+                    config, nlines, ncols,
+                    freq_minmax, moment_minmax, mag_minmax,
+                    stack_plots, plottype)
+            figures.append(fig)
+            plotn = 1
+        ax_text = False
+        ax, ax2 = axes[plotn-1]
         for spec in spec_st_sel.traces:
             if spec.stats.channel[0:2] != code:
                 continue
             orientation = spec.stats.channel[2]
-            if orientation in ['Z', '1']:
-                color = 'purple'
-                linestyle = 'solid'
-                linewidth = 1
-            if orientation in ['N', '2', 'R']:
-                color = 'green'
-                linestyle = 'solid'
-                linewidth = 1
-            if orientation in ['E', '3', 'T']:
-                color = 'blue'
-                linestyle = 'solid'
-                linewidth = 1
-            if orientation == 'H':
-                color = 'red'
-                linestyle = 'solid'
-                linewidth = 1
-            if orientation == 'S':
-                if stack_plots:
-                    color = synth_colors[(plotn-1) % len(synth_colors)]
-                else:
-                    color = 'black'
-                linestyle = 'solid'
-                linewidth = 2
-            if orientation == 's':
-                color = 'gray'
-                linestyle = 'solid'
-                linewidth = 1
-            if orientation == 't':
-                color = 'gray'
-                linestyle = 'dashed'
-                linewidth = 1
+            color, linestyle, linewidth =\
+                _color_lines(orientation, plotn, stack_plots)
             if plottype in ['regular', 'noise']:
                 ax.loglog(spec.get_freq(), spec.data, color=color,
                           linestyle=linestyle, linewidth=linewidth,
                           zorder=20)
                 if orientation == 'S':
                     fc = spec.stats.par['fc']
-                    fc_err = spec.stats.par_err['fc']
-                    fc_min = fc-fc_err
-                    if fc_min < 0:
-                        fc_min = 0.01
-                    ax.axvspan(fc_min, fc+fc_err, color='#bbbbbb',
-                               alpha=0.3, zorder=1)
+                    if 'par_err' in spec.stats.keys():
+                        fc_err = spec.stats.par_err['fc']
+                        fc_min = fc-fc_err
+                        if fc_min < 0:
+                            fc_min = 0.01
+                        ax.axvspan(fc_min, fc+fc_err, color='#bbbbbb',
+                                   alpha=0.3, zorder=1)
                     ax.axvline(fc, color='#999999',
                                linewidth=2., zorder=1)
                     Mw = spec.stats.par['Mw']
-                    Mw_err = spec.stats.par_err['Mw']
-                    ax2.axhspan(Mw-Mw_err, Mw+Mw_err, color='#bbbbbb',
-                                alpha=0.3, zorder=1)
+                    if 'par_err' in spec.stats.keys():
+                        Mw_err = spec.stats.par_err['Mw']
+                        ax2.axhspan(Mw-Mw_err, Mw+Mw_err, color='#bbbbbb',
+                                    alpha=0.3, zorder=1)
             elif plottype == 'weight':
                 ax.semilogx(spec.get_freq(), spec.data, color=color,
                             zorder=20)
@@ -201,14 +325,6 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     except IndexError:
                         continue
                     orientation = sp_noise.stats.channel[2]
-                    if orientation in ['Z', '1']:
-                        color = 'purple'
-                    if orientation in ['N', '2']:
-                        color = 'green'
-                    if orientation in ['E', '3']:
-                        color = 'blue'
-                    if orientation == 'H':
-                        color = 'red'
                     ax.loglog(sp_noise.get_freq(), sp_noise.data,
                               linestyle=':', linewidth=2.,
                               color=color, zorder=20)
@@ -236,15 +352,18 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 if stack_plots:
                     text_y2 = text_y - 0.02
                 else:
-                    text_y2 = 0.04
+                    text_y2 = 0.03
                     color = 'black'
                 fc = spec.stats.par['fc']
-                fc_err = spec.stats.par_err['fc']
                 Mw = spec.stats.par['Mw']
-                Mw_err = spec.stats.par_err['Mw']
                 Mo = mag_to_moment(Mw)
                 t_star = spec.stats.par['t_star']
-                t_star_err = spec.stats.par_err['t_star']
+                if 'par_err' in spec.stats.keys():
+                    fc_err = spec.stats.par_err['fc']
+                    Mw_err = spec.stats.par_err['Mw']
+                    t_star_err = spec.stats.par_err['t_star']
+                else:
+                    fc_err = Mw_err = t_star_err = 0.
                 ax.text(0.05, text_y2,
                         'Mo: %.2g Mw: %.2f±%.2f\n'
                         'fc: %.2f±%.2f Hz t*: %.2f±%.2fs' %
@@ -257,55 +376,15 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                         zorder=50,
                         path_effects=path_effects)
 
-    # Show the x-labels only for the last row
-    for ax, ax2 in axes[-ncols:]:
-        [t.set_visible(True) for t in ax.get_xticklabels()]
-        ax.set_xlabel('Frequency (Hz)')
-    # Show the y-labels only for the first column
-    for i in range(0, len(axes)+ncols, ncols):
-        try:
-            ax = axes[i][0]
-        except IndexError:
-            continue
-        try:
-            ax2 = axes[i-1][1]
-        except IndexError:
-            continue
-        [t.set_visible(True) for t in ax.get_yticklabels()]
-        ax.set_ylabel('Weight')
-        if plottype != 'weight':
-            ax.set_ylabel('Seismic moment (Nm)')
-            if ax2:
-                [t.set_visible(True) for t in ax2.get_yticklabels()]
-                ax2.set_ylabel('Magnitude')
+    # Add lables for the last figure
+    _add_labels(axes, plotn, ncols, plottype)
+    # Turn off the unused axes
+    for ax, ax2 in axes[plotn:]:
+        ax.set_axis_off()
+        if ax2:
+            ax2.set_axis_off()
 
     if config.PLOT_SHOW:
         plt.show()
     if config.PLOT_SAVE:
-        # TODO: improve this:
-        evid = spec_st.traces[0].stats.hypo.evid
-        if plottype == 'regular':
-            suffix = '.ssp.'
-            message = 'Spectral'
-        elif plottype == 'noise':
-            suffix = '.sspnoise.'
-            message = 'Noise'
-        elif plottype == 'weight':
-            suffix = '.sspweight.'
-            message = 'Weight'
-        figurefile = os.path.join(config.options.outdir, evid + suffix +
-                                  config.PLOT_SAVE_FORMAT)
-        if config.PLOT_SHOW:
-            fig.savefig(figurefile, bbox_inches='tight')
-        else:
-            canvas = FigureCanvasAgg(fig)
-            if async_plotter is not None:
-                async_plotter.save(canvas, figurefile, bbox_inches='tight')
-            else:
-                canvas.print_figure(figurefile, bbox_inches='tight')
-        logging.info(message + ' plots saved to: ' + figurefile)
-    # Commenting this out, since it throws a warning on recent versions
-    # of Matplotlib (https://github.com/matplotlib/matplotlib/issues/9970)
-    # By the way, do we really need to call clf()?
-    # if not config.PLOT_SHOW:
-    #     fig.clf()
+        _savefig(config, plottype, figures, async_plotter)
