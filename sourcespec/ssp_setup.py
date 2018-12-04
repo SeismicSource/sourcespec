@@ -393,6 +393,13 @@ def configure(progname='source_spec'):
     # Add options to config:
     config.options = options
 
+    if config.plot_station_map:
+        try:
+            import cartopy.crs  #NOQA
+        except ImportError:
+            logging.error('Please install Cartopy to plot maps.')
+            ssp_exit()
+
     return config
 
 

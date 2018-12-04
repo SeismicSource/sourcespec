@@ -173,7 +173,10 @@ def _spec_inversion(config, spec, noise_weight):
     par = OrderedDict(zip(params_name, params_opt))
     par['Mo'] = mag_to_moment(par['Mw'])
     par['hyp_dist'] = spec.stats.hypo_dist
+    par['epi_dist'] = spec.stats.epi_dist
     par['az'] = az
+    par['lon'] = spec.stats.coords.longitude
+    par['lat'] = spec.stats.coords.latitude
 
     error = np.sqrt(params_cov.diagonal())
     par_err = OrderedDict(zip(params_name, error))

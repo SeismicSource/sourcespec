@@ -82,6 +82,9 @@ def _write_parfile(config, sourcepar, sourcepar_err):
                 hypo.evid, hypo.longitude, hypo.latitude, hypo.depth,
                 hypo.origin_time))
         parfile.write('*** Station source parameters ***\n')
+        parkeys = (
+            'Mw', 'fc', 't_star', 'Mo', 'hyp_dist', 'az', 'Er'
+        )
         formats = dict(
             Mo='  {} {:.3e} ',
             Er='  {} {:.3e} ',
@@ -107,7 +110,7 @@ def _write_parfile(config, sourcepar, sourcepar_err):
                 continue
             par = sourcepar[statId]
             parfile.write('{:>14} {:>6}\t'.format(*statId.split()))
-            for key in par:
+            for key in parkeys:
                 val = par[key]
                 if val is not None:
                     parfile.write(formats[key].format(key, val))
@@ -116,7 +119,7 @@ def _write_parfile(config, sourcepar, sourcepar_err):
             parfile.write('\n')
             err = sourcepar_err[statId]
             parfile.write('{:>21}\t'.format('--- errors'))
-            for key in par:
+            for key in parkeys:
                 try:
                     val = err[key]
                     parfile.write(formats[key].format(key, val))

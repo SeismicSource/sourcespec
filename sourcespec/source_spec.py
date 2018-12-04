@@ -76,6 +76,10 @@ def main():
                  ncols=ncols, async_plotter=plotter)
     plot_spectra(config, weight_st, plottype='weight',
                  ncols=ncols, async_plotter=plotter)
+    if config.plot_station_map:
+        # We import here, cause we check for Cartopy at runtime
+        from sourcespec.ssp_plot_stations import plot_stations
+        plot_stations(config, sourcepar)
 
     ssp_exit()
 

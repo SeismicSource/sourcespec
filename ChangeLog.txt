@@ -36,6 +36,8 @@ v0.9 - 2018-11-XX
 	- Station-specific filters
 	- New parameters: gap_max, overlap_max
 	- Multifigure plotting for traces and spectra (for large number of stations)
+	- New option to plot a station map, color-coded by station magnitude
+		(requires Cartopy)
 	- Refactoring of local magnitude computation code:
 		- Wood-Anderson amplitude is computed from the whole trace converted
 			to W-A and not converting only the min and max peaks (which is
