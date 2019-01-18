@@ -181,11 +181,11 @@ def _write_parfile(config, sourcepar, sourcepar_err):
             ra_mean, ra_minus, ra_plus))
 
         bsd_mean = means['bsd']
-        bsd_error = errors['bsd']
-        # format Mo_std to print it with the same exponent of Mo
-        bsd_error_str = _format_exponent(bsd_error, bsd_mean)
-        parfile.write('Brune stress drop: {:.3e} +/- {} MPa\n'.format(
-            bsd_mean, bsd_error_str))
+        bsd_minus, bsd_plus = errors['bsd']
+        bsd_minus_str = _format_exponent(bsd_minus, bsd_mean)
+        bsd_plus_str = _format_exponent(bsd_plus, bsd_mean)
+        parfile.write('Brune stress drop: {:.3e} /- {} /+ {} MPa\n'.format(
+            bsd_mean, bsd_minus_str, bsd_plus_str))
 
         if means['Ml'] is not None:
             Ml_mean = means['Ml']
@@ -335,7 +335,7 @@ def write_output(config, sourcepar, sourcepar_err):
     # bsd, Brune stress drop (MPa)
     Mo_values = mag_to_moment(Mw_values)
     bsd_values = 0.4375 * Mo_values / np.power(ra_values, 3) * 1e-6
-    means['bsd'], errors['bsd'] = _avg_and_std(bsd_values)
+    means['bsd'], errors['bsd'] = _avg_and_std(bsd_values, logarithmic=True)
 
     # Ml
     # build Ml_values: use np.nan for missing values
