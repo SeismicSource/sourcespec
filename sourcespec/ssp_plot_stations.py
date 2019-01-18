@@ -51,8 +51,8 @@ def _round(x, base=5):
 def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
     geodetic_transform = ccrs.PlateCarree()
     g = Geod(ellps='WGS84')
-    ax.plot(evlon, evlat, marker='*', markersize=12,
-            markeredgewidth=1, markeredgecolor='k',
+    ax.plot(evlon, evlat, marker='*', markersize=20,
+            markeredgewidth=1, markeredgecolor='white',
             color='k', transform=geodetic_transform,
             zorder=10)
     step = _round(maxdist/ncircles)
@@ -76,7 +76,7 @@ def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
         ])
 
 
-def plot_stations(config, sourcepar):
+def plot_stations(config, sourcepar, st=None):
     """Plot station map, color coded by magnitude or fc."""
     _import_mpl(config)
     st_ids = [
@@ -85,10 +85,16 @@ def plot_stations(config, sourcepar):
     lonlat = np.array([
         (sourcepar[k]['lon'], sourcepar[k]['lat']) for k in st_ids])
     epi_dist = np.array([sourcepar[k]['epi_dist'] for k in st_ids])
-    mag = np.array([sourcepar[k]['Mw'] for k in st_ids])
-    # fc = np.array([sourcepar[k]['fc'] for k in st_ids])
+    if st is not None:
+        lonlat_all = np.array([
+            (tr.stats.coords.longitude, tr.stats.coords.latitude)
+            for tr in st
+        ])
+        epi_dist = np.array([tr.stats.epi_dist for tr in st])
     maxdist = np.max(epi_dist)
     maxdiagonal = maxdist*(2**0.5)*1.10
+    mag = np.array([sourcepar[k]['Mw'] for k in st_ids])
+    # fc = np.array([sourcepar[k]['fc'] for k in st_ids])
     g = Geod(ellps='WGS84')
     hypo = config.hypo
     lonmax, latmax, _ = g.fwd(
@@ -125,6 +131,12 @@ def plot_stations(config, sourcepar):
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
     cmap = cm.Spectral_r
 
+    if st is not None:
+        ax.scatter(
+            lonlat_all[:, 0], lonlat_all[:, 1],
+            marker='^', s=100,
+            color='k', edgecolor='k',
+            zorder=88, transform=trans)
     ax.scatter(
         lonlat[:, 0], lonlat[:, 1],
         marker='^', s=100,

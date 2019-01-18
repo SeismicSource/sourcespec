@@ -81,7 +81,7 @@ def main():
     if config.plot_station_map:
         # We import here, cause we check for Cartopy at runtime
         from sourcespec.ssp_plot_stations import plot_stations
-        plot_stations(config, sourcepar)
+        plot_stations(config, sourcepar, proc_st)
 
     ssp_exit()
 
