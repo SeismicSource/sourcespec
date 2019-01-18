@@ -61,7 +61,7 @@ def _M0_avg_and_std(Mw_mean, Mw_error):
 def _format_exponent(value, reference):
     """Format `value` to a string having the same exponent than `reference`."""
     # get the exponent of reference value
-    xp = int(np.log10(reference))
+    xp = np.int(np.floor(np.log10(np.abs(reference))))
     # format value to print it with the same exponent of reference value
     return '{:5.3f}e{:+03d}'.format(value/10**xp, xp)
 
