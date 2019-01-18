@@ -42,6 +42,11 @@ def _import_mpl(config):
     import matplotlib.transforms as transforms
     import matplotlib.patches as patches
     import matplotlib.patheffects as PathEffects
+    from matplotlib.ticker import ScalarFormatter as sf
+    global ScalarFormatter
+    class ScalarFormatter(sf):  #NOQA
+        def _set_format(self, vmin, vmax):
+            self.format = '%1.1f'
 
 
 def _nplots(st, maxlines, ncols):
@@ -82,10 +87,13 @@ def _make_fig(config, nlines, ncols):
         [t.set_visible(False) for t in ax.get_xticklabels()]
         [t.set_visible(True) for t in ax.get_yticklabels()]
         ax.tick_params(width=2)  # FIXME: ticks are below grid lines!
-        ax.ticklabel_format(style='scientific', axis='y',
-                            scilimits=(-1, 1))
+        ax.tick_params(labelsize=8)
+        ax.yaxis.offsetText.set_fontsize(8)
+        yfmt = ScalarFormatter()
+        yfmt.set_powerlimits((-1, 1))
+        ax.yaxis.set_major_formatter(yfmt)
         axes.append(ax)
-    fig.subplots_adjust(hspace=.1, wspace=.15)
+    fig.subplots_adjust(hspace=.1, wspace=.20)
     return fig, axes
 
 
@@ -145,14 +153,15 @@ def _plot_trace(config, trace, ntraces, tmax,
     ax.plot(trace.times(), trace, color=color,
             alpha=alpha, zorder=20, rasterized=True)
     ax.text(0.05, trace.data.mean(), trace.stats.channel,
-            color=color, transform=trans3, zorder=22,
+            fontsize=8, color=color, transform=trans3, zorder=22,
             path_effects=path_effects)
     for phase in 'P', 'S':
         a = trace.stats.arrivals[phase][1] - trace.stats.starttime
         text = trace.stats.arrivals[phase][0]
         ax.axvline(a, linestyle='--',
                    color=phase_label_color[phase], zorder=21)
-        ax.text(a, phase_label_pos[phase], text, transform=trans,
+        ax.text(a, phase_label_pos[phase], text,
+                fontsize=8, transform=trans,
                 zorder=22, path_effects=path_effects)
     # Noise window
     try:
@@ -180,6 +189,7 @@ def _plot_trace(config, trace, ntraces, tmax,
                    trace.stats.hypo_dist,
                    trace.stats.epi_dist)
         ax.text(0.05, text_y, ax_text,
+                fontsize=8,
                 horizontalalignment='left',
                 verticalalignment='bottom',
                 color=color,
@@ -193,7 +203,7 @@ def _add_labels(axes, plotn, ncols):
     # Show the x-labels only for "ncols" plots before "plotn"
     for ax in axes[plotn-ncols:plotn]:
         [t.set_visible(True) for t in ax.get_xticklabels()]
-        ax.set_xlabel('Time (s)')
+        ax.set_xlabel('Time (s)', fontsize=8)
 
 
 def plot_traces(config, st, spec_st=None, ncols=4, block=True,
@@ -236,9 +246,9 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
         instrtype = [t.stats.instrtype for t in st_sel.traces
                      if t.stats.channel[0:2] == code][0]
         if instrtype == 'acc':
-            ax.set_ylabel(u'Acceleration (m/s²)')
+            ax.set_ylabel(u'Acceleration (m/s²)', fontsize=8, labelpad=0)
         elif instrtype == 'shortp' or instrtype == 'broadb':
-            ax.set_ylabel('Velocity (m/s)')
+            ax.set_ylabel('Velocity (m/s)', fontsize=8, labelpad=0)
         # Custom transformation for plotting phase labels:
         # x coords are data, y coords are axes
         trans = transforms.blended_transform_factory(ax.transData,
