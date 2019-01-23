@@ -117,7 +117,11 @@ def plot_stations(config, sourcepar, st=None):
     ax = fig.add_subplot(111, projection=stamen_terrain.crs)
     trans = ccrs.Geodetic()
     ax.set_extent([lonmin, lonmax, latmin, latmax])
-    ax.add_image(stamen_terrain, 8)
+    if maxdiagonal <= 100:
+        tile_zoom_level = 12
+    else:
+        tile_zoom_level = 8
+    ax.add_image(stamen_terrain, tile_zoom_level)
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     countries = cfeature.NaturalEarthFeature(
         category='cultural',
