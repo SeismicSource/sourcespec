@@ -7,7 +7,7 @@
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnès Chounet <chounet@ipgp.fr>
 
-(c) 2015-2018 Claudio Satriano <satriano@ipgp.fr>
+(c) 2015-2019 Claudio Satriano <satriano@ipgp.fr>
 
 
 ## Description

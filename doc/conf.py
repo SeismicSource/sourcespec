@@ -68,7 +68,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'SourceSpec'
-copyright = u'2013-2018, Claudio Satriano'
+copyright = u'2013-2019, Claudio Satriano'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

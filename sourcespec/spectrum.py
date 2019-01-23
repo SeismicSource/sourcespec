@@ -6,7 +6,7 @@ Provides the high-level function do_spectrum()
 and the low-level funciton do_fft().
 
 :copyright:
-    2012-2018 Claudio Satriano <satriano@ipgp.fr>
+    2012-2019 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement, Version 2.1
     (http://www.cecill.info/index.en.html)
