@@ -81,7 +81,7 @@ class Bounds(object):
     def _Qo_to_t_star(self):
         t_star_max, t_star_min =\
             self.hd/(self.config.hypo.vs*np.array(self.config.Qo_min_max))
-        return self._nan_to_none((t_star_min, t_star_max))
+        return t_star_min, t_star_max
 
     def _fix_initial_values_t_star(self):
         if self.ini_values.t_star_0 is not None:
