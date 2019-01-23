@@ -45,7 +45,11 @@ def _import_mpl(config):
 
 def _round(x, base=5):
     """Round to base."""
-    return int(base * round(float(x)/base))
+    round_x = 0
+    while round_x == 0:
+        round_x = int(base * round(float(x)/base))
+        base = base/2.
+    return round_x
 
 
 def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
