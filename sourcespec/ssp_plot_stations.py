@@ -107,7 +107,7 @@ def plot_stations(config, sourcepar, st=None):
     latmin = 2*hypo.latitude - latmax
 
     tile_dir = 'maptiles'
-    stamen_terrain = CachedTiler(cimgt.StamenTerrain(), tile_dir)
+    stamen_terrain = CachedTiler(cimgt.Stamen('terrain-background'), tile_dir)
     # Create a GeoAxes
     figsize = (10, 10)
     if config.PLOT_SHOW:
