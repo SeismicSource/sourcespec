@@ -79,8 +79,12 @@ class Bounds(object):
             return minmax
 
     def _Qo_to_t_star(self):
+        # See if there is a travel-time vs defined
+        vs = self.config.vs_tt
+        if vs is None:
+            vs = self.config.hypo.vs
         t_star_max, t_star_min =\
-            self.hd/(self.config.hypo.vs*np.array(self.config.Qo_min_max))
+            self.hd/(vs*np.array(self.config.Qo_min_max))
         return t_star_min, t_star_max
 
     def _fix_initial_values_t_star(self):
