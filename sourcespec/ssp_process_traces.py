@@ -144,12 +144,13 @@ def _process_trace(config, trace):
     _check_clipping(config, trace_process)
 
     # Remove instrument response
-    if remove_instr_response(trace_process,
-                             config.correct_instrumental_response,
-                             config.pre_filt) is None:
-        logging.warning('%s %s: Unable to remove instrument response: '
-                        'skipping trace' % (trace_process.id, instrtype))
-        raise RuntimeError
+    if not config.options.no_response:
+        if remove_instr_response(trace_process,
+                                 config.correct_instrumental_response,
+                                 config.pre_filt) is None:
+            logging.warning('%s %s: Unable to remove instrument response: '
+                            'skipping trace' % (trace_process.id, instrtype))
+            raise RuntimeError
 
     filter_trace(config, trace_process)
 
