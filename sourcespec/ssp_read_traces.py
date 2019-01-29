@@ -223,7 +223,7 @@ def _add_instrtype(trace):
             instrtype = 'shortp'
         if band_code in ['B', 'H']:
             instrtype = 'broadb'
-    if instr_code in ['N', 'L']:
+    if instr_code in ['N', ]:
         instrtype = 'acc'
 
     # If, not possible, let's see if there is an instrument
