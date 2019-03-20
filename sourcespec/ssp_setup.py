@@ -397,10 +397,22 @@ def configure(progname='source_spec'):
     config.options = options
 
     if config.plot_station_map:
+        cartopy_min_ver = (0, 17, 0)
         try:
-            import cartopy.crs  #NOQA
+            cartopy_ver = None
+            import cartopy  #NOQA
+            cartopy_ver = tuple(map(int, cartopy.__version__.split('.')[:3]))
+            if cartopy_ver < cartopy_min_ver:
+                raise ImportError
         except ImportError:
-            logging.error('Please install Cartopy to plot maps.')
+            logging.error(
+                'Please install cartopy >= {}.{}.{} to plot maps.'.format(
+                    *cartopy_min_ver)
+            )
+            if cartopy_ver:
+                logging.error('Installed cartopy version: {}.{}.{}.'.format(
+                    *cartopy_ver)
+                )
             ssp_exit()
 
     return config
