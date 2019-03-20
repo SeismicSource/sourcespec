@@ -134,13 +134,13 @@ def _plot_trace(config, trace, ntraces, tmax,
     t2 = (trace.stats.arrivals['S'][1] + 3 * config.s_win_length)
     trace.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     orientation = trace.stats.channel[-1]
-    if orientation in ['Z', '1']:
+    if orientation in config.vertical_channel_codes:
         color = 'purple'
-    if orientation in ['N', '2', 'R']:
+    if orientation in config.horizontal_channel_codes_1:
         color = 'green'
         if ntraces > 1:
             trace.data = (trace.data / tmax - 1) * tmax
-    if orientation in ['E', '3', 'T']:
+    if orientation in config.horizontal_channel_codes_2:
         color = 'blue'
         if ntraces > 1:
             trace.data = (trace.data / tmax + 1) * tmax

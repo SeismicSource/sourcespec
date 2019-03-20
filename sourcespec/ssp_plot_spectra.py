@@ -205,16 +205,16 @@ def _add_labels(axes, plotn, ncols, plottype):
         ax2.set_ylabel('Magnitude')
 
 
-def _color_lines(orientation, plotn, stack_plots):
-    if orientation in ['Z', '1']:
+def _color_lines(config, orientation, plotn, stack_plots):
+    if orientation in config.vertical_channel_codes:
         color = 'purple'
         linestyle = 'solid'
         linewidth = 1
-    if orientation in ['N', '2', 'R']:
+    if orientation in config.horizontal_channel_codes_1:
         color = 'green'
         linestyle = 'solid'
         linewidth = 1
-    if orientation in ['E', '3', 'T']:
+    if orientation in config.horizontal_channel_codes_2:
         color = 'blue'
         linestyle = 'solid'
         linewidth = 1
@@ -289,7 +289,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 continue
             orientation = spec.stats.channel[2]
             color, linestyle, linewidth =\
-                _color_lines(orientation, plotn, stack_plots)
+                _color_lines(config, orientation, plotn, stack_plots)
             if plottype in ['regular', 'noise']:
                 ax.loglog(spec.get_freq(), spec.data, color=color,
                           linestyle=linestyle, linewidth=linewidth,

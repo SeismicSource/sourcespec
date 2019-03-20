@@ -396,6 +396,16 @@ def configure(progname='source_spec'):
     # Add options to config:
     config.options = options
 
+    # Additional config values
+    config.vertical_channel_codes = ['Z']
+    config.horizontal_channel_codes_1 = ['N', 'R']
+    config.horizontal_channel_codes_2 = ['E', 'T']
+    msc = config.mis_oriented_channels
+    if msc is not None:
+        config.vertical_channel_codes.append(msc[0])
+        config.horizontal_channel_codes_1.append(msc[1])
+        config.horizontal_channel_codes_2.append(msc[2])
+
     if config.plot_station_map:
         cartopy_min_ver = (0, 17, 0)
         try:

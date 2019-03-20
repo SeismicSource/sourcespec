@@ -847,6 +847,9 @@ def read_traces(config):
             _build_filelist(fullpath, filelist, None)
 
         # phase 2: build a stream object from the file list
+        orientation_codes = config.vertical_channel_codes +\
+            config.horizontal_channel_codes_1 +\
+            config.horizontal_channel_codes_2
         st = Stream()
         for filename in sorted(filelist):
             try:
@@ -856,6 +859,11 @@ def read_traces(config):
                                 'skipping' % filename)
                 continue
             for trace in tmpst.traces:
+                orientation = trace.stats.channel[-1]
+                if orientation not in orientation_codes:
+                    logging.warning('%s: Unknown channel orientation: "%s": '
+                                    'skipping trace' % (trace.id, orientation))
+                    continue
                 if config.options.station is not None:
                     if not trace.stats.station == config.options.station:
                         continue
