@@ -82,6 +82,7 @@ def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
         t = ax.text(p0[0], p0[1], dist_text, size=8, weight='bold',
                     verticalalignment='center',
                     horizontalalignment='center',
+                    clip_on=True,
                     transform=geodetic_transform, zorder=10)
         t.set_path_effects([
             PathEffects.Stroke(linewidth=0.8, foreground='white'),
