@@ -86,7 +86,7 @@ def _correct_traceid(trace, traceid_file):
 
 def _correct_station_name(station, traceid_file):
     if traceid_file is None:
-        return
+        return station
     correct_traceids = _get_correct_traceids(traceid_file)
     # get all the keys containing station name in it
     keys = [key for key in correct_traceids
