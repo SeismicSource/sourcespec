@@ -283,7 +283,7 @@ def _add_hypocenter(trace, hypo):
             if origin_time.microsecond >= 500000:
                 _second += 1
             _microsecond = 0
-            if OBSPY_VERSION >= (1, 1, 1):
+            if OBSPY_VERSION > (1, 1, 1):
                 # UTCDateTime objects will become immutable in future
                 # versions of ObsPy
                 _evid_time = origin_time.replace(
@@ -301,7 +301,7 @@ def _add_hypocenter(trace, hypo):
                 _minute += 1
             _second = 0
             _microsecond = 0
-            if OBSPY_VERSION >= (1, 1, 1):
+            if OBSPY_VERSION > (1, 1, 1):
                 # UTCDateTime objects will become immutable in future
                 # versions of ObsPy
                 _evid_time = _starttime.replace(
@@ -706,8 +706,8 @@ def _parse_picks(config):
         # pick2.time has the same date, hour and minutes
         # than pick.time
         # We therefore make a copy of pick.time,
-        # and set seconds and miscorseconds to 0
-        if OBSPY_VERSION >= (1, 1, 1):
+        # and set seconds and microseconds to 0
+        if OBSPY_VERSION > (1, 1, 1):
             # UTCDateTime objects will become immutable in future
             # versions of ObsPy
             pick2.time = pick.time.replace(second=0, microsecond=0)
