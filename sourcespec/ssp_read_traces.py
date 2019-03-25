@@ -413,14 +413,15 @@ def _read_dataless(path):
         return None
 
     # Try to read the file as StationXML
-    try:
-        inv = read_inventory(path)
-        return inv
-    except TypeError:
-        pass
-    except IOError as err:
-        logging.error(err)
-        ssp_exit()
+    if not os.path.isdir(path):
+        try:
+            inv = read_inventory(path)
+            return inv
+        except TypeError:
+            pass
+        except IOError as err:
+            logging.error(err)
+            ssp_exit()
 
     logging.info('Reading dataless...')
     dataless = dict()
