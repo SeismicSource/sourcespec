@@ -187,6 +187,10 @@ def _init_parser(description, epilog, nargs):
                         help='get picks and hypocenter information from '
                         'QuakeML FILE',
                         metavar='FILE')
+    parser.add_argument('-n', '--evname', dest='evname',
+                        action='store', default=None,
+                        help='event name (used for plots and output files) ',
+                        metavar='NAME')
     parser.add_argument('-e', '--evid', dest='evid',
                         action='store', default=None,
                         help='get evid from catalog', metavar='EVID')

@@ -14,6 +14,7 @@ from __future__ import (absolute_import, division, print_function,
 import os
 import math
 import logging
+from sourcespec.ssp_version import get_git_version
 
 
 phase_label_pos = {'P': 0.9, 'S': 0.93}
@@ -74,6 +75,26 @@ def _make_fig(config, nlines, ncols):
         fig = plt.figure(figsize=figsize)
     else:
         fig = Figure(figsize=figsize)
+    # Create an invisible axis and use it for title and footer
+    ax0 = fig.add_subplot(111)
+    ax0.set_axis_off()
+    # Add event information as a title
+    hypo = config.hypo
+    textstr = 'evid: {} lon: {:.3f} lat: {:.3f} depth: {:.1f} km ' +\
+              'time: {}'
+    textstr = textstr.format(
+        hypo.evid, hypo.longitude, hypo.latitude, hypo.depth,
+        hypo.origin_time)
+    ax0.text(0., 1.06, textstr, fontsize=12,
+             ha='left', va='top', transform=ax0.transAxes)
+    if config.options.evname is not None:
+        textstr = config.options.evname
+        ax0.text(0., 1.1, textstr, fontsize=14,
+                 ha='left', va='top', transform=ax0.transAxes)
+    # Add code information at the figure bottom
+    textstr = 'SourceSpec v{} '.format(get_git_version())
+    ax0.text(1., -0.1, textstr, fontsize=10,
+             ha='right', va='top', transform=ax0.transAxes)
     axes = []
     for n in range(nlines*ncols):
         plotn = n+1
@@ -92,6 +113,8 @@ def _make_fig(config, nlines, ncols):
         yfmt = ScalarFormatter()
         yfmt.set_powerlimits((-1, 1))
         ax.yaxis.set_major_formatter(yfmt)
+        # make the axis visibile, in case it is the only one
+        ax.set_axis_on()
         axes.append(ax)
     fig.subplots_adjust(hspace=.1, wspace=.20)
     return fig, axes

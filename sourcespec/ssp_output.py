@@ -206,6 +206,8 @@ def _write_parfile(config, sourcepar, sourcepar_err):
         localtime = reference.LocalTimezone()
         timezone = localtime.tzname(now)
         parfile.write('\n*** Run completed on: {} {}\n'.format(now, timezone))
+        config.end_of_run = now
+        config.end_of_run_tz = timezone
 
     logging.info('Output written to file: ' + parfilename)
 
