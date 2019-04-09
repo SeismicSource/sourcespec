@@ -20,6 +20,8 @@ import os
 import logging
 import sqlite3
 import numpy as np
+from datetime import datetime
+from pytz import reference
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import mag_to_moment
 
@@ -199,6 +201,11 @@ def _write_parfile(config, sourcepar, sourcepar_err):
         Er_plus_str = _format_exponent(Er_plus, Er_mean)
         parfile.write('Er: {:.3e} /- {} /+ {} N.m\n'.format(
             Er_mean, Er_minus_str, Er_plus_str))
+
+        now = datetime.now()
+        localtime = reference.LocalTimezone()
+        timezone = localtime.tzname(now)
+        parfile.write('\n*** Run completed on: {} {}\n'.format(now, timezone))
 
     logging.info('Output written to file: ' + parfilename)
 
