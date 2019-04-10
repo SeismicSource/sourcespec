@@ -76,7 +76,7 @@ def _make_fig(config, nlines, ncols):
     else:
         fig = Figure(figsize=figsize)
     # Create an invisible axis and use it for title and footer
-    ax0 = fig.add_subplot(111)
+    ax0 = fig.add_subplot(111, label='ax0')
     ax0.set_axis_off()
     # Add event information as a title
     hypo = config.hypo
@@ -113,8 +113,6 @@ def _make_fig(config, nlines, ncols):
         yfmt = ScalarFormatter()
         yfmt.set_powerlimits((-1, 1))
         ax.yaxis.set_major_formatter(yfmt)
-        # make the axis visibile, in case it is the only one
-        ax.set_axis_on()
         axes.append(ax)
     fig.subplots_adjust(hspace=.1, wspace=.20)
     return fig, axes
