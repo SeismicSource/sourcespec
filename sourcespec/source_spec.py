@@ -74,8 +74,6 @@ def main():
     ncols = 4 if nspec > 6 else 3
     plot_spectra(config, spec_st, specnoise_st, plottype='regular',
                  ncols=ncols, async_plotter=plotter)
-    plot_spectra(config, specnoise_st, plottype='noise',
-                 ncols=ncols, async_plotter=plotter)
     plot_spectra(config, weight_st, plottype='weight',
                  ncols=ncols, async_plotter=plotter)
     if config.plot_station_map:

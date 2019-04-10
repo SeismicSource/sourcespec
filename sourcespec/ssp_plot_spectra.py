@@ -160,9 +160,6 @@ def _savefig(config, plottype, figures, async_plotter):
     if plottype == 'regular':
         suffix = '.ssp.'
         message = 'Spectral'
-    elif plottype == 'noise':
-        suffix = '.sspnoise.'
-        message = 'Noise'
     elif plottype == 'weight':
         suffix = '.sspweight.'
         message = 'Weight'
@@ -437,7 +434,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             orientation = spec.stats.channel[2]
             color, linestyle, linewidth =\
                 _color_lines(config, orientation, plotn, stack_plots)
-            if plottype in ['regular', 'noise']:
+            if plottype == 'regular':
                 ax.loglog(spec.get_freq(), spec.data, color=color,
                           linestyle=linestyle, linewidth=linewidth,
                           zorder=20)
