@@ -84,7 +84,7 @@ def _make_fig(config, nlines, ncols):
               'time: {}'
     textstr = textstr.format(
         hypo.evid, hypo.longitude, hypo.latitude, hypo.depth,
-        hypo.origin_time)
+        hypo.origin_time.format_iris_web_service())
     ax0.text(0., 1.06, textstr, fontsize=12,
              ha='left', va='top', transform=ax0.transAxes)
     if config.options.evname is not None:
