@@ -94,7 +94,7 @@ def _make_fig(config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
     else:
         fig = Figure(figsize=figsize)
     # Create an invisible axis and use it for title and footer
-    ax0 = fig.add_subplot(111)
+    ax0 = fig.add_subplot(111, label='ax0')
     ax0.set_axis_off()
     # Add event information as a title
     hypo = config.hypo
@@ -112,7 +112,7 @@ def _make_fig(config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
     # Add code information at the figure bottom
     textstr = 'SourceSpec v{} '.format(get_git_version())
     if not stack_plots:
-        textstr += '– Run completed on: {} {}\n'.format(
+        textstr += '– {} {}\n'.format(
             config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
             config.end_of_run_tz)
     ax0.text(1., -0.1, textstr, fontsize=10,
@@ -123,7 +123,7 @@ def _make_fig(config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
         # ax1 has moment units (or weight)
         if plotn == 1:
             if stack_plots:
-                ax = fig.add_subplot(1, 1, 1)
+                ax = fig.add_subplot(1, 1, 1, label='ax')
             else:
                 ax = fig.add_subplot(nlines, ncols, plotn)
         else:
@@ -152,7 +152,7 @@ def _make_fig(config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
             ax2 = None
         axes.append((ax, ax2))
     fig.subplots_adjust(hspace=.025, wspace=.03)
-    return fig, axes
+    return fig, axes, ax0
 
 
 def _savefig(config, plottype, figures, async_plotter):
@@ -265,6 +265,125 @@ def _color_lines(config, orientation, plotn, stack_plots):
     return color, linestyle, linewidth
 
 
+def _add_legend(config, ax0, spec_st, specnoise_st, stack_plots, plottype):
+    # check the available channel codes
+    channel_codes = set(s.stats.channel[-1] for s in spec_st)
+    # Set ax limit, so that the fake plot lines are hidden below
+    # the spectral plots
+    ax0.set_xlim(-10, 10000)
+    ax0.set_ylim(-10, 10000)
+    ncol0 = 0
+    handles0 = []
+    if 'H' in channel_codes:
+        ncol0 += 1
+        orientation = 'H'
+        color, linestyle, linewidth =\
+            _color_lines(config, orientation, 0, stack_plots)
+        linewidth = 2
+        if plottype == 'weight':
+            label = 'Weight'
+        else:
+            label = 'Root sum of squares'
+        _h, = ax0.plot(range(2), linestyle=linestyle, linewidth=linewidth,
+                       color=color, label=label)
+        handles0.append(_h)
+    Z_codes = sorted(
+        c for c in channel_codes if c in config.vertical_channel_codes)
+    if Z_codes:
+        ncol0 += 1
+        orientation = Z_codes[0]
+        color, linestyle, linewidth =\
+            _color_lines(config, orientation, 0, stack_plots)
+        linewidth = 2
+        label = ', '.join(Z_codes)
+        _h, = ax0.plot(range(2), linestyle=linestyle, linewidth=linewidth,
+                       color=color, label=label)
+        handles0.append(_h)
+    H1_codes = sorted(
+        c for c in channel_codes if c in config.horizontal_channel_codes_1)
+    if H1_codes:
+        ncol0 += 1
+        orientation = H1_codes[0]
+        color, linestyle, linewidth =\
+            _color_lines(config, orientation, 0, stack_plots)
+        linewidth = 2
+        label = ', '.join(H1_codes)
+        _h, = ax0.plot(range(2), linestyle=linestyle, linewidth=linewidth,
+                       color=color, label=label)
+        handles0.append(_h)
+    H2_codes = sorted(
+        c for c in channel_codes if c in config.horizontal_channel_codes_2)
+    if H2_codes:
+        ncol0 += 1
+        orientation = H2_codes[0]
+        color, linestyle, linewidth =\
+            _color_lines(config, orientation, 0, stack_plots)
+        linewidth = 2
+        label = ', '.join(H2_codes)
+        _h, = ax0.plot(range(2), linestyle=linestyle, linewidth=linewidth,
+                       color=color, label=label)
+        handles0.append(_h)
+    if specnoise_st:
+        ncol0 += 1
+        linewidth = 2
+        color = 'gray'
+        linestyle = ':'
+        label = 'Noise'
+        _h, = ax0.plot(range(2), linestyle=linestyle, linewidth=linewidth,
+                       color=color, label=label)
+        handles0.append(_h)
+    # Create a second axis for a second legend
+    ax1 = ax0.get_figure().add_subplot(111, label='ax1', zorder=-1)
+    ax1.set_axis_off()
+    # Set ax limit, so that the fake plot lines are hidden below
+    # the spectral plots
+    ax1.set_xlim(-10, 10000)
+    ax1.set_ylim(-10, 10000)
+    ncol1 = 0
+    handles1 = []
+    if 'S' in channel_codes:
+        ncol1 += 1
+        orientation = 'S'
+        color, linestyle, linewidth =\
+            _color_lines(config, orientation, 0, stack_plots)
+        linewidth = 2
+        label = 'Brune fit'
+        _h, = ax1.plot(range(2), linestyle=linestyle, linewidth=linewidth,
+                       color=color, label=label)
+        handles1.append(_h)
+    if 's' in channel_codes:
+        ncol1 += 1
+        orientation = 's'
+        color, linestyle, linewidth =\
+            _color_lines(config, orientation, 0, stack_plots)
+        linewidth = 2
+        label = 'Brune fit no att.'
+        _h, = ax1.plot(range(2), linestyle=linestyle, linewidth=linewidth,
+                       color=color, label=label)
+        handles1.append(_h)
+    if 't' in channel_codes:
+        ncol1 += 1
+        orientation = 't'
+        color, linestyle, linewidth =\
+            _color_lines(config, orientation, 0, stack_plots)
+        linewidth = 2
+        label = 'Brune fit no fc'
+        _h, = ax1.plot(range(2), linestyle=linestyle, linewidth=linewidth,
+                       color=color, label=label)
+        handles1.append(_h)
+    # Put the two legends on the two axes
+    legend0_y = legend1_y = -0.127
+    if handles0 and handles1:
+        legend0_y = -0.111
+        legend1_y = -0.147
+    if handles0:
+        ax0.legend(handles=handles0, bbox_to_anchor=(0, legend0_y),
+                   loc='lower left', borderaxespad=0, ncol=ncol0)
+    if handles1:
+        ax1.legend(handles=handles1, bbox_to_anchor=(0, legend1_y),
+                   loc='lower left', borderaxespad=0, ncol=ncol1)
+
+
 def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                  stack_plots=False, plottype='regular', async_plotter=None):
     """
@@ -281,9 +400,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         _nplots(spec_st, specnoise_st,
                 config.plot_spectra_maxrows, ncols, plottype)
     figures = []
-    fig, axes = _make_fig(
-            config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
-            stack_plots, plottype)
+    fig, axes, ax0 = _make_fig(
+        config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
+        stack_plots, plottype)
     figures.append(fig)
 
     # Path effect to contour text in white
@@ -300,11 +419,14 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         _, station, code = t
         spec_st_sel = spec_st.select(station=station)
         if plotn > nlines*ncols:
+            # Add lables and legend before making a new figure
             _add_labels(axes, plotn-1, ncols, plottype)
-            fig, axes = _make_fig(
-                    config, nlines, ncols,
-                    freq_minmax, moment_minmax, mag_minmax,
-                    stack_plots, plottype)
+            _add_legend(
+                config, ax0, spec_st, specnoise_st, stack_plots, plottype)
+            fig, axes, ax0 = _make_fig(
+                config, nlines, ncols,
+                freq_minmax, moment_minmax, mag_minmax,
+                stack_plots, plottype)
             figures.append(fig)
             plotn = 1
         ax_text = False
@@ -351,7 +473,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                         continue
                     orientation = sp_noise.stats.channel[2]
                     ax.loglog(sp_noise.get_freq(), sp_noise.data,
-                              linestyle=':', linewidth=2.,
+                              linestyle=':', linewidth=linewidth,
                               color=color, zorder=20)
 
             if not ax_text:
@@ -401,8 +523,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                         zorder=50,
                         path_effects=path_effects)
 
-    # Add lables for the last figure
+    # Add lables and legend for the last figure
     _add_labels(axes, plotn, ncols, plottype)
+    _add_legend(config, ax0, spec_st, specnoise_st, stack_plots, plottype)
     # Turn off the unused axes
     for ax, ax2 in axes[plotn:]:
         ax.set_axis_off()
