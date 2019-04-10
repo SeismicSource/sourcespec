@@ -19,6 +19,7 @@ import cartopy.io.img_tiles as cimgt
 import cartopy.feature as cfeature
 from pyproj import Geod
 from sourcespec.cached_tiler import CachedTiler
+from sourcespec.ssp_version import get_git_version
 
 # TODO:
 # add table with values
@@ -125,6 +126,18 @@ def plot_stations(config, sourcepar, st=None):
     else:
         fig = Figure(figsize=figsize)
     ax = fig.add_subplot(111, projection=stamen_terrain.crs)
+    # Add event information as a title
+    textstr = 'evid: {} \nlon: {:.3f} lat: {:.3f} ' +\
+              'depth: {:.1f} km time: {}'
+    textstr = textstr.format(
+        hypo.evid, hypo.longitude, hypo.latitude, hypo.depth,
+        hypo.origin_time.format_iris_web_service())
+    ax.text(0., 1.15, textstr, fontsize=10,
+            ha='left', va='top', linespacing=1.5, transform=ax.transAxes)
+    if config.options.evname is not None:
+        textstr = config.options.evname
+        ax.text(0., 1.22, textstr, fontsize=14,
+                ha='left', va='top', transform=ax.transAxes)
     trans = ccrs.Geodetic()
     ax.set_extent([lonmin, lonmax, latmin, latmax])
     if maxdiagonal <= 100:
@@ -175,6 +188,13 @@ def plot_stations(config, sourcepar, st=None):
     cax.axhline(magmean, color='k')
     cm_label = 'Magnitude'
     cax.set_ylabel(cm_label)
+    # Add code information at the figure bottom
+    textstr = 'SourceSpec v{} '.format(get_git_version())
+    textstr += '– {} {}\n'.format(
+        config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
+        config.end_of_run_tz)
+    cax.text(1., -0.1, textstr, fontsize=8,
+             ha='right', va='top', transform=cax.transAxes)
 
     evid = config.hypo.evid
     figfile_base = os.path.join(config.options.outdir, evid + '.map_mag.')
