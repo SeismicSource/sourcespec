@@ -164,6 +164,9 @@ def plot_stations(config, sourcepar, st=None):
     vmin = -vmax
     vmax += magmean
     vmin += magmean
+    if vmax == vmin:
+        vmax = magmean+0.5
+        vmin = magmean-0.5
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
     cmap = cm.Spectral_r
 
