@@ -109,6 +109,8 @@ def plot_stations(config, sourcepar, st=None):
     maxdist = np.max(epi_dist)
     maxdiagonal = maxdist*(2**0.5)*1.10
     mag = np.array([sourcepar[k]['Mw'] for k in st_ids])
+    magmean = sourcepar['means_weight']['Mw']
+    magerr = sourcepar['errors_weight']['Mw']
     # fc = np.array([sourcepar[k]['fc'] for k in st_ids])
     g = Geod(ellps='WGS84')
     hypo = config.hypo
@@ -135,9 +137,12 @@ def plot_stations(config, sourcepar, st=None):
     ax.text(0., 1.15, textstr, fontsize=10,
             ha='left', va='top', linespacing=1.5, transform=ax.transAxes)
     if config.options.evname is not None:
-        textstr = config.options.evname
-        ax.text(0., 1.22, textstr, fontsize=14,
-                ha='left', va='top', transform=ax.transAxes)
+        textstr = '{} — '.format(config.options.evname)
+    else:
+        textstr = ''
+    textstr += 'Mw {:.1f} ± {:.1f}'.format(magmean, magerr)
+    ax.text(0., 1.22, textstr, fontsize=14,
+            ha='left', va='top', transform=ax.transAxes)
     trans = ccrs.Geodetic()
     ax.set_extent([lonmin, lonmax, latmin, latmax])
     if maxdiagonal <= 100:
@@ -154,7 +159,6 @@ def plot_stations(config, sourcepar, st=None):
     ax.add_feature(countries, edgecolor='k')
     _plot_circles(ax, hypo.longitude, hypo.latitude, maxdist, 5)
 
-    magmean = sourcepar['means_weight']['Mw']
     vmax = np.max(np.abs(mag-magmean))
     vmin = -vmax
     vmax += magmean
