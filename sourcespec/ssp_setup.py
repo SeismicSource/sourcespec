@@ -449,7 +449,14 @@ def save_config(config):
 
 
 def setup_logging(config, basename=None):
-    """Setup the logging infrastructure."""
+    """
+    Setup the logging infrastructure.
+
+    This function is typically called twice: the first time without basename
+    and a second time with a basename (typically the eventid).
+    When called the second time, the previous logfile is renamed using the
+    given basename.
+    """
     global oldlogfile
     global PYTHON_VERSION_STR
     global OBSPY_VERSION_STR
@@ -467,13 +474,13 @@ def setup_logging(config, basename=None):
         logfile = os.path.join(config.options.outdir,
                                '%s.ssp.log' % datestring)
 
-    log = logging.getLogger()
+    logger = logging.getLogger()
     if oldlogfile:
-        hdlrs = log.handlers[:]
+        hdlrs = logger.handlers[:]
         for hdlr in hdlrs:
             hdlr.flush()
             hdlr.close()
-            log.removeHandler(hdlr)
+            logger.removeHandler(hdlr)
         if OS == 'nt':
             # Windows has problems with renaming
             shutil.copyfile(oldlogfile, logfile)
@@ -482,33 +489,26 @@ def setup_logging(config, basename=None):
         filemode = 'a'
     else:
         filemode = 'w'
-    oldlogfile = logfile
-
-    # logging.basicConfig(
-    #        level=logging.DEBUG,
-    #        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-    #        filename=logfile,
-    #        filemode='w'
-    #        )
 
     # captureWarnings is not supported in old versions of python
     try:
         logging.captureWarnings(True)
     except Exception:
         pass
-    log.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG)
     filehand = logging.FileHandler(filename=logfile, mode=filemode)
     filehand.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s %(name)-12s '
                                   '%(levelname)-8s %(message)s')
     filehand.setFormatter(formatter)
-    log.addHandler(filehand)
+    logger.addHandler(filehand)
 
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
-    log.addHandler(console)
+    logger.addHandler(console)
 
-    if not basename:
+    # Only write these debug infos for a new logfile
+    if not oldlogfile:
         logging.debug('source_spec START')
         logging.debug('SourceSpec version: ' + get_git_version())
         logging.debug('Python version: ' + PYTHON_VERSION_STR)
@@ -519,6 +519,7 @@ def setup_logging(config, basename=None):
         # write running arguments
         logging.debug('Running arguments:')
         logging.debug(' '.join(sys.argv))
+    oldlogfile = logfile
 
 
 def init_plotting():
