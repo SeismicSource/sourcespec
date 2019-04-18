@@ -426,15 +426,16 @@ def configure(progname='source_spec'):
             if cartopy_ver < cartopy_min_ver:
                 raise ImportError
         except ImportError:
-            logging.error(
-                'Please install cartopy >= {}.{}.{} to plot maps.'.format(
+            sys.stderr.write(
+                'Please install cartopy >= {}.{}.{} to plot maps.\n'.format(
                     *cartopy_min_ver)
             )
             if cartopy_ver:
-                logging.error('Installed cartopy version: {}.{}.{}.'.format(
-                    *cartopy_ver)
+                sys.stderr.write(
+                    'Installed cartopy version: {}.{}.{}.\n'.format(
+                        *cartopy_ver)
                 )
-            ssp_exit()
+            sys.exit(1)
 
     return config
 
