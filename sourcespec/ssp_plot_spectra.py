@@ -21,6 +21,7 @@ import math
 import logging
 from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
 from sourcespec.ssp_version import get_git_version
+logger = logging.getLogger(__name__.split('.')[-1])
 
 synth_colors = [
     '#201F1F',
@@ -173,7 +174,7 @@ def _savefig(config, plottype, figures, async_plotter):
             # Temporary commented out (see below)
             # if not config.PLOT_SHOW:
             #     fig.clf()
-        logging.info(message + ' plots saved to: ' + figfile)
+        logger.info(message + ' plots saved to: ' + figfile)
         return
     for n, fig in enumerate(figures):
         if len(figures) == 1:
@@ -188,7 +189,7 @@ def _savefig(config, plottype, figures, async_plotter):
                 async_plotter.save(canvas, figfile, bbox_inches='tight')
             else:
                 canvas.print_figure(figfile, bbox_inches='tight')
-        logging.info(message + ' plots saved to: ' + figfile)
+        logger.info(message + ' plots saved to: ' + figfile)
         # Commenting this out, since it throws a warning on recent versions
         # of Matplotlib (https://github.com/matplotlib/matplotlib/issues/9970)
         # By the way, do we really need to call clf()?

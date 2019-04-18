@@ -23,6 +23,7 @@ from obspy.core import Stream
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import remove_instr_response, hypo_dist
 from sourcespec.ssp_wave_arrival import wave_arrival
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
 def filter_trace(config, trace):
@@ -48,8 +49,8 @@ def filter_trace(config, trace):
             bp_freqmin = config.bp_freqmin_broadb
             bp_freqmax = config.bp_freqmax_broadb
         else:
-            logging.warning('%s: Unknown instrument type: %s: '
-                            'skipping trace' % (trace.id, instrtype))
+            logger.warning('%s: Unknown instrument type: %s: '
+                           'skipping trace' % (trace.id, instrtype))
             raise ValueError
     # remove the mean...
     trace.detrend(type='constant')
@@ -61,7 +62,7 @@ def filter_trace(config, trace):
         msg = '%s: maximum frequency for bandpass filtering ' % trace.id
         msg += 'is larger or equal to Nyquist. '
         msg += 'Setting it to %s Hz' % bp_freqmax
-        logging.warning(msg)
+        logger.warning(msg)
     trace.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
 
 
@@ -70,9 +71,9 @@ def _check_signal_level(config, trace):
     rms = np.sqrt(rms2)
     rms_min = config.rmsmin
     if rms <= rms_min:
-        logging.warning('%s %s: Trace RMS smaller than %g: '
-                        'skipping trace' % (trace.id, trace.stats.instrtype,
-                                            rms_min))
+        logger.warning('%s %s: Trace RMS smaller than %g: '
+                       'skipping trace' % (
+                        trace.id, trace.stats.instrtype, rms_min))
         raise RuntimeError
 
 
@@ -84,10 +85,10 @@ def _check_clipping(config, trace):
     nclips += (trace.data <= clip_min).sum()
     clip_nmax = config.clip_nmax
     if float(nclips)/trace.stats.npts > clip_nmax/100.:
-        logging.warning('%s %s: Trace is clipped for more than %.2f%% '
-                        'with %.2f%% tolerance: skipping trace' %
-                        (trace.id, trace.stats.instrtype, clip_nmax,
-                         clip_tolerance))
+        logger.warning('%s %s: Trace is clipped for more than %.2f%% '
+                       'with %.2f%% tolerance: skipping trace' %
+                       (trace.id, trace.stats.instrtype, clip_nmax,
+                        clip_tolerance))
         raise RuntimeError
 
 
@@ -118,13 +119,13 @@ def _check_sn_ratio(config, trace):
     rmsS = np.sqrt(rmsS2)
 
     sn_ratio = rmsS/rmsnoise
-    logging.info('%s %s: S/N: %.1f' % (trace.id, trace.stats.instrtype,
-                                       sn_ratio))
+    logger.info('%s %s: S/N: %.1f' % (
+        trace.id, trace.stats.instrtype, sn_ratio))
 
     snratio_min = config.sn_min
     if sn_ratio < snratio_min:
-        logging.warning('%s %s: S/N smaller than %g: skipping trace' %
-                        (trace.id, trace.stats.instrtype, snratio_min))
+        logger.warning('%s %s: S/N smaller than %g: skipping trace' %
+                       (trace.id, trace.stats.instrtype, snratio_min))
         raise RuntimeError
 
 
@@ -148,8 +149,8 @@ def _process_trace(config, trace):
         if remove_instr_response(trace_process,
                                  config.correct_instrumental_response,
                                  config.pre_filt) is None:
-            logging.warning('%s %s: Unable to remove instrument response: '
-                            'skipping trace' % (trace_process.id, instrtype))
+            logger.warning('%s %s: Unable to remove instrument response: '
+                           'skipping trace' % (trace_process.id, instrtype))
             raise RuntimeError
 
     filter_trace(config, trace_process)
@@ -168,22 +169,22 @@ def _merge_stream(config, st):
     overlaps = [g for g in gaps_olaps if g[6] < 0]
     gap_duration = sum(g[6] for g in gaps)
     if gap_duration > 0:
-        logging.info('%s: trace has %.3f seconds of gaps.' %
-                     (traceid, gap_duration))
+        logger.info('%s: trace has %.3f seconds of gaps.' %
+                    (traceid, gap_duration))
         gap_max = config.gap_max
         if gap_max is not None and gap_duration > gap_max:
-            logging.warning('%s: Gap duration larger than gap_max (%.1f): '
-                            'skipping trace' % (traceid, gap_max))
+            logger.warning('%s: Gap duration larger than gap_max (%.1f): '
+                           'skipping trace' % (traceid, gap_max))
             raise RuntimeError
     overlap_duration = -1 * sum(g[6] for g in overlaps)
     if overlap_duration > 0:
-        logging.info('%s: trace has %.3f seconds of overlaps.' %
-                     (traceid, overlap_duration))
+        logger.info('%s: trace has %.3f seconds of overlaps.' %
+                    (traceid, overlap_duration))
         overlap_max = config.overlap_max
         if overlap_max is not None and overlap_duration > overlap_max:
-            logging.warning('%s: Overlap duration larger than '
-                            'overlap_max (%.1f): skipping trace' %
-                            (traceid, overlap_max))
+            logger.warning('%s: Overlap duration larger than '
+                           'overlap_max (%.1f): skipping trace' %
+                           (traceid, overlap_max))
             raise RuntimeError
     # Then, compute the same statisics for the S-wave window.
     st_cut = st.copy()
@@ -191,8 +192,8 @@ def _merge_stream(config, st):
     t2 = st[0].stats.arrivals['S2'][1]
     st_cut.trim(starttime=t1, endtime=t2)
     if not st_cut:
-        logging.warning('%s: Not enough signal for the selected cut '
-                        'interval: skipping trace' % traceid)
+        logger.warning('%s: Not enough signal for the selected cut '
+                       'interval: skipping trace' % traceid)
         raise RuntimeError
     gaps_olaps = st_cut.get_gaps()
     gaps = [g for g in gaps_olaps if g[6] >= 0]
@@ -200,13 +201,13 @@ def _merge_stream(config, st):
     duration = st_cut[-1].stats.endtime - st_cut[0].stats.starttime
     gap_duration = sum(g[6] for g in gaps)
     if gap_duration > duration/4:
-        logging.warning('%s: Too many gaps for the selected cut '
-                        'interval: skipping trace' % traceid)
+        logger.warning('%s: Too many gaps for the selected cut '
+                       'interval: skipping trace' % traceid)
         raise RuntimeError
     overlap_duration = -1 * sum(g[6] for g in overlaps)
     if overlap_duration > 0:
-        logging.info('%s: S-wave window has %.3f seconds of overlaps.' %
-                     (traceid, overlap_duration))
+        logger.info('%s: S-wave window has %.3f seconds of overlaps.' %
+                    (traceid, overlap_duration))
     # Finally, demean and remove gaps and overlaps.
     # Since the count value is generally huge, we need to demean twice
     # to take into account for the rounding error
@@ -225,15 +226,15 @@ def _merge_stream(config, st):
 def _add_hypo_dist_and_arrivals(config, st):
     for trace in st:
         if hypo_dist(trace) is None:
-            logging.warning('%s: Unable to compute hypocentral distance: '
-                            'skipping trace' % trace.id)
+            logger.warning('%s: Unable to compute hypocentral distance: '
+                           'skipping trace' % trace.id)
             raise RuntimeError
         if config.max_epi_dist is not None and \
                 trace.stats.epi_dist > config.max_epi_dist:
-            logging.warning('%s: Epicentral distance (%.1f) '
-                            'larger than max_epi_dist (%.1f): skipping trace' %
-                            (trace.id, trace.stats.epi_dist,
-                             config.max_epi_dist))
+            logger.warning('%s: Epicentral distance (%.1f) '
+                           'larger than max_epi_dist (%.1f): skipping trace' %
+                           (trace.id, trace.stats.epi_dist,
+                            config.max_epi_dist))
             raise RuntimeError
 
         p_arrival_time = wave_arrival(trace, 'P', config.p_arrival_tolerance,
@@ -241,8 +242,8 @@ def _add_hypo_dist_and_arrivals(config, st):
         s_arrival_time = wave_arrival(trace, 'S', config.s_arrival_tolerance,
                                       config.vs_tt, config.NLL_time_dir)
         if p_arrival_time is None or s_arrival_time is None:
-            logging.warning('%s: Unable to get arrival times: '
-                            'skipping trace' % trace.id)
+            logger.warning('%s: Unable to get arrival times: '
+                           'skipping trace' % trace.id)
             raise RuntimeError
         # Signal window for spectral analysis
         t1 = s_arrival_time - config.pre_s_time
@@ -285,14 +286,14 @@ def process_traces(config, st):
                 "(" + ")|(".join(config.use_stations) + ")"
                 ).replace('.', '\.')
             if not any(re.match(combined, s) for s in ss):
-                logging.warning('%s: ignored from config file' % id)
+                logger.warning('%s: ignored from config file' % id)
                 continue
         if config.ignore_stations is not None:
             combined = (
                 "(" + ")|(".join(config.ignore_stations) + ")"
                 ).replace('.', '\.')
             if any(re.match(combined, s) for s in ss):
-                logging.warning('%s: ignored from config file' % id)
+                logger.warning('%s: ignored from config file' % id)
                 continue
         try:
             _add_hypo_dist_and_arrivals(config, st_sel)
@@ -303,7 +304,7 @@ def process_traces(config, st):
             continue
 
     if len(out_st) == 0:
-        logging.error('No traces left! Exiting.')
+        logger.error('No traces left! Exiting.')
         ssp_exit()
 
     # Rotate traces, if SH or SV is requested

@@ -24,6 +24,7 @@ from datetime import datetime
 from pytz import reference
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import mag_to_moment
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
 def _avg_and_std(values, errors=None, logarithmic=False):
@@ -209,7 +210,7 @@ def _write_parfile(config, sourcepar, sourcepar_err):
         config.end_of_run = now
         config.end_of_run_tz = timezone
 
-    logging.info('Output written to file: ' + parfilename)
+    logger.info('Output written to file: ' + parfilename)
 
 
 def _write_db(config, sourcepar):
@@ -261,7 +262,7 @@ def _write_db(config, sourcepar):
     # Commit changes and close database
     conn.commit()
     conn.close()
-    logging.info('Output written to database: ' + database_file)
+    logger.info('Output written to database: ' + database_file)
 
 
 def _write_hypo(config, sourcepar):
@@ -295,13 +296,13 @@ def _write_hypo(config, sourcepar):
         except Exception:
             pass
         fp.write(outline)
-    logging.info('Hypo file written to: ' + hypo_file_out)
+    logger.info('Hypo file written to: ' + hypo_file_out)
 
 
 def write_output(config, sourcepar, sourcepar_err):
     """Write results to a plain text file and/or to a SQLite database file."""
     if len(sourcepar) == 0:
-        logging.info('No source parameter calculated')
+        logger.info('No source parameter calculated')
         ssp_exit()
 
     means = dict()
@@ -377,10 +378,10 @@ def write_output(config, sourcepar, sourcepar_err):
     params_name = ('Mw', 'fc', 't_star')
     sourcepar_mean = dict(
         zip(params_name, [means['Mw'], means['fc'], means['t_star']]))
-    logging.info('params_mean: {}'.format(sourcepar_mean))
+    logger.info('params_mean: {}'.format(sourcepar_mean))
     sourcepar_mean_weight = dict(
         zip(params_name,
             [means_weight['Mw'], means_weight['fc'], means_weight['t_star']]))
-    logging.info('params_mean_weighted: {}'.format(sourcepar_mean_weight))
+    logger.info('params_mean_weighted: {}'.format(sourcepar_mean_weight))
 
     return sourcepar_mean

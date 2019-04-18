@@ -15,6 +15,7 @@ import os
 import math
 import logging
 from sourcespec.ssp_version import get_git_version
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
 phase_label_pos = {'P': 0.9, 'S': 0.93}
@@ -129,7 +130,7 @@ def _savefig(config, figures, async_plotter):
                 pdf.savefig(fig)
             if not config.PLOT_SHOW:
                 fig.clf()
-        logging.info('Trace plots saved to: ' + figfile)
+        logger.info('Trace plots saved to: ' + figfile)
         return
     for n, fig in enumerate(figures):
         if len(figures) == 1:
@@ -144,7 +145,7 @@ def _savefig(config, figures, async_plotter):
                 async_plotter.save(canvas, figfile, bbox_inches='tight')
             else:
                 canvas.print_figure(figfile, bbox_inches='tight')
-        logging.info('Trace plots saved to: ' + figfile)
+        logger.info('Trace plots saved to: ' + figfile)
         if not config.PLOT_SHOW:
             fig.clf()
 

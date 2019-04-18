@@ -30,6 +30,7 @@ from sourcespec.ssp_spectral_model import (spectral_model, objective_func,
 from sourcespec.ssp_util import mag_to_moment, select_trace, smooth
 from sourcespec.ssp_radiated_energy import radiated_energy
 from sourcespec.ssp_inversion_types import InitialValues, Bounds
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
 def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
@@ -56,14 +57,14 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
                                   bounds=(params_opt-(1e-10),
                                           params_opt+(1e-10)))
     elif config.inv_algorithm == 'LM':
-        logging.info('%s %s: initial values: %s' %
-                     (spec.id, spec.stats.instrtype,
-                      str(initial_values)))
+        logger.info('%s %s: initial values: %s' %
+                    (spec.id, spec.stats.instrtype,
+                     str(initial_values)))
         bnds = bounds.get_bounds_curve_fit()
         if bnds is not None:
-            logging.info('Trying to use using Levenberg-Marquardt '
-                         'algorithm with bounds. Switching to the '
-                         'Trust Region Reflective algorithm.')
+            logger.info('Trying to use using Levenberg-Marquardt '
+                        'algorithm with bounds. Switching to the '
+                        'Trust Region Reflective algorithm.')
         params_opt, params_cov =\
             curve_fit(spectral_model,
                       freq_log, ydata,
@@ -122,10 +123,10 @@ def _spec_inversion(config, spec, noise_weight):
     if not idx_max:
         # if idx_max is empty, then the source and/or noise spectrum
         # is most certainly "strange". In this case, we simply give up.
-        logging.warning('%s: unable to find a frequency range to compute '
-                        'Mw_0' % spec.id)
-        logging.warning('   This is possibly due to an uncommon '
-                        'spectrum for the trace (e.g., a resonance).')
+        logger.warning('%s: unable to find a frequency range to compute '
+                       'Mw_0' % spec.id)
+        logger.warning('   This is possibly due to an uncommon '
+                       'spectrum for the trace (e.g., a resonance).')
         raise RuntimeError
     idx1 = idx_max[0]
     if idx1 == idx0:
@@ -150,8 +151,8 @@ def _spec_inversion(config, spec, noise_weight):
         t_star_0 = config.t_star_0
 
     initial_values = InitialValues(Mw_0, fc_0, t_star_0)
-    logging.info('%s %s: initial values: %s' %
-                 (spec.id, spec.stats.instrtype, str(initial_values)))
+    logger.info('%s %s: initial values: %s' %
+                (spec.id, spec.stats.instrtype, str(initial_values)))
     bounds = Bounds(config, spec, initial_values)
     bounds.Mw_min = Mw_0 - 0.1
     bounds.Mw_max = Mw_0 + 0.1
@@ -159,14 +160,14 @@ def _spec_inversion(config, spec, noise_weight):
         bounds.t_star_min = t_star_min
     if t_star_max is not None:
         bounds.t_star_max = t_star_max
-    logging.info('%s %s: bounds: %s' %
-                 (spec.id, spec.stats.instrtype, str(bounds)))
+    logger.info('%s %s: bounds: %s' %
+                (spec.id, spec.stats.instrtype, str(bounds)))
     try:
         params_opt, params_cov = _curve_fit(
             config, spec, weight, yerr, initial_values, bounds)
     except RuntimeError:
-        logging.warning('%s %s: unable to fit spectral model' %
-                        (spec.id, spec.stats.instrtype))
+        logger.warning('%s %s: unable to fit spectral model' %
+                       (spec.id, spec.stats.instrtype))
         raise
 
     params_name = ('Mw', 'fc', 't_star')
@@ -225,13 +226,13 @@ def spectral_inversion(config, spec_st, weight_st):
         'frequency': 'Using frequency weighting for inversion.',
         None: 'Using no weighting for inversion.'
     }
-    logging.info(weighting_messages[config.weighting])
+    logger.info(weighting_messages[config.weighting])
     algorithm_messages = {
         'TNC': 'Using truncated Newton algorithm for inversion.',
         'LM': 'Using Levenberg-Marquardt algorithm for inversion.',
         'BH': 'Using basin-hopping algorithm for inversion.'
     }
-    logging.info(algorithm_messages[config.inv_algorithm])
+    logger.info(algorithm_messages[config.inv_algorithm])
 
     sourcepar = OrderedDict()
     sourcepar_err = OrderedDict()
@@ -260,13 +261,13 @@ def spectral_inversion(config, spec_st, weight_st):
         par = sourcepar[statId]
         t_star = par['t_star']
         if t_star < 0:
-            logging.warning('Ignoring station: %s t_star: %f' %
-                            (statId, t_star))
+            logger.warning('Ignoring station: %s t_star: %f' %
+                           (statId, t_star))
             sourcepar.pop(statId, None)
             sourcepar_err.pop(statId, None)
         fc = par['fc']
         if fc < f1 or fc > f2:
-            logging.warning('Ignoring station: %s fc: %f' % (statId, fc))
+            logger.warning('Ignoring station: %s fc: %f' % (statId, fc))
             sourcepar.pop(statId, None)
             sourcepar_err.pop(statId, None)
 

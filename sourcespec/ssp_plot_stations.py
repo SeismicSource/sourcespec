@@ -20,6 +20,7 @@ import cartopy.feature as cfeature
 from pyproj import Geod
 from sourcespec.cached_tiler import CachedTiler
 from sourcespec.ssp_version import get_git_version
+logger = logging.getLogger(__name__.split('.')[-1])
 
 # TODO:
 # add table with values
@@ -216,4 +217,4 @@ def plot_stations(config, sourcepar, st=None):
         else:
             canvas = FigureCanvasAgg(fig)
             canvas.print_figure(figfile, bbox_inches='tight')
-        logging.info('Station-magnitude map saved to: ' + figfile)
+        logger.info('Station-magnitude map saved to: ' + figfile)

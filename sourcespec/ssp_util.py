@@ -19,6 +19,7 @@ import math
 import numpy as np
 from obspy.signal.invsim import cosine_taper as _cos_taper
 from sourcespec.ssp_setup import ssp_exit
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
 # MISC ------------------------------------------------------------------------
@@ -66,8 +67,8 @@ def get_vel(lon, lat, depth, wave, NLL_model_dir):
     try:
         from nllgrid import NLLGrid
     except ImportError:
-        logging.error('Error: the "nllgrid" python module is required '
-                      'for "NLL_model_dir".')
+        logger.error('Error: the "nllgrid" python module is required '
+                     'for "NLL_model_dir".')
         ssp_exit()
     grdfile = '*.{}.mod.hdr'.format(wave)
     grdfile = os.path.join(NLL_model_dir, grdfile)
@@ -125,7 +126,7 @@ def remove_instr_response(trace, correct='True',
     traceId = trace.get_id()
     paz = trace.stats.paz
     if paz is None:
-        logging.warning('%s: no poles and zeros for trace' % traceId)
+        logger.warning('%s: no poles and zeros for trace' % traceId)
         return None
 
     # remove the mean...
@@ -150,8 +151,8 @@ def remove_instr_response(trace, correct='True',
                            remove_sensitivity=True, simulate_sensitivity=None,
                            pre_filt=pre_filt, sacsim=False)
             if len(w) > 0:
-                logging.warning('%s: remove_instr_response: %s' %
-                                (trace.stats.station, w[-1].message))
+                logger.warning('%s: remove_instr_response: %s' %
+                               (trace.stats.station, w[-1].message))
     return trace
 # -----------------------------------------------------------------------------
 

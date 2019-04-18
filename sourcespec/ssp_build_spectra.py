@@ -27,6 +27,7 @@ from sourcespec import spectrum
 from sourcespec.ssp_util import smooth, cosine_taper, moment_to_mag, get_vel
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
 def _time_integrate(config, trace):
@@ -119,13 +120,13 @@ def _check_data_len(config, trace):
     trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     npts = len(trace_cut.data)
     if npts == 0:
-        logging.warning('%s: No data for the selected cut interval: '
-                        'skipping trace' % traceId)
+        logger.warning('%s: No data for the selected cut interval: '
+                       'skipping trace' % traceId)
         raise RuntimeError
     nzeros = len(np.where(trace_cut.data == 0)[0])
     if nzeros > npts/4:
-        logging.warning('%s: Too many gaps for the selected cut '
-                        'interval: skipping trace' % traceId)
+        logger.warning('%s: Too many gaps for the selected cut '
+                       'interval: skipping trace' % traceId)
         raise RuntimeError
 
 
@@ -176,8 +177,8 @@ def _check_noise_level(trace_signal, trace_noise):
     trace_signal_rms = ((trace_signal.data**2).sum())**0.5
     trace_noise_rms = ((trace_noise.data**2).sum())**0.5
     if trace_noise_rms/trace_signal_rms < 1e-6:
-        logging.warning('%s: Noise level is too low or zero: '
-                        'ignoring for noise weighting' % traceId)
+        logger.warning('%s: Noise level is too low or zero: '
+                       'ignoring for noise weighting' % traceId)
         raise RuntimeError
 
 
@@ -250,9 +251,9 @@ def _build_weight(spec, specnoise):
         _smooth_spectrum(weight, npts=11)
         weight.data /= np.max(weight.data)
     else:
-        logging.warning('%s: No available noise window: '
-                        % weight.get_id()[0:-1] +
-                        'a uniform weight will be applied')
+        logger.warning('%s: No available noise window: '
+                       % weight.get_id()[0:-1] +
+                       'a uniform weight will be applied')
         weight.data = np.ones(len(spec.data))
     # interpolate to log-frequencies
     f = interp1d(weight.get_freq(), weight.data, fill_value='extrapolate')
@@ -330,14 +331,14 @@ def build_spectra(config, st, noise_weight=False):
                 idx = range(len(weight.data_raw))
             spectral_ssn =\
                 weight.data_raw[idx].sum()/len(weight.data_raw[idx])
-            logging.info('%s: spectral S/N: %.2f' %
-                         (spec.get_id(), spectral_ssn))
+            logger.info('%s: spectral S/N: %.2f' %
+                        (spec.get_id(), spectral_ssn))
             if config.spectral_sn_min:
                 ssnmin = config.spectral_sn_min
                 if spectral_ssn < ssnmin:
-                    logging.warning('%s: spectral S/N smaller than %.2f: '
-                                    'skipping spectrum' %
-                                    (spec.get_id(), ssnmin))
+                    logger.warning('%s: spectral S/N smaller than %.2f: '
+                                   'skipping spectrum' %
+                                   (spec.get_id(), ssnmin))
                     continue
             specnoise_st.append(specnoise)
         spec_st.append(spec)

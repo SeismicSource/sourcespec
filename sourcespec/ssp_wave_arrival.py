@@ -18,6 +18,7 @@ import warnings
 from sourcespec.ssp_setup import ssp_exit
 from obspy.taup import TauPyModel
 model = TauPyModel(model='iasp91')
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
 def _wave_arrival_nll(trace, phase, NLL_time_dir):
@@ -29,8 +30,8 @@ def _wave_arrival_nll(trace, phase, NLL_time_dir):
     try:
         from nllgrid import NLLGrid
     except ImportError:
-        logging.error('Error: the "nllgrid" python module is required '
-                      'for "NLL_time_dir".')
+        logger.error('Error: the "nllgrid" python module is required '
+                     'for "NLL_time_dir".')
         ssp_exit()
     grdfile = '*.{}.{}.time.hdr'.format(phase, trace.stats.station)
     grdfile = os.path.join(NLL_time_dir, grdfile)
@@ -80,7 +81,7 @@ def _wave_arrival_taup(trace, phase):
             # Ignore a specific obspy.taup warning we do not care about
             if '#2280' in message:
                 continue
-            logging.warning(message)
+            logger.warning(message)
     tt = min(a.time for a in arrivals)
     return trace.stats.hypo.origin_time + tt
 
@@ -92,7 +93,7 @@ def _validate_pick(pick, theo_pick_time, tolerance, trace_id):
     if abs(delta_t) > tolerance:  # seconds
         msg = '%s: measured %s pick time - theoretical time = %.1f s.' %\
               (trace_id, pick.phase, delta_t)
-        logging.warning(msg)
+        logger.warning(msg)
         return False
     return True
 
@@ -116,9 +117,9 @@ def wave_arrival(trace, phase, tolerance=4., vel=None, NLL_time_dir=None):
         theo_pick_time = _wave_arrival_taup(trace, phase)
     for pick in (p for p in trace.stats.picks if p.phase == phase):
         if _validate_pick(pick, theo_pick_time, tolerance, trace.id):
-            logging.info('%s: found %s pick' % (trace.id, phase))
+            logger.info('%s: found %s pick' % (trace.id, phase))
             trace.stats.arrivals[phase] = (phase, pick.time)
             return pick.time
-    logging.info('%s: using theoretical %s pick' % (trace.id, phase))
+    logger.info('%s: using theoretical %s pick' % (trace.id, phase))
     trace.stats.arrivals[phase] = (phase + 'theo', theo_pick_time)
     return theo_pick_time

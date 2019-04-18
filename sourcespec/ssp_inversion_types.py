@@ -13,6 +13,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import logging
 import numpy as np
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
 class InitialValues():
@@ -95,10 +96,10 @@ class Bounds(object):
         if self.t_star_min < self.ini_values.t_star_0 < self.t_star_max:
             return
         t_star_0 = (self.t_star_max + self.t_star_min) / 2.
-        logging.warning('%s %s: initial t_star value: %s outside '
-                        'bounds. Using bound average: %s' %
-                        (self.spec.id, self.spec.stats.instrtype,
-                         self.ini_values.t_star_0, round(t_star_0, 4)))
+        logger.warning('%s %s: initial t_star value: %s outside '
+                       'bounds. Using bound average: %s' %
+                       (self.spec.id, self.spec.stats.instrtype,
+                        self.ini_values.t_star_0, round(t_star_0, 4)))
         self.ini_values.t_star_0 = t_star_0
 
     def __call__(self, **kwargs):

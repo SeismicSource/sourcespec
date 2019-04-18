@@ -61,6 +61,7 @@ OS = os.name
 DEBUG = False
 oldlogfile = None
 plotter = None
+logger = None
 ssp_exit_called = False
 OBSPY_VERSION = None
 OBSPY_VERSION_STR = None
@@ -449,7 +450,7 @@ def save_config(config):
     os.rename(src, dst)
 
 
-def setup_logging(config, basename=None):
+def setup_logging(config, basename=None, progname='source_spec'):
     """
     Setup the logging infrastructure.
 
@@ -459,6 +460,7 @@ def setup_logging(config, basename=None):
     given basename.
     """
     global oldlogfile
+    global logger
     global PYTHON_VERSION_STR
     global OBSPY_VERSION_STR
     global NUMPY_VERSION_STR
@@ -475,13 +477,13 @@ def setup_logging(config, basename=None):
         logfile = os.path.join(config.options.outdir,
                                '%s.ssp.log' % datestring)
 
-    logger = logging.getLogger()
+    logger_root = logging.getLogger()
     if oldlogfile:
-        hdlrs = logger.handlers[:]
+        hdlrs = logger_root.handlers[:]
         for hdlr in hdlrs:
             hdlr.flush()
             hdlr.close()
-            logger.removeHandler(hdlr)
+            logger_root.removeHandler(hdlr)
         if OS == 'nt':
             # Windows has problems with renaming
             shutil.copyfile(oldlogfile, logfile)
@@ -496,30 +498,31 @@ def setup_logging(config, basename=None):
         logging.captureWarnings(True)
     except Exception:
         pass
-    logger.setLevel(logging.DEBUG)
+    logger_root.setLevel(logging.DEBUG)
     filehand = logging.FileHandler(filename=logfile, mode=filemode)
     filehand.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s %(name)-12s '
+    formatter = logging.Formatter('%(asctime)s %(name)-20s '
                                   '%(levelname)-8s %(message)s')
     filehand.setFormatter(formatter)
-    logger.addHandler(filehand)
+    logger_root.addHandler(filehand)
 
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
-    logger.addHandler(console)
+    logger_root.addHandler(console)
+
+    logger = logging.getLogger(progname)
 
     # Only write these debug infos for a new logfile
     if not oldlogfile:
-        logging.debug('source_spec START')
-        logging.debug('SourceSpec version: ' + get_git_version())
-        logging.debug('Python version: ' + PYTHON_VERSION_STR)
-        logging.debug('ObsPy version: ' + OBSPY_VERSION_STR)
-        logging.debug('NumPy version: ' + NUMPY_VERSION_STR)
-        logging.debug('SciPy version: ' + SCIPY_VERSION_STR)
-        logging.debug('Matplotlib version: ' + MATPLOTLIB_VERSION_STR)
-        # write running arguments
-        logging.debug('Running arguments:')
-        logging.debug(' '.join(sys.argv))
+        logger.debug('source_spec START')
+        logger.debug('SourceSpec version: ' + get_git_version())
+        logger.debug('Python version: ' + PYTHON_VERSION_STR)
+        logger.debug('ObsPy version: ' + OBSPY_VERSION_STR)
+        logger.debug('NumPy version: ' + NUMPY_VERSION_STR)
+        logger.debug('SciPy version: ' + SCIPY_VERSION_STR)
+        logger.debug('Matplotlib version: ' + MATPLOTLIB_VERSION_STR)
+        logger.debug('Running arguments:')
+        logger.debug(' '.join(sys.argv))
     oldlogfile = logfile
 
 
@@ -541,9 +544,9 @@ def ssp_exit(retval=0, abort=False):
     ssp_exit_called = True
     if abort:
         print('\nAborting.')
-        logging.debug('source_spec ABORTED')
+        logger.debug('source_spec ABORTED')
     else:
-        logging.debug('source_spec END')
+        logger.debug('source_spec END')
     logging.shutdown()
     global plotter
     if plotter is not None:

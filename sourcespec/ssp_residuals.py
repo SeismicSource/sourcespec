@@ -23,6 +23,7 @@ except ImportError:
 from obspy.core import Stream
 from sourcespec.ssp_spectral_model import spectral_model
 from sourcespec.ssp_util import mag_to_moment
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
 def spectral_residuals(config, spec_st, sourcepar_mean):
@@ -49,6 +50,6 @@ def spectral_residuals(config, spec_st, sourcepar_mean):
     # Save residuals as pickle file
     evid = config.hypo.evid
     res_file = os.path.join(config.options.outdir, evid + '-residuals.pickle')
-    logging.info('Spectral residuals saved to: %s' % res_file)
+    logger.info('Spectral residuals saved to: %s' % res_file)
     with open(res_file, 'wb') as fp:
         pickle.dump(residuals, fp)

@@ -44,6 +44,7 @@ from obspy.geodetics import gps2dist_azimuth
 from obspy import read_events
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import get_vel
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
 class Pick(AttribDict):
@@ -117,7 +118,7 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
                 paz = AttribDict(sp.get_paz(traceid, time))
                 coords = AttribDict(sp.get_coordinates(traceid, time))
             except SEEDParserException as err:
-                logging.error('%s time: %s' % (err, str(time)))
+                logger.error('%s time: %s' % (err, str(time)))
                 pass
     elif isinstance(dataless, Inventory):
         try:
@@ -127,13 +128,12 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
                 sacpz = dataless.get_response(traceid, time).get_sacpz()
                 for w in warns:
                     message = str(w.message)
-                    logging.warning('%s: %s' % (traceid, message))
+                    logger.warning('%s: %s' % (traceid, message))
             attach_paz(trace, io.StringIO(sacpz))
             paz = trace.stats.paz
             coords = AttribDict(dataless.get_coordinates(traceid, time))
         except Exception as err:
-            logging.error('%s traceid: %s time: %s' %
-                          (err, traceid, str(time)))
+            logger.error('%s traceid: %s time: %s' % (err, traceid, str(time)))
             pass
     try:
         trace.stats.paz = paz
@@ -427,10 +427,10 @@ def _read_dataless(path):
         except TypeError:
             pass
         except IOError as err:
-            logging.error(err)
+            logger.error(err)
             ssp_exit()
 
-    logging.info('Reading dataless...')
+    logger.info('Reading dataless...')
     dataless = dict()
     if os.path.isdir(path):
         listing = os.listdir(path)
@@ -441,7 +441,7 @@ def _read_dataless(path):
             except Exception:
                 continue
         # TODO: manage the case in which "path" is a file name
-    logging.info('Reading dataless: done')
+    logger.info('Reading dataless: done')
     return dataless
 
 
@@ -460,7 +460,7 @@ def _read_paz(path):
     if path is None:
         return None
 
-    logging.info('Reading PAZ...')
+    logger.info('Reading PAZ...')
     paz = dict()
     if os.path.isdir(path):
         listing = os.listdir(path)
@@ -496,7 +496,7 @@ def _read_paz(path):
         tr = Trace()
         attach_paz(tr, filename)
         paz['default'] = tr.stats.paz.copy()
-    logging.info('Reading PAZ: done')
+    logger.info('Reading PAZ: done')
     return paz
 
 
@@ -514,7 +514,7 @@ def _parse_qml(qml_file, evid=None):
     try:
         cat = read_events(qml_file)
     except Exception as err:
-        logging.error(err)
+        logger.error(err)
         ssp_exit(1)
 
     if evid is not None:
@@ -585,7 +585,7 @@ def _parse_hypocenter(hypo_file):
                 if any(c.isalpha() for c in line[0:10]):
                     line = fp.readline()
         except IOError as err:
-            logging.error(err)
+            logger.error(err)
             ssp_exit(1)
 
         timestr = line[0:17]
@@ -657,7 +657,7 @@ def _parse_picks(config):
         lines = fp.readlines()
         fp.close()
     except Exception as err:
-        logging.error(err)
+        logger.error(err)
         ssp_exit(1)
     picks = []
     for line in lines:
@@ -748,7 +748,7 @@ def _build_filelist(path, filelist, tmpdir):
         try:
             open(path)
         except IOError as err:
-            logging.error(err)
+            logger.error(err)
             return
         if tarfile.is_tarfile(path) and tmpdir is not None:
             tar = tarfile.open(path)
@@ -827,7 +827,7 @@ def read_traces(config):
             try:
                 tmpst = read(trace.trace_file, fsize=False)
             except Exception as err:
-                logging.error(err)
+                logger.error(err)
                 continue
             for trace in tmpst.traces:
                 st.append(trace)
@@ -839,7 +839,7 @@ def read_traces(config):
                 trace.stats.instrtype = 'acc'  # FIXME
     # ...or in standard files (CRL and ISNet)
     else:
-        logging.info('Reading traces...')
+        logger.info('Reading traces...')
         # phase 1: build a file list
         # ph 1.1: create a temporary dir and run '_build_filelist()'
         #         to move files to it and extract all tar archives
@@ -863,14 +863,14 @@ def read_traces(config):
             try:
                 tmpst = read(filename, fsize=False)
             except Exception:
-                logging.warning('%s: Unable to read file as a trace: '
-                                'skipping' % filename)
+                logger.warning('%s: Unable to read file as a trace: '
+                               'skipping' % filename)
                 continue
             for trace in tmpst.traces:
                 orientation = trace.stats.channel[-1]
                 if orientation not in orientation_codes:
-                    logging.warning('%s: Unknown channel orientation: "%s": '
-                                    'skipping trace' % (trace.id, orientation))
+                    logger.warning('%s: Unknown channel orientation: "%s": '
+                                   'skipping trace' % (trace.id, orientation))
                     continue
                 if config.options.station is not None:
                     if not trace.stats.station == config.options.station:
@@ -883,15 +883,15 @@ def read_traces(config):
                     _add_hypocenter(trace, hypo)
                     _add_picks(trace, picks)
                 except Exception as err:
-                    logging.warning(err)
+                    logger.warning(err)
                     continue
                 st.append(trace)
 
         shutil.rmtree(tmpdir)
 
-    logging.info('Reading traces: done')
+    logger.info('Reading traces: done')
     if len(st.traces) == 0:
-        logging.info('No trace loaded')
+        logger.info('No trace loaded')
         ssp_exit()
 
     _complete_picks(st)
@@ -901,7 +901,7 @@ def read_traces(config):
         try:
             hypo = st[0].stats.hypo
         except AttributeError:
-            logging.error('No hypocenter information found')
+            logger.error('No hypocenter information found')
             ssp_exit()
     # add vs to hypo
     _hypo_vel(hypo, config)
