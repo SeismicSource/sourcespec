@@ -14,6 +14,7 @@ from __future__ import (absolute_import, division, print_function,
 import os
 from glob import glob
 import logging
+import warnings
 from sourcespec.ssp_setup import ssp_exit
 from obspy.taup import TauPyModel
 model = TauPyModel(model='iasp91')
@@ -62,17 +63,24 @@ def _wave_arrival_taup(trace, phase):
     if trace.stats.hypo.origin_time is None:
         return
     phase_list = [phase.lower(), phase]
-    try:
-        arrivals = model.get_travel_times(
-                    source_depth_in_km=trace.stats.hypo.depth,
-                    distance_in_degree=trace.stats.gcarc,
-                    phase_list=phase_list)
-    except Exception:
-        trace.stats.hypo.depth = 0.
-        arrivals = model.get_travel_times(
-                    source_depth_in_km=trace.stats.hypo.depth,
-                    distance_in_degree=trace.stats.gcarc,
-                    phase_list=phase_list)
+    with warnings.catch_warnings(record=True) as warns:
+        try:
+            arrivals = model.get_travel_times(
+                        source_depth_in_km=trace.stats.hypo.depth,
+                        distance_in_degree=trace.stats.gcarc,
+                        phase_list=phase_list)
+        except Exception:
+            trace.stats.hypo.depth = 0.
+            arrivals = model.get_travel_times(
+                        source_depth_in_km=trace.stats.hypo.depth,
+                        distance_in_degree=trace.stats.gcarc,
+                        phase_list=phase_list)
+        for w in warns:
+            message = str(w.message)
+            # Ignore a specific obspy.taup warning we do not care about
+            if '#2280' in message:
+                continue
+            logging.warning(message)
     tt = min(a.time for a in arrivals)
     return trace.stats.hypo.origin_time + tt
 

@@ -9,6 +9,9 @@ import types
 
 import requests
 import PIL
+import logging
+PIL_logger = logging.getLogger('PIL')
+PIL_logger.setLevel(logging.WARNING)
 
 
 class CachedTiler(object):

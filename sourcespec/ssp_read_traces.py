@@ -22,6 +22,7 @@ import os
 import io
 import re
 import logging
+import warnings
 import shutil
 import tarfile
 import tempfile
@@ -120,7 +121,13 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
                 pass
     elif isinstance(dataless, Inventory):
         try:
-            sacpz = dataless.get_response(traceid, time).get_sacpz()
+            with warnings.catch_warnings(record=True) as warns:
+                # get_sacpz() can issue warnings on more than one PAZ found,
+                # so let's catch those warnings and log them properly
+                sacpz = dataless.get_response(traceid, time).get_sacpz()
+                for w in warns:
+                    message = str(w.message)
+                    logging.warning('%s: %s' % (traceid, message))
             attach_paz(trace, io.StringIO(sacpz))
             paz = trace.stats.paz
             coords = AttribDict(dataless.get_coordinates(traceid, time))
