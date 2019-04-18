@@ -190,6 +190,8 @@ def plot_stations(config, sourcepar, st=None):
     fig.colorbar(sm, cax=cax)
     cax.get_yaxis().set_visible(True)
     cax.axhline(magmean, color='k')
+    cax.axhline(magmean-magerr, linestyle=':', color='k')
+    cax.axhline(magmean+magerr, linestyle=':', color='k')
     cm_label = 'Magnitude'
     cax.set_ylabel(cm_label)
     # Add code information at the figure bottom
