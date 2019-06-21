@@ -141,7 +141,7 @@ def plot_stations(config, sourcepar, st=None):
         textstr = '{} — '.format(config.options.evname)
     else:
         textstr = ''
-    textstr += 'Mw {:.1f} ± {:.1f}'.format(magmean, magerr)
+    textstr += 'Mw {:.2f} ± {:.2f}'.format(magmean, magerr)
     ax.text(0., 1.22, textstr, fontsize=14,
             ha='left', va='top', transform=ax.transAxes)
     trans = ccrs.Geodetic()
