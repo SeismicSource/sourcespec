@@ -72,6 +72,7 @@ def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
             color='k', transform=geodetic_transform,
             zorder=10)
     step = _round(maxdist/ncircles)
+    texts = []
     for dist in np.arange(step, maxdist+step, step):
         azimuths = np.arange(0, 360, 1)
         circle = np.array(
@@ -91,6 +92,8 @@ def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
             PathEffects.Stroke(linewidth=0.8, foreground='white'),
             PathEffects.Normal()
         ])
+        texts.append(t)
+    return texts
 
 
 def plot_stations(config, sourcepar, st=None):
@@ -159,7 +162,7 @@ def plot_stations(config, sourcepar, st=None):
         scale='10m',
         facecolor='none')
     ax.add_feature(countries, edgecolor='k')
-    _plot_circles(ax, hypo.longitude, hypo.latitude, maxdist, 5)
+    circle_texts = _plot_circles(ax, hypo.longitude, hypo.latitude, maxdist, 5)
 
     vmax = np.max(np.abs(mag-magmean))
     vmin = -vmax
@@ -221,7 +224,7 @@ def plot_stations(config, sourcepar, st=None):
              ha='right', va='top', transform=cax.transAxes)
 
     if config.plot_station_names_on_map:
-        adjust_text(texts)
+        adjust_text(texts, add_objects=circle_texts)
 
     evid = config.hypo.evid
     figfile_base = os.path.join(config.options.outdir, evid + '.map_mag.')
