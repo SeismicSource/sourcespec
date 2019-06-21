@@ -17,6 +17,7 @@ import numpy as np
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
 import cartopy.feature as cfeature
+from sourcespec.adjustText import adjust_text
 from pyproj import Geod
 from sourcespec.cached_tiler import CachedTiler
 from sourcespec.ssp_version import get_git_version
@@ -145,7 +146,7 @@ def plot_stations(config, sourcepar, st=None):
     ax.text(0., 1.22, textstr, fontsize=14,
             ha='left', va='top', transform=ax.transAxes)
     trans = ccrs.Geodetic()
-    ax.set_extent([lonmin, lonmax, latmin, latmax])
+    ax.set_extent([lonmin, lonmax, latmin, latmax], crs=trans)
     if maxdiagonal <= 100:
         tile_zoom_level = 12
     else:
@@ -181,6 +182,19 @@ def plot_stations(config, sourcepar, st=None):
         marker='^', s=100,
         color=cmap(norm(mag)), edgecolor='k',
         zorder=99, transform=trans)
+    if config.plot_station_names_on_map:
+        texts = []
+        for ll, id in zip(lonlat, st_ids):
+            id = '.'.join(id.split('.')[:2])
+            id = '  ' + id
+            t = ax.text(
+                ll[0], ll[1], id, size=8, weight='bold', va='center',
+                zorder=999, transform=trans)
+            t.set_path_effects([
+                PathEffects.Stroke(linewidth=0.8, foreground='white'),
+                PathEffects.Normal()
+            ])
+            texts.append(t)
 
     # Add a colorbar
     ax_divider = make_axes_locatable(ax)
@@ -205,6 +219,9 @@ def plot_stations(config, sourcepar, st=None):
         config.end_of_run_tz)
     cax.text(1., -0.1, textstr, fontsize=8,
              ha='right', va='top', transform=cax.transAxes)
+
+    if config.plot_station_names_on_map:
+        adjust_text(texts)
 
     evid = config.hypo.evid
     figfile_base = os.path.join(config.options.outdir, evid + '.map_mag.')
