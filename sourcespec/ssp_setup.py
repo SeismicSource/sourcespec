@@ -107,6 +107,15 @@ def _check_library_versions():
     SCIPY_VERSION_STR = scipy.__version__
     import matplotlib
     MATPLOTLIB_VERSION_STR = matplotlib.__version__
+    MATPLOTLIB_VERSION = MATPLOTLIB_VERSION_STR.split('.')[:3]
+    MATPLOTLIB_VERSION = tuple(map(int, MATPLOTLIB_VERSION))
+    MAX_MATPLOTLIB_VERSION = (3, 1, 0)
+    if MATPLOTLIB_VERSION >= MAX_MATPLOTLIB_VERSION:
+        msg = 'ERROR: Matplotlib >= %s.%s.%s ' % MAX_MATPLOTLIB_VERSION
+        msg += 'is not yet supported. Please use a less recent version'
+        msg += ' You have version: %s\n' % MATPLOTLIB_VERSION_STR
+        sys.stderr.write(msg)
+        sys.exit(1)
 
 
 def dprint(string):
