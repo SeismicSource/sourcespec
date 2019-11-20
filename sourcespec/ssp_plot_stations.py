@@ -245,9 +245,6 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
             ])
             texts.append(t)
 
-    if config.plot_station_names_on_map:
-        adjust_text(texts, add_objects=circle_texts, ax=ax)
-
     # Add a colorbar
     ax_divider = make_axes_locatable(ax)
     cax = ax_divider.append_axes('right', size='100%',
@@ -275,6 +272,9 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
         config.end_of_run_tz)
     cax.text(1., -0.1, textstr, fontsize=8,
              ha='right', va='top', transform=cax.transAxes)
+
+    if config.plot_station_names_on_map:
+        adjust_text(texts, add_objects=circle_texts, ax=ax)
 
     evid = config.hypo.evid
     figfile_base = os.path.join(config.options.outdir, evid)
