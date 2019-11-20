@@ -274,7 +274,10 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
              ha='right', va='top', transform=cax.transAxes)
 
     if config.plot_station_names_on_map:
-        adjust_text(texts, add_objects=circle_texts, ax=ax)
+        # first adjust text labels relatively to each other
+        adjust_text(texts, ax=ax, maxshift=1e3)
+        # then, try to stay away from circle texts
+        adjust_text(texts, add_objects=circle_texts, ax=ax, maxshift=1e3)
 
     evid = config.hypo.evid
     figfile_base = os.path.join(config.options.outdir, evid)
