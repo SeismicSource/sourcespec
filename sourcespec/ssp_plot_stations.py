@@ -236,9 +236,10 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
         for ll, id in zip(lonlat, st_ids):
             id = '.'.join(id.split('.')[:2])
             id = '  ' + id
+            station_text_size = config.plot_station_text_size
             t = ax.text(
-                ll[0], ll[1], id, size=8, weight='bold', va='center',
-                zorder=999, transform=trans)
+                ll[0], ll[1], id, size=station_text_size, weight='bold',
+                va='center', zorder=999, transform=trans)
             t.set_path_effects([
                 PathEffects.Stroke(linewidth=0.8, foreground='white'),
                 PathEffects.Normal()
