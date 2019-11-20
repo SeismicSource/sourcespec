@@ -395,7 +395,7 @@ def adjust_text(texts, x=None, y=None, add_objects=None, ax=None,
                 only_move={'points':'xy', 'text':'xy', 'objects':'xy'},
                 avoid_text=True, avoid_points=True, avoid_self=True,
                 save_steps=False, save_prefix='', save_format='png',
-                add_step_numbers=True, on_basemap=False,
+                add_step_numbers=True, on_basemap=False, maxshift=None,
                 *args, **kwargs):
     """Iteratively adjusts the locations of texts.
 
@@ -638,6 +638,8 @@ def adjust_text(texts, x=None, y=None, add_objects=None, ax=None,
         histm = np.max(np.array(history), axis=0)
         history.pop(0)
         history.append((qx, qy))
+        if maxshift is not None and (qx >= maxshift or qy >= maxshift):
+            break
         move_texts(texts, dx, dy,
                    bboxes = get_bboxes(texts, r, (1, 1), ax), ax=ax)
         if save_steps:
