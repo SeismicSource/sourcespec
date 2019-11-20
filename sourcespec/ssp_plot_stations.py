@@ -245,6 +245,9 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
             ])
             texts.append(t)
 
+    if config.plot_station_names_on_map:
+        adjust_text(texts, add_objects=circle_texts, ax=ax)
+
     # Add a colorbar
     ax_divider = make_axes_locatable(ax)
     cax = ax_divider.append_axes('right', size='100%',
@@ -273,9 +276,6 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     cax.text(1., -0.1, textstr, fontsize=8,
              ha='right', va='top', transform=cax.transAxes)
 
-    # if config.plot_station_names_on_map:
-    #     adjust_text(texts, add_objects=circle_texts, ax=ax)
-
     evid = config.hypo.evid
     figfile_base = os.path.join(config.options.outdir, evid)
     figfile_base += '.map_{}.'.format(vname)
@@ -297,6 +297,23 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
             logger.info('Station-corner_freq map saved to: ' + figfile)
 
 
+def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
+    dlonlat = np.diff(lonlat_dist[:, :2], axis=0)
+    dlonlat = np.sum(dlonlat**2, axis=1)**(0.5)
+    # find indexes of overlapping stations
+    idx = np.where(dlonlat < min_dlonlat)[0]
+    # find consecutive indexes (i.e., more than two stations overlapping)
+    didx = np.diff(idx)
+    idx_idx = np.where(didx == 1)[0]
+    idx_consec = idx[idx_idx+1]
+    # spread stations horizontally
+    lonlat_dist[idx] += np.array((-spread, 0, 0))
+    lonlat_dist[idx+1] += np.array((spread, 0, 0))
+    # further spread vertically a third station
+    lonlat_dist[idx_consec] += np.array((0, spread, 0))
+    return lonlat_dist
+
+
 def plot_stations(config, sourcepar):
     """Plot station map, color coded by magnitude or fc."""
     _import_mpl(config)
@@ -306,6 +323,7 @@ def plot_stations(config, sourcepar):
     lonlat_dist = np.array([
         (sourcepar[k]['lon'], sourcepar[k]['lat'], sourcepar[k]['epi_dist'])
         for k in st_ids])
+    _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03)
     mag = np.array([sourcepar[k]['Mw'] for k in st_ids])
     magmean = sourcepar['means_weight']['Mw']
     magerr = sourcepar['errors_weight']['Mw']
