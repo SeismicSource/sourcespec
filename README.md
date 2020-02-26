@@ -2,6 +2,9 @@
 # SourceSpec
 **Earthquake source parameters from S-wave displacement spectra**
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3688587.svg)](
+  https://doi.org/10.5281/zenodo.3688587)
+
 (c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
 
 (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
