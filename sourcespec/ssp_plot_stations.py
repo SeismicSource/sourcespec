@@ -33,14 +33,10 @@ def _import_mpl(config):
     # Reduce logging level for Matplotlib to avoid DEBUG messages
     mpl_logger = logging.getLogger('matplotlib')
     mpl_logger.setLevel(logging.WARNING)
-    if config.PLOT_SHOW:
-        global plt
-        import matplotlib.pyplot as plt
-    else:
-        global Figure
-        global FigureCanvasAgg
-        from matplotlib.figure import Figure
-        from matplotlib.backends.backend_agg import FigureCanvasAgg
+    global plt
+    import matplotlib.pyplot as plt
+    if not config.PLOT_SHOW:
+        plt.switch_backend('Agg')
     global cm
     global colors
     global transforms
@@ -159,10 +155,7 @@ def _make_basemap(config, maxdist):
     stamen_terrain = CachedTiler(cimgt.Stamen('terrain-background'), tile_dir)
     # Create a GeoAxes
     figsize = (10, 10)
-    if config.PLOT_SHOW:
-        fig = plt.figure(figsize=figsize)
-    else:
-        fig = Figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111, projection=stamen_terrain.crs)
     # Add event information as a title
     textstr = 'evid: {} \nlon: {:.3f} lat: {:.3f} ' +\
@@ -290,11 +283,7 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     if config.PLOT_SHOW:
         plt.show()
     if config.PLOT_SAVE:
-        if config.PLOT_SHOW:
-            fig.savefig(figfile, bbox_inches='tight')
-        else:
-            canvas = FigureCanvasAgg(fig)
-            canvas.print_figure(figfile, bbox_inches='tight')
+        fig.savefig(figfile, bbox_inches='tight')
         if vname == 'mag':
             logger.info('Station-magnitude map saved to: ' + figfile)
         elif vname == 'fc':

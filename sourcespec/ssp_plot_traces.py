@@ -28,14 +28,10 @@ def _import_mpl(config):
     # Reduce logging level for Matplotlib to avoid DEBUG messages
     mpl_logger = logging.getLogger('matplotlib')
     mpl_logger.setLevel(logging.WARNING)
-    if config.PLOT_SHOW:
-        global plt
-        import matplotlib.pyplot as plt
-    else:
-        global Figure
-        global FigureCanvasAgg
-        from matplotlib.figure import Figure
-        from matplotlib.backends.backend_agg import FigureCanvasAgg
+    global plt
+    import matplotlib.pyplot as plt
+    if not config.PLOT_SHOW:
+        plt.switch_backend('Agg')
     global PdfPages
     from matplotlib.backends.backend_pdf import PdfPages
     global transforms
@@ -72,10 +68,7 @@ def _make_fig(config, nlines, ncols):
         figsize = (16, 9)
     else:
         figsize = (16, 18)
-    if config.PLOT_SHOW:
-        fig = plt.figure(figsize=figsize)
-    else:
-        fig = Figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize)
     # Create an invisible axis and use it for title and footer
     ax0 = fig.add_subplot(111, label='ax0')
     ax0.set_axis_off()
@@ -137,14 +130,10 @@ def _savefig(config, figures, async_plotter):
             figfile = figfile_base + fmt
         else:
             figfile = figfile_base + '{:02d}.{}'.format(n, fmt)
-        if config.PLOT_SHOW:
+        if config.PLOT_SHOW or (async_plotter is None):
             fig.savefig(figfile, bbox_inches='tight')
         else:
-            canvas = FigureCanvasAgg(fig)
-            if async_plotter is not None:
-                async_plotter.save(canvas, figfile, bbox_inches='tight')
-            else:
-                canvas.print_figure(figfile, bbox_inches='tight')
+            async_plotter.save(fig.canvas, figfile, bbox_inches='tight')
         logger.info('Trace plots saved to: ' + figfile)
         if not config.PLOT_SHOW:
             fig.clf()
