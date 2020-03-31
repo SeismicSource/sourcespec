@@ -11,16 +11,16 @@ class AsyncPlotter():
         self.pids = []
         self.processes = processes
 
-    def async_plotter(self, nc, canvas, filename, bbox_inches, processes):
+    def async_plotter(self, nc, fig, filename, bbox_inches, processes):
         while nc.value >= processes:
             time.sleep(0.1)
         nc.value += 1
-        canvas.print_figure(filename, bbox_inches=bbox_inches)
+        fig.savefig(filename, bbox_inches=bbox_inches)
         nc.value -= 1
 
-    def save(self, canvas, filename, bbox_inches=None):
+    def save(self, fig, filename, bbox_inches=None):
         p = mp.Process(target=self.async_plotter,
-                       args=(self.nc, canvas, filename, bbox_inches,
+                       args=(self.nc, fig, filename, bbox_inches,
                              self.processes))
         p.start()
         self.pids.append(p)

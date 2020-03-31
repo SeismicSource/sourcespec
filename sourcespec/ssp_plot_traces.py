@@ -133,7 +133,7 @@ def _savefig(config, figures, async_plotter):
         if config.PLOT_SHOW or (async_plotter is None):
             fig.savefig(figfile, bbox_inches='tight')
         else:
-            async_plotter.save(fig.canvas, figfile, bbox_inches='tight')
+            async_plotter.save(fig, figfile, bbox_inches='tight')
         logger.info('Trace plots saved to: ' + figfile)
         if not config.PLOT_SHOW:
             fig.clf()

@@ -177,7 +177,7 @@ def _savefig(config, plottype, figures, async_plotter):
         if config.PLOT_SHOW or (async_plotter is None):
             fig.savefig(figfile, bbox_inches='tight')
         else:
-            async_plotter.save(fig.canvas, figfile, bbox_inches='tight')
+            async_plotter.save(fig, figfile, bbox_inches='tight')
         logger.info(message + ' plots saved to: ' + figfile)
         # Commenting this out, since it throws a warning on recent versions
         # of Matplotlib (https://github.com/matplotlib/matplotlib/issues/9970)
