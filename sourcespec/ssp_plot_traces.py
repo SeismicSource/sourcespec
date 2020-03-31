@@ -43,7 +43,7 @@ def _import_mpl(config):
     from matplotlib.ticker import ScalarFormatter as sf
     global ScalarFormatter
     class ScalarFormatter(sf):  #NOQA
-        def _set_format(self, vmin, vmax):
+        def _set_format(self, vmin=None, vmax=None):
             self.format = '%1.1f'
 
 
