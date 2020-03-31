@@ -129,15 +129,15 @@ def _make_fig(config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
         ax.grid(True, which='both', linestyle='solid', color='#DDDDDD',
                 zorder=0)
         ax.set_axisbelow(True)
-        [t.set_visible(False) for t in ax.get_xticklabels()]
-        [t.set_visible(False) for t in ax.get_yticklabels()]
+        ax.xaxis.set_tick_params(which='both', labelbottom=False)
+        ax.yaxis.set_tick_params(which='both', labelleft=False)
         ax.tick_params(width=2)  # FIXME: ticks are below grid lines!
         # ax2 has magnitude units
         if plottype != 'weight':
             if ((stack_plots and plotn == 1) or not stack_plots):
                 ax2 = ax.twinx()
                 ax2.set_ylim(mag_minmax)
-                [t.set_visible(False) for t in ax2.get_xticklabels()]
+                ax2.xaxis.set_tick_params(which='both', labelright=False)
                 for tick in ax2.yaxis.get_major_ticks():
                     tick.set_pad(-2)
                     tick.label2.set_horizontalalignment('right')
@@ -190,7 +190,7 @@ def _add_labels(axes, plotn, ncols, plottype):
     # Show the x-labels only for the last "ncols" plots
     n0 = plotn-ncols if plotn-ncols > 0 else 0
     for ax, ax2 in axes[n0:plotn]:
-        [t.set_visible(True) for t in ax.get_xticklabels()]
+        ax.xaxis.set_tick_params(which='both', labelbottom=True)
         ax.set_xlabel('Frequency (Hz)')
     # Show the y-labels only for the first column
     for i in range(0, len(axes)+ncols, ncols):
@@ -203,17 +203,17 @@ def _add_labels(axes, plotn, ncols, plottype):
             ax2 = axes[i-1][1]
         except IndexError:
             continue
-        [t.set_visible(True) for t in ax.get_yticklabels()]
+        ax.yaxis.set_tick_params(which='both', labelleft=True)
         ax.set_ylabel('Weight')
         if plottype != 'weight':
             ax.set_ylabel('Seismic moment (Nm)')
             if ax2:
-                [t.set_visible(True) for t in ax2.get_yticklabels()]
+                ax2.yaxis.set_tick_params(which='both', labelright=True)
                 ax2.set_ylabel('Magnitude')
     # still some work to do on the last plot
     ax, ax2 = axes[plotn-1]
     if ax2:
-        [t.set_visible(True) for t in ax2.get_yticklabels()]
+        ax2.yaxis.set_tick_params(which='both', labelright=True)
         ax2.set_ylabel('Magnitude')
 
 

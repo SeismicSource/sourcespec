@@ -99,8 +99,8 @@ def _make_fig(config, nlines, ncols):
         ax.grid(True, which='both', linestyle='solid', color='#DDDDDD',
                 zorder=0)
         ax.set_axisbelow(True)
-        [t.set_visible(False) for t in ax.get_xticklabels()]
-        [t.set_visible(True) for t in ax.get_yticklabels()]
+        ax.xaxis.set_tick_params(which='both', labelbottom=False)
+        ax.yaxis.set_tick_params(which='both', labelleft=True)
         ax.tick_params(width=2)  # FIXME: ticks are below grid lines!
         ax.tick_params(labelsize=8)
         ax.yaxis.offsetText.set_fontsize(8)
@@ -213,7 +213,7 @@ def _plot_trace(config, trace, ntraces, tmax,
 def _add_labels(axes, plotn, ncols):
     # Show the x-labels only for "ncols" plots before "plotn"
     for ax in axes[plotn-ncols:plotn]:
-        [t.set_visible(True) for t in ax.get_xticklabels()]
+        ax.xaxis.set_tick_params(which='both', labelbottom=True)
         ax.set_xlabel('Time (s)', fontsize=8)
 
 
