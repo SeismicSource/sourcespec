@@ -23,32 +23,20 @@ from sourcespec.cached_tiler import CachedTiler
 from sourcespec.ssp_version import get_git_version
 logger = logging.getLogger(__name__.split('.')[-1])
 
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
+# Reduce logging level for Matplotlib to avoid DEBUG messages
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as colors
+import matplotlib.patheffects as PathEffects
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
+
+
 # TODO:
 # add table with values
-
-
-def _import_mpl(config):
-    import matplotlib
-    matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
-    # Reduce logging level for Matplotlib to avoid DEBUG messages
-    mpl_logger = logging.getLogger('matplotlib')
-    mpl_logger.setLevel(logging.WARNING)
-    global plt
-    import matplotlib.pyplot as plt
-    if not config.PLOT_SHOW:
-        plt.switch_backend('Agg')
-    global cm
-    global colors
-    global transforms
-    global patches
-    global PathEffects
-    global make_axes_locatable
-    import matplotlib.cm as cm
-    import matplotlib.colors as colors
-    import matplotlib.transforms as transforms
-    import matplotlib.patches as patches
-    import matplotlib.patheffects as PathEffects
-    from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 
 
 def _round(x, base=5):
@@ -309,7 +297,6 @@ def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
 
 def plot_stations(config, sourcepar):
     """Plot station map, color coded by magnitude or fc."""
-    _import_mpl(config)
     st_ids = [
         k for k in sorted(sourcepar.keys())
         if k not in ['means', 'errors', 'means_weight', 'errors_weight']]

@@ -49,7 +49,7 @@ def main():
     spec_st, specnoise_st, weight_st =\
         build_spectra(config, proc_st, noise_weight=True)
 
-    plotter = init_plotting()
+    plotter = init_plotting(config)
     ntr = len(set(t.id[:-1] for t in proc_st))
     ncols = 4 if ntr > 6 else 3
     plot_traces(config, proc_st, spec_st=spec_st, ncols=ncols,

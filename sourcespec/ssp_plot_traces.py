@@ -17,34 +17,24 @@ import logging
 from sourcespec.ssp_version import get_git_version
 logger = logging.getLogger(__name__.split('.')[-1])
 
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
+# Reduce logging level for Matplotlib to avoid DEBUG messages
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.transforms as transforms
+import matplotlib.patches as patches
+import matplotlib.patheffects as PathEffects
+from matplotlib.ticker import ScalarFormatter as sf
+class ScalarFormatter(sf):  #NOQA
+    def _set_format(self, vmin=None, vmax=None):
+        self.format = '%1.1f'
+
 
 phase_label_pos = {'P': 0.9, 'S': 0.93}
 phase_label_color = {'P': 'black', 'S': 'black'}
-
-
-def _import_mpl(config):
-    import matplotlib
-    matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
-    # Reduce logging level for Matplotlib to avoid DEBUG messages
-    mpl_logger = logging.getLogger('matplotlib')
-    mpl_logger.setLevel(logging.WARNING)
-    global plt
-    import matplotlib.pyplot as plt
-    if not config.PLOT_SHOW:
-        plt.switch_backend('Agg')
-    global PdfPages
-    from matplotlib.backends.backend_pdf import PdfPages
-    global transforms
-    global patches
-    global PathEffects
-    import matplotlib.transforms as transforms
-    import matplotlib.patches as patches
-    import matplotlib.patheffects as PathEffects
-    from matplotlib.ticker import ScalarFormatter as sf
-    global ScalarFormatter
-    class ScalarFormatter(sf):  #NOQA
-        def _set_format(self, vmin=None, vmax=None):
-            self.format = '%1.1f'
 
 
 def _nplots(st, maxlines, ncols):
@@ -227,7 +217,6 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
     # Check config, if we need to plot at all
     if not config.PLOT_SHOW and not config.PLOT_SAVE:
         return
-    _import_mpl(config)
 
     nlines, ncols = _nplots(st, config.plot_traces_maxrows, ncols)
     figures = []

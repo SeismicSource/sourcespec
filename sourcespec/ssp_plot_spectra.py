@@ -23,6 +23,16 @@ from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
 from sourcespec.ssp_version import get_git_version
 logger = logging.getLogger(__name__.split('.')[-1])
 
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
+# Reduce logging level for Matplotlib to avoid DEBUG messages
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.patheffects as PathEffects
+
+
 synth_colors = [
     '#201F1F',
     '#94F75B',
@@ -30,26 +40,6 @@ synth_colors = [
     '#FECC38',
     '#FC4384',
 ]
-
-
-def _import_mpl(config):
-    import matplotlib
-    matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
-    # Reduce logging level for Matplotlib to avoid DEBUG messages
-    mpl_logger = logging.getLogger('matplotlib')
-    mpl_logger.setLevel(logging.WARNING)
-    global plt
-    import matplotlib.pyplot as plt
-    if not config.PLOT_SHOW:
-        plt.switch_backend('Agg')
-    global PdfPages
-    from matplotlib.backends.backend_pdf import PdfPages
-    global transforms
-    global patches
-    global PathEffects
-    import matplotlib.transforms as transforms
-    import matplotlib.patches as patches
-    import matplotlib.patheffects as PathEffects
 
 
 def _nplots(spec_st, specnoise_st, maxlines, ncols, plottype):
@@ -381,7 +371,6 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     # Check config, if we need to plot at all
     if not config.PLOT_SHOW and not config.PLOT_SAVE:
         return
-    _import_mpl(config)
 
     nlines, ncols, freq_minmax, moment_minmax, mag_minmax =\
         _nplots(spec_st, specnoise_st,

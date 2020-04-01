@@ -264,7 +264,7 @@ def _update_parser(parser, progname):
 
 
 def _parse_args(progname):
-    """"Parse command line arguments."""
+    """Parse command line arguments."""
     description, epilog, nargs = _get_description(progname)
     parser = _init_parser(description, epilog, nargs)
     _update_parser(parser, progname)
@@ -535,7 +535,10 @@ def setup_logging(config, basename=None, progname='source_spec'):
     oldlogfile = logfile
 
 
-def init_plotting():
+def init_plotting(config):
+    import matplotlib.pyplot as plt
+    if not config.PLOT_SHOW:
+        plt.switch_backend('Agg')
     global plotter
     if OS == 'nt':
         # AsyncPlotter() doesn't work on Windows. TODO: fix this
