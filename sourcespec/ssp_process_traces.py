@@ -8,7 +8,7 @@ Trace processing for sourcespec.
     2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>
 
-    2015-2019 Claudio Satriano <satriano@ipgp.fr>
+    2015-2020 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement, Version 2.1
     (http://www.cecill.info/index.en.html)
