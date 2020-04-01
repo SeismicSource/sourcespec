@@ -4,6 +4,14 @@ import multiprocessing as mp
 import time
 
 
+def _async_plotter(nc, fig, filename, bbox_inches, processes):
+    while nc.value >= processes:
+        time.sleep(0.1)
+    nc.value += 1
+    fig.savefig(filename, bbox_inches=bbox_inches)
+    nc.value -= 1
+
+
 class AsyncPlotter():
     def __init__(self, processes=mp.cpu_count()):
         self.manager = mp.Manager()
@@ -11,15 +19,8 @@ class AsyncPlotter():
         self.pids = []
         self.processes = processes
 
-    def async_plotter(self, nc, fig, filename, bbox_inches, processes):
-        while nc.value >= processes:
-            time.sleep(0.1)
-        nc.value += 1
-        fig.savefig(filename, bbox_inches=bbox_inches)
-        nc.value -= 1
-
     def save(self, fig, filename, bbox_inches=None):
-        p = mp.Process(target=self.async_plotter,
+        p = mp.Process(target=_async_plotter,
                        args=(self.nc, fig, filename, bbox_inches,
                              self.processes))
         p.start()
