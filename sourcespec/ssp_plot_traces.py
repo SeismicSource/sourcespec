@@ -64,11 +64,14 @@ def _make_fig(config, nlines, ncols):
     ax0.set_axis_off()
     # Add event information as a title
     hypo = config.hypo
-    textstr = 'evid: {} lon: {:.3f} lat: {:.3f} depth: {:.1f} km ' +\
-              'time: {}'
+    textstr = 'evid: {} lon: {:.3f} lat: {:.3f} depth: {:.1f} km'
     textstr = textstr.format(
-        hypo.evid, hypo.longitude, hypo.latitude, hypo.depth,
-        hypo.origin_time.format_iris_web_service())
+        hypo.evid, hypo.longitude, hypo.latitude, hypo.depth)
+    try:
+        textstr += ' time: {}'.format(
+            hypo.origin_time.format_iris_web_service())
+    except AttributeError:
+        pass
     ax0.text(0., 1.06, textstr, fontsize=12,
              ha='left', va='top', transform=ax0.transAxes)
     if config.options.evname is not None:

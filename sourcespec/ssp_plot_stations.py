@@ -146,11 +146,14 @@ def _make_basemap(config, maxdist):
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111, projection=stamen_terrain.crs)
     # Add event information as a title
-    textstr = 'evid: {} \nlon: {:.3f} lat: {:.3f} ' +\
-              'depth: {:.1f} km time: {}'
+    textstr = 'evid: {} \nlon: {:.3f} lat: {:.3f} depth: {:.1f} km'
     textstr = textstr.format(
-        hypo.evid, hypo.longitude, hypo.latitude, hypo.depth,
-        hypo.origin_time.format_iris_web_service())
+        hypo.evid, hypo.longitude, hypo.latitude, hypo.depth)
+    try:
+        textstr += ' time: {}'.format(
+            hypo.origin_time.format_iris_web_service())
+    except AttributeError:
+        pass
     ax.text(0., 1.15, textstr, fontsize=10,
             ha='left', va='top', linespacing=1.5, transform=ax.transAxes)
     trans = ccrs.Geodetic()
