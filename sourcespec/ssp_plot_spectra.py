@@ -130,11 +130,8 @@ def _make_fig(config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
             if ((stack_plots and plotn == 1) or not stack_plots):
                 ax2 = ax.twinx()
                 ax2.set_ylim(mag_minmax)
-                ax2.yaxis.set_tick_params(which='both', labelright=False)
-                for tick in ax2.yaxis.get_major_ticks():
-                    tick.set_pad(-2)
-                    tick.label2.set_horizontalalignment('right')
-                ax2.yaxis.set_tick_params(width=0)
+                ax2.yaxis.set_tick_params(
+                    which='both', labelright=False, width=0)
         else:
             ax2 = None
         axes.append((ax, ax2))
@@ -206,12 +203,14 @@ def _add_labels(axes, plotn, ncols, plottype):
         if plottype != 'weight':
             ax.set_ylabel('Seismic moment (Nm)')
             if ax2:
-                ax2.yaxis.set_tick_params(which='both', labelright=True)
+                ax2.yaxis.set_tick_params(
+                    which='both', labelright=True, pad=0, width=2)
                 ax2.set_ylabel('Magnitude')
     # still some work to do on the last plot
     ax, ax2 = axes[plotn-1]
     if ax2:
-        ax2.yaxis.set_tick_params(which='both', labelright=True)
+        ax2.yaxis.set_tick_params(
+            which='both', labelright=True, pad=0, width=2)
         ax2.set_ylabel('Magnitude')
 
 
