@@ -1,4 +1,5 @@
-![SourceSpec_logo](logo/SourceSpec_logo.png)
+<img src="logo/SourceSpec_logo.png" width="600">
+
 # SourceSpec
 **Earthquake source parameters from S-wave displacement spectra**
 
