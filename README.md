@@ -59,5 +59,5 @@ Optionally, you can install the codes by running:
 
 ## Sample runs
 Several sample runs are available in the
-[sourcespec_testruns](https://github.com/claudiodsf/sourcespec_testruns)
-package.
+[sourcespec_testruns](https://github.com/SeismicSource/sourcespec_testruns)
+repository.
