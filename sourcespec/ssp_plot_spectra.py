@@ -130,7 +130,7 @@ def _make_fig(config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
             if ((stack_plots and plotn == 1) or not stack_plots):
                 ax2 = ax.twinx()
                 ax2.set_ylim(mag_minmax)
-                ax2.xaxis.set_tick_params(which='both', labelright=False)
+                ax2.yaxis.set_tick_params(which='both', labelright=False)
                 for tick in ax2.yaxis.get_major_ticks():
                     tick.set_pad(-2)
                     tick.label2.set_horizontalalignment('right')
