@@ -204,8 +204,10 @@ def _plot_trace(config, trace, ntraces, tmax,
 
 
 def _add_labels(axes, plotn, ncols):
-    # Show the x-labels only for "ncols" plots before "plotn"
-    for ax in axes[plotn-ncols:plotn]:
+    """Add xlabels to the last row of plots."""
+    # A row has "ncols" plots: the last row is from `plotn-ncols` to `plotn`
+    n0 = plotn-ncols if plotn-ncols > 0 else 0
+    for ax in axes[n0:plotn]:
         ax.xaxis.set_tick_params(which='both', labelbottom=True)
         ax.set_xlabel('Time (s)', fontsize=8)
 

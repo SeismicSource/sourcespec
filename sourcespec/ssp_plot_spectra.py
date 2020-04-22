@@ -180,7 +180,12 @@ def _savefig(config, plottype, figures, async_plotter):
 
 
 def _add_labels(axes, plotn, ncols, plottype):
-    # Show the x-labels only for the last "ncols" plots
+    """
+    Add xlabels to the last row plots.
+
+    Add ylabels to the first and last columns.
+    """
+    # A row has "ncols" plots: the last row is from `plotn-ncols` to `plotn`
     n0 = plotn-ncols if plotn-ncols > 0 else 0
     for ax, ax2 in axes[n0:plotn]:
         ax.xaxis.set_tick_params(which='both', labelbottom=True)
