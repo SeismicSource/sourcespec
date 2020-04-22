@@ -384,6 +384,8 @@ def configure(progname='source_spec'):
         config_file = options.config_file
         config_obj = ConfigObj(config_file, configspec=configspec,
                                file_error=True)
+        # set encoding to handle accented characters
+        config_obj.encoding = 'utf8'
     except IOError as err:
         sys.stderr.write('%s\n' % err)
         sys.exit(1)
