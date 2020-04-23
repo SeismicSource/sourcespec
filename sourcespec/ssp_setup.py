@@ -318,7 +318,7 @@ def _parse_configspec():
                                        'configspec.conf')
         configspec = ConfigObj(configspec_file, interpolation=False,
                                list_values=False, _inspec=True,
-                               file_error=True)
+                               file_error=True, default_encoding='utf8')
     except IOError as err:
         sys.stderr.write('%s\n' % err)
         sys.exit(1)
@@ -330,7 +330,7 @@ def _parse_configspec():
 
 
 def _write_sample_config(configspec, progname):
-    c = ConfigObj(configspec=configspec)
+    c = ConfigObj(configspec=configspec, default_encoding='utf8')
     val = Validator()
     c.validate(val)
     c.defaults = []
@@ -383,9 +383,7 @@ def configure(progname='source_spec'):
     try:
         config_file = options.config_file
         config_obj = ConfigObj(config_file, configspec=configspec,
-                               file_error=True)
-        # set encoding to handle accented characters
-        config_obj.encoding = 'utf8'
+                               file_error=True, default_encoding='utf8')
     except IOError as err:
         sys.stderr.write('%s\n' % err)
         sys.exit(1)
