@@ -175,16 +175,20 @@ def _init_parser(description, epilog, nargs):
     parser = ArgumentParser(description=description,
                             epilog=epilog,
                             formatter_class=RawTextHelpFormatter)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-S', '--sampleconf', dest='sampleconf',
+                       action='store_true', default=False,
+                       help='write sample configuration to file and exit')
+    group.add_argument('-U', '--updateconf', dest='updateconf',
+                       action='store', default=None,
+                       help='update an existing config file from a previous '
+                       'version', metavar='FILE')
     parser.add_argument('-c', '--configfile', dest='config_file',
                         action='store', default='source_spec.conf',
                         help='load configuration from FILE '
                         '(default: source_spec.conf)', metavar='FILE')
-    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-t', '--trace_path', nargs=nargs,
                        help='path to trace file(s) or trace dir')
-    group.add_argument('-S', '--sampleconf', dest='sampleconf',
-                       action='store_true', default=False,
-                       help='write sample configuration to file and exit')
     parser.add_argument('-H', '--hypocenter', dest='hypo_file',
                         action='store', default=None,
                         help='get hypocenter information from FILE',
@@ -276,6 +280,10 @@ def _parse_args(progname):
         _write_sample_config(configspec, 'source_spec')
         sys.exit(0)
 
+    if options.updateconf:
+        _update_config_file(options.updateconf)
+        sys.exit(0)
+
     if progname == 'source_model':
         options.mag = _parse_values(options.mag)
         options.Mo = _parse_values(options.Mo)
@@ -361,6 +369,40 @@ def _write_sample_config(configspec, progname):
         with open(configfile, 'wb') as fp:
             c.write(fp)
         print('Sample config file written to: ' + configfile)
+
+
+def _update_config_file(config_file):
+    configspec = _parse_configspec()
+    config_obj = _read_config(config_file, configspec)
+    val = Validator()
+    config_obj.validate(val)
+    mod_time = datetime.fromtimestamp(os.path.getmtime(config_file))
+    mod_time_str = mod_time.strftime('%Y%m%d_%H%M%S')
+    config_file_old = '{}.{}'.format(config_file, mod_time_str)
+    # Workaround for python2/3 compatibility
+    try:
+        raw_input = input
+    except NameError:
+        pass
+    ans = raw_input(
+        'Ok to update {}? [y/N]\n(Old file will be saved as {}) '.format(
+            config_file, config_file_old))
+    if ans not in ['y', 'Y']:
+        sys.exit(0)
+    config_new = ConfigObj(configspec=configspec, default_encoding='utf8')
+    config_new = _read_config(None, configspec)
+    config_new.validate(val)
+    config_new.defaults = []
+    config_new.comments = configspec.comments
+    config_new.initial_comment = config_obj.initial_comment
+    for k, v in config_obj.items():
+        if k not in config_new:
+            continue
+        config_new[k] = v
+    shutil.copyfile(config_file, config_file_old)
+    with open(config_file, 'wb') as fp:
+        config_new.write(fp)
+        print('{}: updated'.format(config_file))
 
 
 def _write_config(config_obj, progname, outdir):

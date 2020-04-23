@@ -51,6 +51,7 @@ v0.9 - 2020-04-XX
 	- Code cleaning and optimization:
 		- Switch from optparse (deprecated) to argparse
 		- Code style fixes and refactoring
+	- New option to update a config file from previous versions
 	- BUGFIX: Fix a major bug in reading hypo pick file
 	- BUGFIX: Fix for pick file not read in source_model
 v0.8 - 2014-07-11
