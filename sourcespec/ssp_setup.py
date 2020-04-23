@@ -312,20 +312,27 @@ def _parse_args(progname):
     return options
 
 
-def _parse_configspec():
+def _read_config(config_file, configspec=None):
+    kwargs = dict(
+        configspec=configspec, file_error=True, default_encoding='utf8')
+    if configspec is None:
+        kwargs.update(
+            dict(interpolation=False, list_values=False, _inspec=True))
     try:
-        configspec_file = os.path.join(os.path.dirname(__file__),
-                                       'configspec.conf')
-        configspec = ConfigObj(configspec_file, interpolation=False,
-                               list_values=False, _inspec=True,
-                               file_error=True, default_encoding='utf8')
+        config_obj = ConfigObj(config_file, **kwargs)
     except IOError as err:
-        sys.stderr.write('%s\n' % err)
+        sys.stderr.write('{}\n'.format(err))
         sys.exit(1)
     except Exception as err:
-        sys.stderr.write('Unable to read "%s": %s\n' %
-                         (configspec_file, err))
+        sys.stderr.write('Unable to read "{}": {}\n'.format(config_file, err))
         sys.exit(1)
+    return config_obj
+
+
+def _parse_configspec():
+    configspec_file = os.path.join(
+        os.path.dirname(__file__), 'configspec.conf')
+    configspec = _read_config(configspec_file)
     return configspec
 
 
@@ -380,16 +387,7 @@ def configure(progname='source_spec'):
     options = _parse_args(progname)
 
     configspec = _parse_configspec()
-    try:
-        config_file = options.config_file
-        config_obj = ConfigObj(config_file, configspec=configspec,
-                               file_error=True, default_encoding='utf8')
-    except IOError as err:
-        sys.stderr.write('%s\n' % err)
-        sys.exit(1)
-    except Exception as err:
-        sys.stderr.write('Unable to read "%s": %s\n' % (config_file, err))
-        sys.exit(1)
+    config_obj = _read_config(options.config_file, configspec)
 
     # Set to None all the 'None' strings
     for key, value in iteritems(config_obj.dict()):
