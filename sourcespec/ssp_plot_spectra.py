@@ -159,15 +159,21 @@ def _savefig(config, plottype, figures, async_plotter):
             #     fig.clf()
         logger.info(message + ' plots saved to: ' + figfile)
         return
+
+    bbox = None
+    pad_inches = matplotlib.rcParams['savefig.pad_inches']
     for n, fig in enumerate(figures):
+        if bbox is None:
+            bbox = fig.get_tightbbox(fig.canvas.get_renderer())
+            bbox = bbox.padded(pad_inches)
         if len(figures) == 1:
             figfile = figfile_base + fmt
         else:
             figfile = figfile_base + '{:02d}.{}'.format(n, fmt)
         if config.PLOT_SHOW or (async_plotter is None):
-            fig.savefig(figfile, bbox_inches='tight')
+            fig.savefig(figfile, bbox_inches=bbox)
         else:
-            async_plotter.save(fig, figfile, bbox_inches='tight')
+            async_plotter.save(fig, figfile, bbox_inches=bbox)
         logger.info(message + ' plots saved to: ' + figfile)
         # Commenting this out, since it throws a warning on recent versions
         # of Matplotlib (https://github.com/matplotlib/matplotlib/issues/9970)
