@@ -258,10 +258,6 @@ def _color_lines(config, orientation, plotn, stack_plots):
 def _add_legend(config, ax0, spec_st, specnoise_st, stack_plots, plottype):
     # check the available channel codes
     channel_codes = set(s.stats.channel[-1] for s in spec_st)
-    # Set ax limit, so that the fake plot lines are hidden below
-    # the spectral plots
-    ax0.set_xlim(-10, 10000)
-    ax0.set_ylim(-10, 10000)
     ncol0 = 0
     handles0 = []
     if 'H' in channel_codes:
@@ -325,10 +321,6 @@ def _add_legend(config, ax0, spec_st, specnoise_st, stack_plots, plottype):
     # Create a second axis for a second legend
     ax1 = ax0.get_figure().add_subplot(111, label='ax1', zorder=-1)
     ax1.set_axis_off()
-    # Set ax limit, so that the fake plot lines are hidden below
-    # the spectral plots
-    ax1.set_xlim(-10, 10000)
-    ax1.set_ylim(-10, 10000)
     ncol1 = 0
     handles1 = []
     if 'S' in channel_codes:
@@ -372,6 +364,9 @@ def _add_legend(config, ax0, spec_st, specnoise_st, stack_plots, plottype):
     if handles1:
         ax1.legend(handles=handles1, bbox_to_anchor=(0, legend1_y),
                    loc='lower left', borderaxespad=0, ncol=ncol1)
+    # Make lines invisible
+    for h in handles0 + handles1:
+        h.set_visible(False)
 
 
 def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
