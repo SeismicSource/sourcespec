@@ -24,7 +24,6 @@ from sourcespec.ssp_version import get_git_version
 logger = logging.getLogger(__name__.split('.')[-1])
 
 import matplotlib
-matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
@@ -372,6 +371,8 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     # Check config, if we need to plot at all
     if not config.PLOT_SHOW and not config.PLOT_SAVE:
         return
+
+    matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
 
     nlines, ncols, freq_minmax, moment_minmax, mag_minmax =\
         _nplots(spec_st, specnoise_st,
