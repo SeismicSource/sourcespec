@@ -114,8 +114,8 @@ def _savefig(config, figures, async_plotter):
         with PdfPages(figfile) as pdf:
             for fig in figures:
                 pdf.savefig(fig)
-            if not config.PLOT_SHOW:
-                fig.clf()
+                if not config.PLOT_SHOW:
+                    plt.close(fig)
         logger.info('Trace plots saved to: ' + figfile)
         return
     bbox = None
@@ -134,7 +134,7 @@ def _savefig(config, figures, async_plotter):
             async_plotter.save(fig, figfile, bbox_inches=bbox)
         logger.info('Trace plots saved to: ' + figfile)
         if not config.PLOT_SHOW:
-            fig.clf()
+            plt.close(fig)
 
 
 def _plot_trace(config, trace, ntraces, tmax,

@@ -154,9 +154,8 @@ def _savefig(config, plottype, figures, async_plotter):
         with PdfPages(figfile) as pdf:
             for fig in figures:
                 pdf.savefig(fig)
-            # Temporary commented out (see below)
-            # if not config.PLOT_SHOW:
-            #     fig.clf()
+                if not config.PLOT_SHOW:
+                    plt.close(fig)
         logger.info(message + ' plots saved to: ' + figfile)
         return
 
@@ -175,11 +174,8 @@ def _savefig(config, plottype, figures, async_plotter):
         else:
             async_plotter.save(fig, figfile, bbox_inches=bbox)
         logger.info(message + ' plots saved to: ' + figfile)
-        # Commenting this out, since it throws a warning on recent versions
-        # of Matplotlib (https://github.com/matplotlib/matplotlib/issues/9970)
-        # By the way, do we really need to call clf()?
-        # if not config.PLOT_SHOW:
-        #     fig.clf()
+        if not config.PLOT_SHOW:
+            plt.close(fig)
 
 
 def _add_labels(axes, plotn, ncols, plottype):
