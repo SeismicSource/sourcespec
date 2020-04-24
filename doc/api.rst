@@ -28,6 +28,11 @@ ssp_build_spectra
 .. automodule:: ssp_build_spectra
    :members:
 
+ssp_plot_traces
+-----------------
+.. automodule:: ssp_plot_traces
+   :members:
+
 ssp_local_magnitude
 -------------------
 .. automodule:: ssp_local_magnitude
