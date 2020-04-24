@@ -57,6 +57,11 @@ Optionally, you can install the codes by running:
 (where `x.x` is the version number).
 
 
+## Documentation
+A very incomplete documentation can be found at
+[sourcespec.readthedocs.io](https://sourcespec.readthedocs.io).
+
+
 ## Sample runs
 Several sample runs are available in the
 [sourcespec_testruns](https://github.com/SeismicSource/sourcespec_testruns)
