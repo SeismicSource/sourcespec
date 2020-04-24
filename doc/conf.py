@@ -27,18 +27,26 @@ except ImportError:
     from mock import Mock
 
 
-MOCK_MODULES = ['numpy',
-                'scipy',
-                'scipy.integrate', 'scipy.optimize',
-                'scipy.stats', 'scipy.stats.mstats',
-                'obspy',
-                'obspy.core', 'obspy.core.util', 'obspy.core.inventory',
-                'obspy.io', 'obspy.io.sac',
-                'obspy.io.xseed', 'obspy.io.xseed.utils',
-                'obspy.signal', 'obspy.signal.invsim',
-                'obspy.signal.konnoohmachismoothing', 'obspy.signal.filter',
-                'obspy.signal.util', 'obspy.signal.trigger',
-                'obspy.geodetics']
+MOCK_MODULES = [
+    'matplotlib',
+    'matplotlib.pyplot',
+    'matplotlib.backends.backend_pdf',
+    'matplotlib.transforms',
+    'matplotlib.patches',
+    'matplotlib.patheffects',
+    'matplotlib.ticker',
+    'numpy',
+    'scipy',
+    'scipy.integrate', 'scipy.interpolate', 'scipy.optimize',
+    'scipy.stats', 'scipy.stats.mstats', 'scipy.signal',
+    'obspy',
+    'obspy.core', 'obspy.core.util', 'obspy.core.inventory',
+    'obspy.io', 'obspy.io.sac',
+    'obspy.io.xseed', 'obspy.io.xseed.utils',
+    'obspy.signal', 'obspy.signal.invsim',
+    'obspy.signal.konnoohmachismoothing', 'obspy.signal.filter',
+    'obspy.signal.util', 'obspy.signal.trigger',
+    'obspy.geodetics', 'obspy.taup']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
@@ -148,7 +156,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
