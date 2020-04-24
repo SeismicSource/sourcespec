@@ -149,22 +149,19 @@ def _savefig(config, plottype, figures, async_plotter):
         message = 'Weight'
     figfile_base = os.path.join(config.options.outdir, evid + suffix)
     fmt = config.PLOT_SAVE_FORMAT
+    pad_inches = matplotlib.rcParams['savefig.pad_inches']
+    bbox = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
+    bbox = bbox.padded(pad_inches)
     if fmt == 'pdf_multipage':
         figfile = figfile_base + 'pdf'
         with PdfPages(figfile) as pdf:
             for fig in figures:
-                pdf.savefig(fig)
+                pdf.savefig(fig, bbox_inches=bbox)
                 if not config.PLOT_SHOW:
                     plt.close(fig)
         logger.info(message + ' plots saved to: ' + figfile)
         return
-
-    bbox = None
-    pad_inches = matplotlib.rcParams['savefig.pad_inches']
     for n, fig in enumerate(figures):
-        if bbox is None:
-            bbox = fig.get_tightbbox(fig.canvas.get_renderer())
-            bbox = bbox.padded(pad_inches)
         if len(figures) == 1:
             figfile = figfile_base + fmt
         else:
