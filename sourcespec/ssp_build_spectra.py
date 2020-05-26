@@ -95,7 +95,7 @@ def _compute_h(spec_st, code, wave_type='S'):
         if wave_type == 'SH' and channel[-1] != 'T':
             continue
         # only use radial and, optionally, vertical component for SV
-        if wave_type == 'SV' and channel[-1] == 'T':
+        if wave_type == 'SV' and channel[-1] == 'R':
             continue
         if spec_h is None:
             spec_h = spec.copy()
