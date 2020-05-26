@@ -282,6 +282,8 @@ def _build_H_and_weight(spec_st, specnoise_st, wave_type='S'):
         # 'code' is band+instrument code
         for code in set(x.stats.channel[0:2] for x in spec_st_sel):
             spec_h = _compute_h(spec_st_sel, code, wave_type)
+            if spec_h is None:
+                continue
             spec_st.append(spec_h)
 
             # Compute "H" component for noise, if requested,
