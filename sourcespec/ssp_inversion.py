@@ -165,7 +165,8 @@ def _spec_inversion(config, spec, noise_weight):
     try:
         params_opt, params_cov = _curve_fit(
             config, spec, weight, yerr, initial_values, bounds)
-    except RuntimeError:
+    except (RuntimeError, ValueError) as m:
+        logger.warning(m)
         logger.warning('%s %s: unable to fit spectral model' %
                        (spec.id, spec.stats.instrtype))
         raise
@@ -244,7 +245,7 @@ def spectral_inversion(config, spec_st, weight_st):
         noise_weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
         try:
             par, par_err = _spec_inversion(config, spec, noise_weight)
-        except RuntimeError:
+        except (RuntimeError, ValueError):
             continue
         spec_st += _synth_spec(config, spec, par, par_err)
         statId = '%s %s' % (spec.id, spec.stats.instrtype)
