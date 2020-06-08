@@ -158,10 +158,13 @@ def _make_basemap(config, maxdist):
             ha='left', va='top', linespacing=1.5, transform=ax.transAxes)
     trans = ccrs.Geodetic()
     ax.set_extent([lonmin, lonmax, latmin, latmax], crs=trans)
-    if maxdiagonal <= 100:
-        tile_zoom_level = 12
+    if config.plot_map_tiles_zoom_level:
+        tile_zoom_level = config.plot_map_tiles_zoom_level
     else:
-        tile_zoom_level = 8
+        if maxdiagonal <= 100:
+            tile_zoom_level = 12
+        else:
+            tile_zoom_level = 8
     ax.add_image(stamen_terrain, tile_zoom_level)
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     countries = cfeature.NaturalEarthFeature(
