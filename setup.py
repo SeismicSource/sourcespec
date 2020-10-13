@@ -53,5 +53,5 @@ setup(
             'Programming Language :: Python :: 3.8',
             'Topic :: Scientific/Engineering',
             'Topic :: Scientific/Engineering :: Physics'],
-    install_requires=['obspy>=1.1.0', 'scipy>=0.17', 'pytz']
+    install_requires=['obspy>=1.1.0', 'scipy>=0.17', 'matplotlib>=2.2', 'pytz']
     )
