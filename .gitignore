@@ -17,6 +17,9 @@ doc/generated
 #Temporary files
 *~
 
+#IDE
+.vscode
+
 #Build products
 sourcespec.egg-info/
 dist/
