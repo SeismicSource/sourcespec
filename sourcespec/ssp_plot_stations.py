@@ -211,7 +211,7 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
         cmap = _shiftedColorMap(cm.PRGn, midpoint=midpoint)
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
-    trans = ccrs.Geodetic()
+    trans = ccrs.PlateCarree()
     lonlat = lonlat_dist[:, :2]
     ax.scatter(
         lonlat[:, 0], lonlat[:, 1],
