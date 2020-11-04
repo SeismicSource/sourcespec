@@ -468,6 +468,7 @@ def configure(progname='source_spec'):
         config.horizontal_channel_codes_2.append(msc[2])
 
     if config.plot_station_map:
+        _exit = False
         cartopy_min_ver = (0, 17, 0)
         try:
             cartopy_ver = None
@@ -485,6 +486,13 @@ def configure(progname='source_spec'):
                     'Installed cartopy version: {}.{}.{}.\n'.format(
                         *cartopy_ver)
                 )
+            _exit = True
+        try:
+            import pyproj  #NOQA
+        except ImportError:
+            sys.stderr.write('Please install pyproj to plot maps.\n')
+            _exit = True
+        if _exit:
             sys.exit(1)
 
     return config
