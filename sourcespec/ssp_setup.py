@@ -399,6 +399,9 @@ def _update_config_file(config_file):
         if k not in config_new:
             continue
         config_new[k] = v
+    # Migrate 's_win_length' to 'win_length'
+    if 's_win_length' in config_obj:
+        config_new['win_length'] = config_obj['s_win_length']
     shutil.copyfile(config_file, config_file_old)
     with open(config_file, 'wb') as fp:
         config_new.write(fp)
@@ -446,6 +449,14 @@ def configure(progname='source_spec'):
         sys.exit(1)
     if not test:
         sys.stderr.write('No configuration value present!\n')
+        sys.exit(1)
+
+    if 's_win_length' in config_obj or 'noise_win_length' in config_obj:
+        sys.stderr.write(
+            'Error: "s_win_length" and "noise_win_length" config parameters '
+            'are no more\nsupported. Both are replaced by "win_length".\n\n'
+            'Consider upgrading your config file via the "-U" option.\n'
+        )
         sys.exit(1)
 
     _write_config(config_obj, progname, options.outdir)

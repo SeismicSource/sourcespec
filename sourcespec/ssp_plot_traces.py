@@ -137,7 +137,7 @@ def _savefig(config, figures, async_plotter):
 def _plot_trace(config, trace, ntraces, tmax,
                 spec_st, ax, ax_text, trans, trans3, path_effects):
     t1 = (trace.stats.arrivals['P'][1] - config.pre_p_time)
-    t2 = (trace.stats.arrivals['S'][1] + 3 * config.s_win_length)
+    t2 = (trace.stats.arrivals['S'][1] + 3 * config.win_length)
     trace.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     orientation = trace.stats.channel[-1]
     if orientation in config.vertical_channel_codes:

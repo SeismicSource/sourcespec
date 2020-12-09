@@ -99,8 +99,8 @@ def _check_sn_ratio(config, trace):
     trace_noise.detrend(type='constant')
     # ...and the linear trend...
     trace_noise.detrend(type='linear')
-    t1 = trace_noise.stats.arrivals['NN1'][1]
-    t2 = trace_noise.stats.arrivals['NN2'][1]
+    t1 = trace_noise.stats.arrivals['N1'][1]
+    t2 = trace_noise.stats.arrivals['N2'][1]
     trace_noise.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
 
     # S window for s/n ratio
@@ -109,8 +109,8 @@ def _check_sn_ratio(config, trace):
     trace_cutS.detrend(type='constant')
     # ...and the linear trend...
     trace_cutS.detrend(type='linear')
-    t1 = trace_cutS.stats.arrivals['SN1'][1]
-    t2 = trace_cutS.stats.arrivals['SN2'][1]
+    t1 = trace_cutS.stats.arrivals['S1'][1]
+    t2 = trace_cutS.stats.arrivals['S2'][1]
     trace_cutS.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
 
     rmsnoise2 = np.power(trace_noise.data, 2).sum()
@@ -247,24 +247,14 @@ def _add_hypo_dist_and_arrivals(config, st):
             raise RuntimeError
         # Signal window for spectral analysis
         t1 = s_arrival_time - config.pre_s_time
-        t2 = t1 + config.s_win_length
+        t2 = t1 + config.win_length
         trace.stats.arrivals['S1'] = ('S1', t1)
         trace.stats.arrivals['S2'] = ('S2', t2)
         # Noise window for spectral analysis
         t1 = p_arrival_time - config.pre_p_time
-        t2 = t1 + config.s_win_length
+        t2 = t1 + config.win_length
         trace.stats.arrivals['N1'] = ('N1', t1)
         trace.stats.arrivals['N2'] = ('N2', t2)
-        # Signal window for S/N ratio
-        t1 = s_arrival_time - config.pre_s_time
-        t2 = t1 + config.noise_win_length
-        trace.stats.arrivals['SN1'] = ('SN1', t1)
-        trace.stats.arrivals['SN2'] = ('SN2', t2)
-        # Noise window for S/N ratio
-        t1 = p_arrival_time - config.pre_p_time
-        t2 = t1 + config.noise_win_length
-        trace.stats.arrivals['NN1'] = ('NN1', t1)
-        trace.stats.arrivals['NN2'] = ('NN2', t2)
 
 
 def process_traces(config, st):

@@ -56,8 +56,8 @@ def _get_cut_times(config, tr):
     except Exception:
         logger.warning('%s: Trace has no P arrival: skipping trace' % tr.id)
         raise RuntimeError
-    t1 = p_arrival_time - config.s_win_length
-    t2 = p_arrival_time + config.s_win_length
+    t1 = p_arrival_time - config.win_length
+    t2 = p_arrival_time + config.win_length
 
     tr_noise = tr_env.copy()
     tr_signal = tr_env.copy()
