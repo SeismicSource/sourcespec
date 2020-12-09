@@ -170,7 +170,7 @@ def toDeg(radians):
 
 def calc_dist(lat1, lon1, lat2, lon2):
     """
-    Distance between two point on the earth.
+    Distance between two point on the earth, in kilometers.
 
     Haversine formula:
     http://www.movable-type.co.uk/scripts/latlong.html
@@ -187,6 +187,7 @@ def calc_dist(lat1, lon1, lat2, lon2):
 
 
 def hypo_dist(trace):
+    """Compute hypocentral and epicentral distance (in km) for a trace."""
     try:
         coords = trace.stats.coords
         hypo = trace.stats.hypo

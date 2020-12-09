@@ -50,7 +50,7 @@ def _wave_arrival_nll(trace, phase, NLL_time_dir):
 
 
 def _wave_arrival_vel(trace, phase, vel):
-    """Arrival time using a constant velocity."""
+    """Arrival time using a constant velocity (in km/s)."""
     if trace.stats.hypo.origin_time is None:
         return
     if vel is None:
