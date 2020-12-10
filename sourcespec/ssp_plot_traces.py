@@ -161,6 +161,10 @@ def _plot_trace(config, trace, ntraces, tmax,
     ax.text(0.05, trace.data.mean(), trace.stats.channel,
             fontsize=8, color=color, transform=trans3, zorder=22,
             path_effects=path_effects)
+    _text = 'S/N: {:.1f}'.format(trace.stats.sn_ratio)
+    ax.text(0.95, trace.data.mean(), _text, ha='right',
+            fontsize=8, color=color, transform=trans3, zorder=22,
+            path_effects=path_effects)
     for phase in 'P', 'S':
         a = trace.stats.arrivals[phase][1] - trace.stats.starttime
         text = trace.stats.arrivals[phase][0]

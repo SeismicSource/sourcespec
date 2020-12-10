@@ -125,6 +125,7 @@ def _check_sn_ratio(config, trace):
     sn_ratio = rmsS/rmsnoise
     logger.info('%s %s: S/N: %.1f' % (
         trace.id, trace.stats.instrtype, sn_ratio))
+    trace.stats.sn_ratio = sn_ratio
 
     snratio_min = config.sn_min
     if sn_ratio < snratio_min:
