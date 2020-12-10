@@ -63,14 +63,30 @@ class Bounds(object):
         return s
 
     def _set_fc_min_max(self, config):
+        fc_0 = self.ini_values.fc_0
         if config.fc_min_max is None:
             # If no bound is given, set it to fc_0 +/- a decade
             scale = 10.  # a decade
-            fc_0 = self.ini_values.fc_0
             self.fc_min = fc_0/scale
             self.fc_max = fc_0*scale
         else:
             self.fc_min, self.fc_max = config.fc_min_max
+        if self.fc_min > fc_0:
+            logger.warning(
+                '{} {}: fc_min ({}) larger than fc_0 ({}). '
+                'Using fc_0 instead.'.format(
+                    self.spec.id, self.spec.stats.instrtype,
+                    self.fc_min, round(fc_0, 4))
+            )
+            self.fc_min = fc_0
+        if self.fc_max < fc_0:
+            logger.warning(
+                '{} {}: fc_max ({}) smaller than fc_0 ({}). '
+                'Using fc_0 instead.'.format(
+                    self.spec.id, self.spec.stats.instrtype,
+                    self.fc_max, round(fc_0, 4))
+            )
+            self.fc_max = fc_0
 
     def _check_minmax(self, minmax):
         if minmax is None:
@@ -95,10 +111,12 @@ class Bounds(object):
         if self.t_star_min < self.ini_values.t_star_0 < self.t_star_max:
             return
         t_star_0 = (self.t_star_max + self.t_star_min) / 2.
-        logger.warning('%s %s: initial t_star value: %s outside '
-                       'bounds. Using bound average: %s' %
-                       (self.spec.id, self.spec.stats.instrtype,
-                        self.ini_values.t_star_0, round(t_star_0, 4)))
+        logger.warning(
+            '{} {}: initial t_star value ({}) outside '
+            'bounds. Using bound average ({})'.format(
+                self.spec.id, self.spec.stats.instrtype,
+                self.ini_values.t_star_0, round(t_star_0, 4))
+        )
         self.ini_values.t_star_0 = t_star_0
 
     def __call__(self, **kwargs):
