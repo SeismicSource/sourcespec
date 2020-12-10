@@ -108,20 +108,21 @@ class Bounds(object):
         tmax = bool(np.all(params <= self.params_max))
         return tmin and tmax
 
-    def _get_bounds(self):
-        """Get bounds for minimize()."""
+    @property
+    def bounds(self):
+        """Get bounds for minimize() as sequence of (min, max) pairs."""
         self._bounds = ((self.Mw_min, self.Mw_max),
                         (self.fc_min, self.fc_max),
                         (self.t_star_min, self.t_star_max))
         return self._bounds
 
-    def _set_bounds(self, value):
+    @bounds.setter
+    def bounds(self, value):
+        """Set bounds from a sequence of three (min, max) pairs."""
         self._bounds = value
         self.Mw_min, self.Mw_max = value[0]
         self.fc_min, self.fc_max = value[1]
         self.t_star_min, self.t_star_max = value[2]
-
-    bounds = property(_get_bounds, _set_bounds)
 
     def get_bounds_curve_fit(self):
         """Get bounds for curve-fit()."""
