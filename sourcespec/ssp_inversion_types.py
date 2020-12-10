@@ -64,9 +64,8 @@ class Bounds(object):
 
     def _set_fc_min_max(self, config):
         if config.fc_min_max is None:
-            # If no bound is given, set it to a decade around fc_0
-            scale = 10**0.5  # half a decade
-            scale = 10**1.  # half a decade
+            # If no bound is given, set it to fc_0 +/- a decade
+            scale = 10.  # a decade
             fc_0 = self.ini_values.fc_0
             self.fc_min = fc_0/scale
             self.fc_max = fc_0*scale
