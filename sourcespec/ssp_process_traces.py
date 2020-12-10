@@ -118,6 +118,10 @@ def _check_sn_ratio(config, trace):
     rmsS2 = np.power(trace_cutS.data, 2).sum()
     rmsS = np.sqrt(rmsS2)
 
+    if rmsnoise == 0:
+        logger.warning('%s %s: empty noise window: skipping trace' %
+                       (trace.id, trace.stats.instrtype))
+        raise RuntimeError
     sn_ratio = rmsS/rmsnoise
     logger.info('%s %s: S/N: %.1f' % (
         trace.id, trace.stats.instrtype, sn_ratio))
