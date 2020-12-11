@@ -331,13 +331,14 @@ def build_spectra(config, st, noise_weight=False):
                 idx = np.where((sn_fmin <= freqs)*(freqs <= sn_fmax))
             else:
                 idx = range(len(weight.data_raw))
-            spectral_ssn =\
+            spectral_snratio =\
                 weight.data_raw[idx].sum()/len(weight.data_raw[idx])
+            spec.stats.spectral_snratio = spectral_snratio
             logger.info('%s: spectral S/N: %.2f' %
-                        (spec.get_id(), spectral_ssn))
+                        (spec.get_id(), spectral_snratio))
             if config.spectral_sn_min:
                 ssnmin = config.spectral_sn_min
-                if spectral_ssn < ssnmin:
+                if spectral_snratio < ssnmin:
                     logger.warning('%s: spectral S/N smaller than %.2f: '
                                    'skipping spectrum' %
                                    (spec.get_id(), ssnmin))

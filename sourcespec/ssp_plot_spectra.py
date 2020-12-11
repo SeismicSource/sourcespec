@@ -384,7 +384,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     figures.append(fig)
 
     # Path effect to contour text in white
-    path_effects = [PathEffects.withStroke(linewidth=3, foreground="white")]
+    path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
 
     # Plot!
     plotn = 0
@@ -409,6 +409,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             plotn = 1
         ax_text = False
         ax, ax2 = axes[plotn-1]
+        sn_text_ypos = 0.95
         for spec in spec_st_sel.traces:
             if spec.stats.channel[0:2] != code:
                 continue
@@ -419,6 +420,14 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 ax.loglog(spec.get_freq(), spec.data, color=color,
                           linestyle=linestyle, linewidth=linewidth,
                           zorder=20)
+                # Write spectral S/N for regular Z,N,E components
+                if orientation not in ['S', 's', 't', 'H']:
+                    _text = 'S/N: {:.1f}'.format(spec.stats.spectral_snratio)
+                    ax.text(
+                        0.95, sn_text_ypos, _text, ha='right', va='top',
+                        fontsize=8, color=color, path_effects=path_effects,
+                        transform=ax.transAxes, zorder=20)
+                    sn_text_ypos -= 0.05
                 if orientation == 'S':
                     fc = spec.stats.par['fc']
                     if 'par_err' in spec.stats.keys():
