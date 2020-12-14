@@ -8,11 +8,12 @@ Earthquake source parameters from S-wave displacement spectra
 
 v1.0 - 2020-12-xx
 	- Simplification of time window parameters:
-		 - an unique window length, "win_length", is used for time-domain S/N ratio
-		   calculation and spectral analysis
-		 - the old parameters, "noise_win_length" and "s_win_length", are no more
-		   supported and generate an error
+		- an unique window length, "win_length", is used for time-domain S/N ratio
+		  calculation and spectral analysis
+		- the old parameters, "noise_win_length" and "s_win_length", are no more
+		  supported and generate an error
 	- Reorganized config file and improved inline documentation within the file
+		- removed unused option: fc_0
 	- Plotting improvements:
 		- Show S/N ratio on trace plots
 		- Show spectral S/N ratio on spectrum plots
