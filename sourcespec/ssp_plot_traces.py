@@ -37,13 +37,9 @@ phase_label_color = {'P': 'black', 'S': 'black'}
 
 
 def _nplots(st, maxlines, ncols):
-    # Determine the number of plots:
-    nplots = 0
-    for station in set(x.stats.station for x in st.traces):
-        st_sel = st.select(station=station)
-        # 'code' is band+instrument code
-        for code in set(x.stats.channel[0:2] for x in st_sel):
-            nplots += 1
+    """Determine the number of lines and columns of the plot."""
+    # Remove the channel letter to determine the number of plots
+    nplots = len(set(tr.id[:-1] for tr in st))
     nlines = int(math.ceil(nplots/ncols))
     if nlines > maxlines:
         nlines = maxlines
@@ -241,14 +237,13 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
 
     # Plot!
     plotn = 0
-    stalist = sorted(set(
-        (t.stats.hypo_dist, t.stats.station, t.stats.channel[0:2])
-        for t in st))
+    stalist = sorted(set((tr.stats.hypo_dist, tr.id[:-1]) for tr in st))
     for t in stalist:
         plotn += 1
+        _, traceid = t
         # 'code' is band+instrument code
-        _, station, code = t
-        st_sel = st.select(station=station)
+        network, station, location, code = traceid.split('.')
+        st_sel = st.select(network=network, station=station, location=location)
         if plotn > nlines*ncols:
             _add_labels(axes, plotn-1, ncols)
             fig, axes = _make_fig(config, nlines, ncols)
