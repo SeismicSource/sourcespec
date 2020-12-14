@@ -122,8 +122,11 @@ class Bounds(object):
     def __call__(self, **kwargs):
         """Interface for basin-hopping."""
         params = kwargs['x_new']
-        tmin = bool(np.all(params >= self.params_min))
-        tmax = bool(np.all(params <= self.params_max))
+        params_min = (self.Mw_min, self.fc_min, self.t_star_min)
+        params_max = (self.Mw_max or 1e300, self.fc_max or 1e300,
+                      self.t_star_max or 1e300)
+        tmin = bool(np.all(params >= params_min))
+        tmax = bool(np.all(params <= params_max))
         return tmin and tmax
 
     @property
