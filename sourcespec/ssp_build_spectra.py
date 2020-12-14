@@ -226,6 +226,7 @@ def _build_spectrum(config, trace):
     spec.stats.hypo = stats.hypo
     spec.stats.hypo_dist = stats.hypo_dist
     spec.stats.epi_dist = stats.epi_dist
+    spec.stats.ignore = stats.ignore
     # Integrate in frequency domain, if no time-domain
     # integration has been performed
     if not config.time_domain_int:
@@ -278,14 +279,17 @@ def _build_H_and_weight(spec_st, specnoise_st, wave_type='S'):
     else:
         noise_weight = False
     weight_st = Stream()
-    stalist = set(sp.id[:-1] for sp in spec_st)
+    stalist = set(sp.id[:-1] for sp in spec_st if not sp.stats.ignore)
     for specid in stalist:
         network, station, location, code = specid.split('.')
         spec_st_sel = spec_st.select(
             network=network, station=station, location=location)
+        spec_st_sel = Stream(sp for sp in spec_st_sel if not sp.stats.ignore)
         if noise_weight:
             specnoise_st_sel = specnoise_st.select(
                 network=network, station=station, location=location)
+            specnoise_st_sel = Stream(
+                sp for sp in specnoise_st_sel if not sp.stats.ignore)
         # 'code' is band+instrument code
         for code in set(x.stats.channel[0:2] for x in spec_st_sel):
             spec_h = _compute_h(spec_st_sel, code, wave_type)
@@ -347,9 +351,11 @@ def build_spectra(config, st, noise_weight=False):
                 ssnmin = config.spectral_sn_min
                 if spectral_snratio < ssnmin:
                     logger.warning('%s: spectral S/N smaller than %.2f: '
-                                   'skipping spectrum' %
+                                   'ignoring spectrum' %
                                    (spec.get_id(), ssnmin))
-                    continue
+                    trace.stats.ignore = True
+                    spec.stats.ignore = True
+                    specnoise.stats.ignore = True
             specnoise_st.append(specnoise)
         spec_st.append(spec)
 

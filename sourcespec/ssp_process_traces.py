@@ -129,9 +129,9 @@ def _check_sn_ratio(config, trace):
 
     snratio_min = config.sn_min
     if sn_ratio < snratio_min:
-        logger.warning('%s %s: S/N smaller than %g: skipping trace' %
+        logger.warning('%s %s: S/N smaller than %g: ignoring trace' %
                        (trace.id, trace.stats.instrtype, snratio_min))
-        raise RuntimeError
+        trace.stats.ignore = True
 
 
 def _process_trace(config, trace):
@@ -293,6 +293,7 @@ def process_traces(config, st):
         try:
             _add_hypo_dist_and_arrivals(config, st_sel)
             trace = _merge_stream(config, st_sel)
+            trace.stats.ignore = False
             trace_process = _process_trace(config, trace)
             out_st.append(trace_process)
         except (ValueError, RuntimeError):

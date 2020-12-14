@@ -16,6 +16,7 @@ v1.0 - 2020-12-xx
 	- Plotting improvements:
 		- Show S/N ratio on trace plots
 		- Show spectral S/N ratio on spectrum plots
+		- Option to show/hide ignored traces/spectra (low S/N)
 	- Bug fixes:
 		- Pay attention to location code when building average spectra
 		- Plotting: avoid overlapping traces with different location code

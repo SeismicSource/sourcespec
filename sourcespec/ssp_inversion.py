@@ -242,6 +242,8 @@ def spectral_inversion(config, spec_st, weight_st):
     for spec in spectra:
         if spec.stats.channel[2] != 'H':
             continue
+        if spec.stats.ignore:
+            continue
         noise_weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
         try:
             par, par_err = _spec_inversion(config, spec, noise_weight)

@@ -36,9 +36,13 @@ phase_label_pos = {'P': 0.9, 'S': 0.93}
 phase_label_color = {'P': 'black', 'S': 'black'}
 
 
-def _nplots(st, maxlines, ncols):
+def _nplots(config, st, maxlines, ncols):
     """Determine the number of lines and columns of the plot."""
     # Remove the channel letter to determine the number of plots
+    if config.plot_traces_ignored:
+        nplots = len(set(tr.id[:-1] for tr in st))
+    else:
+        nplots = len(set(tr.id[:-1] for tr in st if not tr.stats.ignore))
     nplots = len(set(tr.id[:-1] for tr in st))
     nlines = int(math.ceil(nplots/ncols))
     if nlines > maxlines:
@@ -131,7 +135,7 @@ def _savefig(config, figures, async_plotter):
 
 
 def _plot_trace(config, trace, ntraces, tmax,
-                spec_st, ax, ax_text, trans, trans3, path_effects):
+                ax, ax_text, trans, trans3, path_effects):
     t1 = (trace.stats.arrivals['P'][1] - config.pre_p_time)
     t2 = (trace.stats.arrivals['S'][1] + 3 * config.win_length)
     trace.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
@@ -146,12 +150,11 @@ def _plot_trace(config, trace, ntraces, tmax,
         color = 'blue'
         if ntraces > 1:
             trace.data = (trace.data / tmax + 1) * tmax
-    alpha = 1.0
-    # if spec_st is given, grey out traces that have no spectrum
-    # (i.e., low spectral S/N)
-    if spec_st:
-        if not spec_st.select(id=trace.get_id()):
-            alpha = 0.3
+    # dim out ignored traces
+    if trace.stats.ignore:
+        alpha = 0.3
+    else:
+        alpha = 1.0
     ax.plot(trace.times(), trace, color=color,
             alpha=alpha, zorder=20, rasterized=True)
     ax.text(0.05, trace.data.mean(), trace.stats.channel,
@@ -227,7 +230,7 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
 
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
 
-    nlines, ncols = _nplots(st, config.plot_traces_maxrows, ncols)
+    nlines, ncols = _nplots(config, st, config.plot_traces_maxrows, ncols)
     figures = []
     fig, axes = _make_fig(config, nlines, ncols)
     figures.append(fig)
@@ -237,7 +240,13 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
 
     # Plot!
     plotn = 0
-    stalist = sorted(set((tr.stats.hypo_dist, tr.id[:-1]) for tr in st))
+    if config.plot_traces_ignored:
+        stalist = sorted(set((tr.stats.hypo_dist, tr.id[:-1]) for tr in st))
+    else:
+        stalist = sorted(set(
+            (tr.stats.hypo_dist, tr.id[:-1]) for tr in st
+            if not tr.stats.ignore
+        ))
     for t in stalist:
         plotn += 1
         _, traceid = t
@@ -272,8 +281,11 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
         for trace in st_sel.traces:
             if trace.stats.channel[0:2] != code:
                 continue
-            _plot_trace(config, trace, ntraces, tmax,
-                        spec_st, ax, ax_text, trans, trans3, path_effects)
+            if not config.plot_traces_ignored and trace.stats.ignore:
+                continue
+            _plot_trace(
+                config, trace, ntraces, tmax, ax, ax_text,
+                trans, trans3, path_effects)
 
     # Add lables for the last figure
     _add_labels(axes, plotn, ncols)

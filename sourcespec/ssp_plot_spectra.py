@@ -19,6 +19,7 @@ from __future__ import (absolute_import, division, print_function,
 import os
 import math
 import logging
+from obspy import Stream
 from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
 from sourcespec.ssp_version import get_git_version
 logger = logging.getLogger(__name__.split('.')[-1])
@@ -41,19 +42,25 @@ synth_colors = [
 ]
 
 
-def _nplots(spec_st, specnoise_st, maxlines, ncols, plottype):
-    # Determine the number of plots and axes min and max:
+def _nplots(config, spec_st, specnoise_st, maxlines, ncols, plottype):
+    """Determine the number of plots and axes min and max."""
     nplots = 0
     moment_minmax = None
     freq_minmax = None
-    specids = set('.'.join(sp.id.split('.')[:-1]) for sp in spec_st)
+    if not config.plot_spectra_ignored:
+        _spec_st = Stream(sp for sp in spec_st if not sp.stats.ignore)
+    else:
+        _spec_st = spec_st
+    specids = set('.'.join(sp.id.split('.')[:-1]) for sp in _spec_st)
     for specid in specids:
         network, station, location = specid.split('.')
-        spec_st_sel = spec_st.select(station=station)
+        spec_st_sel = _spec_st.select(
+            network=network, station=station, location=location)
         if specnoise_st:
-            specnoise_sel = specnoise_st.select(station=station)
+            specnoise_sel = specnoise_st.select(
+                network=network, station=station, location=location)
             spec_st_sel += specnoise_sel
-        for spec in spec_st_sel.traces:
+        for spec in spec_st_sel:
             moment_minmax, freq_minmax =\
                 spec_minmax(spec.data, spec.get_freq(),
                             moment_minmax, freq_minmax)
@@ -377,7 +384,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
 
     nlines, ncols, freq_minmax, moment_minmax, mag_minmax =\
-        _nplots(spec_st, specnoise_st,
+        _nplots(config, spec_st, specnoise_st,
                 config.plot_spectra_maxrows, ncols, plottype)
     figures = []
     fig, axes, ax0 = _make_fig(
@@ -390,7 +397,15 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
 
     # Plot!
     plotn = 0
-    stalist = sorted(set((sp.stats.hypo_dist, sp.id[:-1]) for sp in spec_st))
+    if config.plot_spectra_ignored:
+        stalist = sorted(set(
+            (sp.stats.hypo_dist, sp.id[:-1]) for sp in spec_st
+        ))
+    else:
+        stalist = sorted(set(
+            (sp.stats.hypo_dist, sp.id[:-1]) for sp in spec_st
+            if not sp.stats.ignore
+        ))
     for t in stalist:
         plotn += 1
         _, specid = t
@@ -415,11 +430,18 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         for spec in spec_st_sel.traces:
             if spec.stats.channel[0:2] != code:
                 continue
+            if not config.plot_spectra_ignored and spec.stats.ignore:
+                continue
             orientation = spec.stats.channel[2]
             color, linestyle, linewidth =\
                 _color_lines(config, orientation, plotn, stack_plots)
+            # dim out ignored spectra
+            if spec.stats.ignore:
+                alpha = 0.3
+            else:
+                alpha = 1.0
             if plottype == 'regular':
-                ax.loglog(spec.get_freq(), spec.data, color=color,
+                ax.loglog(spec.get_freq(), spec.data, color=color, alpha=alpha,
                           linestyle=linestyle, linewidth=linewidth,
                           zorder=20)
                 # Write spectral S/N for regular Z,N,E components
@@ -447,8 +469,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                         ax2.axhspan(Mw-Mw_err, Mw+Mw_err, color='#bbbbbb',
                                     alpha=0.3, zorder=1)
             elif plottype == 'weight':
-                ax.semilogx(spec.get_freq(), spec.data, color=color,
-                            zorder=20)
+                ax.semilogx(
+                    spec.get_freq(), spec.data, color=color, alpha=alpha,
+                    zorder=20)
             else:
                 raise ValueError('Unknown plot type: %s' % plottype)
             # leg = ax.legend(('N', 'E', 'H'), 'lower right')
@@ -461,9 +484,10 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     except IndexError:
                         continue
                     orientation = sp_noise.stats.channel[2]
-                    ax.loglog(sp_noise.get_freq(), sp_noise.data,
-                              linestyle=':', linewidth=linewidth,
-                              color=color, zorder=20)
+                    ax.loglog(
+                        sp_noise.get_freq(), sp_noise.data,
+                        linestyle=':', linewidth=linewidth,
+                        color=color, alpha=alpha, zorder=20)
 
             if not ax_text:
                 ax_text = '%s %s' % (spec.id[0:-1], spec.stats.instrtype)
