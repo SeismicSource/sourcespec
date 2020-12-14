@@ -91,6 +91,9 @@ def _compute_h(spec_st, code, wave_type='S'):
         channel = spec.stats.channel
         if channel[0:2] != code:
             continue
+        # avoid reusing a previous 'H' channel
+        if channel[-1] == 'H':
+            continue
         # only use transverse component for SH
         if wave_type == 'SH' and channel[-1] != 'T':
             continue
@@ -275,10 +278,14 @@ def _build_H_and_weight(spec_st, specnoise_st, wave_type='S'):
     else:
         noise_weight = False
     weight_st = Stream()
-    for station in set(x.stats.station for x in spec_st.sort()):
-        spec_st_sel = spec_st.select(station=station)
+    stalist = set(sp.id[:-1] for sp in spec_st)
+    for specid in stalist:
+        network, station, location, code = specid.split('.')
+        spec_st_sel = spec_st.select(
+            network=network, station=station, location=location)
         if noise_weight:
-            specnoise_st_sel = specnoise_st.select(station=station)
+            specnoise_st_sel = specnoise_st.select(
+                network=network, station=station, location=location)
         # 'code' is band+instrument code
         for code in set(x.stats.channel[0:2] for x in spec_st_sel):
             spec_h = _compute_h(spec_st_sel, code, wave_type)
