@@ -46,7 +46,9 @@ def _nplots(spec_st, specnoise_st, maxlines, ncols, plottype):
     nplots = 0
     moment_minmax = None
     freq_minmax = None
-    for station in set(x.stats.station for x in spec_st.traces):
+    specids = set('.'.join(sp.id.split('.')[:-1]) for sp in spec_st)
+    for specid in specids:
+        network, station, location = specid.split('.')
         spec_st_sel = spec_st.select(station=station)
         if specnoise_st:
             specnoise_sel = specnoise_st.select(station=station)
@@ -388,14 +390,14 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
 
     # Plot!
     plotn = 0
-    stalist = sorted(set(
-        (t.stats.hypo_dist, t.stats.station, t.stats.channel[0:2])
-        for t in spec_st))
+    stalist = sorted(set((sp.stats.hypo_dist, sp.id[:-1]) for sp in spec_st))
     for t in stalist:
         plotn += 1
+        _, specid = t
         # 'code' is band+instrument code
-        _, station, code = t
-        spec_st_sel = spec_st.select(station=station)
+        network, station, location, code = specid.split('.')
+        spec_st_sel = spec_st.select(
+            network=network, station=station, location=location)
         if plotn > nlines*ncols:
             # Add lables and legend before making a new figure
             _add_labels(axes, plotn-1, ncols, plottype)
