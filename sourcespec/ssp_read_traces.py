@@ -211,7 +211,7 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
             '%s: could not find coords for trace: skipping trace' % traceid)
 
 
-def _add_instrtype(trace):
+def _add_instrtype(trace, config):
     instrtype = None
     trace.stats.instrtype = None
 
@@ -225,12 +225,31 @@ def _add_instrtype(trace):
         instr_code = chan[1]
     except IndexError:
         instr_code = None
-    if instr_code in ['H', 'L']:
+    # SEED standard instrument codes:
+    instr_codes_vel = ['H', 'L']
+    instr_codes_acc = ['N', ]
+    # User-defined instrument codes:
+    instr_code_acc_user = config.instrument_code_acceleration
+    instr_code_vel_user = config.instrument_code_velocity
+    # Remove user-defined instrument codes if they conflict
+    # with another instrument
+    try:
+        instr_codes_vel.remove(instr_code_acc_user)
+    except ValueError:
+        pass
+    try:
+        instr_codes_acc.remove(instr_code_vel_user)
+    except ValueError:
+        pass
+    # Add user-defined instrument codes
+    instr_codes_vel.append(instr_code_vel_user)
+    instr_codes_acc.append(instr_code_acc_user)
+    if instr_code in instr_codes_vel:
         if band_code in ['E', 'S']:
             instrtype = 'shortp'
         if band_code in ['B', 'H']:
             instrtype = 'broadb'
-    if instr_code in ['N', ]:
+    if instr_code in instr_codes_acc:
         instrtype = 'acc'
 
     # If, not possible, let's see if there is an instrument
@@ -879,7 +898,7 @@ def read_traces(config):
                 _correct_traceid(trace, config.traceids)
                 try:
                     _add_paz_and_coords(trace, dataless, paz)
-                    _add_instrtype(trace)
+                    _add_instrtype(trace, config)
                     _add_hypocenter(trace, hypo)
                     _add_picks(trace, picks)
                 except Exception as err:
