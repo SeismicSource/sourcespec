@@ -89,7 +89,7 @@ def _compute_h(spec_st, code, wave_type='S'):
         # this avoids taking a component from co-located station:
         # ('code' is band+instrument code)
         channel = spec.stats.channel
-        if channel[0:2] != code:
+        if channel[:-1] != code:
             continue
         # avoid reusing a previous 'H' channel
         if channel[-1] == 'H':
@@ -291,7 +291,7 @@ def _build_H_and_weight(spec_st, specnoise_st, wave_type='S'):
             specnoise_st_sel = Stream(
                 sp for sp in specnoise_st_sel if not sp.stats.ignore)
         # 'code' is band+instrument code
-        for code in set(x.stats.channel[0:2] for x in spec_st_sel):
+        for code in set(x.stats.channel[:-1] for x in spec_st_sel):
             spec_h = _compute_h(spec_st_sel, code, wave_type)
             if spec_h is None:
                 continue

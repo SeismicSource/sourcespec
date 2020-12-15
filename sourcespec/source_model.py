@@ -55,7 +55,7 @@ def make_synth(config, spec_st, trace_spec=None):
         spec.stats.station = 'Mw: %.1f fc: %.2fHz t*: %.2fs alpha: %.2f' %\
             (mag, fc, t_star, alpha)
         spec.stats.instrtype = 'Synth'
-        spec.stats.channel = spec.stats.channel[0:2] + 'S'
+        spec.stats.channel = spec.stats.channel[:-1] + 'S'
         spec.stats.par = {'Mw': mag, 'fc': fc, 't_star': t_star,
                           'alpha': alpha}
 

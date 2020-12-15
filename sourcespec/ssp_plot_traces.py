@@ -192,8 +192,9 @@ def _plot_trace(config, trace, ntraces, tmax,
     if not ax_text:
         text_y = 0.1
         color = 'black'
+        id_no_channel = '.'.join(trace.id.split('.')[:-1])
         ax_text = '%s %s %.1f km (%.1f km)' %\
-                  (trace.id[0:-4],
+                  (id_no_channel,
                    trace.stats.instrtype,
                    trace.stats.hypo_dist,
                    trace.stats.epi_dist)
@@ -261,7 +262,7 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
         ax_text = False
         ax = axes[plotn-1]
         instrtype = [t.stats.instrtype for t in st_sel.traces
-                     if t.stats.channel[0:2] == code][0]
+                     if t.stats.channel[:-1] == code][0]
         if instrtype == 'acc':
             ax.set_ylabel(u'Acceleration (m/s²)', fontsize=8, labelpad=0)
         elif instrtype == 'shortp' or instrtype == 'broadb':
@@ -275,11 +276,11 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
         trans3 = transforms.offset_copy(trans2, fig=fig, x=0, y=0.1)
 
         maxes = [abs(t.max()) for t in st_sel.traces
-                 if t.stats.channel[0:2] == code]
+                 if t.stats.channel[:-1] == code]
         ntraces = len(maxes)
         tmax = max(maxes)
         for trace in st_sel.traces:
-            if trace.stats.channel[0:2] != code:
+            if trace.stats.channel[:-1] != code:
                 continue
             if not config.plot_traces_ignored and trace.stats.ignore:
                 continue

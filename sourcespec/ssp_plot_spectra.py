@@ -65,7 +65,7 @@ def _nplots(config, spec_st, specnoise_st, maxlines, ncols, plottype):
                 spec_minmax(spec.data, spec.get_freq(),
                             moment_minmax, freq_minmax)
         # 'code' is band+instrument code
-        for code in set(x.stats.channel[0:2] for x in spec_st_sel):
+        for code in set(x.stats.channel[:-1] for x in spec_st_sel):
             nplots += 1
     nlines = int(math.ceil(nplots/ncols))
     if nlines > maxlines:
@@ -428,11 +428,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         ax, ax2 = axes[plotn-1]
         sn_text_ypos = 0.95
         for spec in spec_st_sel.traces:
-            if spec.stats.channel[0:2] != code:
+            if spec.stats.channel[:-1] != code:
                 continue
             if not config.plot_spectra_ignored and spec.stats.ignore:
                 continue
-            orientation = spec.stats.channel[2]
+            orientation = spec.stats.channel[-1]
             color, linestyle, linewidth =\
                 _color_lines(config, orientation, plotn, stack_plots)
             # dim out ignored spectra
@@ -477,20 +477,20 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             # leg = ax.legend(('N', 'E', 'H'), 'lower right')
 
             if specnoise_st:
-                if spec.stats.channel[2] != 'S':
+                if spec.stats.channel[-1] != 'S':
                     specid = spec.get_id()
                     try:
                         sp_noise = specnoise_st.select(id=specid)[0]
                     except IndexError:
                         continue
-                    orientation = sp_noise.stats.channel[2]
+                    orientation = sp_noise.stats.channel[-1]
                     ax.loglog(
                         sp_noise.get_freq(), sp_noise.data,
                         linestyle=':', linewidth=linewidth,
                         color=color, alpha=alpha, zorder=20)
 
             if not ax_text:
-                ax_text = '%s %s' % (spec.id[0:-1], spec.stats.instrtype)
+                ax_text = '%s %s' % (spec.id[:-1], spec.stats.instrtype)
                 if stack_plots:
                     text_y = 0.05 + (plotn-1) * 0.05
                 else:

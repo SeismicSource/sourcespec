@@ -414,7 +414,7 @@ def _complete_picks(st):
     for station in set(tr.stats.station for tr in st):
         st_sel = st.select(station=station)
         # 'code' is band+instrument code
-        for code in set(tr.stats.channel[0:2] for tr in st_sel):
+        for code in set(tr.stats.channel[:-1] for tr in st_sel):
             st_sel2 = st_sel.select(channel=code + '?')
             # Select default P and S picks as the first in list
             all_picks = [pick for tr in st_sel2 for pick in tr.stats.picks]

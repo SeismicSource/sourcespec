@@ -192,7 +192,7 @@ def _synth_spec(config, spec, par, par_err):
 
     freq = spec.get_freq()
     spec_synth = spec.copy()
-    spec_synth.stats.channel = spec.stats.channel[0:2] + 'S'
+    spec_synth.stats.channel = spec.stats.channel[:-1] + 'S'
     spec_synth.stats.par = par
     spec_synth.stats.par_err = par_err
     spec_synth.data_mag = spectral_model(freq, *params_opt)
@@ -202,7 +202,7 @@ def _synth_spec(config, spec, par, par_err):
     # Add an extra spectrum with no attenuation
     if config.plot_spectra_no_attenuation:
         spec_synth = spec.copy()
-        spec_synth.stats.channel = spec.stats.channel[0:2] + 's'
+        spec_synth.stats.channel = spec.stats.channel[:-1] + 's'
         _params = list(params_opt)
         _params[-1] = 0
         spec_synth.data_mag = spectral_model(freq, *_params)
@@ -211,7 +211,7 @@ def _synth_spec(config, spec, par, par_err):
 
     if config.plot_spectra_no_fc:
         spec_synth = spec.copy()
-        spec_synth.stats.channel = spec.stats.channel[0:2] + 't'
+        spec_synth.stats.channel = spec.stats.channel[:-1] + 't'
         _params = list(params_opt)
         _params[1] = 1e999
         spec_synth.data_mag = spectral_model(freq, *_params)
@@ -240,7 +240,7 @@ def spectral_inversion(config, spec_st, weight_st):
     stations = set(x.stats.station for x in spec_st)
     spectra = [sp for sta in stations for sp in spec_st.select(station=sta)]
     for spec in spectra:
-        if spec.stats.channel[2] != 'H':
+        if spec.stats.channel[-1] != 'H':
             continue
         if spec.stats.ignore:
             continue
