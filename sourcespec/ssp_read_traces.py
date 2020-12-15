@@ -217,13 +217,11 @@ def _add_instrtype(trace, config):
 
     # First, try to get the instrtype from channel name
     chan = trace.stats.channel
-    try:
+    if len(chan) > 2:
         band_code = chan[0]
-    except IndexError:
-        band_code = None
-    try:
         instr_code = chan[1]
-    except IndexError:
+    else:
+        band_code = None
         instr_code = None
     # SEED standard instrument codes:
     instr_codes_vel = ['H', 'L']
@@ -242,8 +240,10 @@ def _add_instrtype(trace, config):
     except ValueError:
         pass
     # Add user-defined instrument codes
-    instr_codes_vel.append(instr_code_vel_user)
-    instr_codes_acc.append(instr_code_acc_user)
+    if instr_code_vel_user is not None:
+        instr_codes_vel.append(instr_code_vel_user)
+    if instr_code_acc_user is not None:
+        instr_codes_acc.append(instr_code_acc_user)
     if instr_code in instr_codes_vel:
         if band_code in ['E', 'S']:
             instrtype = 'shortp'
