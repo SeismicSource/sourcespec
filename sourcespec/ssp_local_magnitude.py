@@ -115,14 +115,15 @@ def _process_trace(config, tr, t0, t1):
     tr_process.detrend(type='constant')
     # ...and the linear trend...
     tr_process.detrend(type='linear')
-    # ...filter
-    # TODO: parametrize?
-    tr_process.filter(type='bandpass', freqmin=0.1, freqmax=20)
-    # remove response and convert to Wood-Anderson
-    # TODO: parametrize?
-    pre_filt = (0.05, 0.1, 15, 20)
+    freqmin = config.ml_bp_freqmin
+    freqmax = config.ml_bp_freqmax
+    # ...remove response...
+    pre_filt = (freqmin, freqmin*1.1, freqmax*0.9, freqmax)
     remove_instr_response(
         tr_process, config.correct_instrumental_response, pre_filt)
+    # ...filter
+    tr_process.filter(type='bandpass', freqmin=freqmin, freqmax=freqmax)
+    # Convert to Wood-Anderson
     # note: conversion to Wood-Anderson integrates the signal once
     if tr.stats.instrtype == 'acc':
         WA_double_int = deepcopy(WOODANDERSON)
