@@ -15,6 +15,7 @@ v1.0 - 2020-12-xx
 	- Reorganized config file and improved inline documentation within the file
 		- removed unused option: fc_0
 		- removed "pre_filt" option
+		- post-processing check on fc bounds has been removed
 	- Option to specify non standard instrument codes (e.g., "L" for
 	  acceleration)
 	- Option to specify filter frequencies for local magnitude computation

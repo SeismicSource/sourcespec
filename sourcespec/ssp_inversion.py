@@ -254,10 +254,7 @@ def spectral_inversion(config, spec_st, weight_st):
         sourcepar[statId] = par
         sourcepar_err[statId] = par_err
 
-    # Filter stations with negative t_star
-    # or with anomalous corner frequencies
-    f1 = config.min_corner_freq
-    f2 = config.max_corner_freq
+    # Filter stations with negative t_star or fc
     # Make a copy of sourcepar.keys() since the dictionary
     # may change during iteration
     for statId in list(sourcepar.keys()):
@@ -269,7 +266,7 @@ def spectral_inversion(config, spec_st, weight_st):
             sourcepar.pop(statId, None)
             sourcepar_err.pop(statId, None)
         fc = par['fc']
-        if fc < f1 or fc > f2:
+        if fc < 0:
             logger.warning('Ignoring station: %s fc: %f' % (statId, fc))
             sourcepar.pop(statId, None)
             sourcepar_err.pop(statId, None)
