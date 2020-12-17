@@ -26,7 +26,8 @@ from sourcespec.ssp_wave_arrival import wave_arrival
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
-def filter_trace(config, trace):
+def _get_bandpass_frequencies(config, trace):
+    """Get frequencies for bandpass filter."""
     # see of there is a station-specfic filter
     station = trace.stats.station
     try:
@@ -52,6 +53,11 @@ def filter_trace(config, trace):
             logger.warning('%s: Unknown instrument type: %s: '
                            'skipping trace' % (trace.id, instrtype))
             raise ValueError
+    return bp_freqmin, bp_freqmax
+
+
+def filter_trace(config, trace):
+    bp_freqmin, bp_freqmax = _get_bandpass_frequencies(config, trace)
     # remove the mean...
     trace.detrend(type='constant')
     # ...and the linear trend...
@@ -151,9 +157,10 @@ def _process_trace(config, trace):
 
     # Remove instrument response
     if not config.options.no_response:
-        if remove_instr_response(trace_process,
-                                 config.correct_instrumental_response,
-                                 config.pre_filt) is None:
+        correct = config.correct_instrumental_response
+        bp_freqmin, bp_freqmax = _get_bandpass_frequencies(config, trace)
+        pre_filt = (bp_freqmin, bp_freqmin*1.1, bp_freqmax*0.9, bp_freqmax)
+        if remove_instr_response(trace_process, correct, pre_filt) is None:
             logger.warning('%s %s: Unable to remove instrument response: '
                            'skipping trace' % (trace_process.id, instrtype))
             raise RuntimeError

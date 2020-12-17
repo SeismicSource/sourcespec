@@ -119,8 +119,10 @@ def _process_trace(config, tr, t0, t1):
     # TODO: parametrize?
     tr_process.filter(type='bandpass', freqmin=0.1, freqmax=20)
     # remove response and convert to Wood-Anderson
+    # TODO: parametrize?
+    pre_filt = (0.05, 0.1, 15, 20)
     remove_instr_response(
-        tr_process, config.correct_instrumental_response, config.pre_filt)
+        tr_process, config.correct_instrumental_response, pre_filt)
     # note: conversion to Wood-Anderson integrates the signal once
     if tr.stats.instrtype == 'acc':
         WA_double_int = deepcopy(WOODANDERSON)

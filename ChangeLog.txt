@@ -14,6 +14,7 @@ v1.0 - 2020-12-xx
 		  supported and generate an error
 	- Reorganized config file and improved inline documentation within the file
 		- removed unused option: fc_0
+		- removed "pre_filt" option
 	- Option to specify non standard instrument codes (e.g., "L" for
 	  acceleration)
 	- Plotting improvements:
