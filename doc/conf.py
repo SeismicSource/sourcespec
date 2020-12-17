@@ -277,3 +277,36 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+
+# -- Custom functions for SourceSpec ------------------------------------------
+def update_configfile(app):
+    with open('configuration_file.rst', 'w') as fp:
+        fp.write('''.. Configuration File:
+
+##################
+Configuration File
+##################
+
+Configuration file (default name: ``source_spec.conf``) is a plain text file
+with keys and values in the form ``key = value``.
+Comment lines start with ``#``.
+
+Some fields are comma-separated lists: even if only one element is specified,
+a comma is always required (e.g., ``ignore_stations = STA01,``).
+
+Here is the default config file, generated through ``source_spec -S``::
+
+''')
+        configspec = os.path.join('..', 'sourcespec', 'configspec.conf')
+        for line in open(configspec):
+            if '=' in line and line[0] != '#':
+                key, val = line.split(' = ')
+                val = val.split('default=')[1]
+                val = val.replace(')', '').replace("'", '')
+                line = key + ' = ' + val
+            fp.write('  ' + line)
+
+
+def setup(app):
+    app.connect('builder-inited', update_configfile)

@@ -11,6 +11,7 @@ sspec_out
 source_spec.conf
 
 #Sphinx doc build
+doc/configuration_file.rst
 doc/_build
 doc/generated
 

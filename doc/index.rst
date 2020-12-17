@@ -31,6 +31,7 @@ Contents:
    :maxdepth: 2
 
    source_spec
+   configuration_file
    api
 
 
