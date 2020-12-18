@@ -60,7 +60,7 @@ def call_git_describe(abbrev=4):
     if os.path.normpath(path) != SOURCE_SPEC_ROOT:
         return None
     try:
-        p = Popen(['git', 'describe', '--dirty', '--abbrev=%d' % abbrev,
+        p = Popen(['git', 'describe', '--abbrev=%d' % abbrev,
                    '--always', '--tags'],
                   cwd=SOURCE_SPEC_ROOT, stdout=PIPE, stderr=PIPE)
 
