@@ -41,6 +41,8 @@ from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 
 def _round(x, base=5):
     """Round to base."""
+    if x <= base/2:
+        return 0
     round_x = 0
     while round_x == 0:
         round_x = int(base * round(float(x)/base))
@@ -107,6 +109,8 @@ def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
             color='k', transform=geodetic_transform,
             zorder=10)
     step = _round(maxdist/ncircles)
+    if step == 0:
+        step = 1
     texts = []
     for dist in np.arange(step, maxdist+step, step):
         azimuths = np.arange(0, 360, 1)
