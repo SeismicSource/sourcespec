@@ -1,7 +1,7 @@
 .. _source_spec:
 
 ###########
-source_spec
+SourceSpec
 ###########
 
 Earthquake source parameters from inversion of S-wave spectra.
