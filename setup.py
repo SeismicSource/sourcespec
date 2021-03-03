@@ -13,10 +13,6 @@ sys.path.insert(0, path)
 from ssp_version import get_git_version
 
 
-with open('README.md', 'rb') as f:
-    long_descr = f.read().decode('utf-8')
-
-
 setup(
     name='sourcespec',
     packages=['sourcespec', 'sourcespec.configobj'],
@@ -30,7 +26,8 @@ setup(
     version=get_git_version(),
     description='Earthquake source parameters from S-wave '
                 'displacement spectra',
-    long_description=long_descr,
+    long_description='Earthquake source parameters from S-wave '
+                'displacement spectra',
     author='Claudio Satriano',
     author_email='satriano@ipgp.fr',
     url='http://www.ipgp.fr/~satriano',
@@ -40,8 +37,8 @@ setup(
             'Development Status :: 5 - Production/Stable',
             'Environment :: Console',
             'Intended Audience :: Science/Research',
-            'License :: OSI Approved :: CeCILL Free Software License '
-                'Agreement, Version 2.1',
+            'License :: OSI Approved :: CEA CNRS Inria Logiciel Libre '
+                'License, version 2.1 (CeCILL-2.1)',
             'Operating System :: OS Independent',
             'Programming Language :: Python',
             'Programming Language :: Python :: 2',
