@@ -13,7 +13,7 @@ Earthquake source parameters from S-wave displacement spectra
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnès Chounet <chounet@ipgp.fr>
 
-(c) 2015-2020 Claudio Satriano <satriano@ipgp.fr>
+(c) 2015-2021 Claudio Satriano <satriano@ipgp.fr>
 
 ## Description
 

@@ -4,9 +4,9 @@ Earthquake source parameters from S-wave displacement spectra
 (c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnès Chounet <chounet@ipgp.fr>
-(c) 2015-2020 Claudio Satriano <satriano@ipgp.fr>
+(c) 2015-2021 Claudio Satriano <satriano@ipgp.fr>
 
-v1.0 - 2020-12-xx
+v1.0 - 2021-03-xx
 	- Simplification of time window parameters:
 		- an unique window length, "win_length", is used for time-domain S/N ratio
 		  calculation and spectral analysis

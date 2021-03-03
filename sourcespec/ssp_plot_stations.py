@@ -3,7 +3,7 @@
 Station plotting routine.
 
 :copyright:
-    2018-2020 Claudio Satriano <satriano@ipgp.fr>
+    2018-2021 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement, Version 2.1
     (http://www.cecill.info/index.en.html)
