@@ -46,16 +46,19 @@ To get help:
 
 ## Installation
 
-Simply uncompress the archive and run the codes from `bin` directory.
+### Using pip
+
+The easiest way of installing SourceSpec is through `pip`:
+
+    pip install sourcespec
+
+### From this GitHub repository
+
+Clone or download this project, uncompress it (if needed)
+and run the codes from `bin` directory.
 Optionally, you can install the codes by running:
 
     pip install .
-
-(use `pip install -e .` to install in developer mode), or:
-
-    pip install sourcespec-x.x.tar.gz
-
-(where `x.x` is the version number).
 
 ## Documentation
 
