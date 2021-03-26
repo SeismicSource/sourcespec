@@ -480,7 +480,7 @@ def configure(progname='source_spec'):
 
     if config.plot_station_map:
         _exit = False
-        cartopy_min_ver = (0, 17, 0)
+        cartopy_min_ver = (0, 18, 0)
         try:
             cartopy_ver = None
             import cartopy  #NOQA
