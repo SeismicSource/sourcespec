@@ -6,6 +6,10 @@ Earthquake source parameters from S-wave displacement spectra
               Agnès Chounet <chounet@ipgp.fr>
 (c) 2015-2021 Claudio Satriano <satriano@ipgp.fr>
 
+master
+	- Bug fixes:
+		- Require cartopy>=0.18 for compatibility with matplotlib>=3.3
+
 v1.0 - 2021-03-03
 	- Simplification of time window parameters:
 		- an unique window length, "win_length", is used for time-domain S/N ratio
