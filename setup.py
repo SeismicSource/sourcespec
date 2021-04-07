@@ -28,6 +28,7 @@ setup(
                 'displacement spectra',
     long_description='Earthquake source parameters from S-wave '
                 'displacement spectra',
+    long_description_content_type='text/markdown',
     author='Claudio Satriano',
     author_email='satriano@ipgp.fr',
     url='http://www.ipgp.fr/~satriano',
