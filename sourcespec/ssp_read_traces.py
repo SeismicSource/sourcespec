@@ -247,7 +247,7 @@ def _add_instrtype(trace, config):
     if instr_code in instr_codes_vel:
         if band_code in ['E', 'S']:
             instrtype = 'shortp'
-        if band_code in ['B', 'H']:
+        if band_code in ['B', 'C', 'H']:
             instrtype = 'broadb'
     if instr_code in instr_codes_acc:
         instrtype = 'acc'
