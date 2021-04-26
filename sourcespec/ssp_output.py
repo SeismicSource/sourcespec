@@ -338,13 +338,15 @@ def write_output(config, sourcepar, sourcepar_err):
         _avg_and_std(t_star_values, errors=t_star_err)
 
     # ra, radius (meters)
-    vs_m = config.hypo.vs*1000
-    ra_values = 0.37 * vs_m / fc_values
+    vs_m = config.hypo.vs*1e3
+    # Madariaga (2009), doi:10.1007/978-1-4419-7695-6_22, eq. 31:
+    ra_values = 0.3724 * vs_m / fc_values
     means['ra'], errors['ra'] = _avg_and_std(ra_values, logarithmic=True)
 
     # bsd, Brune stress drop (MPa)
     Mo_values = mag_to_moment(Mw_values)
-    bsd_values = 0.4375 * Mo_values / np.power(ra_values, 3) * 1e-6
+    # Madariaga (2009), doi:10.1007/978-1-4419-7695-6_22, eq. 27:
+    bsd_values = 7./16 * Mo_values / np.power(ra_values, 3) * 1e-6
     means['bsd'], errors['bsd'] = _avg_and_std(bsd_values, logarithmic=True)
 
     # Ml
