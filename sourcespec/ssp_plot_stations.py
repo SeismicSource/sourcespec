@@ -20,7 +20,7 @@ import cartopy.feature as cfeature
 from sourcespec.adjustText import adjust_text
 from pyproj import Geod
 from sourcespec.cached_tiler import CachedTiler
-from sourcespec.ssp_version import get_git_version
+from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.split('.')[-1])
 
 import matplotlib
@@ -258,7 +258,7 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
         cm_label = 'Corner Frequency (Hz)'
     cax.set_ylabel(cm_label)
     # Add code information at the figure bottom
-    textstr = 'SourceSpec v{} '.format(get_git_version())
+    textstr = 'SourceSpec v{} '.format(get_versions()['version'])
     textstr += '– {} {}\n'.format(
         config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
         config.end_of_run_tz)

@@ -21,7 +21,7 @@ import math
 import logging
 from obspy import Stream
 from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
-from sourcespec.ssp_version import get_git_version
+from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.split('.')[-1])
 
 import matplotlib
@@ -105,7 +105,7 @@ def _make_fig(config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
         ax0.text(0., 1.1, textstr, fontsize=14,
                  ha='left', va='top', transform=ax0.transAxes)
     # Add code information at the figure bottom
-    textstr = 'SourceSpec v{} '.format(get_git_version())
+    textstr = 'SourceSpec v{} '.format(get_versions()['version'])
     if not stack_plots:
         textstr += '– {} {}\n'.format(
             config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),

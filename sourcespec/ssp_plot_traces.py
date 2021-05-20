@@ -14,7 +14,7 @@ from __future__ import (absolute_import, division, print_function,
 import os
 import math
 import logging
-from sourcespec.ssp_version import get_git_version
+from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.split('.')[-1])
 
 import matplotlib
@@ -78,7 +78,7 @@ def _make_fig(config, nlines, ncols):
         ax0.text(0., 1.1, textstr, fontsize=14,
                  ha='left', va='top', transform=ax0.transAxes)
     # Add code information at the figure bottom
-    textstr = 'SourceSpec v{} '.format(get_git_version())
+    textstr = 'SourceSpec v{} '.format(get_versions()['version'])
     ax0.text(1., -0.1, textstr, fontsize=10,
              ha='right', va='top', transform=ax0.transAxes)
     axes = []

@@ -10,7 +10,7 @@ import inspect
 path = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(
     inspect.currentframe())), os.pardir, 'sourcespec'))
 sys.path.insert(0, path)
-from ssp_version import get_git_version
+from _version import get_versions
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -83,7 +83,7 @@ copyright = u'2013-2020, Claudio Satriano'
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = get_git_version()
+release = get_versions()['version']
 # The short X.Y version.
 version = release.split('-')[0]
 

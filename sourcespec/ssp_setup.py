@@ -33,8 +33,8 @@ except ImportError:
 from sourcespec.configobj import ConfigObj
 from sourcespec.configobj.validate import Validator
 from sourcespec.config import Config
-from sourcespec.ssp_version import get_git_version
 from sourcespec.AsyncPlotter import AsyncPlotter
+from sourcespec._version import get_versions
 
 # define ipshell(), if possible
 if sys.stdout.isatty():
@@ -264,7 +264,7 @@ def _update_parser(parser, progname):
         parser.add_argument('-P', '--plot', dest='plot', action='store_true',
                             default=False, help='plot results')
     parser.add_argument('-v', '--version', action='version',
-                        version=get_git_version())
+                        version=get_versions()['version'])
 
 
 def _parse_args(progname):
@@ -583,7 +583,7 @@ def setup_logging(config, basename=None, progname='source_spec'):
     # Only write these debug infos for a new logfile
     if not oldlogfile:
         logger.debug('source_spec START')
-        logger.debug('SourceSpec version: ' + get_git_version())
+        logger.debug('SourceSpec version: ' + get_versions()['version'])
         logger.debug('Python version: ' + PYTHON_VERSION_STR)
         logger.debug('ObsPy version: ' + OBSPY_VERSION_STR)
         logger.debug('NumPy version: ' + NUMPY_VERSION_STR)

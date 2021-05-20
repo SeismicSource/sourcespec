@@ -2,6 +2,7 @@ include ChangeLog.txt
 include README.md
 include LICENSE.txt
 include CONTRIBUTORS.txt
-include sourcespec/configspec.conf
-include sourcespec/RELEASE-VERSION
 include bin/*.py
+include versioneer.py
+include sourcespec/_version.py
+include sourcespec/configspec.conf

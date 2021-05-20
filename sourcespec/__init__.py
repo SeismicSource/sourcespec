@@ -1,4 +1,3 @@
-from .ssp_version import get_git_version
-from .ssp_util import moment_to_mag, mag_to_moment
-
-__version__ = get_git_version()
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
