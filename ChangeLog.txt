@@ -7,6 +7,9 @@ Earthquake source parameters from S-wave displacement spectra
 (c) 2015-2021 Claudio Satriano <satriano@ipgp.fr>
 
 
+v1.2 - 2021-05-20
+	- Use python-versioneer to manage version numbers
+
 v1.1 - 2021-04-07
 	- Bug fixes:
 		- Accept band code "C" for broadband seismometers sampled at >=250 Hz
