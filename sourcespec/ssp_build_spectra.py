@@ -63,18 +63,26 @@ def _frequency_integrate(config, spec):
 
 
 def _cut_spectrum(config, spec):
-    instrtype = spec.stats.instrtype
-    if instrtype == 'acc':
-        freq1 = config.freq1_acc
-        freq2 = config.freq2_acc
-    elif instrtype == 'shortp':
-        freq1 = config.freq1_shortp
-        freq2 = config.freq2_shortp
-    elif instrtype == 'broadb':
-        freq1 = config.freq1_broadb
-        freq2 = config.freq2_broadb
-    else:
-        raise ValueError
+    # see if there is a station-specfic frequency range
+    station = spec.stats.station
+    try:
+        freq1 = float(config['freq1_' + station])
+        freq2 = float(config['freq2_' + station])
+    except KeyError:
+        instrtype = spec.stats.instrtype
+        if instrtype == 'acc':
+            freq1 = config.freq1_acc
+            freq2 = config.freq2_acc
+        elif instrtype == 'shortp':
+            freq1 = config.freq1_shortp
+            freq2 = config.freq2_shortp
+        elif instrtype == 'broadb':
+            freq1 = config.freq1_broadb
+            freq2 = config.freq2_broadb
+        else:
+            logger.warning('%s: Unknown instrument type: %s: '
+                           'skipping spectrum' % (spec.id, instrtype))
+            raise ValueError
     return spec.slice(freq1, freq2)
 
 

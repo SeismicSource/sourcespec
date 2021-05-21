@@ -6,6 +6,8 @@ Earthquake source parameters from S-wave displacement spectra
               Agnès Chounet <chounet@ipgp.fr>
 (c) 2015-2021 Claudio Satriano <satriano@ipgp.fr>
 
+unreleased:
+	- Option to provide station-specific spectral windowing
 
 v1.2 - 2021-05-20
 	- Use python-versioneer to manage version numbers
