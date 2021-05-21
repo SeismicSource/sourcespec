@@ -35,21 +35,10 @@ def _get_bandpass_frequencies(config, trace):
         bp_freqmax = float(config['bp_freqmax_' + station])
     except KeyError:
         instrtype = trace.stats.instrtype
-        if instrtype == 'acc':
-            # band-pass frequencies:
-            # TODO: calculate from sampling rate?
-            bp_freqmin = config.bp_freqmin_acc
-            bp_freqmax = config.bp_freqmax_acc
-        elif instrtype == 'shortp':
-            # band-pass frequencies:
-            # TODO: calculate from sampling rate?
-            bp_freqmin = config.bp_freqmin_shortp
-            bp_freqmax = config.bp_freqmax_shortp
-        elif instrtype == 'broadb':
-            # band-pass frequencies:
-            bp_freqmin = config.bp_freqmin_broadb
-            bp_freqmax = config.bp_freqmax_broadb
-        else:
+        try:
+            bp_freqmin = float(config['bp_freqmin_' + instrtype])
+            bp_freqmax = float(config['bp_freqmax_' + instrtype])
+        except KeyError:
             logger.warning('%s: Unknown instrument type: %s: '
                            'skipping trace' % (trace.id, instrtype))
             raise ValueError

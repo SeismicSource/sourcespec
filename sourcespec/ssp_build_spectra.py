@@ -69,17 +69,11 @@ def _cut_spectrum(config, spec):
         freq1 = float(config['freq1_' + station])
         freq2 = float(config['freq2_' + station])
     except KeyError:
-        instrtype = spec.stats.instrtype
-        if instrtype == 'acc':
-            freq1 = config.freq1_acc
-            freq2 = config.freq2_acc
-        elif instrtype == 'shortp':
-            freq1 = config.freq1_shortp
-            freq2 = config.freq2_shortp
-        elif instrtype == 'broadb':
-            freq1 = config.freq1_broadb
-            freq2 = config.freq2_broadb
-        else:
+        try:
+            instrtype = spec.stats.instrtype
+            freq1 = float(config['freq1_' + instrtype])
+            freq2 = float(config['freq2_' + instrtype])
+        except KeyError:
             logger.warning('%s: Unknown instrument type: %s: '
                            'skipping spectrum' % (spec.id, instrtype))
             raise ValueError
