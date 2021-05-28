@@ -46,17 +46,43 @@ To get help:
 
 ## Installation
 
-### Using pip
+### Using pip and PyPI (preferred method)
 
-The easiest way of installing SourceSpec is through `pip`:
+The latest release of SourceSpec is available on the
+[Python Package Index](https://pypi.org/project/sourcespec/).
+
+You can install it easily through `pip`:
 
     pip install sourcespec
+    
+### From SourceSpec GitHub releases
 
-### From this GitHub repository
+Download the latest release from the
+[releases page](https://github.com/SeismicSource/sourcespec/releases),
+in `zip` or `tar.gz` format, then:
 
-Clone or download this project, uncompress it (if needed)
-and run the codes from `bin` directory.
-Optionally, you can install the codes by running:
+	pip install sourcespec-X.Y.zip
+
+or
+
+	pip install sourcespec-X.Y.tar.gz
+	
+Where, `X.Y` is the version number (e.g., `1.2`).
+You don't need to uncompress the release files yourself.
+
+### From SourceSpec GitHub repository
+
+If you need a recent feature that is not in the latest release (see the
+`unreleased` section in [ChangeLog](ChangeLog.txt)), you want to use the source
+code from the SourceSpec GitHub repository.
+
+For that, clone the project:
+
+	git clone https://github.com/SeismicSource/sourcespec.git
+
+(avoid using the "Download ZIP" option from the green "Code" button, since
+version number is lost), then install the code from within the `sourcespec`
+main directory by running:
 
     pip install .
 
