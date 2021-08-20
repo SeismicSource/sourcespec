@@ -595,6 +595,18 @@ def setup_logging(config, basename=None, progname='source_spec'):
 
 
 def init_plotting(config):
+    if config.html_report:
+        if not config.PLOT_SAVE:
+            logger.warning(
+                'The html_report option is selected but PLOT_SAVE is False. '
+                'Setting PLOT_SAVE to True.')
+            config.PLOT_SAVE = True
+        if config.PLOT_SAVE_FORMAT != 'png':
+            logger.warning(
+                'The html_report option is selected but PLOT_SAVE_FORMAT is '
+                'not png. Setting PLOT_SAVE_FORMAT to png.')
+            config.PLOT_SAVE_FORMAT = 'png'
+
     import matplotlib.pyplot as plt
     if not config.PLOT_SHOW:
         plt.switch_backend('Agg')

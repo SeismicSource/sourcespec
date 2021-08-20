@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>SourceSpec: {EVENTID}</title>
+    <!-- Bootstrap CSS CDN -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
+    <!-- Scrollbar Custom CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
+    <!-- Our Custom CSS -->
+    <link rel="stylesheet" href="style.css" onerror="this.onerror=null;this.href='http://cdn.jsdelivr.net/gh/SeismicSource/sourcespec/sourcespec/html_report_template/style.css';">
+    <!-- Font Awesome JS -->
+    <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/solid.js" integrity="sha384-tzzSw1/Vo+0N5UhStP3bvwWPq+uvzCMfrN1fEFe+xBmv1C/AtVX5K0uZtmcHitFZ" crossorigin="anonymous"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/fontawesome.js" integrity="sha384-6OIrr52G08NpOFSZdxxz1xdNSndlD4vdcf/q2myIUVO0VsqaGHJsB0RaBE01VTOY" crossorigin="anonymous"></script>
+    <!-- lightGallery -->
+    <script src="https://cdn.jsdelivr.net/npm/lightgallery@2.1.7/lightgallery.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.1.7/css/lightgallery-bundle.min.css">
+  </head>
+  
+  <body>
+    <div class="wrapper">
+      <span id="event_summary"></span>
+      <!-- Sidebar  -->
+      <nav id="sidebar">
+        <div class="sidebar-header">
+          <a href="https://github.com/SeismicSource/sourcespec" target="_blank">
+            <img src="http://cdn.jsdelivr.net/gh/SeismicSource/sourcespec/logo/SourceSpec_logo.png" style="max-width: 100%"/>
+          </a>
+        </div>
+        <ul class="list-unstyled components">
+          <li>
+            <a href="#event_summary">
+              <i class="fas fa-info-circle"></i>
+              &nbsp;&nbsp;
+              Event Summary
+            </a>
+          </li>
+          <li>
+            <a href="#moment_magnitude">
+              <i class="fas fa-image"></i>
+              &nbsp;&nbsp;
+              Moment Magnitude
+            </a>
+          </li>
+          <li>
+            <a href="#corner_frequency">
+              <i class="fas fa-image"></i>
+              &nbsp;&nbsp;
+              Corner Frequency
+            </a>
+          </li>
+          <li>
+            <a href="#traces">
+              <i class="fas fa-image"></i>
+              &nbsp;&nbsp;
+              Traces
+            </a>
+          </li>
+          <li>
+            <a href="#spectra">
+              <i class="fas fa-image"></i>
+              &nbsp;&nbsp;
+              Spectra
+            </a>
+          </li>
+          <li>
+            <a href="#average_source_parameters">
+              <i class="fas fa-table"></i>
+              &nbsp;&nbsp;
+              Average Source Parameteres
+            </a>
+          </li>
+          <li>
+            <a href="#station_source_parameters">
+              <i class="fas fa-table"></i>
+              &nbsp;&nbsp;
+              Station Source Parameteres
+            </a>
+          </li>
+          <li>
+            <a href="#files">
+              <i class="fas fa-file"></i>
+              &nbsp;&nbsp;
+              Files
+            </a>
+          </li>
+        </ul>
+        <div class="sidebar-footer">
+          SourceSpec {VERSION}<br/>
+          Run completed on<br/>
+          {RUN_COMPLETED}
+        </div>
+      </nav>
+
+      <!-- Page Content  -->
+      <div id="content">
+        <div id="sidebarCollapse">
+            <button type="button" class="btn btn-info">
+            <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <h2>Event Summary</h2>
+        <table class="table">
+          <tbody>
+            <tr>
+              <th scope="row">Event ID:</th>
+              <td>{EVENTID}</td>
+            </tr>
+            <tr>
+              <th scope="row">Longitude:</th>
+              <td>{EVENT_LONGITUDE} °E</td>
+            </tr>
+            <tr>
+              <th scope="row">Latitude:</th>
+              <td>{EVENT_LATITUDE} °N</td>
+            </tr>
+            <tr>
+              <th scope="row">Depth:</th>
+              <td>{EVENT_DEPTH} km</td>
+            </tr>
+            <tr>
+              <th scope="row">Origin Time:</th>
+              <td>{ORIGIN_TIME}</td>
+            </tr>
+            <tr>
+              <th scope="row">Moment Magnitude:</th>
+              <td>{MW_WEIGHT} ± {MW_WEIGHT_ERR}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="page-break"></div>
+        <div class="line" id="moment_magnitude"></div>
+        <h2>Moment Magnitude</h2>
+        <div class="item" data-src="{MAP_MAG}">
+          <img src="{MAP_MAG}" style="max-width:100%"/>
+        </div>
+          
+        <div class="page-break"></div>
+        <div class="line" id="corner_frequency"></div>
+        <h2>Corner Frequency</h2>
+        <div class="item" data-src="{MAP_FC}">
+          <img src="{MAP_FC}" style="max-width:100%"/>
+        </div>
+
+        <div class="line" id="traces"></div>
+        {TRACES_PLOTS}
+  
+        <div class="line" id="spectra"></div>
+        {SPECTRA_PLOTS}
+  
+        <div class="page-break"></div>
+        <div class="line" id="average_source_parameters"></div>
+        <h2>Average Source Parameters</h2>
+        <table class="table">
+          <tbody>
+            <tr>
+              <th scope="row">Mw</th>
+              <td>{MW} +/- {MW_ERR}</td>
+            </tr>
+            <tr>
+              <th scope="row">Mw (weighted):</th>
+              <td>{MW_WEIGHT} +/- {MW_WEIGHT_ERR}</td>
+            </tr>
+            <tr>
+              <th scope="row">Mo:</th>
+              <td>{M0} /- {M0_ERR_MINUS} /+ {M0_ERR_PLUS} N.m</td>
+            </tr>
+            <tr>
+              <th scope="row">Mo (weighted):</th>
+              <td>{M0_WEIGHT} /- {M0_WEIGHT_ERR_MINUS} /+ {M0_WEIGHT_ERR_PLUS} N.m</td>
+            </tr>
+            <tr>
+              <th scope="row">fc:</th>
+              <td>{FC} /- {FC_ERR_MINUS} /+ {FC_ERR_PLUS} Hz</td>
+            </tr>
+            <tr>
+              <th scope="row">fc (weighted):</th>
+              <td>{FC_WEIGHT} /- {FC_WEIGHT_ERR_MINUS} /+ {FC_WEIGHT_ERR_PLUS} Hz</td>
+            </tr>
+            <tr>
+              <th scope="row">t_star:</th>
+              <td>{TSTAR} +/- {TSTAR_ERR} s</td>
+            </tr>
+            <tr>
+              <th scope="row">t_star (weighted):</th>
+              <td>{TSTAR_WEIGHT} +/- {TSTAR_WEIGHT_ERR} s</td>
+            </tr>
+            <tr>
+              <th scope="row">Source Radius:</th>
+              <td>{RADIUS} /- {RADIUS_ERR_MINUS} /+ {RADIUS_ERR_PLUS} m</td>
+            </tr>
+            <tr>
+              <th scope="row">Brune Stress Drop:</th>
+              <td>{BSD} /- {BSD_ERR_MINUS} /+ {BSD_ERR_PLUS} MPa</td>
+            </tr>
+            <tr>
+              <th scope="row">Radiated Energy:</th>
+              <td>{ER} /- {ER_ERR_MINUS} /+ {ER_ERR_PLUS} N.m</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="page-break"></div>
+        <div class="line" id="station_source_parameters"></div>
+        <h2>Station Source Parameters</h2>
+        <table class="table stations">
+          <thead>
+            <tr>
+              <th scope="col">Station</th>
+              <th scope="col">Type</th>
+              <th scope="col">Mw</th>
+              <th scope="col">Corner Frequency (Hz)</th>
+              <th scope="col">t_star (s)</th>
+              <th scope="col">Seismic Moment (N.m)</th>
+              <th scope="col">Hypocentral Distance (km)</th>
+              <th scope="col">Azimuth (°)</th>
+              <th scope="col">Radiated Energy (N.m)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {STATION_TABLE_ROWS}
+          </tbody>
+        </table>
+
+        <div class="page-break"></div>
+        <div class="line" id="files"></div>
+        <h2>Files</h2>
+        <table class="table">
+          <tbody>
+            <tr>
+              <th scope="row">Configuration:</th>
+              <td>
+                <a href="{CONF_FILE}" type="text/plain">
+                  {CONF_FILE_BNAME}
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Output:</th>
+              <td>
+                <a href="{OUT_FILE}" type="text/plain">
+                  {OUT_FILE_BNAME}
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Log:</th>
+              <td>
+                <a href="{LOG_FILE}" type="text/plain">
+                  {LOG_FILE_BNAME}
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+      </div>
+    </div>
+    <!-- jQuery CDN - Slim version (=without AJAX) -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <!-- Popper.JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
+    <!-- jQuery Custom Scroller CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
+    <!-- smoothscroll-polyfill -->
+    <script src="https://cdn.jsdelivr.net/npm/smoothscroll-polyfill@0.4.4/dist/smoothscroll.min.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function () {
+          $("#sidebar").mCustomScrollbar({
+              theme: "minimal"
+          });
+      
+          $('#sidebarCollapse').on('click', function () {
+              $('#sidebar, #sidebarCollapse, #content').toggleClass('active');
+              $('.collapse.in').toggleClass('in');
+              $('a[aria-expanded=true]').attr('aria-expanded', 'false');
+          });
+      });
+      // Smooth scrolling
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+
+          document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+          });
+        });
+      });
+      
+      lightGallery(document.getElementById('content'), {
+        selector: '.item'
+      });
+    </script>
+  </body>
+</html>

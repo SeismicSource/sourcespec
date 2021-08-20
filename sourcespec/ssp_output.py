@@ -24,6 +24,7 @@ from datetime import datetime
 from pytz import reference
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import mag_to_moment
+from sourcespec.ssp_html_report import html_report
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -376,6 +377,10 @@ def write_output(config, sourcepar, sourcepar_err):
 
     # Write to hypo file, if requested
     _write_hypo(config, sourcepar)
+
+    # Write html_report, if requested
+    if config.html_report:
+        html_report(config, sourcepar, sourcepar_err)
 
     params_name = ('Mw', 'fc', 't_star')
     sourcepar_mean = dict(

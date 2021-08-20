@@ -1,0 +1,279 @@
+@import "https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700";
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #fff;
+}
+
+p {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.1em;
+  font-weight: 300;
+  line-height: 1.7em;
+  color: #999;
+}
+
+a,
+a:hover,
+a:focus {
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+table.stations {
+  font-size: 0.8em;
+}
+
+.navbar {
+  padding: 15px 10px;
+  background: #fff;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 40px;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-btn {
+  box-shadow: none;
+  outline: none !important;
+  border: none;
+}
+
+.line {
+  width: 100%;
+  height: 1px;
+  border-bottom: 1px dashed #ddd;
+  margin: 40px 0;
+}
+
+/* ---------------------------------------------------
+    SIDEBAR STYLE
+----------------------------------------------------- */
+
+.wrapper {
+  display: flex;
+  width: 100%;
+}
+
+#sidebar {
+  width: 250px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 999;
+  background: #212121;
+  color: #fff;
+  transition: all 0.3s;
+}
+
+#sidebar.active {
+  margin-left: -250px;
+}
+
+#sidebar .sidebar-header {
+  padding: 5px;
+  background: #17054F;
+  border-bottom: 4px solid #444;
+  font-size: 1.3em;
+  font-weight: bold;
+}
+
+#sidebar .sidebar-footer {
+  padding-left: 20px;
+  font-size: 0.9em;
+  color: #94AFAB;
+}
+
+#sidebar ul.components {
+  padding: 20px 0;
+}
+
+#sidebar ul p {
+  color: #fff;
+  padding: 10px;
+}
+
+#sidebar ul li a {
+  padding-top: 15px;
+  padding-bottom: 15px;
+  padding-left: 20px;
+  padding-right: 10px;
+  font-size: 1.0em;
+  display: block;
+  border-bottom: 1px solid #444;
+  color: #aaa; 
+}
+
+#sidebar ul li a:hover {
+  color: #e14d5b;
+  background: #fff;
+}
+
+#sidebar ul li.active>a,
+a[aria-expanded="true"] {
+  color: #fff;
+  background: #6d7fcc;
+}
+
+a[data-toggle="collapse"] {
+  position: relative;
+}
+
+.dropdown-toggle::after {
+  display: block;
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+}
+
+ul ul a {
+  font-size: 0.9em !important;
+  padding-left: 30px !important;
+  background: #6d7fcc;
+}
+
+ul.CTAs {
+  padding: 20px;
+}
+
+ul.CTAs a {
+  text-align: center;
+  font-size: 0.9em !important;
+  display: block;
+  border-radius: 5px;
+  margin-bottom: 5px;
+}
+
+a.download {
+  background: #fff;
+  color: #7386D5;
+}
+
+a.article,
+a.article:hover {
+  background: #6d7fcc !important;
+  color: #fff !important;
+}
+
+/* ---------------------------------------------------
+    SIDEBAR COLLAPSE BUTTON
+----------------------------------------------------- */
+
+#sidebarCollapse {
+  position: fixed;
+  top: 0;
+  left: 250px;
+  transition: all 0.3s;
+}
+#sidebarCollapse.active {
+  left: 0;
+}
+#sidebarCollapse .btn.btn-info {
+  font-size: 24px;
+  color: black;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* ---------------------------------------------------
+    CONTENT STYLE
+----------------------------------------------------- */
+
+#content {
+  width: calc(100% - 250px);
+  padding: 40px;
+  min-height: 100vh;
+  transition: all 0.3s;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+#content.active {
+  width: 100%;
+}
+
+/* ---------------------------------------------------
+    LIGHTGALLERY ITEMS
+----------------------------------------------------- */
+
+.item {
+  cursor: zoom-in;
+}
+
+/* ---------------------------------------------------
+    MEDIAQUERIES
+----------------------------------------------------- */
+
+@media (max-width: 768px) {
+  #sidebar {
+    margin-left: -250px;
+  }
+  #sidebar.active {
+    margin-left: 0;
+  }
+  #content {
+    width: 100%;
+  }
+  /* Uncomment the following if you do not want sidebar hovering content
+     on small window widths */
+  /* #content.active {
+    width: calc(100% - 250px);
+  } */
+  #sidebarCollapse span {
+    display: none;
+  }
+  #sidebarCollapse {
+    left: 0;
+  }
+  #sidebarCollapse.active {
+    left: 246px;
+  }
+  #sidebarCollapse.active .btn.btn-info {
+    font-size: 27.4px;
+    background: #17054f;
+    color: white;
+  }
+}
+
+
+/* ---------------------------------------------------
+    PRINTING
+----------------------------------------------------- */
+
+#print {
+  display: none;
+}
+.page-break {
+  display: none;
+}
+
+@page {
+  size: A4 landscape;
+}
+
+@media print {
+  #sidebarCollapse {
+    display: none;
+  }
+  #sidebar {
+    margin-left: -250px;
+  }
+  #content {
+    width: 100%;
+  }
+  #print {
+    display: block;
+  }
+  .line {
+    display: none;
+  }
+  .page-break {
+    display: block;
+    page-break-before: always;
+  }
+}
