@@ -606,6 +606,11 @@ def init_plotting(config):
                 'The html_report option is selected but PLOT_SAVE_FORMAT is '
                 'not png. Setting PLOT_SAVE_FORMAT to png.')
             config.PLOT_SAVE_FORMAT = 'png'
+        if not config.plot_station_map:
+            logger.warning(
+                'The html_report option is selected but plot_station_map '
+                'is False. Setting plot_station_map to True.')
+            config.plot_station_map = True
 
     import matplotlib.pyplot as plt
     if not config.PLOT_SHOW:
