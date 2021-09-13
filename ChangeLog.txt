@@ -6,7 +6,7 @@ Earthquake source parameters from S-wave displacement spectra
               Agnès Chounet <chounet@ipgp.fr>
 (c) 2015-2021 Claudio Satriano <satriano@ipgp.fr>
 
-unreleased:
+v1.31 - 2021-09-13
 	- Fix for HTML report not showing trace and spectral plots
 	- HTML report: add Corner Frequency in Event Summary
 
