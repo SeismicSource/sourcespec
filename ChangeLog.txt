@@ -8,6 +8,7 @@ Earthquake source parameters from S-wave displacement spectra
 
 unreleased:
 	- Fix for HTML report not showing trace and spectral plots
+	- HTML report: add Corner Frequency in Event Summary
 
 v1.3 - 2021-08-20
 	- HTML reports
