@@ -194,7 +194,7 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
         textstr += 'Mw {:.2f} ± {:.2f}'.format(vmean, verr)
     elif vname == 'fc':
         verr_minus, verr_plus = verr
-        textstr += 'fc {:.2f} - {:.2f} + {:.2f} Hz'.format(
+        textstr += 'fc {:.3f} [- {:.3f}, + {:.3f}] Hz'.format(
             vmean, verr_minus, verr_plus)
     ax.text(0., 1.22, textstr, fontsize=14,
             ha='left', va='top', transform=ax.transAxes)
