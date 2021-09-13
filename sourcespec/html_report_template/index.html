@@ -18,7 +18,7 @@
     <script src="https://cdn.jsdelivr.net/npm/lightgallery@2.1.7/lightgallery.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.1.7/css/lightgallery-bundle.min.css">
   </head>
-  
+
   <body>
     <div class="wrapper">
       <span id="event_summary"></span>
@@ -142,7 +142,7 @@
         <div class="item" data-src="{MAP_MAG}">
           <img src="{MAP_MAG}" style="max-width:100%"/>
         </div>
-          
+
         <div class="page-break"></div>
         <div class="line" id="corner_frequency"></div>
         <h2>Corner Frequency</h2>
@@ -152,10 +152,10 @@
 
         <div class="line" id="traces"></div>
         {TRACES_PLOTS}
-  
+
         <div class="line" id="spectra"></div>
         {SPECTRA_PLOTS}
-  
+
         <div class="page-break"></div>
         <div class="line" id="average_source_parameters"></div>
         <h2>Average Source Parameters</h2>
@@ -261,7 +261,7 @@
             </tr>
           </tbody>
         </table>
-        
+
       </div>
     </div>
     <!-- jQuery CDN - Slim version (=without AJAX) -->
@@ -279,7 +279,7 @@
           $("#sidebar").mCustomScrollbar({
               theme: "minimal"
           });
-      
+
           $('#sidebarCollapse').on('click', function () {
               $('#sidebar, #sidebarCollapse, #content').toggleClass('active');
               $('.collapse.in').toggleClass('in');
@@ -296,7 +296,7 @@
           });
         });
       });
-      
+
       lightGallery(document.getElementById('content'), {
         selector: '.item'
       });
