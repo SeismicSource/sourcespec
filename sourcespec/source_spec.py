@@ -28,6 +28,7 @@ from sourcespec.ssp_output import write_output
 from sourcespec.ssp_residuals import spectral_residuals
 from sourcespec.ssp_plot_spectra import plot_spectra
 from sourcespec.ssp_plot_traces import plot_traces
+from sourcespec.ssp_html_report import html_report
 
 
 def main():
@@ -79,6 +80,9 @@ def main():
         # We import here, cause we check for Cartopy at runtime
         from sourcespec.ssp_plot_stations import plot_stations
         plot_stations(config, sourcepar)
+
+    if config.html_report:
+        html_report(config, sourcepar, sourcepar_err)
 
     ssp_exit()
 

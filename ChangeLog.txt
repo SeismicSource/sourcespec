@@ -7,6 +7,10 @@ Earthquake source parameters from S-wave displacement spectra
 (c) 2015-2021 Claudio Satriano <satriano@ipgp.fr>
 
 unreleased:
+	- Fix for HTML report not showing trace and spectral plots
+
+v1.3 - 2021-08-20
+	- HTML reports
 	- Option to provide station-specific spectral windowing
 
 v1.2 - 2021-05-20
