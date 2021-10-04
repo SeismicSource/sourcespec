@@ -3,6 +3,9 @@
 from setuptools import setup
 import versioneer
 
+with open('README.md', 'rb') as f:
+    long_descr = f.read().decode('utf-8')
+
 setup(
     name='sourcespec',
     packages=['sourcespec', 'sourcespec.configobj', 'sourcespec.adjustText'],
@@ -17,12 +20,11 @@ setup(
     cmdclass=versioneer.get_cmdclass(),
     description='Earthquake source parameters from S-wave '
                 'displacement spectra',
-    long_description='Earthquake source parameters from S-wave '
-                'displacement spectra',
+    long_description=long_descr,
     long_description_content_type='text/markdown',
     author='Claudio Satriano',
     author_email='satriano@ipgp.fr',
-    url='http://www.ipgp.fr/~satriano',
+    url='https://sourcespec.readthedocs.io',
     license='CeCILL Free Software License Agreement, Version 2.1',
     platforms='OS Independent',
     classifiers=[
