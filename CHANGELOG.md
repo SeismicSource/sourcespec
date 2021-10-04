@@ -10,6 +10,11 @@ Earthquake source parameters from S-wave displacement spectra
 (c) 2015-2021 Claudio Satriano <satriano@ipgp.fr>
 
 
+## unreleased
+  - Change default inversion algorithm to TNC (truncated
+    Newton algorithm)
+
+
 ## v1.31 - 2021-09-13
   - Fix for HTML report not showing trace and spectral plots
   - HTML report: add Corner Frequency in Event Summary
