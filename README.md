@@ -96,3 +96,12 @@ A very incomplete documentation can be found at
 Several sample runs are available in the
 [sourcespec_testruns](https://github.com/SeismicSource/sourcespec_testruns)
 repository.
+
+## How to cite
+
+If you used SourceSpec for a scientific paper, please cite it as:
+
+> Satriano, C. (2021). SourceSpec – Earthquake source parameters from S-wave
+> displacement spectra (X.XX). https://doi.org/10.5281/ZENODO.3688587
+
+Please replace "X.XX" with the SourceSpec version number you used.
