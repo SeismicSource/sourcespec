@@ -102,6 +102,6 @@ repository.
 If you used SourceSpec for a scientific paper, please cite it as:
 
 > Satriano, C. (2021). SourceSpec – Earthquake source parameters from S-wave
-> displacement spectra (X.XX). https://doi.org/10.5281/ZENODO.3688587
+> displacement spectra (X.Y). https://doi.org/10.5281/ZENODO.3688587
 
-Please replace "X.XX" with the SourceSpec version number you used.
+Please replace `X.Y` with the SourceSpec version number you used.
