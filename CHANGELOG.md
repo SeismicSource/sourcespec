@@ -14,6 +14,7 @@ Earthquake source parameters from S-wave displacement spectra
   - New config option `rps_from_focal_mechanism` to compute station-specific
     S-wave radiation pattern from focal mechanism, if a focal mechanism is
     available in the QuakeML file
+  - Plot the focal mechanism on maps, if it is available
   - Change default inversion algorithm to TNC (truncated
     Newton algorithm)
   - Config option `dataless` renamed to `station_metadata`

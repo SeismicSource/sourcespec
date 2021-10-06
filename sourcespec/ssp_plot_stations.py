@@ -17,6 +17,7 @@ import numpy as np
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
 import cartopy.feature as cfeature
+from obspy.imaging.beachball import beach
 from sourcespec.adjustText import adjust_text
 from pyproj import Geod
 from sourcespec.cached_tiler import CachedTiler
@@ -104,10 +105,6 @@ def _shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shifted'):
 def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
     geodetic_transform = ccrs.PlateCarree()
     g = Geod(ellps='WGS84')
-    ax.plot(evlon, evlat, marker='*', markersize=20,
-            markeredgewidth=1, markeredgecolor='white',
-            color='k', transform=geodetic_transform,
-            zorder=10)
     step = _round(maxdist/ncircles)
     if step == 0:
         step = 1
@@ -133,6 +130,34 @@ def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
         ])
         texts.append(t)
     return texts
+
+
+def _plot_hypo(ax, hypo):
+    geodetic_transform = ccrs.PlateCarree()
+    try:
+        strike = hypo.strike
+        dip = hypo.dip
+        rake = hypo.rake
+        xy = ax.projection.transform_point(
+            hypo.longitude, hypo.latitude, geodetic_transform)
+        meca = beach(
+            (strike, dip, rake),
+            xy=xy,
+            width=30,
+            linewidth=1,
+            facecolor='k',
+            zorder=10,
+            axes=ax
+        )
+        ax.add_collection(meca)
+    except AttributeError:
+        # plot hypocenter as a star
+        ax.plot(
+            hypo.longitude, hypo.latitude, marker='*', markersize=20,
+            markeredgewidth=1, markeredgecolor='white',
+            color='k', transform=geodetic_transform,
+            zorder=10
+        )
 
 
 def _make_basemap(config, maxdist):
@@ -178,6 +203,7 @@ def _make_basemap(config, maxdist):
         facecolor='none')
     ax.add_feature(countries, edgecolor='k')
     circle_texts = _plot_circles(ax, hypo.longitude, hypo.latitude, maxdist, 5)
+    _plot_hypo(ax, hypo)
     return ax, circle_texts
 
 
