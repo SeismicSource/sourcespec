@@ -27,6 +27,7 @@ from sourcespec import spectrum
 from sourcespec.ssp_util import smooth, cosine_taper, moment_to_mag, get_vel
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
+from sourcespec.ssp_radiation_pattern import get_radiation_pattern_coefficient
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -202,7 +203,9 @@ def _displacement_to_moment(stats, config):
     vs_hypo *= 1000.
     vs_station *= 1000.
     vs3 = vs_hypo**(5./2) * vs_station**(1./2)
-    return 4 * math.pi * vs3 * config.rho / (2 * config.rps)
+    rps = get_radiation_pattern_coefficient(stats, config)
+    coeff = 4 * math.pi * vs3 * config.rho / (2 * rps)
+    return coeff
 
 
 def _smooth_spectrum(spec, npts=5):
@@ -238,6 +241,9 @@ def _build_spectrum(config, trace):
     # convert to seismic moment
     coeff = _displacement_to_moment(stats, config)
     spec.data *= coeff
+    # store coeff to correct back data in displacement units
+    # for radiated_energy()
+    spec.coeff = coeff
     # smooth
     _smooth_spectrum(spec, npts=5)
     return spec

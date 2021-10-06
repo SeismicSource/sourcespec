@@ -40,7 +40,6 @@ from obspy import read_inventory
 from obspy.core.inventory import Inventory
 from obspy.io.sac import attach_paz
 from obspy.core import Trace
-from obspy.geodetics import gps2dist_azimuth
 from obspy import read_events
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import get_vel
@@ -346,10 +345,6 @@ def _add_hypocenter(trace, hypo):
         hypo.longitude = evlo
         hypo.depth = evdp
     trace.stats.hypo = hypo
-    _, _, baz = gps2dist_azimuth(
-        hypo.latitude, hypo.longitude,
-        trace.stats.coords.latitude, trace.stats.coords.longitude)
-    trace.stats.back_azimuth = baz
 
 
 def _add_picks(trace, picks):
@@ -552,8 +547,18 @@ def _parse_qml(qml_file, evid=None):
     hypo.depth = origin.depth/1000.
     hypo.evid = ev.resource_id.id.split('/')[-1]
 
-    picks = []
+    # See if there is a focal mechanism with nodal planes
+    try:
+        fm = ev.focal_mechanisms[0]
+        nodal_plane = fm.nodal_planes.nodal_plane_1
+        hypo.strike = nodal_plane.strike
+        hypo.dip = nodal_plane.dip
+        hypo.rake = nodal_plane.rake
+        logger.info('Found focal mechanism in QuakeML file')
+    except Exception:
+        pass
 
+    picks = []
     for pck in ev.picks:
         pick = Pick()
         pick.station = pck.waveform_id.station_code

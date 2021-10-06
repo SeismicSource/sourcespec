@@ -34,12 +34,10 @@ def radiated_energy(config, spec_st, sourcepar):
         freq = spec.get_freq()
         rho = config.rho
         vs = config.hypo.vs * 1000.
-        rps = config.rps
         # Data is in moment units. Let's put it back to displacement units,
         # and derive it to velocity through multiplication by 2*pi*freq:
         # (2. is the free-surface amplification factor)
-        coeff = 4 * np.pi * vs**3 * rho / (rps * 2.)
-        data = (spec.data/coeff) * (2*np.pi*freq)
+        data = (spec.data/spec.coeff) * (2*np.pi*freq)
         # Correct data for attenuation:
         data *= np.exp(np.pi * t_star * freq)
         # Compute the energy integral, up to fmax:

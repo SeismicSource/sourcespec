@@ -18,6 +18,7 @@ import warnings
 import math
 import numpy as np
 from obspy.signal.invsim import cosine_taper as _cos_taper
+from obspy.geodetics import gps2dist_azimuth, kilometers2degrees
 from sourcespec.ssp_setup import ssp_exit
 logger = logging.getLogger(__name__.split('.')[-1])
 
@@ -168,24 +169,6 @@ def toDeg(radians):
     return degrees
 
 
-def calc_dist(lat1, lon1, lat2, lon2):
-    """
-    Distance between two point on the earth, in kilometers.
-
-    Haversine formula:
-    http://www.movable-type.co.uk/scripts/latlong.html
-    """
-    R = 6371  # km
-    dLat = toRad(lat2-lat1)
-    dLon = toRad(lon2-lon1)
-    a = math.sin(dLat/2) * math.sin(dLat/2) + \
-        math.cos(toRad(lat1)) * math.cos(toRad(lat2)) * \
-        math.sin(dLon/2) * math.sin(dLon/2)
-    gcarc = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-    dist = R * gcarc
-    return dist, toDeg(gcarc)
-
-
 def hypo_dist(trace):
     """Compute hypocentral and epicentral distance (in km) for a trace."""
     try:
@@ -203,8 +186,14 @@ def hypo_dist(trace):
     evdp = hypo.depth
     if None in (stla, stlo, stel, evla, evlo, evdp):
         return None
-    epi_dist, gcarc = calc_dist(stla, stlo, evla, evlo)
+    epi_dist, az, baz = gps2dist_azimuth(
+        hypo.latitude, hypo.longitude,
+        trace.stats.coords.latitude, trace.stats.coords.longitude)
+    epi_dist /= 1e3   # in km
+    gcarc = kilometers2degrees(epi_dist)
     hypo_dist = math.sqrt(epi_dist**2 + (stel+evdp)**2)
+    trace.stats.azimuth = az
+    trace.stats.back_azimuth = baz
     trace.stats.epi_dist = epi_dist
     trace.stats.hypo_dist = hypo_dist
     trace.stats.gcarc = gcarc
