@@ -103,14 +103,14 @@ def _correct_station_name(station, traceid_file):
     return correct_station
 
 
-def _add_paz_and_coords(trace, dataless, paz_dict=None):
+def _add_paz_and_coords(trace, metadata, paz_dict=None):
     trace.stats.paz = None
     trace.stats.coords = None
     traceid = trace.get_id()
     time = trace.stats.starttime
-    # We first look into the dataless dictionary, if available
-    if isinstance(dataless, dict):
-        for sp in dataless.values():
+    # We first check whether metadata is a dataless dictionary
+    if isinstance(metadata, dict):
+        for sp in metadata.values():
             # Check first if our traceid is in the dataless file
             if traceid not in str(sp):
                 continue
@@ -120,31 +120,31 @@ def _add_paz_and_coords(trace, dataless, paz_dict=None):
             except SEEDParserException as err:
                 logger.error('%s time: %s' % (err, str(time)))
                 pass
-    elif isinstance(dataless, Inventory):
+    elif isinstance(metadata, Inventory):
         try:
             with warnings.catch_warnings(record=True) as warns:
                 # get_sacpz() can issue warnings on more than one PAZ found,
                 # so let's catch those warnings and log them properly
-                sacpz = dataless.get_response(traceid, time).get_sacpz()
+                sacpz = metadata.get_response(traceid, time).get_sacpz()
                 for w in warns:
                     message = str(w.message)
                     logger.warning('%s: %s' % (traceid, message))
             attach_paz(trace, io.StringIO(sacpz))
             paz = trace.stats.paz
-            coords = AttribDict(dataless.get_coordinates(traceid, time))
+            coords = AttribDict(metadata.get_coordinates(traceid, time))
         except Exception as err:
             logger.error('%s traceid: %s time: %s' % (err, traceid, str(time)))
             pass
     try:
         trace.stats.paz = paz
-        # elevation is in meters in the dataless
+        # elevation is in meters
         coords.elevation /= 1000.
         trace.stats.coords = coords
     except Exception:
         pass
-    # If we couldn't find any PAZ in the dataless dictionary,
-    # we try to attach paz from the paz dictionary passed
-    # as argument
+    # If we couldn't find any PAZ in the dataless dictionary
+    # or in the Inventory, we try to attach paz from the paz dictionary
+    # passed as argument
     if trace.stats.paz is None and paz_dict is not None:
         # Look for traceid or for a generic paz
         net, sta, loc, chan = trace.id.split('.')
@@ -434,7 +434,7 @@ def _complete_picks(st):
 
 
 # FILE PARSING ----------------------------------------------------------------
-def _read_dataless(path):
+def _read_metadata(path):
     if path is None:
         return None
 
@@ -449,19 +449,19 @@ def _read_dataless(path):
             logger.error(err)
             ssp_exit()
 
-    logger.info('Reading dataless...')
-    dataless = dict()
+    logger.info('Reading station metadata...')
+    metadata = dict()
     if os.path.isdir(path):
         listing = os.listdir(path)
         for filename in listing:
             fullpath = os.path.join(path, filename)
             try:
-                dataless[filename] = Parser(fullpath)
+                metadata[filename] = Parser(fullpath)
             except Exception:
                 continue
         # TODO: manage the case in which "path" is a file name
-    logger.info('Reading dataless: done')
-    return dataless
+    logger.info('Reading station metadata: done')
+    return metadata
 
 
 def _read_paz(path):
@@ -813,8 +813,8 @@ def _set_pick_file_path(config):
 # Public interface:
 def read_traces(config):
     """Read traces, store waveforms and metadata."""
-    # read dataless
-    dataless = _read_dataless(config.dataless)
+    # read metadata
+    metadata = _read_metadata(config.station_metadata)
     # read PAZ (normally this is an alternative to dataless)
     paz = _read_paz(config.paz)
 
@@ -851,7 +851,7 @@ def read_traces(config):
             for trace in tmpst.traces:
                 st.append(trace)
                 trace.stats.format = config.trace_format
-                _add_paz_and_coords(trace, dataless, paz)
+                _add_paz_and_coords(trace, metadata, paz)
                 _add_hypocenter(trace, hypo)
                 _add_picks(trace, picks)  # FIXME: actually add picks!
                 # _add_instrtype(trace)
@@ -897,7 +897,7 @@ def read_traces(config):
                 trace.stats.format = config.trace_format
                 _correct_traceid(trace, config.traceid_mapping_file)
                 try:
-                    _add_paz_and_coords(trace, dataless, paz)
+                    _add_paz_and_coords(trace, metadata, paz)
                     _add_instrtype(trace, config)
                     _add_hypocenter(trace, hypo)
                     _add_picks(trace, picks)

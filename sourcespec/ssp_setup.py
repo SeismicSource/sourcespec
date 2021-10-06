@@ -404,6 +404,7 @@ def _update_config_file(config_file):
         'traceids': 'traceid_mapping_file',
         'ignore_stations': 'ignore_traceids',
         'use_stations': 'use_traceids',
+        'dataless': 'station_metadata',
     }
     for old_opt, new_opt in migrate_options.items():
         if old_opt in config_obj:
@@ -478,6 +479,14 @@ def configure(progname='source_spec'):
             'Error: "ignore_stations" and "use_stations" config parameters '
             'have been renamed to\n"ignore_traceids" and "use_traceids", '
             'respectively.\n\n'
+            'Please upgrade your config file manually or '
+            'via the "-U" option.\n'
+        )
+        sys.exit(1)
+    if 'dataless' in config_obj:
+        sys.stderr.write(
+            'Error: "dataless" config parameter has been renamed to '
+            '"station_metadata".\n\n'
             'Please upgrade your config file manually or '
             'via the "-U" option.\n'
         )
