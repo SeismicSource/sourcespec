@@ -697,7 +697,7 @@ def _parse_picks(config):
         pick = Pick()
         pick.station = line[0:4].strip()
         pick.station = \
-            _correct_station_name(pick.station, config.traceids)
+            _correct_station_name(pick.station, config.traceid_mapping_file)
         pick.flag = line[4:5]
         pick.phase = line[5:6]
         pick.polarity = line[6:7]
@@ -895,7 +895,7 @@ def read_traces(config):
                     if not trace.stats.station == config.options.station:
                         continue
                 trace.stats.format = config.trace_format
-                _correct_traceid(trace, config.traceids)
+                _correct_traceid(trace, config.traceid_mapping_file)
                 try:
                     _add_paz_and_coords(trace, dataless, paz)
                     _add_instrtype(trace, config)

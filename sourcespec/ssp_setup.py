@@ -402,6 +402,9 @@ def _update_config_file(config_file):
     # Migrate 's_win_length' to 'win_length'
     if 's_win_length' in config_obj:
         config_new['win_length'] = config_obj['s_win_length']
+    # Migrate 'traceids' to 'traceid_mapping_file'
+    if 'traceids' in config_obj:
+        config_new['traceid_mapping_file'] = config_obj['traceids']
     shutil.copyfile(config_file, config_file_old)
     with open(config_file, 'wb') as fp:
         config_new.write(fp)
@@ -455,7 +458,16 @@ def configure(progname='source_spec'):
         sys.stderr.write(
             'Error: "s_win_length" and "noise_win_length" config parameters '
             'are no more\nsupported. Both are replaced by "win_length".\n\n'
-            'Consider upgrading your config file via the "-U" option.\n'
+            'Please upgrade your config file manually or '
+            'via the "-U" option.\n'
+        )
+        sys.exit(1)
+    if 'traceids' in config_obj:
+        sys.stderr.write(
+            'Error: "traceids" config parameter has been renamed to '
+            '"traceid_mapping_file".\n\n'
+            'Please upgrade your config file manually or '
+            'via the "-U" option.\n'
         )
         sys.exit(1)
 
