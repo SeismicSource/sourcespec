@@ -399,12 +399,15 @@ def _update_config_file(config_file):
         if k not in config_new:
             continue
         config_new[k] = v
-    # Migrate 's_win_length' to 'win_length'
-    if 's_win_length' in config_obj:
-        config_new['win_length'] = config_obj['s_win_length']
-    # Migrate 'traceids' to 'traceid_mapping_file'
-    if 'traceids' in config_obj:
-        config_new['traceid_mapping_file'] = config_obj['traceids']
+    migrate_options = {
+        's_win_length': 'win_length',
+        'traceids': 'traceid_mapping_file',
+        'ignore_stations': 'ignore_traceids',
+        'use_stations': 'use_traceids',
+    }
+    for old_opt, new_opt in migrate_options.items():
+        if old_opt in config_obj:
+            config_new[new_opt] = config_obj[old_opt]
     shutil.copyfile(config_file, config_file_old)
     with open(config_file, 'wb') as fp:
         config_new.write(fp)
@@ -466,6 +469,15 @@ def configure(progname='source_spec'):
         sys.stderr.write(
             'Error: "traceids" config parameter has been renamed to '
             '"traceid_mapping_file".\n\n'
+            'Please upgrade your config file manually or '
+            'via the "-U" option.\n'
+        )
+        sys.exit(1)
+    if 'ignore_stations' in config_obj or 'use_stations' in config_obj:
+        sys.stderr.write(
+            'Error: "ignore_stations" and "use_stations" config parameters '
+            'have been renamed to\n"ignore_traceids" and "use_traceids", '
+            'respectively.\n\n'
             'Please upgrade your config file manually or '
             'via the "-U" option.\n'
         )

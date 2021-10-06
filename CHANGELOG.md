@@ -14,6 +14,8 @@ Earthquake source parameters from S-wave displacement spectra
   - Change default inversion algorithm to TNC (truncated
     Newton algorithm)
   - Config option `traceids` renamed to `traceid_mapping_file`
+  - Config options `ignore_stations` and `use_stations` renamed to
+    `ignore_traceids` and `use_traceids`, respectively
 
 
 ## v1.31 - 2021-09-13

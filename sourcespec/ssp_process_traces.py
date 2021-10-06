@@ -272,19 +272,19 @@ def process_traces(config, st):
         ss.append('.'.join((network, station)))
         ss.append('.'.join((network, station, location)))
         ss.append('.'.join((network, station, location, channel)))
-        if config.use_stations is not None:
+        if config.use_traceids is not None:
             combined = (
-                "(" + ")|(".join(config.use_stations) + ")"
+                "(" + ")|(".join(config.use_traceids) + ")"
                 ).replace('.', '\.')
             if not any(re.match(combined, s) for s in ss):
-                logger.warning('%s: ignored from config file' % id)
+                logger.warning('{}: ignored from config file'.format(id))
                 continue
-        if config.ignore_stations is not None:
+        if config.ignore_traceids is not None:
             combined = (
-                "(" + ")|(".join(config.ignore_stations) + ")"
+                "(" + ")|(".join(config.ignore_traceids) + ")"
                 ).replace('.', '\.')
             if any(re.match(combined, s) for s in ss):
-                logger.warning('%s: ignored from config file' % id)
+                logger.warning('{}: ignored from config file'.format(id))
                 continue
         try:
             _add_hypo_dist_and_arrivals(config, st_sel)
