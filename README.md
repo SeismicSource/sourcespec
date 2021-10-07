@@ -73,7 +73,7 @@ You don't need to uncompress the release files yourself.
 ### From SourceSpec GitHub repository
 
 If you need a recent feature that is not in the latest release (see the
-`unreleased` section in [ChangeLog](ChangeLog.txt)), you want to use the source
+`unreleased` section in [CHANGELOG](CHANGELOG.md)), you want to use the source
 code from the SourceSpec GitHub repository.
 
 For that, clone the project:

@@ -8,8 +8,8 @@ with open('README.md', 'rb') as f:
         'logo/SourceSpec_logo.png',
         'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec/logo/SourceSpec_logo.png'
     ).replace(
-        '(ChangeLog.txt)',
-        '(https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec/ChangeLog.txt)'
+        '(CHANGELOG.md)',
+        '(https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec/CHANGELOG.md)'
     )
 
 setup(
