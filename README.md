@@ -74,7 +74,8 @@ You don't need to uncompress the release files yourself.
 
 If you need a recent feature that is not in the latest release (see the
 `unreleased` section in [CHANGELOG](CHANGELOG.md)), you want to use the source
-code from the SourceSpec GitHub repository.
+code from the
+[SourceSpec GitHub repository](https://github.com/SeismicSource/sourcespec).
 
 For that, clone the project:
 
