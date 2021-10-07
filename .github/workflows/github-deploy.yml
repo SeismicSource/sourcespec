@@ -1,0 +1,39 @@
+name: Build wheel and deploy to PyPI
+
+on: [push, pull_request]
+
+jobs:
+  dist:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Build wheel and SDist
+      run: pipx run build
+
+    - uses: actions/upload-artifact@v2
+      with:
+        path: dist/*
+
+    - name: Check metadata
+      run: pipx run twine check dist/*
+
+
+  publish:
+    needs: [dist]
+    runs-on: ubuntu-latest
+    # upload to PyPI on every tag starting with 'v'
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+    # alternatively, to publish when a GitHub Release is created, use the following rule:
+    # if: github.event_name == 'release' && github.event.action == 'published'
+
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: artifact
+        path: dist
+
+    - uses: pypa/gh-action-pypi-publish@v1.4.2
+      with:
+        user: claudiodsf
+        password: ${{ secrets.pypi_password }}
