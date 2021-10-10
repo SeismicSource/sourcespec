@@ -1,4 +1,4 @@
-include ChangeLog.txt
+include CHANGELOG.md
 include README.md
 include LICENSE.txt
 include CONTRIBUTORS.txt
