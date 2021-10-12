@@ -339,7 +339,10 @@ def plot_stations(config, sourcepar):
     lonlat_dist = np.array([
         (sourcepar[k]['lon'], sourcepar[k]['lat'], sourcepar[k]['epi_dist'])
         for k in st_ids])
-    _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03)
+    maxdist = np.max(lonlat_dist[:, 2])
+    # empirical rule to define overlapping station spread
+    spread = maxdist/4e3
+    _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=spread)
     mag = np.array([sourcepar[k]['Mw'] for k in st_ids])
     magmean = sourcepar['means_weight']['Mw']
     magerr = sourcepar['errors_weight']['Mw']
