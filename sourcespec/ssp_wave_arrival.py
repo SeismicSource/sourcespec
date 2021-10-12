@@ -15,54 +15,86 @@ import os
 from glob import glob
 import logging
 import warnings
-from sourcespec.ssp_setup import ssp_exit
+from math import asin, degrees
 from obspy.taup import TauPyModel
 model = TauPyModel(model='iasp91')
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
-def _wave_arrival_nll(trace, phase, NLL_time_dir):
-    """Arrival time using a NLL grid."""
-    if trace.stats.hypo.origin_time is None:
-        return
+def _get_nll_grd(phase, station, type, NLL_time_dir):
+    # Lazy-import here, since nllgrid is not an installation requirement
+    from nllgrid import NLLGrid
+    for _station in station, 'DEFAULT':
+        key = '{}_{}_{}'.format(phase, _station, type)
+        try:
+            # first try to lookup in cache
+            grd = _get_nll_grd.grds[key]
+            return grd
+        except KeyError:
+            pass
+        try:
+            grdfile = '*.{}.{}.{}.hdr'.format(phase, _station, type)
+            grdfile = os.path.join(NLL_time_dir, grdfile)
+            grdfile = glob(grdfile)[0]
+            grd = NLLGrid(grdfile)
+            # cache NLL grid
+            _get_nll_grd.grds[key] = grd
+            return grd
+        except IndexError:
+            # IndexError from glob()[0]
+            pass
+    raise RuntimeError
+
+
+# dictionary to cache NLL grids
+_get_nll_grd.grds = dict()
+
+
+def _wave_arrival_nll(trace, phase, NLL_time_dir, focmec):
+    """Travel time and takeoff angle using a NLL grid."""
     if NLL_time_dir is None:
-        return
-    try:
-        from nllgrid import NLLGrid
-    except ImportError:
-        logger.error('Error: the "nllgrid" python module is required '
-                     'for "NLL_time_dir".')
-        ssp_exit()
-    grdfile = '*.{}.{}.time.hdr'.format(phase, trace.stats.station)
-    grdfile = os.path.join(NLL_time_dir, grdfile)
-    try:
-        grdfile = glob(grdfile)[0]
-    except IndexError:
-        return
-    grd = NLLGrid(grdfile)
-    if grd.type != 'TIME':
-        return
-    hypo_x, hypo_y = grd.project(trace.stats.hypo.longitude,
-                                 trace.stats.hypo.latitude)
-    hypo_z = trace.stats.hypo.depth
-    tt = grd.get_value(hypo_x, hypo_y, hypo_z)
-    return trace.stats.hypo.origin_time + tt
+        raise RuntimeError
+    station = trace.stats.station
+    travel_time = takeoff_angle = None
+    grdtypes = ['time']
+    if focmec:
+        grdtypes.append('angle')
+    for type in grdtypes:
+        try:
+            grd = _get_nll_grd(phase, station, type, NLL_time_dir)
+        except RuntimeError:
+            logger.warning(
+                '{}: Cannot find NLL {} grid. '
+                'Falling back to another method'.format(trace.id, type))
+            raise RuntimeError
+        if grd.station == 'DEFAULT':
+            sta_x, sta_y = grd.project(
+                trace.stats.coords.longitude, trace.stats.coords.latitude)
+            grd.sta_x, grd.sta_y = sta_x, sta_y
+        hypo_x, hypo_y = grd.project(
+            trace.stats.hypo.longitude, trace.stats.hypo.latitude)
+        hypo_z = trace.stats.hypo.depth
+        if type == 'time':
+            travel_time = grd.get_value(hypo_x, hypo_y, hypo_z)
+        elif type == 'angle':
+            azimuth, takeoff_angle, quality = grd.get_value(
+                hypo_x, hypo_y, hypo_z)
+    return travel_time, takeoff_angle
 
 
 def _wave_arrival_vel(trace, phase, vel):
-    """Arrival time using a constant velocity (in km/s)."""
-    if trace.stats.hypo.origin_time is None:
-        return
+    """Travel time and takeoff angle using a constant velocity (in km/s)."""
     if vel is None:
-        return
-    tt = trace.stats.hypo_dist / vel
-    return trace.stats.hypo.origin_time + tt
+        raise RuntimeError
+    travel_time = trace.stats.hypo_dist / vel
+    takeoff_angle = degrees(asin(trace.stats.epi_dist/trace.stats.hypo_dist))
+    # takeoff angle is 180° upwards and 0° downwards
+    takeoff_angle = 180. - takeoff_angle
+    return travel_time, takeoff_angle
 
 
 def _wave_arrival_taup(trace, phase):
-    """Arrival time using taup."""
-    if trace.stats.hypo.origin_time is None:
-        return
+    """Travel time and takeoff angle using taup."""
     phase_list = [phase.lower(), phase]
     with warnings.catch_warnings(record=True) as warns:
         try:
@@ -82,8 +114,11 @@ def _wave_arrival_taup(trace, phase):
             if '#2280' in message:
                 continue
             logger.warning(message)
-    tt = min(a.time for a in arrivals)
-    return trace.stats.hypo.origin_time + tt
+    # get first arrival
+    first_arrival = sorted(arrivals, key=lambda a: a.time)[0]
+    travel_time = first_arrival.time
+    takeoff_angle = first_arrival.takeoff_angle
+    return travel_time, takeoff_angle
 
 
 def _validate_pick(pick, theo_pick_time, tolerance, trace_id):
@@ -91,35 +126,61 @@ def _validate_pick(pick, theo_pick_time, tolerance, trace_id):
         return True
     delta_t = pick.time - theo_pick_time
     if abs(delta_t) > tolerance:  # seconds
-        msg = '%s: measured %s pick time - theoretical time = %.1f s.' %\
-              (trace_id, pick.phase, delta_t)
-        logger.warning(msg)
+        logger.warning(
+            '{}: measured {} pick time - theoretical time = {:.1f} s'.format(
+                trace_id, pick.phase, delta_t
+            ))
         return False
     return True
 
 
-def wave_arrival(trace, phase, tolerance=4., vel=None, NLL_time_dir=None):
+def add_arrivals_to_trace(trace, config):
     """
-    Obtain arrival time for a given phase and a given trace.
+    Add P and S arrival times and takeoff angles to trace.
 
-    Returns the theoretical arrival time if no pick is available
+    Uses the theoretical arrival time if no pick is available
     or if the pick is too different from the theoretical arrival.
     """
-    try:
-        arrival = trace.stats.arrivals[phase][1]
-        return arrival
-    except KeyError:
-        pass
-    theo_pick_time = _wave_arrival_nll(trace, phase, NLL_time_dir)
-    if theo_pick_time is None:
-        theo_pick_time = _wave_arrival_vel(trace, phase, vel)
-    if theo_pick_time is None:
-        theo_pick_time = _wave_arrival_taup(trace, phase)
-    for pick in (p for p in trace.stats.picks if p.phase == phase):
-        if _validate_pick(pick, theo_pick_time, tolerance, trace.id):
-            logger.info('%s: found %s pick' % (trace.id, phase))
-            trace.stats.arrivals[phase] = (phase, pick.time)
-            return pick.time
-    logger.info('%s: using theoretical %s pick' % (trace.id, phase))
-    trace.stats.arrivals[phase] = (phase + 'theo', theo_pick_time)
-    return theo_pick_time
+    tolerance = config.p_arrival_tolerance
+    NLL_time_dir = config.NLL_time_dir
+    vel = {'P': config.vp_tt, 'S': config.vs_tt}
+    focmec = config.rps_from_focal_mechanism
+    for phase in 'P', 'S':
+        try:
+            travel_time, takeoff_angle = _wave_arrival_nll(
+                trace, phase, NLL_time_dir, focmec)
+            method = 'NonLinLoc grid'
+        except RuntimeError:
+            try:
+                travel_time, takeoff_angle = _wave_arrival_vel(
+                    trace, phase, vel[phase])
+                method = 'constant V{}: {:.1f} km/s'.format(
+                    phase.lower(), vel[phase])
+            except RuntimeError:
+                try:
+                    travel_time, takeoff_angle = _wave_arrival_taup(
+                        trace, phase)
+                    method = 'global velocity model (iasp91)'
+                except RuntimeError:
+                    return
+        if trace.stats.hypo.origin_time is None:
+            theo_pick_time = None
+        else:
+            theo_pick_time = trace.stats.hypo.origin_time + travel_time
+        found_pick = False
+        for pick in (p for p in trace.stats.picks if p.phase == phase):
+            if _validate_pick(pick, theo_pick_time, tolerance, trace.id):
+                logger.info('{}: found {} pick'.format(trace.id, phase))
+                trace.stats.arrivals[phase] = (phase, pick.time)
+                found_pick = True
+                break
+        if not found_pick and theo_pick_time is not None:
+            logger.info('{}: using theoretical {} pick from {}'.format(
+                trace.id, phase, method))
+            trace.stats.arrivals[phase] = (phase + 'theo', theo_pick_time)
+        trace.stats.takeoff_angles[phase] = takeoff_angle
+        if focmec:
+            logger.info(
+                '{}: {} takeoff angle: {:.1f} computed from {}'.format(
+                    trace.id, phase, takeoff_angle, method
+                ))

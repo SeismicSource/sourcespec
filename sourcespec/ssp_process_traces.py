@@ -22,7 +22,7 @@ import re
 from obspy.core import Stream
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import remove_instr_response, hypo_dist
-from sourcespec.ssp_wave_arrival import wave_arrival
+from sourcespec.ssp_wave_arrival import add_arrivals_to_trace
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -238,13 +238,18 @@ def _add_hypo_dist_and_arrivals(config, st):
                             config.max_epi_dist))
             raise RuntimeError
 
-        p_arrival_time = wave_arrival(trace, 'P', config.p_arrival_tolerance,
-                                      config.vp_tt, config.NLL_time_dir)
-        s_arrival_time = wave_arrival(trace, 'S', config.s_arrival_tolerance,
-                                      config.vs_tt, config.NLL_time_dir)
-        if p_arrival_time is None or s_arrival_time is None:
-            logger.warning('%s: Unable to get arrival times: '
-                           'skipping trace' % trace.id)
+        add_arrivals_to_trace(trace, config)
+        try:
+            p_arrival_time = trace.stats.arrivals['P'][1]
+        except KeyError:
+            logger.warning('{}: Unable to get P arrival time: '
+                           'skipping trace'.format(trace.id))
+            raise RuntimeError
+        try:
+            s_arrival_time = trace.stats.arrivals['S'][1]
+        except KeyError:
+            logger.warning('{}: Unable to get S arrival time: '
+                           'skipping trace'.format(trace.id))
             raise RuntimeError
         # Signal window for spectral analysis
         t1 = s_arrival_time - config.pre_s_time

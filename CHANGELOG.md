@@ -22,6 +22,8 @@ Earthquake source parameters from S-wave displacement spectra
   - Config option `traceids` renamed to `traceid_mapping_file`
   - Config options `ignore_stations` and `use_stations` renamed to
     `ignore_traceids` and `use_traceids`, respectively
+  - Support for 2D NonLinLoc grids (via `nllgrid >= 1.4.1`)
+  - Possibility of using a generic `DEFAULT` NonLinLoc time grid
   - Fixed: `nllgrid` was always requested at runtime
 
 

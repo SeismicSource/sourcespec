@@ -399,9 +399,10 @@ def _add_picks(trace, picks):
                 stat_picks.append(pick)
 
     trace.stats.picks = stat_picks
-    # Create an empty dict for arrivals.
-    # It will be used later.
+    # Create empty dicts for arrivals and takeoff angles.
+    # They will be used later.
     trace.stats.arrivals = dict()
+    trace.stats.takeoff_angles = dict()
 
 
 def _complete_picks(st):

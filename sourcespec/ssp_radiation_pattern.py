@@ -94,33 +94,17 @@ def get_radiation_pattern_coefficient(stats, config):
         logger.warning(
             'Cannot find focal mechanism. Using "rps" value from config file')
         return config.rps
-    phase_list = ['s', 'S']
-    with warnings.catch_warnings(record=True) as warns:
-        try:
-            arrivals = model.get_travel_times(
-                        source_depth_in_km=stats.hypo.depth,
-                        distance_in_degree=stats.gcarc,
-                        phase_list=phase_list)
-        except Exception:
-            stats.hypo.depth = 0.
-            arrivals = model.get_travel_times(
-                        source_depth_in_km=stats.hypo.depth,
-                        distance_in_degree=stats.gcarc,
-                        phase_list=phase_list)
-        for w in warns:
-            message = str(w.message)
-            # Ignore a specific obspy.taup warning we do not care about
-            if '#2280' in message:
-                continue
-            logger.warning(message)
-    # get first arrival
-    arrivals = sorted(arrivals, key=lambda a: a.time)
-    first_arrival = arrivals[0]
-    takeoff_angle = first_arrival.takeoff_angle
-    rps = radiation_pattern(
-        strike, dip, rake, takeoff_angle, stats.azimuth, 'S')
     traceid = '.'.join(
         (stats.network, stats.station, stats.location, stats.channel))
+    try:
+        takeoff_angle = stats.takeoff_angles['S']
+    except Exception:
+        logger.warning(
+            '{}: Cannot find takeoff angle. '
+            'Using "rps" value from config file'.format(traceid))
+        return config.rps
+    rps = radiation_pattern(
+        strike, dip, rake, takeoff_angle, stats.azimuth, 'S')
     logger.info(
         '{}: Radiation pattern from focal mechanism: {:.2f}'.format(
             traceid, rps
