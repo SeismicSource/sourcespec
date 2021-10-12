@@ -755,10 +755,7 @@ def _parse_picks(config):
 
 
 def _hypo_vel(hypo, config):
-    vs = get_vel(hypo.longitude, hypo.latitude, hypo.depth,
-                 'S', config.NLL_model_dir)
-    if vs is None:
-        vs = config.vs
+    vs = get_vel(hypo.longitude, hypo.latitude, hypo.depth, 'S', config)
     hypo.vs = vs
 
 

@@ -95,6 +95,58 @@ def _check_obspy_version():
         sys.exit(1)
 
 
+def _check_cartopy_version():
+    cartopy_min_ver = (0, 18, 0)
+    try:
+        cartopy_ver = None
+        import cartopy  #NOQA
+        cartopy_ver = tuple(map(int, cartopy.__version__.split('.')[:3]))
+        if cartopy_ver < cartopy_min_ver:
+            raise ImportError
+    except ImportError:
+        sys.stderr.write(
+            'Please install cartopy >= {}.{}.{} to plot maps.\n'.format(
+                *cartopy_min_ver)
+        )
+        if cartopy_ver is not None:
+            sys.stderr.write(
+                'Installed cartopy version: {}.{}.{}.\n'.format(*cartopy_ver)
+            )
+        raise ImportError
+
+
+def _check_pyproj_version():
+    try:
+        import pyproj  #NOQA
+    except ImportError:
+        sys.stderr.write('Please install pyproj to plot maps.\n')
+        raise ImportError
+
+
+def _check_nllgrid_version():
+    nllgrid_min_ver = (1, 4, 1)
+    try:
+        nllgrid_ver = None
+        import nllgrid  #NOQA
+        nllgrid_ver_str = nllgrid.__version__.split('+')[0]
+        nllgrid_ver = tuple(map(int, nllgrid_ver_str.split('.')))
+        # nllgrid versions are sometimes X.Y, other times X.Y.Z
+        while len(nllgrid_ver) < 3:
+            nllgrid_ver = (*nllgrid_ver, 0)
+        if nllgrid_ver < nllgrid_min_ver:
+            raise ImportError
+    except ImportError:
+        sys.stderr.write(
+            'Please install nllgrid >= {}.{}.{} '
+            'to use NonLinLoc grids.\n'.format(*nllgrid_min_ver)
+        )
+        if nllgrid_ver is not None:
+            sys.stderr.write(
+                'Installed nllgrid version: {}\n'.format(nllgrid.__version__)
+            )
+        raise ImportError
+
+
 def _check_library_versions():
     global PYTHON_VERSION_STR
     global NUMPY_VERSION_STR
@@ -512,31 +564,16 @@ def configure(progname='source_spec'):
         config.horizontal_channel_codes_2.append(msc[2])
 
     if config.plot_station_map:
-        _exit = False
-        cartopy_min_ver = (0, 18, 0)
         try:
-            cartopy_ver = None
-            import cartopy  #NOQA
-            cartopy_ver = tuple(map(int, cartopy.__version__.split('.')[:3]))
-            if cartopy_ver < cartopy_min_ver:
-                raise ImportError
+            _check_cartopy_version()
+            _check_pyproj_version()
         except ImportError:
-            sys.stderr.write(
-                'Please install cartopy >= {}.{}.{} to plot maps.\n'.format(
-                    *cartopy_min_ver)
-            )
-            if cartopy_ver:
-                sys.stderr.write(
-                    'Installed cartopy version: {}.{}.{}.\n'.format(
-                        *cartopy_ver)
-                )
-            _exit = True
+            sys.exit(1)
+
+    if config.NLL_time_dir is not None or config.NLL_model_dir is not None:
         try:
-            import pyproj  #NOQA
+            _check_nllgrid_version()
         except ImportError:
-            sys.stderr.write('Please install pyproj to plot maps.\n')
-            _exit = True
-        if _exit:
             sys.exit(1)
 
     return config

@@ -197,9 +197,7 @@ def _displacement_to_moment(stats, config):
     vs_hypo = config.hypo.vs
     vs_station = get_vel(
         stats.coords.longitude, stats.coords.latitude, -stats.coords.elevation,
-        'S', config.NLL_model_dir)
-    if vs_station is None:
-        vs_station = config.vs
+        'S', config)
     vs_hypo *= 1000.
     vs_station *= 1000.
     vs3 = vs_hypo**(5./2) * vs_station**(1./2)

@@ -62,27 +62,32 @@ def select_trace(stream, traceid, instrtype):
             if tr.stats.instrtype == instrtype][0]
 
 
-def get_vel(lon, lat, depth, wave, NLL_model_dir):
-    if NLL_model_dir is None:
-        return
-    try:
-        from nllgrid import NLLGrid
-    except ImportError:
-        logger.error('Error: the "nllgrid" python module is required '
-                     'for "NLL_model_dir".')
-        ssp_exit()
+def get_vel(lon, lat, depth, wave, config):
+    """
+    Get velocity at a given point from NonLinLoc grid.
+
+    Fall back to config.vp or config.vs if no grid is defined.
+    """
+    if wave == 'P':
+        vel = config.vp
+    elif wave == 'S':
+        vel = config.vs
+    if config.NLL_model_dir is None:
+        return vel
+    # Lazy-import here, since nllgrid is not an installation requirement
+    from nllgrid import NLLGrid
     grdfile = '*.{}.mod.hdr'.format(wave)
-    grdfile = os.path.join(NLL_model_dir, grdfile)
+    grdfile = os.path.join(config.NLL_model_dir, grdfile)
     try:
         grdfile = glob(grdfile)[0]
     except IndexError:
-        return
+        return vel
     grd = NLLGrid(grdfile)
     x, y = grd.project(lon, lat)
     if grd.type == 'SLOW_LEN':
         slow_len = grd.get_value(lon, lat, depth)
-        return grd.dx / slow_len
-    return
+        vel = grd.dx / slow_len
+    return vel
 # -----------------------------------------------------------------------------
 
 
