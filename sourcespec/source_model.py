@@ -36,6 +36,7 @@ def make_synth(config, spec_st, trace_spec=None):
     fmax = config.options.fmax + fdelta
 
     residuals = list()
+    n = 0
     for fc, mag, Mo, t_star, alpha in zip(
             config.options.fc, config.options.mag, config.options.Mo,
             config.options.t_star, config.options.alpha):
@@ -52,8 +53,8 @@ def make_synth(config, spec_st, trace_spec=None):
         else:
             mag = moment_to_mag(Mo)
 
-        spec.stats.station = 'Mw: %.1f fc: %.2fHz t*: %.2fs alpha: %.2f' %\
-            (mag, fc, t_star, alpha)
+        spec.stats.station = 'S{:02d}'.format(n)
+        n += 1
         spec.stats.instrtype = 'Synth'
         spec.stats.channel = spec.stats.channel[:-1] + 'S'
         spec.stats.par = {'Mw': mag, 'fc': fc, 't_star': t_star,

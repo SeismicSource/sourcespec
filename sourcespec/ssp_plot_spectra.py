@@ -510,7 +510,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
 
             if orientation == 'S':
                 if stack_plots:
-                    text_y2 = text_y - 0.02
+                    text_y2 = text_y - 0.04
                 else:
                     text_y2 = 0.03
                     color = 'black'
