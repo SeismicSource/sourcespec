@@ -11,6 +11,7 @@ Earthquake source parameters from S-wave displacement spectra
 
 
 ## unreleased
+
   - New config option `rps_from_focal_mechanism` to compute station-specific
     S-wave radiation pattern from focal mechanism, if a focal mechanism is
     available in the QuakeML file
@@ -24,26 +25,31 @@ Earthquake source parameters from S-wave displacement spectra
 
 
 ## v1.31 - 2021-09-13
+
   - Fix for HTML report not showing trace and spectral plots
   - HTML report: add Corner Frequency in Event Summary
 
 
 ## v1.3 - 2021-08-20
+
   - HTML reports
   - Option to provide station-specific spectral windowing
 
 
 ## v1.2 - 2021-05-20
+
   - Use `python-versioneer` to manage version numbers
 
 
 ## v1.1 - 2021-04-07
+
   - Bug fixes:
     - Accept band code `C` for broadband seismometers sampled at >=250 Hz
     - Require `cartopy>=0.18` for compatibility with `matplotlib>=3.3`
 
 
 ## v1.0 - 2021-03-03
+
   - Simplification of time window parameters:
     - an unique window length, `win_length`, is used for time-domain S/N ratio
       calculation and spectral analysis
@@ -67,6 +73,7 @@ Earthquake source parameters from S-wave displacement spectra
 
 
 ## v0.9 - 2020-04-24
+
   - Support for QuakeML input and StationXML
   - Support for Python 3.5
   - Only compatible with ObsPy >= 1.1.0
@@ -117,6 +124,7 @@ Earthquake source parameters from S-wave displacement spectra
 
 
 ## v0.8 - 2014-07-11
+
   - Trace plot showing S and noise time windows
   - Improved handling of paz files
   - Per-station Mo on output file
@@ -124,6 +132,7 @@ Earthquake source parameters from S-wave displacement spectra
 
 
 ## v0.7 - 2014-04-07
+
   - Code reorganization:
     - inversion code split to its own functions
   - Option to use bounded inversion
@@ -134,6 +143,7 @@ Earthquake source parameters from S-wave displacement spectra
 
 
 ## v0.6 - 2013-06-05
+
   - Signal to noise weighting
   - Improved local magnitude computation
   - New options:
@@ -146,6 +156,7 @@ Earthquake source parameters from S-wave displacement spectra
 
 
 ## v0.5 - 2013-02-10
+
   - Azimuth computation
   - Construction of an overall database
   - Local magnitude computation
@@ -153,19 +164,23 @@ Earthquake source parameters from S-wave displacement spectra
 
 
 ## v0.4 - 2012-04-10
+
   - Logging infrastructure
   - Code reorganization
 
 
 ## v0.3 - 2012-02-10
+
   - Output is no more printed at screen, but to file
   - The plots can be saved to a file as well
   - We differentiate between short periods and broad bands
 
 
 ## v0.2 - 2012-02-06
+
 Extended and generalized for the CRL application.
 
 
 ## v0.1 - 2012-01-17
+
 Initial Python port.
