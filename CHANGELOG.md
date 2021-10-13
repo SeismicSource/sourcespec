@@ -24,7 +24,14 @@ Earthquake source parameters from S-wave displacement spectra
     `ignore_traceids` and `use_traceids`, respectively
   - Support for 2D NonLinLoc grids (via `nllgrid >= 1.4.1`)
   - Possibility of using a generic `DEFAULT` NonLinLoc time grid
+  - Added `cartopy` as an installation dependency
   - Fixed: `nllgrid` was always requested at runtime
+  - Fixed: gracefully handle the case when there is no internet connection and
+    map tiles cannot be downloaded
+  - Fixed (Windows): suppress colored terminal output, which is not supported
+  - Fixed (Windows): it is now possible to relaunch the same run, without
+    having to delete the output directory first
+  - Fixed (Windows): use same timezone names than Linux and macOS
 
 
 ## v1.31 - 2021-09-13
