@@ -589,6 +589,11 @@ def save_config(config):
     src = os.path.join(config.options.outdir, 'source_spec.conf')
     evid = config.hypo.evid
     dst = os.path.join(config.options.outdir, '%s.ssp.conf' % evid)
+    # On Windows, dst file must not exist
+    try:
+        os.remove(dst)
+    except Exception:
+        pass
     os.rename(src, dst)
 
 
