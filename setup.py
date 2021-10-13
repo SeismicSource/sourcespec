@@ -57,5 +57,5 @@ setup(
         'matplotlib>=2.2',
         'cartopy>=0.18.0',
         'pyproj',
-        'pytz']
+        'tzlocal']
     )

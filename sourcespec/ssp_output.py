@@ -21,7 +21,7 @@ import logging
 import sqlite3
 import numpy as np
 from datetime import datetime
-from pytz import reference
+from tzlocal import get_localzone
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import mag_to_moment
 logger = logging.getLogger(__name__.split('.')[-1])
@@ -204,8 +204,8 @@ def _write_parfile(config, sourcepar, sourcepar_err):
             Er_mean, Er_minus_str, Er_plus_str))
 
         now = datetime.now()
-        localtime = reference.LocalTimezone()
-        timezone = localtime.tzname(now)
+        tz = get_localzone()
+        timezone = tz.tzname(now)
         parfile.write('\n*** Run completed on: {} {}\n'.format(now, timezone))
         config.end_of_run = now
         config.end_of_run_tz = timezone
