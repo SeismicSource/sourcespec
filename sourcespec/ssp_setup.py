@@ -69,6 +69,7 @@ OBSPY_VERSION_STR = None
 NUMPY_VERSION_STR = None
 SCIPY_VERSION_STR = None
 MATPLOTLIB_VERSION_STR = None
+CARTOPY_VERSION_STR = None
 PYTHON_VERSION_STR = None
 
 
@@ -101,6 +102,8 @@ def _check_cartopy_version():
     try:
         cartopy_ver = None
         import cartopy  #NOQA
+        global CARTOPY_VERSION_STR
+        CARTOPY_VERSION_STR = cartopy.__version__
         cartopy_ver = tuple(map(int, cartopy.__version__.split('.')[:3]))
         if cartopy_ver < cartopy_min_ver:
             raise ImportError
@@ -111,7 +114,7 @@ def _check_cartopy_version():
         )
         if cartopy_ver is not None:
             sys.stderr.write(
-                'Installed cartopy version: {}.{}.{}.\n'.format(*cartopy_ver)
+                'Installed cartopy version: {}.\n'.format(CARTOPY_VERSION_STR)
             )
         raise ImportError
 
@@ -605,6 +608,7 @@ def setup_logging(config, basename=None, progname='source_spec'):
     global NUMPY_VERSION_STR
     global SCIPY_VERSION_STR
     global MATPLOTLIB_VERSION_STR
+    global CARTOPY_VERSION_STR
     # Create outdir
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
@@ -660,6 +664,7 @@ def setup_logging(config, basename=None, progname='source_spec'):
         logger.debug('NumPy version: ' + NUMPY_VERSION_STR)
         logger.debug('SciPy version: ' + SCIPY_VERSION_STR)
         logger.debug('Matplotlib version: ' + MATPLOTLIB_VERSION_STR)
+        logger.debug('Cartopy version: ' + CARTOPY_VERSION_STR)
         logger.debug('Running arguments:')
         logger.debug(' '.join(sys.argv))
     oldlogfile = logfile
