@@ -13,7 +13,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import logging
-import warnings
 from math import pi, sin, cos
 from obspy.taup import TauPyModel
 logger = logging.getLogger(__name__.split('.')[-1])
@@ -103,10 +102,14 @@ def get_radiation_pattern_coefficient(stats, config):
             '{}: Cannot find takeoff angle. '
             'Using "rps" value from config file'.format(traceid))
         return config.rps
+    wave = config.wave_type
     rps = radiation_pattern(
-        strike, dip, rake, takeoff_angle, stats.azimuth, 'S')
+        strike, dip, rake, takeoff_angle, stats.azimuth, wave)
+    # we are interested only in amplitude
+    # (SV and SH radiation patterns have a sign)
+    rps = abs(rps)
     logger.info(
-        '{}: Radiation pattern from focal mechanism: {:.2f}'.format(
-            traceid, rps
+        '{}: {} radiation pattern from focal mechanism: {:.2f}'.format(
+            traceid, wave, rps
         ))
     return rps
