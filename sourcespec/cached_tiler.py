@@ -6,12 +6,13 @@ https://github.com/SciTools/cartopy/issues/732#issuecomment-191423035
 """
 import os
 import types
-
 import requests
 import PIL
 import logging
-PIL_logger = logging.getLogger('PIL')
-PIL_logger.setLevel(logging.WARNING)
+logger = logging.getLogger(__name__.split('.')[-1])
+logging.getLogger('PIL').setLevel(logging.WARNING)
+logging.getLogger('requests').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
 
 
 class CachedTiler(object):
@@ -47,10 +48,15 @@ class CachedTiler(object):
         tile_fname = os.path.join(
             cache_dir, '_'.join(str(v) for v in tile) + '.png')
         if not os.path.exists(tile_fname):
-            response = requests.get(self._image_url(tile),
-                                    stream=True)
-
-            with open(tile_fname, "wb") as fh:
+            try:
+                response = requests.get(self._image_url(tile),
+                                        stream=True)
+            except requests.exceptions.RequestException:
+                logger.warning(
+                    'Cannot download map tiles. Check internet connection.')
+                # we call the original tiler, which will return an empty image
+                return self.tiler.get_image(tile)
+            with open(tile_fname, 'wb') as fh:
                 for chunk in response:
                     fh.write(chunk)
         with open(tile_fname, 'rb') as fh:
