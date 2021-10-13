@@ -82,6 +82,10 @@ def _rad_patt_SH(phi, dip, rake, takeoff):
     return R
 
 
+# Cache radiation patterns
+rps_cache = dict()
+
+
 def get_radiation_pattern_coefficient(stats, config):
     if not config.rps_from_focal_mechanism:
         return config.rps
@@ -95,6 +99,14 @@ def get_radiation_pattern_coefficient(stats, config):
         return config.rps
     traceid = '.'.join(
         (stats.network, stats.station, stats.location, stats.channel))
+    wave = config.wave_type
+    key = '{}_{}'.format(traceid, wave)
+    global rps_cache
+    try:
+        rps = rps_cache[key]
+        return rps
+    except KeyError:
+        pass
     try:
         takeoff_angle = stats.takeoff_angles['S']
     except Exception:
@@ -102,7 +114,6 @@ def get_radiation_pattern_coefficient(stats, config):
             '{}: Cannot find takeoff angle. '
             'Using "rps" value from config file'.format(traceid))
         return config.rps
-    wave = config.wave_type
     rps = radiation_pattern(
         strike, dip, rake, takeoff_angle, stats.azimuth, wave)
     # we are interested only in amplitude
@@ -112,4 +123,5 @@ def get_radiation_pattern_coefficient(stats, config):
         '{}: {} radiation pattern from focal mechanism: {:.2f}'.format(
             traceid, wave, rps
         ))
+    rps_cache[key] = rps
     return rps
