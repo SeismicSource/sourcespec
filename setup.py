@@ -3,13 +3,14 @@
 from setuptools import setup
 import versioneer
 
+cdn_baseurl = 'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec/'
 with open('README.md', 'rb') as f:
     long_descr = f.read().decode('utf-8').replace(
         'logo/SourceSpec_logo.png',
-        'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec/logo/SourceSpec_logo.png'
+        '{}logo/SourceSpec_logo.png'.format(cdn_baseurl)
     ).replace(
         '(CHANGELOG.md)',
-        '(https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec/CHANGELOG.md)'
+        '({}CHANGELOG.md)'.format(cdn_baseurl)
     )
 
 setup(
