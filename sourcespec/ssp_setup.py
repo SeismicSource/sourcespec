@@ -37,7 +37,8 @@ from sourcespec.AsyncPlotter import AsyncPlotter
 from sourcespec._version import get_versions
 
 # define ipshell(), if possible
-if sys.stdout.isatty():
+# note: ANSI colors do not work on Windows standard terminal
+if sys.stdout.isatty() and sys.platform != 'win32':
     try:
         import IPython
         IP_VERSION = tuple(map(int, IPython.__version__.split('.')[:3]))
