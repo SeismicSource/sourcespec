@@ -10,7 +10,7 @@ Earthquake source parameters from S-wave displacement spectra
 (c) 2015-2021 Claudio Satriano <satriano@ipgp.fr>
 
 
-## unreleased
+## v1.4 - 2021-10-13
 
   - New config option `rps_from_focal_mechanism` to compute station-specific
     S-wave radiation pattern from focal mechanism, if a focal mechanism is
