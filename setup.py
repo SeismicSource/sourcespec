@@ -31,7 +31,7 @@ setup(
     long_description_content_type='text/markdown',
     author='Claudio Satriano',
     author_email='satriano@ipgp.fr',
-    url='https://sourcespec.readthedocs.io',
+    url='https://github.com/SeismicSource/sourcespec',
     license='CeCILL Free Software License Agreement, Version 2.1',
     platforms='OS Independent',
     classifiers=[
