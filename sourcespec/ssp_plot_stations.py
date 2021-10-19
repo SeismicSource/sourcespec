@@ -53,9 +53,10 @@ def _round(x, base=5):
 
 # Source: https://stackoverflow.com/a/20528097
 def _shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shifted'):
-    '''
-    Function to offset the "center" of a colormap. Useful for
-    data with a negative min and positive max and you want the
+    """
+    Offset the "center" of a colormap.
+
+    Useful for data with a negative min and positive max and you want the
     middle of the colormap's dynamic range to be at zero.
 
     Input
@@ -73,7 +74,7 @@ def _shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shifted'):
       stop : Offset from highest point in the colormap's range.
           Defaults to 1.0 (no upper offset). Should be between
           `midpoint` and 1.0.
-    '''
+    """
     cdict = {
         'red': [],
         'green': [],
@@ -108,6 +109,9 @@ def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
     step = _round(maxdist/ncircles)
     if step == 0:
         step = 1
+    if maxdist < 1:  # 1 km
+        ncircles = 5
+        step = 0.2
     texts = []
     for dist in np.arange(step, maxdist+step, step):
         azimuths = np.arange(0, 360, 1)
@@ -118,7 +122,10 @@ def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
         ax.plot(circle[:, 0], circle[:, 1],
                 color='#777777', linestyle='--',
                 transform=geodetic_transform)
-        dist_text = '{} km'.format(int(dist))
+        if maxdist < 1:
+            dist_text = '{} m'.format(int(dist*1000))
+        else:
+            dist_text = '{} km'.format(int(dist))
         t = ax.text(p0[0], p0[1], dist_text, size=8, weight='bold',
                     verticalalignment='center',
                     horizontalalignment='center',

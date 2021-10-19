@@ -10,6 +10,11 @@ Earthquake source parameters from S-wave displacement spectra
 (c) 2015-2021 Claudio Satriano <satriano@ipgp.fr>
 
 
+## unreleased
+
+- Correctly show circles on maps with diagonal smaller than 1 km
+
+
 ## v1.4 - 2021-10-13
 
 - New config option `rps_from_focal_mechanism` to compute station-specific
