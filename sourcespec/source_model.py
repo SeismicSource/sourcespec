@@ -14,23 +14,14 @@ Direct spectral modelling.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import math
-import numpy as np
-# import cPickle as pickle
-from copy import deepcopy
-from obspy.core import Stream
-from sourcespec.spectrum import Spectrum
-from sourcespec.ssp_setup import configure, ssp_exit
-from sourcespec.ssp_read_traces import read_traces
-from sourcespec.ssp_process_traces import process_traces
-from sourcespec.ssp_build_spectra import build_spectra
-from sourcespec.ssp_spectral_model import spectral_model, objective_func
-from sourcespec.ssp_util import mag_to_moment, moment_to_mag
-from sourcespec.ssp_plot_spectra import plot_spectra
-from sourcespec.ssp_plot_traces import plot_traces
-
 
 def make_synth(config, spec_st, trace_spec=None):
+    import math
+    import numpy as np
+    from copy import deepcopy
+    from sourcespec.spectrum import Spectrum
+    from sourcespec.ssp_spectral_model import spectral_model, objective_func
+    from sourcespec.ssp_util import mag_to_moment, moment_to_mag
     fdelta = 0.01
     fmin = config.options.fmin
     fmax = config.options.fmax + fdelta
@@ -81,7 +72,15 @@ def make_synth(config, spec_st, trace_spec=None):
 
 
 def main():
-    config = configure('source_model')
+    # Lazy-import modules for speed
+    from sourcespec.ssp_parse_arguments import parse_args
+    options = parse_args(progname='source_model')
+    from sourcespec.ssp_setup import configure, ssp_exit
+    config = configure(options, progname='source_model')
+    from sourcespec.ssp_read_traces import read_traces
+    from sourcespec.ssp_process_traces import process_traces
+    from sourcespec.ssp_build_spectra import build_spectra
+    from obspy.core import Stream
 
     if len(config.options.trace_path) > 0:
         st = read_traces(config)
@@ -110,6 +109,8 @@ def main():
         config.PLOT_SHOW = False
     config.PLOT_SAVE = False
 
+    from sourcespec.ssp_plot_spectra import plot_spectra
+    from sourcespec.ssp_plot_traces import plot_traces
     plot_traces(config, proc_st, ncols=2, block=False)
     plot_spectra(config, spec_st, ncols=1, stack_plots=True)
 
