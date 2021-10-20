@@ -106,7 +106,9 @@ def _check_cartopy_version():
         msg = (
             '\nPlease install cartopy >= {}.{}.{} to plot maps.\n'
             'How to install: '
-            'https://scitools.org.uk/cartopy/docs/latest/installing.html\n'
+            'https://scitools.org.uk/cartopy/docs/latest/installing.html\n\n'
+            'Alternatively, set "plot_station_map" and "html_report" to '
+            '"False" in config file.\n'
             .format(*cartopy_min_ver)
         )
         if cartopy_ver is not None:
@@ -380,20 +382,20 @@ def configure(options, progname):
     if config.html_report:
         if not config.PLOT_SAVE:
             msg = (
-                'The html_report option is selected but PLOT_SAVE is False. '
-                'Setting PLOT_SAVE to True.')
+                'The "html_report" option is selected but "PLOT_SAVE" '
+                'is "False". Setting "PLOT_SAVE" to "True".')
             config.warnings.append(msg)
             config.PLOT_SAVE = True
         if config.PLOT_SAVE_FORMAT != 'png':
             msg = (
-                'The html_report option is selected but PLOT_SAVE_FORMAT is '
-                'not png. Setting PLOT_SAVE_FORMAT to png.')
+                'The "html_report" option is selected but "PLOT_SAVE_FORMAT" '
+                'is not "png". Setting "PLOT_SAVE_FORMAT" to "png".')
             config.warnings.append(msg)
             config.PLOT_SAVE_FORMAT = 'png'
         if not config.plot_station_map:
             msg = (
-                'The html_report option is selected but plot_station_map '
-                'is False. Setting plot_station_map to True.')
+                'The "html_report" option is selected but "plot_station_map" '
+                'is "False". Setting "plot_station_map" to "True".')
             config.warnings.append(msg)
             config.plot_station_map = True
 
