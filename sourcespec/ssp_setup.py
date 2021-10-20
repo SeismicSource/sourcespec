@@ -103,8 +103,10 @@ def _check_cartopy_version():
             raise ImportError
     except ImportError:
         sys.stderr.write(
-            'Please install cartopy >= {}.{}.{} to plot maps.\n'.format(
-                *cartopy_min_ver)
+            'Please install cartopy >= {}.{}.{} to plot maps.\n'
+            'How to install: '
+            'https://scitools.org.uk/cartopy/docs/latest/installing.html\n'
+            .format(*cartopy_min_ver)
         )
         if cartopy_ver is not None:
             sys.stderr.write(
@@ -122,7 +124,7 @@ def _check_pyproj_version():
 
 
 def _check_nllgrid_version():
-    nllgrid_min_ver = (1, 4, 1)
+    nllgrid_min_ver = (1, 4, 2)
     try:
         nllgrid_ver = None
         import nllgrid  #NOQA
@@ -135,8 +137,9 @@ def _check_nllgrid_version():
             raise ImportError
     except ImportError:
         sys.stderr.write(
-            'Please install nllgrid >= {}.{}.{} '
-            'to use NonLinLoc grids.\n'.format(*nllgrid_min_ver)
+            'Please install nllgrid >= {}.{}.{} to use NonLinLoc grids.\n'
+            'How to install: https://github.com/claudiodsf/nllgrid\n'
+            .format(*nllgrid_min_ver)
         )
         if nllgrid_ver is not None:
             sys.stderr.write(
@@ -472,7 +475,8 @@ def setup_logging(config, basename=None, progname='source_spec'):
         logger.debug('NumPy version: ' + NUMPY_VERSION_STR)
         logger.debug('SciPy version: ' + SCIPY_VERSION_STR)
         logger.debug('Matplotlib version: ' + MATPLOTLIB_VERSION_STR)
-        logger.debug('Cartopy version: ' + CARTOPY_VERSION_STR)
+        if CARTOPY_VERSION_STR is not None:
+            logger.debug('Cartopy version: ' + CARTOPY_VERSION_STR)
         logger.debug('Running arguments:')
         logger.debug(' '.join(sys.argv))
     oldlogfile = logfile

@@ -52,10 +52,10 @@ setup(
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Physics'],
     install_requires=[
-        'obspy>=1.1.0',
+        'numpy>=1.10',
         'scipy>=0.17',
         'matplotlib>=2.2',
-        'cartopy>=0.18.0',
+        'obspy>=1.1.0',
         'pyproj',
         'tzlocal']
     )
