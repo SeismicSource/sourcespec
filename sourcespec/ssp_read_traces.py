@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# SPDX-License-Identifier: CECILL-2.1
 """
 Read traces in multiple formats of data and metadata.
 
@@ -11,8 +12,8 @@ Read traces in multiple formats of data and metadata.
     2015-2021 Claudio Satriano <satriano@ipgp.fr>,
               Sophie Lambotte <sophie.lambotte@unistra.fr>
 :license:
-    CeCILL Free Software License Agreement, Version 2.1
-    (http://www.cecill.info/index.en.html)
+    CeCILL Free Software License Agreement v2.1
+    (http://www.cecill.info/licences.en.html)
 """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)

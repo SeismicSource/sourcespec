@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# SPDX-License-Identifier: CECILL-2.1
 """setup.py: setuptools control."""
 from setuptools import setup
 import versioneer

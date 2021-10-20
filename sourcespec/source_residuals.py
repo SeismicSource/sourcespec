@@ -1,4 +1,5 @@
 # -*- coding: utf8 -*-
+# SPDX-License-Identifier: CECILL-2.1
 """
 Compute station residuals from source_spec.py output.
 
@@ -8,8 +9,8 @@ Compute station residuals from source_spec.py output.
 
     2015-2021 Claudio Satriano <satriano@ipgp.fr>
 :license:
-    CeCILL Free Software License Agreement, Version 2.1
-    (http://www.cecill.info/index.en.html)
+    CeCILL Free Software License Agreement v2.1
+    (http://www.cecill.info/licences.en.html)
 """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
