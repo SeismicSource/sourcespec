@@ -102,25 +102,25 @@ def _check_cartopy_version():
         if cartopy_ver < cartopy_min_ver:
             raise ImportError
     except ImportError:
-        sys.stderr.write(
-            'Please install cartopy >= {}.{}.{} to plot maps.\n'
+        msg = (
+            '\nPlease install cartopy >= {}.{}.{} to plot maps.\n'
             'How to install: '
             'https://scitools.org.uk/cartopy/docs/latest/installing.html\n'
             .format(*cartopy_min_ver)
         )
         if cartopy_ver is not None:
-            sys.stderr.write(
+            msg += (
                 'Installed cartopy version: {}.\n'.format(CARTOPY_VERSION_STR)
             )
-        raise ImportError
+        raise ImportError(msg)
 
 
 def _check_pyproj_version():
     try:
         import pyproj  #NOQA
     except ImportError:
-        sys.stderr.write('Please install pyproj to plot maps.\n')
-        raise ImportError
+        msg = '\nPlease install pyproj to plot maps.\n'
+        raise ImportError(msg)
 
 
 def _check_nllgrid_version():
@@ -136,16 +136,16 @@ def _check_nllgrid_version():
         if nllgrid_ver < nllgrid_min_ver:
             raise ImportError
     except ImportError:
-        sys.stderr.write(
-            'Please install nllgrid >= {}.{}.{} to use NonLinLoc grids.\n'
+        msg = (
+            '\nPlease install nllgrid >= {}.{}.{} to use NonLinLoc grids.\n'
             'How to install: https://github.com/claudiodsf/nllgrid\n'
             .format(*nllgrid_min_ver)
         )
         if nllgrid_ver is not None:
-            sys.stderr.write(
+            msg += (
                 'Installed nllgrid version: {}\n'.format(nllgrid.__version__)
             )
-        raise ImportError
+        raise ImportError(msg)
 
 
 def _check_library_versions():
@@ -373,17 +373,44 @@ def configure(options, progname):
         config.horizontal_channel_codes_1.append(msc[1])
         config.horizontal_channel_codes_2.append(msc[2])
 
+    # A list of warnings to be issued when logger is set up
+    config.warnings = list()
+
+    if config.html_report:
+        if not config.PLOT_SAVE:
+            msg = (
+                'The html_report option is selected but PLOT_SAVE is False. '
+                'Setting PLOT_SAVE to True.')
+            config.warnings.append(msg)
+            config.PLOT_SAVE = True
+        if config.PLOT_SAVE_FORMAT != 'png':
+            msg = (
+                'The html_report option is selected but PLOT_SAVE_FORMAT is '
+                'not png. Setting PLOT_SAVE_FORMAT to png.')
+            config.warnings.append(msg)
+            config.PLOT_SAVE_FORMAT = 'png'
+        if not config.plot_station_map:
+            msg = (
+                'The html_report option is selected but plot_station_map '
+                'is False. Setting plot_station_map to True.')
+            config.warnings.append(msg)
+            config.plot_station_map = True
+
     if config.plot_station_map:
         try:
             _check_cartopy_version()
             _check_pyproj_version()
-        except ImportError:
+        except ImportError as err:
+            for msg in config.warnings:
+                print(msg)
+            sys.stderr.write(str(err))
             sys.exit(1)
 
     if config.NLL_time_dir is not None or config.NLL_model_dir is not None:
         try:
             _check_nllgrid_version()
-        except ImportError:
+        except ImportError as err:
+            sys.stderr.write(str(err))
             sys.exit(1)
 
     return config
@@ -481,25 +508,13 @@ def setup_logging(config, basename=None, progname='source_spec'):
         logger.debug(' '.join(sys.argv))
     oldlogfile = logfile
 
+    # See if there are warnings to deliver
+    for _ in range(len(config.warnings)):
+        msg = config.warnings.pop(0)
+        logger.warning(msg)
+
 
 def init_plotting(config):
-    if config.html_report:
-        if not config.PLOT_SAVE:
-            logger.warning(
-                'The html_report option is selected but PLOT_SAVE is False. '
-                'Setting PLOT_SAVE to True.')
-            config.PLOT_SAVE = True
-        if config.PLOT_SAVE_FORMAT != 'png':
-            logger.warning(
-                'The html_report option is selected but PLOT_SAVE_FORMAT is '
-                'not png. Setting PLOT_SAVE_FORMAT to png.')
-            config.PLOT_SAVE_FORMAT = 'png'
-        if not config.plot_station_map:
-            logger.warning(
-                'The html_report option is selected but plot_station_map '
-                'is False. Setting plot_station_map to True.')
-            config.plot_station_map = True
-
     import matplotlib.pyplot as plt
     if not config.PLOT_SHOW:
         plt.switch_backend('Agg')
