@@ -15,6 +15,7 @@ Earthquake source parameters from S-wave displacement spectra
 - Correctly show circles on maps with diagonal smaller than 1 km
 - `cartopy` removed as installation dependency, since it is not easily
   installable via `pip`
+- Removed autodetection of hypo71 file paths (specific to CRL case)
 
 
 ## v1.4 - 2021-10-13

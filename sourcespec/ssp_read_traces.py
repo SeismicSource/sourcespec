@@ -782,38 +782,6 @@ def _build_filelist(path, filelist, tmpdir):
 # -----------------------------------------------------------------------------
 
 
-# PATH DISCOVERY --------------------------------------------------------------
-# We try to guess the path of the hypo and pick file from the data dir
-# This applies (for the moment) only to the Corinth format
-def _set_hypo_file_path(config):
-    if config.options.hypo_file is not None:
-        return
-    # try with the basename of the datadir
-    if os.path.isdir(config.options.trace_path[0]):
-        hypo_file = config.options.trace_path[0] + '.phs.h'
-        try:
-            open(hypo_file)
-            config.options.hypo_file = hypo_file
-        except Exception:
-            pass
-    return
-
-
-def _set_pick_file_path(config):
-    if config.options.pick_file is not None:
-        return
-    # try with the basename of the datadir
-    if os.path.isdir(config.options.trace_path[0]):
-        pick_file = config.options.trace_path[0] + '.phs'
-        try:
-            open(pick_file)
-            config.options.pick_file = pick_file
-        except Exception:
-            pass
-    return
-# -----------------------------------------------------------------------------
-
-
 # Public interface:
 def read_traces(config):
     """Read traces, store waveforms and metadata."""
@@ -822,17 +790,16 @@ def read_traces(config):
     # read PAZ (normally this is an alternative to dataless)
     paz = _read_paz(config.paz)
 
+    hypo = picks = None
     # parse hypocenter file
-    _set_hypo_file_path(config)
-    hypo = _parse_hypocenter(config.options.hypo_file)
+    if config.options.hypo_file is not None:
+        hypo = _parse_hypocenter(config.options.hypo_file)
     # parse pick file
-    _set_pick_file_path(config)
-    picks = _parse_picks(config)
-
+    if config.options.pick_file is not None:
+        picks = _parse_picks(config)
     # parse QML file
-    if hypo is None:
-        hypo, picks = _parse_qml(config.options.qml_file,
-                                 config.options.evid)
+    if config.options.qml_file is not None:
+        hypo, picks = _parse_qml(config.options.qml_file, config.options.evid)
 
     # finally, read traces
     # traces can be defined in a pickle catalog (Antilles format)...
@@ -924,7 +891,13 @@ def read_traces(config):
         try:
             hypo = st[0].stats.hypo
         except AttributeError:
-            logger.error('No hypocenter information found')
+            logger.error('No hypocenter information found.')
+            sys.stderr.write(
+                '\n'
+                'Use "-q" or "-H" options to provide hypocenter information\n'
+                'or add hypocenter information to the SAC file header\n'
+                '(if you use the SAC format).\n'
+            )
             ssp_exit()
     # add vs to hypo
     _hypo_vel(hypo, config)
