@@ -589,64 +589,76 @@ def _parse_qml(qml_file, evid=None):
     return hypo, picks
 
 
-def _parse_hypocenter(hypo_file):
-    if hypo_file is None:
-        return None
-
+def _parse_hypocenter_from_event(ev):
     hypo = AttribDict()
-    hypo.latitude = None
-    hypo.longitude = None
-    hypo.depth = None
-    hypo.origin_time = None
-    hypo.evid = None
+    hypo.latitude = ev.latitude
+    hypo.longitude = ev.longitude
+    hypo.depth = ev.depth
+    hypo.origin_time = ev.utcdate
+    hypo.evid = ev.event_id
+    return hypo
 
-    if isinstance(hypo_file, str):
-        try:
-            with open(hypo_file) as fp:
-                # Corinth hypocenter file format:
-                # TODO: check file format
-                line = fp.readline()
-                # Skip the first line if it contains
-                # characters in the first 10 digits:
-                if any(c.isalpha() for c in line[0:10]):
-                    line = fp.readline()
-        except IOError as err:
-            logger.error(err)
-            ssp_exit(1)
 
+def _is_hypo71_hypocenter(hypo_file):
+    with open(hypo_file) as fp:
+        line = fp.readline()
+        # Skip the first line if it contains
+        # characters in the first 10 digits:
+        if any(c.isalpha() for c in line[0:10]):
+            line = fp.readline()
+    try:
         timestr = line[0:17]
         # There are two possible formats for the timestring.
         # We try both of them
         try:
-            dt = datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
-        except ValueError:
-            dt = datetime.strptime(timestr, '%y%m%d %H%M %S.%f')
-        hypo.origin_time = UTCDateTime(dt)
+            datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
+        except Exception:
+            datetime.strptime(timestr, '%y%m%d %H%M %S.%f')
+    except Exception:
+        msg = '{}: Not a hypo71 hypocenter file'.format(hypo_file)
+        raise Exception(msg)
 
-        lat = float(line[17:20])
-        lat_deg = float(line[21:26])
-        hypo.latitude = lat + lat_deg/60
-        lon = float(line[26:30])
-        lon_deg = float(line[31:36])
-        hypo.longitude = lon + lon_deg/60
-        hypo.depth = float(line[36:42])
-        evid = os.path.basename(hypo_file)
-        evid = evid.replace('.phs', '').replace('.h', '').replace('.hyp', '')
-        hypo.evid = evid
 
-    else:  # FIXME: put a condition here!
-        ev = hypo_file  # FIXME: improve this!
-        hypo.latitude = ev.latitude
-        hypo.longitude = ev.longitude
-        hypo.depth = ev.depth
-        hypo.origin_time = ev.utcdate
-        hypo.evid = ev.event_id
+def _parse_hypo71_hypocenter(hypo_file):
+    if hypo_file is None:
+        return None
+    try:
+        _is_hypo71_hypocenter(hypo_file)
+        with open(hypo_file) as fp:
+            line = fp.readline()
+            # Skip the first line if it contains
+            # characters in the first 10 digits:
+            if any(c.isalpha() for c in line[0:10]):
+                line = fp.readline()
+    except Exception as err:
+        logger.error(err)
+        ssp_exit(1)
 
+    hypo = AttribDict()
+    timestr = line[0:17]
+    # There are two possible formats for the timestring.
+    # We try both of them
+    try:
+        dt = datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
+    except ValueError:
+        dt = datetime.strptime(timestr, '%y%m%d %H%M %S.%f')
+    hypo.origin_time = UTCDateTime(dt)
+
+    lat = float(line[17:20])
+    lat_deg = float(line[21:26])
+    hypo.latitude = lat + lat_deg/60
+    lon = float(line[26:30])
+    lon_deg = float(line[31:36])
+    hypo.longitude = lon + lon_deg/60
+    hypo.depth = float(line[36:42])
+    evid = os.path.basename(hypo_file)
+    evid = evid.replace('.phs', '').replace('.h', '').replace('.hyp', '')
+    hypo.evid = evid
     return hypo
 
 
-def _is_hypo_format(fp):
-    for line in fp.readlines():
+def _is_hypo71_picks(pick_file):
+    for line in open(pick_file):
         # remove newline
         line = line.replace('\n', '')
         # skip separator and empty lines
@@ -656,20 +668,14 @@ def _is_hypo_format(fp):
         # Check if it is a pick line
         # 6th character should be alpha (phase name: P or S)
         # other character should be digits (date/time)
-        if (line[5].isalpha() and
+        if not (line[5].isalpha() and
                 line[9].isdigit() and
                 line[20].isdigit()):
-            fp.seek(0)  # rewind file
-            return True
-        else:
-            fp.seek(0)  # rewind file
-            return False
+            msg = '{}: Not a hypo71 phase file'.format(pick_file)
+            raise Exception(msg)
 
 
-# TODO: def _is_NLL_format(fp):
-
-
-def _parse_picks(config):
+def _parse_hypo71_picks(config):
     # we need to lazy-import here, so that OBSPY_VERSION is defined
     from sourcespec.ssp_setup import OBSPY_VERSION
     pick_file = config.options.pick_file
@@ -677,16 +683,12 @@ def _parse_picks(config):
         return None
 
     try:
-        fp = open(pick_file)
-        if not _is_hypo_format(fp):
-            raise Exception('%s: Not a phase file' % pick_file)
-        lines = fp.readlines()
-        fp.close()
+        _is_hypo71_picks(pick_file)
     except Exception as err:
         logger.error(err)
         ssp_exit(1)
     picks = []
-    for line in lines:
+    for line in open(pick_file):
         # remove newline
         line = line.replace('\n', '')
         # skip separator and empty lines
@@ -793,10 +795,10 @@ def read_traces(config):
     hypo = picks = None
     # parse hypocenter file
     if config.options.hypo_file is not None:
-        hypo = _parse_hypocenter(config.options.hypo_file)
+        hypo = _parse_hypo71_hypocenter(config.options.hypo_file)
     # parse pick file
     if config.options.pick_file is not None:
-        picks = _parse_picks(config)
+        picks = _parse_hypo71_picks(config)
     # parse QML file
     if config.options.qml_file is not None:
         hypo, picks = _parse_qml(config.options.qml_file, config.options.evid)
@@ -808,7 +810,7 @@ def read_traces(config):
         with open(config.pickle_catalog, 'rb') as fp:
             catalog = pickle.load(fp)
         event = [ev for ev in catalog if ev.event_id == config.options.evid][0]
-        hypo = _parse_hypocenter(event)
+        hypo = _parse_hypocenter_from_event(event)
         st = Stream()
         for trace in event.traces:
             if config.options.station is not None:
