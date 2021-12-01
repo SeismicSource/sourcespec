@@ -35,7 +35,7 @@ def _parse_values(value_str):
         try:
             output = tuple(map(float, value_str.rstrip(',').split(',')))
         except ValueError:
-            sys.stderr.write('ERROR: Invalid value: %s\n' % value_str)
+            sys.stderr.write('ERROR: Invalid value: {}\n'.format(value_str))
             sys.exit(1)
     return output
 
@@ -64,108 +64,151 @@ def _get_description(progname):
         epilog += '(note that the magnitude value "3.5" is repeated twice).\n'
         epilog += 'Use "-C" to generate all the possible combinations.'
     else:
-        sys.stderr.write('Wrong program name: %s\n' % progname)
+        sys.stderr.write('Wrong program name: {}\n'.format(progname))
         sys.exit(1)
     return description, epilog, nargs
 
 
 def _init_parser(description, epilog, nargs):
-    parser = ArgumentParser(description=description,
-                            epilog=epilog,
-                            formatter_class=RawTextHelpFormatter)
+    parser = ArgumentParser(
+        description=description, epilog=epilog,
+        formatter_class=RawTextHelpFormatter
+    )
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-S', '--sampleconf', dest='sampleconf',
-                       action='store_true', default=False,
-                       help='write sample configuration to file and exit')
-    group.add_argument('-U', '--updateconf', dest='updateconf',
-                       action='store', default=None,
-                       help='update an existing config file from a previous '
-                       'version', metavar='FILE')
-    parser.add_argument('-c', '--configfile', dest='config_file',
-                        action='store', default='source_spec.conf',
-                        help='load configuration from FILE '
-                        '(default: source_spec.conf)', metavar='FILE')
-    group.add_argument('-t', '--trace_path', nargs=nargs,
-                       help='path to trace file(s) or trace dir')
-    parser.add_argument('-H', '--hypocenter', dest='hypo_file',
-                        action='store', default=None,
-                        help='get hypocenter information from FILE. '
-                        'Supported formats: HYPO71',
-                        metavar='FILE')
-    parser.add_argument('-p', '--pickfile', dest='pick_file',
-                        action='store', default=None,
-                        help='get picks from FILE. '
-                        'Supported formats: HYPO71',
-                        metavar='FILE')
-    parser.add_argument('-q', '--qmlfile', dest='qml_file',
-                        action='store', default=None,
-                        help='get picks and hypocenter information from '
-                        'QuakeML FILE',
-                        metavar='FILE')
-    parser.add_argument('-n', '--evname', dest='evname',
-                        action='store', default=None,
-                        help='event name (used for plots and output files) ',
-                        metavar='NAME')
-    parser.add_argument('-e', '--evid', dest='evid',
-                        action='store', default=None,
-                        help='get evid from catalog', metavar='EVID')
-    parser.add_argument('-s', '--station', dest='station',
-                        action='store', default=None,
-                        help='only use this station', metavar='STATION')
-    parser.add_argument('-N', '--no-response', dest='no_response',
-                        action='store_true', default=False,
-                        help='do not remove instrument response')
+    group.add_argument(
+        '-S', '--sampleconf', dest='sampleconf',
+        action='store_true', default=False,
+        help='write sample configuration to file and exit'
+    )
+    group.add_argument(
+        '-U', '--updateconf', dest='updateconf',
+        action='store', default=None,
+        help='update an existing config file from a previous version',
+        metavar='FILE'
+    )
+    parser.add_argument(
+        '-c', '--configfile', dest='config_file',
+        action='store', default='source_spec.conf',
+        help='load configuration from FILE (default: source_spec.conf)',
+        metavar='FILE'
+    )
+    group.add_argument(
+        '-t', '--trace_path', nargs=nargs,
+        help='path to trace file(s) or trace dir'
+    )
+    parser.add_argument(
+        '-H', '--hypocenter', dest='hypo_file',
+        action='store', default=None,
+        help='get hypocenter information from FILE. Supported formats: HYPO71',
+        metavar='FILE'
+    )
+    parser.add_argument(
+        '-p', '--pickfile', dest='pick_file',
+        action='store', default=None,
+        help='get picks from FILE. Supported formats: HYPO71',
+        metavar='FILE'
+    )
+    parser.add_argument(
+        '-q', '--qmlfile', dest='qml_file',
+        action='store', default=None,
+        help='get picks and hypocenter information from QuakeML FILE',
+        metavar='FILE'
+    )
+    parser.add_argument(
+        '-n', '--evname', dest='evname',
+        action='store', default=None,
+        help='event name (used for plots and output files) ',
+        metavar='NAME'
+    )
+    parser.add_argument(
+        '-e', '--evid', dest='evid',
+        action='store', default=None,
+        help='get evid from catalog', metavar='EVID'
+    )
+    parser.add_argument(
+        '-s', '--station', dest='station',
+        action='store', default=None,
+        help='only use this station', metavar='STATION'
+    )
+    parser.add_argument(
+        '-N', '--no-response', dest='no_response',
+        action='store_true', default=False,
+        help='do not remove instrument response'
+    )
     return parser
 
 
 def _update_parser(parser, progname):
     if progname == 'source_spec':
-        parser.add_argument('-o', '--outdir', dest='outdir',
-                            action='store', default='sspec_out',
-                            help='save output to OUTDIR (default: sspec_out)',
-                            metavar='OUTDIR')
-        parser.add_argument('-C', '--correction', dest='correction',
-                            action='store_true', default=False,
-                            help='apply station correction to the "H" '
-                            'component of the spectra')
+        parser.add_argument(
+            '-o', '--outdir', dest='outdir',
+            action='store', default='sspec_out',
+            help='save output to OUTDIR (default: sspec_out)',
+            metavar='OUTDIR'
+        )
+        parser.add_argument(
+            '-C', '--correction', dest='correction',
+            action='store_true', default=False,
+            help='apply station correction to the "H" component of the '
+                 'spectra'
+        )
     elif progname == 'source_model':
-        parser.add_argument('-f', '--fmin', dest='fmin', action='store',
-                            type=float, default='0.01',
-                            help='minimum frequency (Hz, default 0.01)',
-                            metavar='FMIN')
-        parser.add_argument('-F', '--fmax', dest='fmax', action='store',
-                            type=float, default='50.0',
-                            help='maximum frequency (Hz, default 50.0)',
-                            metavar='FMAX')
-        parser.add_argument('-k', '--fc', dest='fc', action='store',
-                            default='10.0',
-                            help='(list of) corner frequency '
-                            '(Hz, default 10.0)', metavar='FC')
-        parser.add_argument('-m', '--mag', dest='mag', action='store',
-                            default='2.0',
-                            help='(list of) moment magnitude (default 2.0)',
-                            metavar='Mw')
-        parser.add_argument('-M', '--moment', dest='Mo', action='store',
-                            default='NaN',
-                            help='(list of) seismic moment '
-                            '(N.m, default undefined)', metavar='Mo')
-        parser.add_argument('-*', '--tstar', dest='t_star', action='store',
-                            default='0.0',
-                            help='(list of) t-star (attenuation, default 0.0)',
-                            metavar='T-STAR')
-        parser.add_argument('-a', '--alpha', dest='alpha', action='store',
-                            default='1.0',
-                            help='(list of) alpha (exponent for frequency '
-                            'dependence\nof attenuation, default 1.0)',
-                            metavar='1.0')
-        parser.add_argument('-C', '--combine', dest='combine',
-                            action='store_true', default=False,
-                            help='generate all the combinations of fc, mag, '
-                            'Mo, tstar, alpha')
-        parser.add_argument('-P', '--plot', dest='plot', action='store_true',
-                            default=False, help='plot results')
-    parser.add_argument('-v', '--version', action='version',
-                        version=get_versions()['version'])
+        parser.add_argument(
+            '-f', '--fmin', dest='fmin', action='store',
+            type=float, default='0.01',
+            help='minimum frequency (Hz, default 0.01)',
+            metavar='FMIN'
+        )
+        parser.add_argument(
+            '-F', '--fmax', dest='fmax', action='store',
+            type=float, default='50.0',
+            help='maximum frequency (Hz, default 50.0)',
+            metavar='FMAX'
+        )
+        parser.add_argument(
+            '-k', '--fc', dest='fc', action='store',
+            default='10.0',
+            help='(list of) corner frequency (Hz, default 10.0)',
+            metavar='Fc'
+        )
+        parser.add_argument(
+            '-m', '--mag', dest='mag', action='store',
+            default='2.0',
+            help='(list of) moment magnitude (default 2.0)',
+            metavar='Mw'
+        )
+        parser.add_argument(
+            '-M', '--moment', dest='Mo', action='store',
+            default='NaN',
+            help='(list of) seismic moment (N.m, default undefined)',
+            metavar='Mo'
+        )
+        parser.add_argument(
+            '-*', '--tstar', dest='t_star', action='store',
+            default='0.0',
+            help='(list of) t-star (attenuation, default 0.0)',
+            metavar='T-STAR'
+        )
+        parser.add_argument(
+            '-a', '--alpha', dest='alpha', action='store',
+            default='1.0',
+            help='(list of) alpha (exponent for frequency dependence\n'
+                 'of attenuation, default 1.0)',
+            metavar='1.0'
+        )
+        parser.add_argument(
+            '-C', '--combine', dest='combine',
+            action='store_true', default=False,
+            help='generate all the combinations of fc, mag, Mo, tstar, alpha'
+        )
+        parser.add_argument(
+            '-P', '--plot', dest='plot', action='store_true',
+            default=False, help='plot results'
+        )
+    parser.add_argument(
+        '-v', '--version', action='version',
+        version=get_versions()['version']
+    )
 
 
 def parse_args(progname):
