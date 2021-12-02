@@ -104,9 +104,12 @@ def _correct_station_name(station, traceid_file):
 
 
 def _add_paz_and_coords(trace, metadata, paz_dict=None):
+    traceid = trace.get_id()
+    # If we already know that traceid is skipped, raise a silent exception
+    if traceid in _add_paz_and_coords.skipped:
+        raise Exception()
     trace.stats.paz = None
     trace.stats.coords = None
-    traceid = trace.get_id()
     time = trace.stats.starttime
     # We first check whether metadata is a dataless dictionary
     if isinstance(metadata, dict):
@@ -207,8 +210,13 @@ def _add_paz_and_coords(trace, metadata, paz_dict=None):
             pass
     # Still no coords? Raise an exception
     if trace.stats.coords is None:
+        _add_paz_and_coords.skipped.append(traceid)
         raise Exception(
             '%s: could not find coords for trace: skipping trace' % traceid)
+
+
+# list to keep track of skipped traces
+_add_paz_and_coords.skipped = list()
 
 
 def _add_instrtype(trace, config):
@@ -877,7 +885,9 @@ def read_traces(config):
                     _add_hypocenter(trace, hypo)
                     _add_picks(trace, picks)
                 except Exception as err:
-                    logger.warning(err)
+                    # only warn if error message is not empty
+                    if str(err):
+                        logger.warning(err)
                     continue
                 st.append(trace)
 
