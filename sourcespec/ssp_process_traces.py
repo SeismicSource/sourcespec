@@ -194,8 +194,12 @@ def _merge_stream(config, st):
     t2 = st[0].stats.arrivals['S2'][1]
     st_cut.trim(starttime=t1, endtime=t2)
     if not st_cut:
-        logger.warning('%s: Not enough signal for the selected cut '
-                       'interval: skipping trace' % traceid)
+        logger.warning(
+            '{}: No signal for the selected S-wave cut interval: '
+            'skipping trace >'.format(traceid))
+        logger.warning(
+            '> Cut interval: {} - {}'.format(t1, t2)
+        )
         raise RuntimeError
     gaps_olaps = st_cut.get_gaps()
     gaps = [g for g in gaps_olaps if g[6] >= 0]
