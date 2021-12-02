@@ -348,58 +348,59 @@ def _add_hypocenter(trace, hypo):
     trace.stats.hypo = hypo
 
 
-def _add_picks(trace, picks):
-    stat_picks = []
+def _get_picks_from_SAC(trace):
+    trace_picks = []
     station = trace.stats.station
+    fields = ('a', 't0', 't1', 't2', 't3', 't4',
+              't5', 't6', 't7', 't8', 't9')
+    times = []
+    labels = []
+    for key in fields:
+        try:
+            times.append(trace.stats.sac[key])
+        except KeyError:
+            times.append(None)
+        # now look at labels (ka, kt0, ...)
+        key = 'k' + key
+        try:
+            labels.append(trace.stats.sac[key].strip())
+        except KeyError:
+            labels.append(None)
+    for time, label, field in zip(times, labels, fields):
+        if time is None:
+            continue
+        pick = Pick()
+        pick.station = station
+        begin = trace.stats.sac.b
+        pick.time = trace.stats.starttime + time - begin
+        if label is not None and len(label) == 4:
+            pick.flag = label[0]
+            pick.phase = label[1]
+            pick.polarity = label[2]
+            pick.quality = label[3]
+        else:
+            if field == 'a':
+                pick.phase = 'P'
+            elif field == 't0':
+                pick.phase = 'S'
+            else:
+                pick.phase = 'X'
+        trace_picks.append(pick)
+    return trace_picks
 
+
+def _add_picks(trace, picks):
+    trace_picks = []
+    station = trace.stats.station
     if picks is None:
         # try to get picks from SAC header
-        if trace.stats._format != 'SAC':
-            return
-
-        fields = ('a', 't0', 't1', 't2', 't3', 't4',
-                  't5', 't6', 't7', 't8', 't9')
-        times = []
-        labels = []
-        for key in fields:
-            try:
-                times.append(trace.stats.sac[key])
-            except KeyError:
-                times.append(None)
-            # now look at labels (ka, kt0, ...)
-            key = 'k' + key
-            try:
-                labels.append(trace.stats.sac[key].strip())
-            except KeyError:
-                labels.append(None)
-        for time, label, field in zip(times, labels, fields):
-            if time is None:
-                continue
-
-            pick = Pick()
-            pick.station = station
-            begin = trace.stats.sac.b
-            pick.time = trace.stats.starttime + time - begin
-            if label is not None and len(label) == 4:
-                pick.flag = label[0]
-                pick.phase = label[1]
-                pick.polarity = label[2]
-                pick.quality = label[3]
-            else:
-                if field == 'a':
-                    pick.phase = 'P'
-                elif field == 't0':
-                    pick.phase = 'S'
-                else:
-                    pick.phase = 'X'
-            stat_picks.append(pick)
-
+        if trace.stats._format == 'SAC':
+            trace_picks = _get_picks_from_SAC(trace)
     else:
         for pick in picks:
             if pick.station == station:
-                stat_picks.append(pick)
-
-    trace.stats.picks = stat_picks
+                trace_picks.append(pick)
+    trace.stats.picks = trace_picks
     # Create empty dicts for arrivals and takeoff angles.
     # They will be used later.
     trace.stats.arrivals = dict()
@@ -599,26 +600,6 @@ def _parse_hypocenter_from_event(ev):
     return hypo
 
 
-def _is_hypo71_hypocenter(hypo_file):
-    with open(hypo_file) as fp:
-        line = fp.readline()
-        # Skip the first line if it contains
-        # characters in the first 10 digits:
-        if any(c.isalpha() for c in line[0:10]):
-            line = fp.readline()
-    try:
-        timestr = line[0:17]
-        # There are two possible formats for the timestring.
-        # We try both of them
-        try:
-            datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
-        except Exception:
-            datetime.strptime(timestr, '%y%m%d %H%M %S.%f')
-    except Exception:
-        msg = '{}: Not a hypo71 hypocenter file'.format(hypo_file)
-        raise Exception(msg)
-
-
 def _parse_hypo71_hypocenter(hypo_file):
     with open(hypo_file) as fp:
         line = fp.readline()
@@ -632,7 +613,7 @@ def _parse_hypo71_hypocenter(hypo_file):
     # We try both of them
     try:
         dt = datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
-    except ValueError:
+    except Exception:
         dt = datetime.strptime(timestr, '%y%m%d %H%M %S.%f')
     hypo.origin_time = UTCDateTime(dt)
     lat = float(line[17:20])
@@ -649,18 +630,33 @@ def _parse_hypo71_hypocenter(hypo_file):
 
 
 def _parse_hypo2000_file(hypo_file):
-    pass
+    for line in open(hypo_file):
+        print(line)
+    ssp_exit()
 
 
 def _parse_hypo_file(hypo_file):
     picks = None
+    err_msgs = []
     try:
-        _is_hypo71_hypocenter(hypo_file)
         hypo = _parse_hypo71_hypocenter(hypo_file)
+        return hypo, picks
     except Exception as err:
-        logger.error(err)
-        ssp_exit(1)
-    return hypo, picks
+        msg = '{}: Not a hypo71 hypocenter file'.format(hypo_file)
+        err_msgs.append(msg)
+        msg = 'Parsing error: ' + str(err)
+        err_msgs.append(msg)
+    try:
+        hypo, picks = _parse_hypo2000_file(hypo_file)
+        return hypo, picks
+    except Exception as err:
+        msg = '{}: Not a hypo2000 hypocenter file'.format(hypo_file)
+        err_msgs.append(msg)
+        msg = 'Parsing error: ' + str(err)
+        err_msgs.append(msg)
+    for msg in err_msgs:
+        logger.error(msg)
+    ssp_exit(1)
 
 
 def _is_hypo71_picks(pick_file):
