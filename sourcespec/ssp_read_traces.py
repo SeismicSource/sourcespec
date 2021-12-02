@@ -620,20 +620,12 @@ def _is_hypo71_hypocenter(hypo_file):
 
 
 def _parse_hypo71_hypocenter(hypo_file):
-    if hypo_file is None:
-        return None
-    try:
-        _is_hypo71_hypocenter(hypo_file)
-        with open(hypo_file) as fp:
+    with open(hypo_file) as fp:
+        line = fp.readline()
+        # Skip the first line if it contains
+        # characters in the first 10 digits:
+        if any(c.isalpha() for c in line[0:10]):
             line = fp.readline()
-            # Skip the first line if it contains
-            # characters in the first 10 digits:
-            if any(c.isalpha() for c in line[0:10]):
-                line = fp.readline()
-    except Exception as err:
-        logger.error(err)
-        ssp_exit(1)
-
     hypo = AttribDict()
     timestr = line[0:17]
     # There are two possible formats for the timestring.
@@ -643,7 +635,6 @@ def _parse_hypo71_hypocenter(hypo_file):
     except ValueError:
         dt = datetime.strptime(timestr, '%y%m%d %H%M %S.%f')
     hypo.origin_time = UTCDateTime(dt)
-
     lat = float(line[17:20])
     lat_deg = float(line[21:26])
     hypo.latitude = lat + lat_deg/60
@@ -655,6 +646,21 @@ def _parse_hypo71_hypocenter(hypo_file):
     evid = evid.replace('.phs', '').replace('.h', '').replace('.hyp', '')
     hypo.evid = evid
     return hypo
+
+
+def _parse_hypo2000_file(hypo_file):
+    pass
+
+
+def _parse_hypo_file(hypo_file):
+    picks = None
+    try:
+        _is_hypo71_hypocenter(hypo_file)
+        hypo = _parse_hypo71_hypocenter(hypo_file)
+    except Exception as err:
+        logger.error(err)
+        ssp_exit(1)
+    return hypo, picks
 
 
 def _is_hypo71_picks(pick_file):
@@ -795,7 +801,7 @@ def read_traces(config):
     hypo = picks = None
     # parse hypocenter file
     if config.options.hypo_file is not None:
-        hypo = _parse_hypo71_hypocenter(config.options.hypo_file)
+        hypo, picks = _parse_hypo_file(config.options.hypo_file)
     # parse pick file
     if config.options.pick_file is not None:
         picks = _parse_hypo71_picks(config)

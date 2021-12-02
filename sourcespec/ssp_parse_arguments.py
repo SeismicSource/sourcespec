@@ -97,21 +97,23 @@ def _init_parser(description, epilog, nargs):
         help='path to trace file(s) or trace dir'
     )
     parser.add_argument(
+        '-q', '--qmlfile', dest='qml_file',
+        action='store', default=None,
+        help='get picks and hypocenter information from QuakeML FILE',
+        metavar='FILE'
+    )
+    parser.add_argument(
         '-H', '--hypocenter', dest='hypo_file',
         action='store', default=None,
-        help='get hypocenter information from FILE. Supported formats: HYPO71',
+        help='get hypocenter information from FILE.\n'
+             'Supported formats: HYPO71, HYPOINVERSE-2000.\n'
+             'If this file contains picks, they will be parsed as well.',
         metavar='FILE'
     )
     parser.add_argument(
         '-p', '--pickfile', dest='pick_file',
         action='store', default=None,
         help='get picks from FILE. Supported formats: HYPO71',
-        metavar='FILE'
-    )
-    parser.add_argument(
-        '-q', '--qmlfile', dest='qml_file',
-        action='store', default=None,
-        help='get picks and hypocenter information from QuakeML FILE',
         metavar='FILE'
     )
     parser.add_argument(
