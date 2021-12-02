@@ -147,6 +147,14 @@ def add_arrivals_to_trace(trace, config):
     vel = {'P': config.vp_tt, 'S': config.vs_tt}
     focmec = config.rps_from_focal_mechanism
     for phase in 'P', 'S':
+        key = '{}_{}'.format(trace.id, phase)
+        try:
+            trace.stats.arrivals[phase] = add_arrivals_to_trace.pick_cache[key]
+            trace.stats.takeoff_angles[phase] =\
+                add_arrivals_to_trace.angle_cache[key]
+            continue
+        except KeyError:
+            pass
         try:
             travel_time, takeoff_angle = _wave_arrival_nll(
                 trace, phase, NLL_time_dir, focmec)
@@ -179,9 +187,19 @@ def add_arrivals_to_trace(trace, config):
             logger.info('{}: using theoretical {} pick from {}'.format(
                 trace.id, phase, method))
             trace.stats.arrivals[phase] = (phase + 'theo', theo_pick_time)
+        else:
+            # Cannot get phase arrival: we stop here
+            continue
+        add_arrivals_to_trace.pick_cache[key] = trace.stats.arrivals[phase]
         trace.stats.takeoff_angles[phase] = takeoff_angle
         if focmec:
             logger.info(
                 '{}: {} takeoff angle: {:.1f} computed from {}'.format(
                     trace.id, phase, takeoff_angle, method
                 ))
+        add_arrivals_to_trace.angle_cache[key] =\
+            trace.stats.takeoff_angles[phase]
+
+
+add_arrivals_to_trace.pick_cache = dict()
+add_arrivals_to_trace.angle_cache = dict()
