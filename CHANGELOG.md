@@ -12,6 +12,7 @@ Earthquake source parameters from S-wave displacement spectra
 
 ## unreleased
 
+- Support for HYPOINVERSE-2000 output files
 - Correctly show circles on maps with diagonal smaller than 1 km
 - `cartopy` removed as installation dependency, since it is not easily
   installable via `pip`

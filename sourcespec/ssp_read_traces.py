@@ -638,9 +638,54 @@ def _parse_hypo71_hypocenter(hypo_file):
 
 
 def _parse_hypo2000_file(hypo_file):
+    hypo = AttribDict()
+    picks = list()
+    hypo_line = False
+    station_line = False
+    oldstation = oldnetwork = oldchannel = ''
     for line in open(hypo_file):
-        print(line)
-    ssp_exit()
+        word = line.split()
+        if not word:
+            continue
+        if hypo_line:
+            hypo = AttribDict()
+            timestr = ' '.join(word[0:3])
+            hypo.origin_time = UTCDateTime(timestr)
+            hypo.latitude = float(word[3])
+            hypo.longitude = float(word[4])
+            # depth is in km, according to the hypo2000 manual
+            hypo.depth = float(word[5])
+            evid = os.path.basename(hypo_file)
+            evid = evid.replace('.txt', '')
+            hypo.evid = evid
+        if station_line:
+            pick = Pick()
+            station = line[1:5].strip()
+            pick.station = station if station else oldstation
+            oldstation = pick.station
+            network = line[6:8].strip()
+            pick.network = network if network else oldnetwork
+            oldnetwork = pick.network
+            channel = line[9:12].strip()
+            pick.channel = channel if channel else oldchannel
+            oldchannel = pick.channel
+            # pick.flag = line[4:5]
+            pick.phase = line[31:34].strip()
+            if not pick.phase:
+                continue
+            seconds = float(line[37:43])
+            time = hypo.origin_time.replace(second=0, microsecond=0)
+            pick.time = time + seconds
+            picks.append(pick)
+        if word[0] == 'YEAR':
+            hypo_line = True
+            continue
+        hypo_line = False
+        if word[0] == 'STA':
+            station_line = True
+    if not hypo:
+        raise TypeError('Could not find hypocenter data.')
+    return hypo, picks
 
 
 def _parse_hypo_file(hypo_file):
@@ -662,6 +707,7 @@ def _parse_hypo_file(hypo_file):
         err_msgs.append(msg)
         msg = 'Parsing error: ' + str(err)
         err_msgs.append(msg)
+    # If we arrive here, the file was not recognized as valid
     for msg in err_msgs:
         logger.error(msg)
     ssp_exit(1)
