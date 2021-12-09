@@ -74,7 +74,13 @@ def _get_correct_traceids(traceid_file):
 def _correct_traceid(trace, traceid_file):
     if traceid_file is None:
         return
-    correct_traceids = _get_correct_traceids(traceid_file)
+    try:
+        correct_traceids = _get_correct_traceids(traceid_file)
+    except Exception:
+        msg = ('traceid mapping file "{}" not found '
+               'or not in json format'.format(traceid_file))
+        logger.error(msg)
+        ssp_exit(1)
     try:
         traceid = correct_traceids[trace.get_id()]
         net, sta, loc, chan = traceid.split('.')
