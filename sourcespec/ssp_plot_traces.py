@@ -137,9 +137,6 @@ def _savefig(config, figures, async_plotter):
 
 def _plot_trace(config, trace, ntraces, tmax,
                 ax, ax_text, trans, trans3, path_effects):
-    t1 = (trace.stats.arrivals['P'][1] - config.pre_p_time)
-    t2 = (trace.stats.arrivals['S'][1] + 3 * config.win_length)
-    trace.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     orientation = trace.stats.channel[-1]
     if orientation in config.vertical_channel_codes:
         color = 'purple'
@@ -219,10 +216,17 @@ def _add_labels(axes, plotn, ncols):
         ax.set_xlabel('Time (s)', fontsize=8)
 
 
+def _trim_traces(config, st):
+    for trace in st:
+        t1 = (trace.stats.arrivals['P'][1] - config.pre_p_time)
+        t2 = (trace.stats.arrivals['S'][1] + 3 * config.win_length)
+        trace.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+
+
 def plot_traces(config, st, spec_st=None, ncols=4, block=True,
                 async_plotter=None):
     """
-    Plot displacement traces.
+    Plot traces in the original instrument unit (velocity or acceleration).
 
     Display to screen and/or save to file.
     """
@@ -276,6 +280,7 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
                                                       ax.transData)
         trans3 = transforms.offset_copy(trans2, fig=fig, x=0, y=0.1)
 
+        _trim_traces(config, st_sel)
         maxes = [abs(t.max()) for t in st_sel.traces
                  if t.stats.channel[:-1] == code]
         ntraces = len(maxes)
