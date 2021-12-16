@@ -17,7 +17,10 @@ Earthquake source parameters from S-wave displacement spectra
 - `cartopy` removed as installation dependency, since it is not easily
   installable via `pip`
 - Removed autodetection of hypo71 file paths (specific to CRL case)
-- Check for trace clipping only in the processing window
+- New approach for trace clipping detection (requires just one configuration
+  parameters, named `clip_max_percent`)
+  - Check for trace clipping only in the processing window
+  - Use histogram of samples to detect clipping
 - Fix trace plot scaling for traces with larger signal outside the plot window
 
 

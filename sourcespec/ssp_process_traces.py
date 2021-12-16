@@ -76,19 +76,18 @@ def _check_signal_level(config, trace):
 def _check_clipping(config, trace):
     t1 = (trace.stats.arrivals['P'][1] - config.pre_p_time)
     t2 = (trace.stats.arrivals['S'][1] + config.win_length)
-    tr = trace.copy().trim(t1, t2)
-    clip_tolerance = config.clip_tolerance
-    clip_max = (1 - clip_tolerance/100.) * tr.data.max()
-    clip_min = (1 - clip_tolerance/100.) * tr.data.min()
-    nclips = (tr.data >= clip_max).sum()
-    nclips += (tr.data <= clip_min).sum()
-    clip_nmax = config.clip_nmax
-    if float(nclips)/tr.stats.npts > clip_nmax/100.:
+    tr = trace.copy().trim(t1, t2).detrend('demean')
+    npts = len(tr.data)
+    # Compute data histogram with a number of bins equal to 10% of data points
+    hist, bins = np.histogram(np.abs(tr.data), bins=int(npts*0.1))
+    # Clipped samples are in the last bin
+    nclips = hist[-1]
+    clip_max_percent = config.clip_max_percent
+    if nclips/npts > clip_max_percent/100.:
         msg = (
             '{} {}: Trace is clipped for more than {:.2f}% '
-            'with {:.2f}% tolerance: skipping trace'.format(
-                tr.id, tr.stats.instrtype, clip_nmax,
-                clip_tolerance)
+            'skipping trace'.format(
+                tr.id, tr.stats.instrtype, clip_max_percent)
         )
         raise RuntimeError(msg)
 

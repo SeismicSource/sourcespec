@@ -265,6 +265,7 @@ def _update_config_file(config_file, configspec):
         'ignore_stations': 'ignore_traceids',
         'use_stations': 'use_traceids',
         'dataless': 'station_metadata',
+        'clip_nmax': 'clip_max_percent'
     }
     for old_opt, new_opt in migrate_options.items():
         if old_opt in config_obj:
@@ -351,6 +352,14 @@ def configure(options, progname):
         sys.stderr.write(
             'Error: "dataless" config parameter has been renamed to '
             '"station_metadata".\n\n'
+            'Please upgrade your config file manually or '
+            'via the "-U" option.\n'
+        )
+        sys.exit(1)
+    if 'clip_nmax' in config_obj:
+        sys.stderr.write(
+            'Error: "clip_nmax" config parameter has been renamed to '
+            '"clip_max_percent".\n\n'
             'Please upgrade your config file manually or '
             'via the "-U" option.\n'
         )
