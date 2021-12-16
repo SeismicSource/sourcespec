@@ -258,6 +258,9 @@ def _update_config_file(config_file, configspec):
     for k, v in config_obj.items():
         if k not in config_new:
             continue
+        # Fix for force_list(default=None)
+        if v == ['None', ]:
+            v = None
         config_new[k] = v
     migrate_options = {
         's_win_length': 'win_length',
