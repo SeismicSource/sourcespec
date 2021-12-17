@@ -290,6 +290,51 @@ def _write_config(config_obj, progname, outdir):
         config_obj.write(fp)
 
 
+def _check_deprecated_config_options(config_obj):
+    deprecation_msgs = list()
+    if 's_win_length' in config_obj or 'noise_win_length' in config_obj:
+        deprecation_msgs.append(
+            '> "s_win_length" and "noise_win_length" config parameters '
+            'are no more\n'
+            '   supported. Both are replaced by "win_length".\n'
+        )
+    if 'traceids' in config_obj:
+        deprecation_msgs.append(
+            '> "traceids" config parameter has been renamed to '
+            '"traceid_mapping_file".\n'
+        )
+    if 'ignore_stations' in config_obj or 'use_stations' in config_obj:
+        deprecation_msgs.append(
+            '> "ignore_stations" and "use_stations" config parameters '
+            'have been renamed to\n'
+            '  "ignore_traceids" and "use_traceids", respectively.\n'
+        )
+    if 'dataless' in config_obj:
+        deprecation_msgs.append(
+            '> "dataless" config parameter has been renamed to '
+            '"station_metadata".\n'
+        )
+    if 'clip_nmax' in config_obj:
+        deprecation_msgs.append(
+            '> "clip_nmax" config parameter has been renamed to '
+            '"clip_max_percent".\n'
+            '   Note that the new default is 5% '
+            '(current value in your config file: {}%)\n'.format(
+                config_obj['clip_nmax'])
+        )
+    if deprecation_msgs:
+        sys.stderr.write(
+            'Error: your config file contains deprecated parameters:\n\n')
+    for msg in deprecation_msgs:
+        sys.stderr.write(msg)
+    if deprecation_msgs:
+        sys.stderr.write(
+            '\nPlease upgrade your config file manually or '
+            'via the "-U" option.\n'
+        )
+        sys.exit(1)
+
+
 def configure(options, progname):
     """
     Parse command line arguments and read config file.
@@ -326,48 +371,7 @@ def configure(options, progname):
         sys.stderr.write('No configuration value present!\n')
         sys.exit(1)
 
-    if 's_win_length' in config_obj or 'noise_win_length' in config_obj:
-        sys.stderr.write(
-            'Error: "s_win_length" and "noise_win_length" config parameters '
-            'are no more\nsupported. Both are replaced by "win_length".\n\n'
-            'Please upgrade your config file manually or '
-            'via the "-U" option.\n'
-        )
-        sys.exit(1)
-    if 'traceids' in config_obj:
-        sys.stderr.write(
-            'Error: "traceids" config parameter has been renamed to '
-            '"traceid_mapping_file".\n\n'
-            'Please upgrade your config file manually or '
-            'via the "-U" option.\n'
-        )
-        sys.exit(1)
-    if 'ignore_stations' in config_obj or 'use_stations' in config_obj:
-        sys.stderr.write(
-            'Error: "ignore_stations" and "use_stations" config parameters '
-            'have been renamed to\n"ignore_traceids" and "use_traceids", '
-            'respectively.\n\n'
-            'Please upgrade your config file manually or '
-            'via the "-U" option.\n'
-        )
-        sys.exit(1)
-    if 'dataless' in config_obj:
-        sys.stderr.write(
-            'Error: "dataless" config parameter has been renamed to '
-            '"station_metadata".\n\n'
-            'Please upgrade your config file manually or '
-            'via the "-U" option.\n'
-        )
-        sys.exit(1)
-    if 'clip_nmax' in config_obj:
-        sys.stderr.write(
-            'Error: "clip_nmax" config parameter has been renamed to '
-            '"clip_max_percent".\n\n'
-            'Please upgrade your config file manually or '
-            'via the "-U" option.\n'
-        )
-        sys.exit(1)
-
+    _check_deprecated_config_options(config_obj)
     _write_config(config_obj, progname, options.outdir)
 
     # Create a Config object
