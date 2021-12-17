@@ -15,8 +15,10 @@ from __future__ import (absolute_import, division, print_function,
 import os
 import logging
 import numpy as np
+import warnings
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
+import cartopy.io.shapereader as shpreader
 import cartopy.feature as cfeature
 from obspy.imaging.beachball import beach
 from sourcespec.adjustText import adjust_text
@@ -204,12 +206,25 @@ def _make_basemap(config, maxdist):
             tile_zoom_level = 8
     ax.add_image(stamen_terrain, tile_zoom_level)
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
-    countries = cfeature.NaturalEarthFeature(
-        category='cultural',
-        name='admin_0_countries',
-        scale='10m',
-        facecolor='none')
-    ax.add_feature(countries, edgecolor='k')
+    # add coastlines from GSHHS
+    coastline_resolution = {
+        'full': 'f',
+        'high': 'h',
+        'intermediate': 'i',
+        'low': 'l',
+        'crude': 'c'
+    }
+    shpfile = shpreader.gshhs(
+        coastline_resolution[config.plot_coastline_resolution])
+    shp = shpreader.Reader(shpfile)
+    with warnings.catch_warnings():
+        # silent a warning on:
+        # "Shapefile shape has invalid polygon: no exterior rings found"
+        warnings.simplefilter('ignore')
+        ax.add_geometries(
+            shp.geometries(), ccrs.PlateCarree(),
+            edgecolor='black', facecolor='none')
+    ax.add_feature(cfeature.BORDERS, edgecolor='black', facecolor='none')
     circle_texts = _plot_circles(ax, hypo.longitude, hypo.latitude, maxdist, 5)
     _plot_hypo(ax, hypo)
     return ax, circle_texts

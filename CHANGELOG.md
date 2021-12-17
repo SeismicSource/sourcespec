@@ -12,16 +12,22 @@ Earthquake source parameters from S-wave displacement spectra
 
 ## unreleased
 
-- Support for HYPOINVERSE-2000 output files
-- Correctly show circles on maps with diagonal smaller than 1 km
-- `cartopy` removed as installation dependency, since it is not easily
-  installable via `pip`
-- Removed autodetection of hypo71 file paths (specific to CRL case)
-- New approach for trace clipping detection (requires just one configuration
-  parameters, named `clip_max_percent`)
-  - Check for trace clipping only in the processing window
-  - Use histogram of samples to detect clipping
-- Fix trace plot scaling for traces with larger signal outside the plot window
+- Input/output:
+  - Support for HYPOINVERSE-2000 output files
+  - Removed autodetection of hypo71 file paths (specific to CRL case)
+- Processing:
+  - New approach for trace clipping detection (requires just one configuration
+    parameter, named `clip_max_percent`)
+    - Check for trace clipping only in the processing window
+    - Use histogram of samples to detect clipping
+- Plotting:
+  - `cartopy` removed as installation dependency, since it is not easily
+    installable via `pip`
+  - Use GSHHS database to draw coastlines.
+    - New config option: `plot_coastline_resolution`
+  - Correctly show circles on maps with diagonal smaller than 1 km
+  - Fix trace plot scaling for traces with larger signal outside the plot
+    window
 
 
 ## v1.4 - 2021-10-13
