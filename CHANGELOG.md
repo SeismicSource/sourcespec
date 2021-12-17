@@ -28,6 +28,8 @@ Earthquake source parameters from S-wave displacement spectra
   - Correctly show circles on maps with diagonal smaller than 1 km
   - Fix trace plot scaling for traces with larger signal outside the plot
     window
+  - Do not plot 'H' spectrum if there is only one instrument component
+    (since it will coincide with the only component)
 
 
 ## v1.4 - 2021-10-13

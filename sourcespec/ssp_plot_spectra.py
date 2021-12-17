@@ -428,12 +428,20 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         ax_text = False
         ax, ax2 = axes[plotn-1]
         sn_text_ypos = 0.95
+        orientations = [sp.stats.channel[-1] for sp in spec_st_sel]
+        # compute the number of instrument components (N, Z, E, 1, 2, ...)
+        ncomponents = len(
+            [o for o in orientations if o not in ['S', 's', 't', 'H']])
         for spec in spec_st_sel.traces:
             if spec.stats.channel[:-1] != code:
                 continue
             if not config.plot_spectra_ignored and spec.stats.ignore:
                 continue
             orientation = spec.stats.channel[-1]
+            # If there is only one component, do not plot the 'H' spectrum
+            # which would coincide with the component spectrum
+            if ncomponents == 1 and orientation == 'H':
+                continue
             color, linestyle, linewidth =\
                 _color_lines(config, orientation, plotn, stack_plots)
             # dim out ignored spectra
