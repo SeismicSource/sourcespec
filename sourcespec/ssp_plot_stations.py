@@ -204,18 +204,30 @@ def _make_basemap(config, maxdist):
             tile_zoom_level = 12
         else:
             tile_zoom_level = 8
+        logger.info('Map zoom level autoset to: {}'.format(tile_zoom_level))
     ax.add_image(stamen_terrain, tile_zoom_level)
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     # add coastlines from GSHHS
-    coastline_resolution = {
+    res_map = {
         'full': 'f',
         'high': 'h',
         'intermediate': 'i',
         'low': 'l',
         'crude': 'c'
     }
-    shpfile = shpreader.gshhs(
-        coastline_resolution[config.plot_coastline_resolution])
+    inv_res_map = {v: k for k, v in res_map.items()}
+    if config.plot_coastline_resolution:
+        coastline_resolution = res_map[config.plot_coastline_resolution]
+    else:
+        if maxdiagonal <= 100:
+            coastline_resolution = 'h'
+        else:
+            coastline_resolution = 'i'
+        logger.info(
+            'Coastline resolution autoset to: {}'.format(
+                inv_res_map[coastline_resolution])
+        )
+    shpfile = shpreader.gshhs(coastline_resolution)
     shp = shpreader.Reader(shpfile)
     with warnings.catch_warnings():
         # silent a warning on:
