@@ -643,12 +643,41 @@ def _parse_hypo71_hypocenter(hypo_file):
     return hypo
 
 
+def _parse_hypo2000_station_line(line, oldpick, orig_time):
+    if oldpick is not None:
+        oldstation = oldpick.station
+        oldnetwork = oldpick.network
+        oldchannel = oldpick.channel
+    else:
+        oldstation = ""
+        oldnetwork = ""
+        oldchannel = ""
+    pick = Pick()
+    station = line[1:5].strip()
+    pick.station = station if station else oldstation
+    oldstation = pick.station
+    network = line[6:8].strip()
+    pick.network = network if network else oldnetwork
+    oldnetwork = pick.network
+    channel = line[9:12].strip()
+    pick.channel = channel if channel else oldchannel
+    oldchannel = pick.channel
+    # pick.flag = line[4:5]
+    pick.phase = line[31:34].strip()
+    if not pick.phase:
+        raise Exception()
+    seconds = float(line[37:43])
+    time = orig_time.replace(second=0, microsecond=0)
+    pick.time = time + seconds
+    return pick
+
+
 def _parse_hypo2000_file(hypo_file):
     hypo = AttribDict()
     picks = list()
     hypo_line = False
     station_line = False
-    oldstation = oldnetwork = oldchannel = ''
+    oldpick = None
     for line in open(hypo_file):
         word = line.split()
         if not word:
@@ -665,24 +694,13 @@ def _parse_hypo2000_file(hypo_file):
             evid = evid.replace('.txt', '')
             hypo.evid = evid
         if station_line:
-            pick = Pick()
-            station = line[1:5].strip()
-            pick.station = station if station else oldstation
-            oldstation = pick.station
-            network = line[6:8].strip()
-            pick.network = network if network else oldnetwork
-            oldnetwork = pick.network
-            channel = line[9:12].strip()
-            pick.channel = channel if channel else oldchannel
-            oldchannel = pick.channel
-            # pick.flag = line[4:5]
-            pick.phase = line[31:34].strip()
-            if not pick.phase:
+            try:
+                pick = _parse_hypo2000_station_line(
+                    line, oldpick, hypo.orig_time)
+                oldpick = pick
+                picks.append(pick)
+            except Exception:
                 continue
-            seconds = float(line[37:43])
-            time = hypo.origin_time.replace(second=0, microsecond=0)
-            pick.time = time + seconds
-            picks.append(pick)
         if word[0] == 'YEAR':
             hypo_line = True
             continue
