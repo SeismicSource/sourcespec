@@ -643,6 +643,57 @@ def _parse_hypo71_hypocenter(hypo_file):
     return hypo
 
 
+def _parse_hypo2000_hypo_line(line):
+    word = line.split()
+    hypo = AttribDict()
+    timestr = ' '.join(word[0:3])
+    hypo.origin_time = UTCDateTime(timestr)
+    n = 3
+    if word[n].isnumeric():
+        # Check if word is integer
+        # In this case the format should be: degrees and minutes
+        latitude = float(word[n]) + float(word[n+1])/60.
+        n += 2
+    elif 'N' in word[n] or 'S' in word[n]:
+        # Check if there is N or S in the string
+        # In this case the format should be: degrees and minutes
+        _word = word[n].replace('N', ' ').replace('S', ' ').split()
+        latitude = float(_word[0]) + float(_word[1])/60.
+        n += 1
+    else:
+        # Otherwise latitude should be in float format
+        try:
+            latitude = float(word[n])
+        except Exception:
+            msg = 'cannot read latitude: {}'.format(word[n])
+            raise Exception(msg)
+        n += 1
+    hypo.latitude = latitude
+    if word[n].isnumeric():
+        # Check if word is integer
+        # In this case the format should be: degrees and minutes
+        longitude = float(word[n]) + float(word[n+1])/60.
+        n += 2
+    elif 'E' in word[n] or 'W' in word[n]:
+        # Check if there is E or W in the string
+        # In this case the format should be: degrees and minutes
+        _word = word[n].replace('E', ' ').replace('W', ' ').split()
+        longitude = float(_word[0]) + float(_word[1])/60.
+        n += 1
+    else:
+        # Otherwise longitude should be in float format
+        try:
+            longitude = float(word[n])
+        except Exception:
+            msg = 'cannot read longitude: {}'.format(word[n])
+            raise Exception(msg)
+        n += 1
+    hypo.longitude = longitude
+    # depth is in km, according to the hypo2000 manual
+    hypo.depth = float(word[n])
+    return hypo
+
+
 def _parse_hypo2000_station_line(line, oldpick, orig_time):
     if oldpick is not None:
         oldstation = oldpick.station
@@ -683,13 +734,7 @@ def _parse_hypo2000_file(hypo_file):
         if not word:
             continue
         if hypo_line:
-            hypo = AttribDict()
-            timestr = ' '.join(word[0:3])
-            hypo.origin_time = UTCDateTime(timestr)
-            hypo.latitude = float(word[3])
-            hypo.longitude = float(word[4])
-            # depth is in km, according to the hypo2000 manual
-            hypo.depth = float(word[5])
+            hypo = _parse_hypo2000_hypo_line(line)
             evid = os.path.basename(hypo_file)
             evid = evid.replace('.txt', '')
             hypo.evid = evid
