@@ -228,35 +228,32 @@ def _write_db(config, sourcepar):
     conn = sqlite3.connect(database_file)
     c = conn.cursor()
 
-    # Init database schema
+    # Init Station table
     c.execute('create table if not exists Stations '
               '(stid, evid, Mo, Mw, fc, t_star, dist, azimuth);')
-
     # Write station source parameters to database
     for statId in sorted(sourcepar.keys()):
         if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
             continue
         par = sourcepar[statId]
-
         # Remove existing line, if present
         t = (statId, evid)
         c.execute('delete from Stations where stid=? and evid=?;', t)
-
         # Insert new line
         t = (statId, evid, par['Mo'], par['Mw'], par['fc'], par['t_star'],
              par['hyp_dist'], par['az'])
         c.execute('insert into Stations values(?, ?, ?, ?, ?, ?, ?, ?);', t)
-
     # Commit changes
     conn.commit()
 
-    means = sourcepar['means']
-
+    # Init Event table
     c.execute('create table if not exists Events '
               '(evid, Mo_mean, Mw_mean, fc_mean, t_star_mean, '
               'ra_mean, bsd_mean, Ml_mean);')
-    t = (evid, means['Mw'])
-    c.execute('delete from Events where evid=? and Mw_mean=?;', t)
+    means = sourcepar['means']
+    # Remove event from Event table, if present
+    t = (evid, )
+    c.execute('delete from Events where evid=?;', t)
     t = (evid, means['Mo'], means['Mw'], means['fc'], means['t_star'],
          means['ra'], means['bsd'], means['Ml'])
     c.execute('insert into Events values(?, ?, ?, ?, ?, ?, ?, ?);', t)
