@@ -230,7 +230,7 @@ def _write_db(config, sourcepar):
 
     # Init Station table
     c.execute('create table if not exists Stations '
-              '(stid, evid, Mo, Mw, fc, t_star, dist, azimuth);')
+              '(stid, evid, Mo, Mw, fc, t_star, dist, azimuth, Er);')
     # Write station source parameters to database
     for statId in sorted(sourcepar.keys()):
         if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
@@ -241,22 +241,22 @@ def _write_db(config, sourcepar):
         c.execute('delete from Stations where stid=? and evid=?;', t)
         # Insert new line
         t = (statId, evid, par['Mo'], par['Mw'], par['fc'], par['t_star'],
-             par['hyp_dist'], par['az'])
-        c.execute('insert into Stations values(?, ?, ?, ?, ?, ?, ?, ?);', t)
+             par['hyp_dist'], par['az'], par['Er'])
+        c.execute('insert into Stations values(?, ?, ?, ?, ?, ?, ?, ?, ?);', t)
     # Commit changes
     conn.commit()
 
     # Init Event table
     c.execute('create table if not exists Events '
               '(evid, Mo_mean, Mw_mean, fc_mean, t_star_mean, '
-              'ra_mean, bsd_mean, Ml_mean);')
+              'ra_mean, bsd_mean, Er_mean, Ml_mean);')
     means = sourcepar['means']
     # Remove event from Event table, if present
     t = (evid, )
     c.execute('delete from Events where evid=?;', t)
     t = (evid, means['Mo'], means['Mw'], means['fc'], means['t_star'],
-         means['ra'], means['bsd'], means['Ml'])
-    c.execute('insert into Events values(?, ?, ?, ?, ?, ?, ?, ?);', t)
+         means['ra'], means['bsd'], means['Er'], means['Ml'])
+    c.execute('insert into Events values(?, ?, ?, ?, ?, ?, ?, ?, ?);', t)
     # Commit changes and close database
     conn.commit()
     conn.close()
