@@ -248,15 +248,23 @@ def _write_db(config, sourcepar):
 
     # Init Event table
     c.execute('create table if not exists Events '
-              '(evid, Mo_mean, Mw_mean, fc_mean, t_star_mean, '
-              'ra_mean, bsd_mean, Er_mean, Ml_mean);')
+              '(evid, Mo, Mo_wavg, Mw, Mw_wavg, fc, fc_wavg,'
+              't_star, t_star_wavg, ra, bsd, Er, Ml);')
     means = sourcepar['means']
+    means_weight = sourcepar['means_weight']
     # Remove event from Event table, if present
     t = (evid, )
     c.execute('delete from Events where evid=?;', t)
-    t = (evid, means['Mo'], means['Mw'], means['fc'], means['t_star'],
-         means['ra'], means['bsd'], means['Er'], means['Ml'])
-    c.execute('insert into Events values(?, ?, ?, ?, ?, ?, ?, ?, ?);', t)
+    t = (
+        evid,
+        means['Mo'], means_weight['Mo'],
+        means['Mw'], means_weight['Mw'],
+        means['fc'], means_weight['fc'],
+        means['t_star'], means_weight['t_star'],
+        means['ra'], means['bsd'], means['Er'], means['Ml']
+    )
+    c.execute(
+        'insert into Events values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);', t)
     # Commit changes and close database
     conn.commit()
     conn.close()
