@@ -15,6 +15,8 @@ Earthquake source parameters from S-wave displacement spectra
 - Input/output:
   - Support for HYPOINVERSE-2000 output files
   - Removed autodetection of hypo71 file paths (specific to CRL case)
+  - SQLite output: added radiated energy, weighted averages and
+    errors on parameters
 - Processing:
   - New approach for trace clipping detection (requires just one configuration
     parameter, named `clip_max_percent`)
