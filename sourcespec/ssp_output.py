@@ -214,7 +214,7 @@ def _write_parfile(config, sourcepar, sourcepar_err):
     logger.info('Output written to file: ' + parfilename)
 
 
-def _write_db(config, sourcepar):
+def _write_db(config, sourcepar, sourcepar_err):
     try:
         database_file = config.database_file
     except KeyError:
@@ -229,42 +229,73 @@ def _write_db(config, sourcepar):
     c = conn.cursor()
 
     # Init Station table
-    c.execute('create table if not exists Stations '
-              '(stid, evid, Mo, Mw, fc, t_star, dist, azimuth, Er);')
+    c.execute(
+        'create table if not exists Stations '
+        '(stid, evid, Mo, Mw, Mw_err, fc, fc_err, t_star, t_star_err,'
+        'dist, azimuth, Er);')
     # Write station source parameters to database
     for statId in sorted(sourcepar.keys()):
         if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
             continue
         par = sourcepar[statId]
+        par_err = sourcepar_err[statId]
         # Remove existing line, if present
         t = (statId, evid)
         c.execute('delete from Stations where stid=? and evid=?;', t)
         # Insert new line
-        t = (statId, evid, par['Mo'], par['Mw'], par['fc'], par['t_star'],
-             par['hyp_dist'], par['az'], par['Er'])
-        c.execute('insert into Stations values(?, ?, ?, ?, ?, ?, ?, ?, ?);', t)
+        t = (
+            statId, evid, par['Mo'],
+            par['Mw'], par_err['Mw'],
+            par['fc'], par_err['fc'],
+            par['t_star'], par_err['t_star'],
+            par['hyp_dist'], par['az'], par['Er']
+        )
+        # Create a string like ?,?,?,?
+        values = ','.join('?'*len(t))
+        c.execute('insert into Stations values(' + values + ');', t)
     # Commit changes
     conn.commit()
 
     # Init Event table
-    c.execute('create table if not exists Events '
-              '(evid, Mo, Mo_wavg, Mw, Mw_wavg, fc, fc_wavg,'
-              't_star, t_star_wavg, ra, bsd, Er, Ml);')
+    c.execute(
+        'create table if not exists Events '
+        '(evid, Mo, Mo_err_minus, Mo_err_plus,'
+        'Mo_wavg, Mo_wavg_err_minus, Mo_wavg_err_plus,'
+        'Mw, Mw_err, Mw_wavg, Mw_wavg_err,'
+        'fc, fc_err_minus, fc_err_plus,'
+        'fc_wavg, fc_wavg_err_minus, fc_wavg_err_plus,'
+        't_star, t_star_err,'
+        't_star_wavg, t_star_wavg_err,'
+        'ra, ra_err_minus, ra_err_plus,'
+        'bsd, bsd_err_minus, bsd_err_plus,'
+        'Er, Er_err_minus, Er_err_plus,'
+        'Ml, Ml_err);')
     means = sourcepar['means']
     means_weight = sourcepar['means_weight']
+    errors = sourcepar['errors']
+    errors_weight = sourcepar['errors_weight']
     # Remove event from Event table, if present
     t = (evid, )
     c.execute('delete from Events where evid=?;', t)
     t = (
         evid,
-        means['Mo'], means_weight['Mo'],
-        means['Mw'], means_weight['Mw'],
-        means['fc'], means_weight['fc'],
-        means['t_star'], means_weight['t_star'],
-        means['ra'], means['bsd'], means['Er'], means['Ml']
+        means['Mo'], *errors['Mo'],
+        means_weight['Mo'], *errors_weight['Mo'],
+        means['Mw'], errors['Mw'],
+        means_weight['Mw'], errors_weight['Mw'],
+        means['fc'], *errors['fc'],
+        means_weight['fc'], *errors_weight['fc'],
+        means['t_star'], errors['t_star'],
+        means_weight['t_star'], errors_weight['t_star'],
+        means['ra'], *errors['ra'],
+        means['bsd'], *errors['bsd'],
+        means['Er'], *errors['Er'],
+        means['Ml'], errors['Ml']
     )
+    # Create a string like ?,?,?,?
+    values = ','.join('?'*len(t))
     c.execute(
-        'insert into Events values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);', t)
+        'insert into Events values(' + values + ');', t)
     # Commit changes and close database
     conn.commit()
     conn.close()
@@ -378,7 +409,7 @@ def write_output(config, sourcepar, sourcepar_err):
     _write_parfile(config, sourcepar, sourcepar_err)
 
     # Write to database, if requested
-    _write_db(config, sourcepar)
+    _write_db(config, sourcepar, sourcepar_err)
 
     # Write to hypo file, if requested
     _write_hypo(config, sourcepar)
