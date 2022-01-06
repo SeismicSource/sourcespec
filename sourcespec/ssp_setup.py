@@ -372,6 +372,10 @@ def configure(options, progname):
         sys.exit(1)
 
     _check_deprecated_config_options(config_obj)
+
+    # Create a 'no_evid' subdir into outdir.
+    # It will be then renamed once an evid is available
+    options.outdir = os.path.join(options.outdir, 'no_evid')
     _write_config(config_obj, progname, options.outdir)
 
     # Create a Config object
@@ -447,6 +451,30 @@ def save_config(config):
     except Exception:
         pass
     os.rename(src, dst)
+
+
+def rename_outdir(config):
+    """Rename outdir using evid."""
+    try:
+        evid = config.hypo.evid
+    except Exception:
+        return
+    src = config.options.outdir
+    path = os.path.normpath(config.options.outdir).split(os.sep)
+    dst = os.path.join(*path[:-1], evid)
+    if os.path.exists(dst):
+        # If destination already exists, we move all files into destination
+        file_names = os.listdir(src)
+        for file_name in file_names:
+            shutil.move(
+                os.path.join(src, file_name),
+                os.path.join(dst, file_name)
+            )
+        os.rmdir(src)
+    else:
+        # Otherwhise, we need just to rename
+        os.rename(src, dst)
+    config.options.outdir = dst
 
 
 def setup_logging(config, basename=None, progname='source_spec'):

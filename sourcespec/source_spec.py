@@ -25,8 +25,9 @@ def main():
     options = parse_args(progname='source_spec')
 
     # Setup stage
-    from sourcespec.ssp_setup import (configure, setup_logging, save_config,
-                                      init_plotting, ssp_exit)
+    from sourcespec.ssp_setup import (
+        configure, rename_outdir, setup_logging, save_config, init_plotting,
+        ssp_exit)
     config = configure(options, progname='source_spec')
     setup_logging(config)
 
@@ -34,6 +35,9 @@ def main():
     st = read_traces(config)
 
     setup_logging(config, config.hypo.evid)
+
+    # Now that we have an evid, we can rename the outdir
+    rename_outdir(config)
 
     # Save config to out dir
     save_config(config)
