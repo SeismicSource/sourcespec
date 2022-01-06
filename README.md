@@ -1,4 +1,4 @@
-<img src="logo/SourceSpec_logo.png" width="600">
+<img src="logo/SourceSpec_logo.svg" width="600">
 
 # SourceSpec
 
