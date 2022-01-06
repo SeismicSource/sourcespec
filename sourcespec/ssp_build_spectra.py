@@ -127,13 +127,17 @@ def _check_data_len(config, trace):
     trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     npts = len(trace_cut.data)
     if npts == 0:
-        logger.warning('%s: No data for the selected cut interval: '
-                       'skipping trace' % traceId)
+        logger.warning(
+            '{}: No data for the selected cut interval: '
+            'skipping trace'.format(traceId)
+        )
         raise RuntimeError
     nzeros = len(np.where(trace_cut.data == 0)[0])
     if nzeros > npts/4:
-        logger.warning('%s: Too many gaps for the selected cut '
-                       'interval: skipping trace' % traceId)
+        logger.warning(
+            '{}: S-wave window is zero for more than 25%: '
+            'skipping trace'.format(traceId)
+        )
         raise RuntimeError
 
 
