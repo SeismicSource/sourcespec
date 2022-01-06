@@ -223,6 +223,7 @@ def _synth_spec(config, spec, par, par_err):
 
 def spectral_inversion(config, spec_st, weight_st):
     """Inversion of displacement spectra."""
+    logger.info('Inverting spectra...')
     weighting_messages = {
         'noise': 'Using noise weighting for inversion.',
         'frequency': 'Using frequency weighting for inversion.',
@@ -274,4 +275,5 @@ def spectral_inversion(config, spec_st, weight_st):
 
     radiated_energy(config, spec_st, sourcepar)
 
+    logger.info('Inverting spectra: done')
     return sourcepar, sourcepar_err

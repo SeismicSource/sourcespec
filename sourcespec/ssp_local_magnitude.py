@@ -152,6 +152,7 @@ def _compute_local_magnitude(config, amp, h_dist):
 
 def local_magnitude(config, st, proc_st, sourcepar, sourcepar_err):
     """Compute local magnitude from max absolute W-A amplitude."""
+    logger.info('Computing local magnitude...')
     # We only use traces selected for proc_st
     trace_ids = set(tr.id for tr in proc_st)
     for tr_id in sorted(trace_ids):
@@ -194,4 +195,4 @@ def local_magnitude(config, st, proc_st, sourcepar, sourcepar_err):
     ml_values = np.array([x.get('Ml', np.nan) for x in sourcepar.values()])
     ml_values = ml_values[~np.isnan(ml_values)]
     Ml = np.mean(ml_values)
-    logger.info('Network Local Magnitude: %.2f' % Ml)
+    logger.info('Network local magnitude: {:.2f}'.format(Ml))

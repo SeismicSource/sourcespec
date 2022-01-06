@@ -332,6 +332,7 @@ def build_spectra(config, st, noise_weight=False):
     corrected for instrumental constants, normalized by
     hypocentral distance.
     """
+    logger.info('Building spectra...')
     spec_st = Stream()
     specnoise_st = Stream()
 
@@ -387,6 +388,7 @@ def build_spectra(config, st, noise_weight=False):
     if config.options.correction:
         spec_st = station_correction(spec_st, config)
 
+    logger.info('Building spectra: done')
     if noise_weight:
         for specnoise in specnoise_st:
             specnoise.data_mag = moment_to_mag(specnoise.data)

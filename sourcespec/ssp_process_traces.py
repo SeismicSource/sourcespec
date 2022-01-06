@@ -274,6 +274,7 @@ def _add_hypo_dist_and_arrivals(config, st):
 
 def process_traces(config, st):
     """Remove mean, deconvolve and ignore unwanted components."""
+    logger.info('Processing traces...')
     out_st = Stream()
     for id in sorted(set(tr.id for tr in st)):
         # We still use a stream, since the trace can have
@@ -325,4 +326,5 @@ def process_traces(config, st):
             st_sel.trim(t0, t1)
             st_sel.rotate('NE->RT')
 
+    logger.info('Processing traces: done')
     return out_st
