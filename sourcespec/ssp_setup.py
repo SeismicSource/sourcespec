@@ -453,8 +453,8 @@ def save_config(config):
     os.rename(src, dst)
 
 
-def rename_outdir(config):
-    """Rename outdir using evid."""
+def move_outdir(config):
+    """Move outdir to a new dir named from evid."""
     try:
         evid = config.hypo.evid
     except Exception:
@@ -462,19 +462,28 @@ def rename_outdir(config):
     src = config.options.outdir
     path = os.path.normpath(config.options.outdir).split(os.sep)
     dst = os.path.join(*path[:-1], evid)
-    if os.path.exists(dst):
-        # If destination already exists, we move all files into destination
-        file_names = os.listdir(src)
-        for file_name in file_names:
-            shutil.move(
-                os.path.join(src, file_name),
-                os.path.join(dst, file_name)
-            )
-        os.rmdir(src)
-    else:
-        # Otherwhise, we need just to rename
-        os.rename(src, dst)
+    # Create destination
+    if not os.path.exists(dst):
+        os.makedirs(dst)
+    # Copy all files into destination
+    file_names = os.listdir(src)
+    for file_name in file_names:
+        shutil.copyfile(
+            os.path.join(src, file_name),
+            os.path.join(dst, file_name)
+        )
+    # Old outdir cannot be removed yet, because the log file is still opened
+    config.options.oldoutdir = src
     config.options.outdir = dst
+
+
+def remove_old_outdir(config):
+    """Try to remove the old outdir."""
+    try:
+        oldoutdir = config.options.oldoutdir
+        shutil.rmtree(oldoutdir)
+    except Exception:
+        return
 
 
 def setup_logging(config, basename=None, progname='source_spec'):
@@ -512,11 +521,13 @@ def setup_logging(config, basename=None, progname='source_spec'):
             hdlr.flush()
             hdlr.close()
             logger_root.removeHandler(hdlr)
-        if OS == 'nt':
-            # Windows has problems with renaming
-            shutil.copyfile(oldlogfile, logfile)
-        else:
-            os.rename(oldlogfile, logfile)
+        # Copy old logfile to new
+        shutil.copyfile(oldlogfile, logfile)
+        # Remove old logfile from old and new dir
+        os.remove(oldlogfile)
+        oldlogfile = os.path.join(
+            config.options.outdir, os.path.basename(oldlogfile))
+        os.remove(oldlogfile)
         filemode = 'a'
     else:
         filemode = 'w'
