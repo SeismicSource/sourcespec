@@ -7,13 +7,7 @@ Earthquake source parameters from S-wave displacement spectra
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3688587.svg)](
   https://doi.org/10.5281/zenodo.3688587)
 
-(c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
-
-(c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
-              Emanuela Matrullo <matrullo@geologie.ens.fr>,
-              Agnès Chounet <chounet@ipgp.fr>
-
-(c) 2015-2021 Claudio Satriano <satriano@ipgp.fr>
+(c) 2011-2022 Claudio Satriano <satriano@ipgp.fr>
 
 ## Description
 
@@ -102,7 +96,7 @@ repository.
 
 If you used SourceSpec for a scientific paper, please cite it as:
 
-> Satriano, C. (2021). SourceSpec – Earthquake source parameters from S-wave
+> Satriano, C. (2022). SourceSpec – Earthquake source parameters from S-wave
 > displacement spectra (X.Y). https://doi.org/10.5281/ZENODO.3688587
 
 Please replace `X.Y` with the SourceSpec version number you used.

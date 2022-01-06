@@ -1,13 +1,7 @@
 # SourceSpec
 Earthquake source parameters from S-wave displacement spectra
 
-(c) 2011-2012 Claudio Satriano <satriano@ipgp.fr>
-
-(c) 2013-2014 Claudio Satriano <satriano@ipgp.fr>,
-              Emanuela Matrullo <matrullo@geologie.ens.fr>,
-              Agnès Chounet <chounet@ipgp.fr>
-
-(c) 2015-2021 Claudio Satriano <satriano@ipgp.fr>
+(c) 2011-2022 Claudio Satriano <satriano@ipgp.fr>
 
 
 ## unreleased

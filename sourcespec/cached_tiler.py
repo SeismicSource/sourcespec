@@ -1,5 +1,11 @@
 """
-CachedTiler class.
+CachedTiler class for Catyopy.
+
+:copyright:
+    2018-2022 Claudio Satriano <satriano@ipgp.fr>
+:license:
+    CeCILL Free Software License Agreement v2.1
+    (http://www.cecill.info/licences.en.html)
 
 Adapted from
 https://github.com/SciTools/cartopy/issues/732#issuecomment-191423035

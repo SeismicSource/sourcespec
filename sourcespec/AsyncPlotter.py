@@ -1,5 +1,16 @@
 # -*- coding: utf8 -*-
-# Modified from: https://gist.github.com/astrofrog/1453933
+# SPDX-License-Identifier: CECILL-2.1
+"""
+AsyncPlotter class for sourcespec.
+
+:copyright:
+    2016-2022 Claudio Satriano <satriano@ipgp.fr>
+:license:
+    CeCILL Free Software License Agreement v2.1
+    (http://www.cecill.info/licences.en.html)
+
+Modified from: https://gist.github.com/astrofrog/1453933
+"""
 import multiprocessing as mp
 import time
 
