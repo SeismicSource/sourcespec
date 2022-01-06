@@ -25,6 +25,7 @@ from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 from obspy.core import Stream
 from sourcespec import spectrum
+from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import smooth, cosine_taper, moment_to_mag, get_vel
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
@@ -369,6 +370,10 @@ def build_spectra(config, st, noise_weight=False):
                     specnoise.stats.ignore = True
             specnoise_st.append(specnoise)
         spec_st.append(spec)
+
+    if not spec_st:
+        logger.error('No spectra left! Exiting.')
+        ssp_exit()
 
     # build H component and weight_st
     weight_st = _build_H_and_weight(spec_st, specnoise_st, config.wave_type)
