@@ -21,6 +21,7 @@ from future.utils import iteritems
 
 import sys
 import os
+import platform
 import shutil
 import logging
 import signal
@@ -555,6 +556,9 @@ def setup_logging(config, basename=None, progname='source_spec'):
     if not oldlogfile:
         logger.debug('source_spec START')
         logger.debug('SourceSpec version: ' + get_versions()['version'])
+        uname = platform.uname()
+        uname_str = '{} {} {}'.format(uname[0], uname[2], uname[4])
+        logger.debug('Platform: ' + uname_str)
         logger.debug('Python version: ' + PYTHON_VERSION_STR)
         logger.debug('ObsPy version: ' + OBSPY_VERSION_STR)
         logger.debug('NumPy version: ' + NUMPY_VERSION_STR)
