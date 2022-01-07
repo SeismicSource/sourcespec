@@ -260,17 +260,6 @@ _paramstring = r'''
 
 _matchstring = '^%s*' % _paramstring
 
-# Python pre 2.2.1 doesn't have bool
-try:
-    bool
-except NameError:
-    def bool(val):
-        """Simple boolean equivalent function. """
-        if val:
-            return 1
-        else:
-            return 0
-
 
 def dottedQuadToNum(ip):
     """
@@ -278,17 +267,8 @@ def dottedQuadToNum(ip):
 
     >>> int(dottedQuadToNum('1 '))
     1
-    >>> int(dottedQuadToNum(' 1.2'))
-    16777218
-    >>> int(dottedQuadToNum(' 1.2.3 '))
-    16908291
     >>> int(dottedQuadToNum('1.2.3.4'))
     16909060
-    >>> dottedQuadToNum('255.255.255.255')
-    4294967295
-    >>> dottedQuadToNum('255.255.255.256')
-    Traceback (most recent call last):
-    ValueError: Not a good dotted-quad IP: 255.255.255.256
     """
 
     # import here to avoid it when ip_addr values are not used
@@ -381,7 +361,7 @@ class VdtUnknownCheckError(ValidateError):
         Traceback (most recent call last):
         VdtUnknownCheckError: the check "yoda" is unknown.
         """
-        ValidateError.__init__(self, 'the check "%s" is unknown.' % (value,))
+        ValidateError.__init__(self, 'the check "{}" is unknown.'.format(value))
 
 
 class VdtParamError(SyntaxError):
@@ -401,7 +381,7 @@ class VdtParamError(SyntaxError):
         if value is self.NOT_GIVEN:
             SyntaxError.__init__(self, name_or_msg)
         else:
-            SyntaxError.__init__(self, 'passed an incorrect value "%s" for parameter "%s".' % (value, name_or_msg))
+            SyntaxError.__init__(self, 'passed an incorrect value "{}" for parameter "{}".'.format(value, name_or_msg))
 
 
 class VdtTypeError(ValidateError):
@@ -413,7 +393,7 @@ class VdtTypeError(ValidateError):
         Traceback (most recent call last):
         VdtTypeError: the value "jedi" is of the wrong type.
         """
-        ValidateError.__init__(self, 'the value "%s" is of the wrong type.' % (value,))
+        ValidateError.__init__(self, 'the value "{}" is of the wrong type.'.format(value))
 
 
 class VdtValueError(ValidateError):
@@ -425,7 +405,7 @@ class VdtValueError(ValidateError):
         Traceback (most recent call last):
         VdtValueError: the value "jedi" is unacceptable.
         """
-        ValidateError.__init__(self, 'the value "%s" is unacceptable.' % (value,))
+        ValidateError.__init__(self, 'the value "{}" is unacceptable.'.format(value))
 
 
 class VdtValueTooSmallError(VdtValueError):
@@ -437,7 +417,7 @@ class VdtValueTooSmallError(VdtValueError):
         Traceback (most recent call last):
         VdtValueTooSmallError: the value "0" is too small.
         """
-        ValidateError.__init__(self, 'the value "%s" is too small.' % (value,))
+        ValidateError.__init__(self, 'the value "{}" is too small.'.format(value))
 
 
 class VdtValueTooBigError(VdtValueError):
@@ -449,7 +429,7 @@ class VdtValueTooBigError(VdtValueError):
         Traceback (most recent call last):
         VdtValueTooBigError: the value "1" is too big.
         """
-        ValidateError.__init__(self, 'the value "%s" is too big.' % (value,))
+        ValidateError.__init__(self, 'the value "{}" is too big.'.format(value))
 
 
 class VdtValueTooShortError(VdtValueError):
@@ -463,7 +443,7 @@ class VdtValueTooShortError(VdtValueError):
         """
         ValidateError.__init__(
             self,
-            'the value "%s" is too short.' % (value,))
+            'the value "{}" is too short.'.format(value))
 
 
 class VdtValueTooLongError(VdtValueError):
@@ -475,7 +455,7 @@ class VdtValueTooLongError(VdtValueError):
         Traceback (most recent call last):
         VdtValueTooLongError: the value "jedie" is too long.
         """
-        ValidateError.__init__(self, 'the value "%s" is too long.' % (value,))
+        ValidateError.__init__(self, 'the value "{}" is too long.'.format(value))
 
 
 class Validator(object):
@@ -547,7 +527,7 @@ class Validator(object):
     ConfigObj, an alternative to ConfigParser which supports lists and
     can validate a config file using a config schema.
     For more details on using Validator with ConfigObj see:
-    https://configobj.readthedocs.org/en/latest/configobj.html
+    https://configobj.readthedocs.io/en/latest/configobj.html
     """
 
     # this regex does the initial parsing of the checks
@@ -653,7 +633,7 @@ class Validator(object):
             fun_kwargs = dict(fun_kwargs)
         else:
             fun_name, fun_args, fun_kwargs, default = self._parse_check(check)
-            fun_kwargs = dict([(str(key), value) for (key, value) in list(fun_kwargs.items())])
+            fun_kwargs = {str(key): value for (key, value) in list(fun_kwargs.items())}
             self._cache[check] = fun_name, list(fun_args), dict(fun_kwargs), default
         return fun_name, fun_args, fun_kwargs, default
 
@@ -955,7 +935,7 @@ def is_boolean(value):
         except KeyError:
             raise VdtTypeError(value)
     # we do an equality test rather than an identity test
-    # this ensures Python 2.2 compatibilty
+    # this ensures Python 2.2 compatibility
     # and allows 0 and 1 to represent True and False
     if value == False:
         return False
@@ -1244,7 +1224,7 @@ def force_list(value, min=None, max=None):
     trailing comma that turns a single value into a list.
 
     You can optionally specify the minimum and maximum number of members.
-    A minumum of greater than one will fail if the user only supplies a
+    A minimum of greater than one will fail if the user only supplies a
     string.
 
     >>> vtor.check('force_list', ())
@@ -1261,10 +1241,17 @@ def force_list(value, min=None, max=None):
 
 
 fun_dict = {
+    int: is_integer,
+    'int': is_integer,
     'integer': is_integer,
+    float: is_float,
     'float': is_float,
     'ip_addr': is_ip_addr,
+    str: is_string,
+    'str': is_string,
     'string': is_string,
+    bool: is_boolean,
+    'bool': is_boolean,
     'boolean': is_boolean,
 }
 
@@ -1482,4 +1469,6 @@ if __name__ == '__main__':
     failures, tests = doctest.testmod(
         m, globs=globs,
         optionflags=doctest.IGNORE_EXCEPTION_DETAIL | doctest.ELLIPSIS)
-    assert not failures, '{} failures out of {} tests'.format(failures, tests)
+    print('{} {} failures out of {} tests'
+          .format("FAIL" if failures else "*OK*", failures, tests))
+    sys.exit(bool(failures))
