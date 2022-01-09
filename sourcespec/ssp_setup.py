@@ -25,6 +25,7 @@ import platform
 import shutil
 import logging
 import signal
+import uuid
 from datetime import datetime
 from sourcespec.configobj import ConfigObj
 from sourcespec.configobj.validate import Validator
@@ -374,9 +375,14 @@ def configure(options, progname):
 
     _check_deprecated_config_options(config_obj)
 
-    # Create a 'no_evid' subdir into outdir.
+    # Create a 'no_evid_' subdir into outdir.
+    # The random hex string will make it sure that this name is unique
     # It will be then renamed once an evid is available
-    options.outdir = os.path.join(options.outdir, 'no_evid')
+    hex = uuid.uuid4().hex
+    options.outdir = os.path.join(
+        options.outdir,
+        'no_evid_{}'.format(hex)
+    )
     _write_config(config_obj, progname, options.outdir)
 
     # Create a Config object
