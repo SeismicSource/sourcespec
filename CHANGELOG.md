@@ -24,6 +24,7 @@ Earthquake source parameters from S-wave displacement spectra
   - Use GSHHS database to draw coastlines.
     - New config option: `plot_coastline_resolution`
   - Correctly show circles on maps with diagonal smaller than 1 km
+  - Fix for error on plotting fc map, when only one station is available
   - Fix trace plot scaling for traces with larger signal outside the plot
     window
   - Do not plot 'H' spectrum if there is only one instrument component

@@ -272,6 +272,9 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     elif vname == 'fc':
         vmin = np.min(values)
         vmax = np.max(values)
+        if vmax == vmin:
+            vmax = vmean+1
+            vmin = vmean-1
         midpoint = (vmean-vmin)/(vmax-vmin)
         cmap = _shiftedColorMap(cm.PRGn, midpoint=midpoint)
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
