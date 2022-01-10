@@ -238,7 +238,7 @@ def _write_db(config, sourcepar, sourcepar_err):
     evid = hypo.evid
 
     # Open SQLite database
-    conn = sqlite3.connect(database_file)
+    conn = sqlite3.connect(database_file, timeout=20)
     c = conn.cursor()
 
     # Init Station table
