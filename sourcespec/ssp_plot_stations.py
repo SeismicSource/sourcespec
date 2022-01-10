@@ -181,7 +181,7 @@ def _make_basemap(config, maxdist):
     tile_dir = 'maptiles'
     stamen_terrain = CachedTiler(cimgt.Stamen('terrain-background'), tile_dir)
     # Create a GeoAxes
-    figsize = (10, 10)
+    figsize = (7.5, 7.5)
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111, projection=stamen_terrain.crs)
     # Add event information as a title
@@ -303,11 +303,8 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
 
     # Add a colorbar
     ax_divider = make_axes_locatable(ax)
-    cax = ax_divider.append_axes('right', size='100%',
-                                 pad='-30%', aspect=15.,
-                                 map_projection=ax.projection)
-    cax.background_patch.set_visible(False)
-    cax.outline_patch.set_visible(False)
+    cax = ax_divider.append_axes(
+        'right', size='6%', pad='15%', axes_class=plt.Axes)
     sm = cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     fig = ax.get_figure()
