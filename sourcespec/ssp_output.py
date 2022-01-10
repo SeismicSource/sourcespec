@@ -246,9 +246,11 @@ def _write_db(config, sourcepar, sourcepar_err):
         '(stid, evid, Mo, Mw, Mw_err, fc, fc_err, t_star, t_star_err,'
         'dist, azimuth, Er);')
     # Write station source parameters to database
+    nobs = 0
     for statId in sorted(sourcepar.keys()):
         if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
             continue
+        nobs += 1
         par = sourcepar[statId]
         par_err = sourcepar_err[statId]
         # Remove existing line, if present
@@ -275,7 +277,7 @@ def _write_db(config, sourcepar, sourcepar_err):
     # Init Event table
     c.execute(
         'create table if not exists Events '
-        '(evid, Mo, Mo_err_minus, Mo_err_plus,'
+        '(evid, nobs, Mo, Mo_err_minus, Mo_err_plus,'
         'Mo_wavg, Mo_wavg_err_minus, Mo_wavg_err_plus,'
         'Mw, Mw_err, Mw_wavg, Mw_wavg_err,'
         'fc, fc_err_minus, fc_err_plus,'
@@ -294,7 +296,7 @@ def _write_db(config, sourcepar, sourcepar_err):
     t = (evid, )
     c.execute('delete from Events where evid=?;', t)
     t = (
-        evid,
+        evid, nobs,
         means['Mo'], *errors['Mo'],
         means_weight['Mo'], *errors_weight['Mo'],
         means['Mw'], errors['Mw'],
