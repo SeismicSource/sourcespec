@@ -242,6 +242,21 @@ def _make_basemap(config, maxdist):
     return ax, circle_texts
 
 
+def _contrast_color(color):
+    """
+    Return the best contrasting color, either black or white.
+
+    Source: https://stackoverflow.com/a/3943023/2021880
+    """
+    R, G, B = [
+        c/12.92 if c <= 0.03928 else ((c+0.055)/1.055)**2.4 for c in color[:3]]
+    L = 0.2126*R + 0.7152*G + 0.0722*B  # luminance
+    if L > 0.179:
+        return 'black'
+    else:
+        return 'white'
+
+
 def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     maxdist = np.max(lonlat_dist[:, 2])
     ax, circle_texts = _make_basemap(config, maxdist)
@@ -315,9 +330,15 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     fig = ax.get_figure()
     fig.colorbar(sm, cax=cax)
     cax.get_yaxis().set_visible(True)
-    cax.axhline(vmean, color='k')
-    cax.axhline(vmean-verr_minus, linestyle=':', color='k')
-    cax.axhline(vmean+verr_plus, linestyle=':', color='k')
+    cax.axhline(vmean, lw=2, color='black')
+    linestyle = (0, (2, 1))
+    linewidth = 1.5
+    color = _contrast_color(cmap(norm(vmean-verr_minus)))
+    cax.axhline(
+        vmean-verr_minus, lw=linewidth, linestyle=linestyle, color=color)
+    color = _contrast_color(cmap(norm(vmean+verr_plus)))
+    cax.axhline(
+        vmean+verr_plus, lw=linewidth, linestyle=linestyle, color=color)
     if vname == 'mag':
         cm_label = 'Magnitude'
     elif vname == 'fc':

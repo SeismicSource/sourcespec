@@ -25,6 +25,7 @@ Earthquake source parameters from S-wave displacement spectra
     - New config option: `plot_coastline_resolution`
   - Correctly show circles on maps with diagonal smaller than 1 km
   - Fix plotting map colorbar on Matplotlib 3.5
+  - Make average and errorbar lines more visible on map colorbar
   - Fix for error on plotting fc map, when only one station is available
   - Fix trace plot scaling for traces with larger signal outside the plot
     window
