@@ -234,7 +234,8 @@ def _write_db(config, sourcepar, sourcepar_err):
     if not database_file:
         return
 
-    evid = config.hypo.evid
+    hypo = config.hypo
+    evid = hypo.evid
 
     # Open SQLite database
     conn = sqlite3.connect(database_file)
@@ -277,7 +278,8 @@ def _write_db(config, sourcepar, sourcepar_err):
     # Init Event table
     c.execute(
         'create table if not exists Events '
-        '(evid, nobs, Mo, Mo_err_minus, Mo_err_plus,'
+        '(evid, orig_time, lon, lat, depth, nobs,'
+        'Mo, Mo_err_minus, Mo_err_plus,'
         'Mo_wavg, Mo_wavg_err_minus, Mo_wavg_err_plus,'
         'Mw, Mw_err, Mw_wavg, Mw_wavg_err,'
         'fc, fc_err_minus, fc_err_plus,'
@@ -296,7 +298,9 @@ def _write_db(config, sourcepar, sourcepar_err):
     t = (evid, )
     c.execute('delete from Events where evid=?;', t)
     t = (
-        evid, nobs,
+        evid,
+        str(hypo.origin_time), hypo.longitude, hypo.latitude, hypo.depth,
+        nobs,
         means['Mo'], *errors['Mo'],
         means_weight['Mo'], *errors_weight['Mo'],
         means['Mw'], errors['Mw'],
