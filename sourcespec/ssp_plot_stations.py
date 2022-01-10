@@ -277,6 +277,11 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
             vmin = vmean-1
         midpoint = (vmean-vmin)/(vmax-vmin)
         cmap = _shiftedColorMap(cm.PRGn, midpoint=midpoint)
+    # Corner case, when errorbars are larger than vmin or vmax
+    if vmin > vmean-verr_minus:
+        vmin = vmean-(verr_minus*1.1)
+    if vmax < vmean+verr_plus:
+        vmax = vmean+(verr_plus*1.1)
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
     trans = ccrs.PlateCarree()
