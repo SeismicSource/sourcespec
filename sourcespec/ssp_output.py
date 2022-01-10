@@ -214,6 +214,18 @@ def _write_parfile(config, sourcepar, sourcepar_err):
     logger.info('Output written to file: ' + parfilename)
 
 
+def _log_db_write_error(db_err, db_file):
+    msg = 'Unable to insert values: {}'.format(db_err)
+    logger.error(msg)
+    msg = 'Maybe your sqlite database has an old format.'
+    logger.info(msg)
+    msg = 'Try to remove or rename your database file.'
+    logger.info(msg)
+    msg = '(Current database file: {})'.format(db_file)
+    logger.info(msg)
+    ssp_exit(1)
+
+
 def _write_db(config, sourcepar, sourcepar_err):
     try:
         database_file = config.database_file
@@ -252,7 +264,11 @@ def _write_db(config, sourcepar, sourcepar_err):
         )
         # Create a string like ?,?,?,?
         values = ','.join('?'*len(t))
-        c.execute('insert into Stations values(' + values + ');', t)
+        try:
+            c.execute('insert into Stations values(' + values + ');', t)
+        except Exception as msg:
+            _log_db_write_error(msg, database_file)
+            ssp_exit(1)
     # Commit changes
     conn.commit()
 
@@ -294,8 +310,12 @@ def _write_db(config, sourcepar, sourcepar_err):
     )
     # Create a string like ?,?,?,?
     values = ','.join('?'*len(t))
-    c.execute(
-        'insert into Events values(' + values + ');', t)
+    try:
+        c.execute(
+            'insert into Events values(' + values + ');', t)
+    except Exception as msg:
+        _log_db_write_error(msg, database_file)
+        ssp_exit(1)
     # Commit changes and close database
     conn.commit()
     conn.close()
