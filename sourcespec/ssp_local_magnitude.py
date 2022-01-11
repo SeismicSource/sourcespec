@@ -159,7 +159,7 @@ def local_magnitude(config, st, proc_st, sourcepar, sourcepar_err):
         tr = st.select(id=tr_id)[0]
 
         # only analyze traces for which we have the other
-        # source paramters defined
+        # source parameters defined
         key = '%sH %s' % (tr_id[:-1], tr.stats.instrtype)
         try:
             par = sourcepar[key]
@@ -194,5 +194,8 @@ def local_magnitude(config, st, proc_st, sourcepar, sourcepar_err):
     # build ml_values: use np.nan for missing values
     ml_values = np.array([x.get('Ml', np.nan) for x in sourcepar.values()])
     ml_values = ml_values[~np.isnan(ml_values)]
-    Ml = np.mean(ml_values)
-    logger.info('Network local magnitude: {:.2f}'.format(Ml))
+    if len(ml_values) == 0:
+        logger.warning('No Ml values could be computed')
+    else:
+        Ml = np.mean(ml_values)
+        logger.info('Network local magnitude: {:.2f}'.format(Ml))
