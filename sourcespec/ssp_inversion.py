@@ -130,7 +130,7 @@ def _spec_inversion(config, spec, noise_weight):
                        'spectrum for the trace (e.g., a resonance).')
         raise RuntimeError
     idx1 = idx_max[0]
-    if idx1 == idx0:
+    if idx1 == idx0 and len(idx_max) > 1:
         idx1 = idx_max[1]
     # first maximum is a proxy for fc, we use it for fc_0:
     fc_0 = freq_log[idx1]
