@@ -97,8 +97,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
     elif config.inv_algorithm == 'GS':
         minimize_func = objective_func(freq_log, ydata, weight)
         nsteps = (10, 200, 200)  # we do fewer steps in magnitude
-        params_opt = grid_search(
-            minimize_func, bounds.bounds, nsteps)
+        params_opt = grid_search(minimize_func, bounds.bounds, nsteps)
         # trick: use curve_fit() bounded to params_opt
         # to get the covariance
         _, params_cov = curve_fit(
