@@ -20,6 +20,7 @@ Earthquake source parameters from S-wave displacement spectra
     - Check for trace clipping only in the processing window
     - Use histogram of samples to detect clipping
 - Inversion:
+  - New inversion method: grid search (very slow!)
   - Fix for Basin-hopping algorithm not running
 - Plotting:
   - `cartopy` removed as installation dependency, since it is not easily
