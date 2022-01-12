@@ -64,10 +64,6 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
             bounds=(params_opt-(1e-10), params_opt+(1e-10))
         )
     elif config.inv_algorithm == 'LM':
-        logger.info(
-            '{} {}: initial values: {}'.format(
-                spec.id, spec.stats.instrtype, str(initial_values))
-        )
         bnds = bounds.get_bounds_curve_fit()
         if bnds is not None:
             logger.info(
@@ -78,7 +74,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         params_opt, params_cov = curve_fit(
             spectral_model, freq_log, ydata,
             p0=initial_values.get_params0(), sigma=yerr,
-            bounds=bounds.get_bounds_curve_fit()
+            bounds=bnds
         )
     elif config.inv_algorithm == 'BH':
         minimize_func = objective_func(freq_log, ydata, weight)
