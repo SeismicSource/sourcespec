@@ -19,6 +19,8 @@ Earthquake source parameters from S-wave displacement spectra
     parameter, named `clip_max_percent`)
     - Check for trace clipping only in the processing window
     - Use histogram of samples to detect clipping
+- Inversion:
+  - Fix for Basin-hopping algorithm not running
 - Plotting:
   - `cartopy` removed as installation dependency, since it is not easily
     installable via `pip`
