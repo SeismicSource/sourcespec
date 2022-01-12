@@ -22,7 +22,7 @@ import logging
 import math
 import numpy as np
 from collections import OrderedDict
-from scipy.optimize import curve_fit, minimize
+from scipy.optimize import curve_fit, minimize, basinhopping
 from scipy.signal import argrelmax
 from obspy import Stream
 from obspy.geodetics import gps2dist_azimuth
@@ -38,46 +38,52 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
     """
     Curve fitting.
 
-    Uses "curve_fit()" (Levenberg-Marquardt algorithm if no bounds
-    or Trust Region Reflective algorithm if bounds)
-    or the truncated Newton algorithm (TNC) with bounds.
+    Available algorithms:
+      - Levenberg-Marquardt (LM, via `curve_fit()`). Automatically switches to
+        Trust Region Reflective algorithm if bounds are provided.
+      - Truncated Newton algorithm (TNC) with bounds.
+      - Basin-hooping (BH)
     """
     freq_log = spec.freq_log
     ydata = spec.data_log_mag
     if config.inv_algorithm == 'TNC':
         minimize_func = objective_func(freq_log, ydata, weight)
-        res =\
-            minimize(minimize_func,
-                     x0=initial_values.get_params0(), method='TNC',
-                     callback=callback, bounds=bounds.bounds)
+        res = minimize(
+            minimize_func,
+            x0=initial_values.get_params0(), method='TNC',
+            callback=callback, bounds=bounds.bounds
+        )
         params_opt = res.x
         # trick: use curve_fit() bounded to params_opt
         # to get the covariance
-        _, params_cov = curve_fit(spectral_model, freq_log, ydata,
-                                  p0=params_opt, sigma=yerr,
-                                  bounds=(params_opt-(1e-10),
-                                          params_opt+(1e-10)))
+        _, params_cov = curve_fit(
+            spectral_model, freq_log, ydata,
+            p0=params_opt, sigma=yerr,
+            bounds=(params_opt-(1e-10), params_opt+(1e-10))
+        )
     elif config.inv_algorithm == 'LM':
-        logger.info('%s %s: initial values: %s' %
-                    (spec.id, spec.stats.instrtype,
-                     str(initial_values)))
+        logger.info(
+            '{} {}: initial values: {}'.format(
+                spec.id, spec.stats.instrtype, str(initial_values))
+        )
         bnds = bounds.get_bounds_curve_fit()
         if bnds is not None:
-            logger.info('Trying to use using Levenberg-Marquardt '
-                        'algorithm with bounds. Switching to the '
-                        'Trust Region Reflective algorithm.')
-        params_opt, params_cov =\
-            curve_fit(spectral_model,
-                      freq_log, ydata,
-                      p0=initial_values.get_params0(),
-                      sigma=yerr,
-                      bounds=bounds.get_bounds_curve_fit())
+            logger.info(
+                'Trying to use using Levenberg-Marquardt '
+                'algorithm with bounds. Switching to the '
+                'Trust Region Reflective algorithm.'
+            )
+        params_opt, params_cov = curve_fit(
+            spectral_model, freq_log, ydata,
+            p0=initial_values.get_params0(), sigma=yerr,
+            bounds=bounds.get_bounds_curve_fit()
+        )
     elif config.inv_algorithm == 'BH':
-        from scipy.optimize import basinhopping
         minimize_func = objective_func(freq_log, ydata, weight)
-        res = basinhopping(minimize_func,
-                           x0=initial_values.get_params0(),
-                           niter=100, accept_test=bounds)
+        res = basinhopping(
+            minimize_func, x0=initial_values.get_params0(), niter=100,
+            accept_test=bounds
+        )
         params_opt = res.x
     return params_opt, params_cov
 
