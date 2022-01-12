@@ -20,6 +20,8 @@ Earthquake source parameters from S-wave displacement spectra
     - Check for trace clipping only in the processing window
     - Use histogram of samples to detect clipping
 - Inversion:
+  - New config option: `Mw_0_variability`. Allowed variability around `Mw_0`
+    during the main inversion. Previously hardcoded to 0.1
   - New inversion method: grid search (very slow!)
   - Fix for Basin-hopping algorithm not running
 - Plotting:

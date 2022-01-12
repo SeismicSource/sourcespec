@@ -181,8 +181,8 @@ def _spec_inversion(config, spec, noise_weight):
     logger.info('%s %s: initial values: %s' %
                 (spec.id, spec.stats.instrtype, str(initial_values)))
     bounds = Bounds(config, spec, initial_values)
-    bounds.Mw_min = Mw_0 - 0.1
-    bounds.Mw_max = Mw_0 + 0.1
+    bounds.Mw_min = Mw_0 - config.Mw_0_variability
+    bounds.Mw_max = Mw_0 + config.Mw_0_variability
     if t_star_min is not None:
         bounds.t_star_min = t_star_min
     if t_star_max is not None:
