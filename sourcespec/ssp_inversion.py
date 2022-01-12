@@ -187,6 +187,11 @@ def _spec_inversion(config, spec, noise_weight):
 
     params_name = ('Mw', 'fc', 't_star')
     par = OrderedDict(zip(params_name, params_opt))
+    par_str = '; '.join(['{}: {:.4f}'.format(key, par[key]) for key in par])
+    logger.info(
+        '{} {}: optimal values: {}'.format(
+            spec.id, spec.stats.instrtype, par_str)
+    )
     par['Mo'] = mag_to_moment(par['Mw'])
     par['hyp_dist'] = spec.stats.hypo_dist
     par['epi_dist'] = spec.stats.epi_dist
