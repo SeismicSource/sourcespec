@@ -43,7 +43,8 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
       - Levenberg-Marquardt (LM, via `curve_fit()`). Automatically switches to
         Trust Region Reflective algorithm if bounds are provided.
       - Truncated Newton algorithm (TNC) with bounds.
-      - Basin-hooping (BH)
+      - Basin-hopping (BH)
+      - Grid search (GS)
     """
     freq_log = spec.freq_log
     ydata = spec.data_log_mag
