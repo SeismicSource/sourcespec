@@ -31,7 +31,7 @@ from sourcespec.ssp_spectral_model import (spectral_model, objective_func,
 from sourcespec.ssp_util import mag_to_moment, select_trace, smooth
 from sourcespec.ssp_radiated_energy import radiated_energy
 from sourcespec.ssp_inversion_types import InitialValues, Bounds
-from sourcespec.ssp_grid_search import grid_search
+from sourcespec.ssp_grid_sampling import GridSampling
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -93,7 +93,14 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
     elif config.inv_algorithm == 'GS':
         minimize_func = objective_func(freq_log, ydata, weight)
         nsteps = (10, 200, 200)  # we do fewer steps in magnitude
-        params_opt = grid_search(minimize_func, bounds.bounds, nsteps)
+        grid_sampling = GridSampling(minimize_func, bounds.bounds, nsteps)
+        grid_sampling.grid_search()
+        params_opt = grid_sampling.params_opt
+        spec_label = '{} {}'.format(spec.id, spec.stats.instrtype)
+        params_name = ('Mw', 'fc', 't_star')
+        params_unit = ('', 'Hz', 's')
+        grid_sampling.plot_conditional(
+            config, params_name, params_unit, spec_label)
         # trick: use curve_fit() bounded to params_opt
         # to get the covariance
         _, params_cov = curve_fit(
