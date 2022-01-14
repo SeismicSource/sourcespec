@@ -101,7 +101,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         spec_label = '{} {}'.format(spec.id, spec.stats.instrtype)
         params_name = ('Mw', 'fc', 't_star')
         params_unit = ('', 'Hz', 's')
-        grid_sampling.plot_conditional(
+        grid_sampling.plot_conditional_misfit(
             config, params_name, params_unit, spec_label)
         # trick: use curve_fit() bounded to params_opt
         # to get the covariance

@@ -85,7 +85,7 @@ class GridSampling():
         mf = np.vectorize(mf)
         self.misfit = mf(*self.values)
 
-    def plot_conditional(self, config, params_name, params_unit, label):
+    def plot_conditional_misfit(self, config, params_name, params_unit, label):
         """Plot conditional misfit for each parameter."""
         import matplotlib.pyplot as plt
         ndim = self.misfit.ndim
@@ -124,7 +124,7 @@ class GridSampling():
             os.makedirs(outdir)
         evid = config.hypo.evid
         figfile_base = os.path.join(outdir, evid)
-        figfile_base += '.misfit_{}.'.format(label.replace(' ', '_'))
+        figfile_base += '.cond_misfit_{}.'.format(label.replace(' ', '_'))
         fmt = config.PLOT_SAVE_FORMAT
         if fmt == 'pdf_multipage':
             fmt = 'pdf'
