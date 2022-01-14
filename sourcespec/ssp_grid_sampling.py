@@ -27,16 +27,18 @@ class GridSampling():
     The class provides optimal solutions, uncertainties and plotting methods.
     """
 
-    def __init__(self, misfit_func, bounds, nsteps):
+    def __init__(self, misfit_func, bounds, nsteps, sampling_mode):
         """
         Init grid sampling.
 
         bounds : sequence of (min, max) pairs for each dimension.
-        nsteps : number of grid steps for each dimension
+        nsteps : number of grid steps for each dimension.
+        sampling_mode : sequence of 'lin' or 'log' for each diemesion.
         """
         self.misfit_func = misfit_func
         self.bounds = bounds
         self.nsteps = nsteps
+        self.sampling_mode = sampling_mode
         self.misfit = None
         self._values = None
         self._min_idx = None
@@ -46,11 +48,17 @@ class GridSampling():
         if self._values is not None:
             return self._values
         values = []
-        for bds, ns in zip(self.bounds, self.nsteps):
+        for bds, ns, mode in zip(self.bounds, self.nsteps, self.sampling_mode):
             if None in bds:
                 msg = 'All parameters must be bounded for grid sampling'
                 raise RuntimeError(msg)
-            values.append(np.linspace(*bds, ns))
+            if mode == 'log':
+                if bds[0] == 0:
+                    bds = (bds[1]/ns, bds[1])
+                bds = np.log10(bds)
+                values.append(np.logspace(*bds, ns))
+            else:
+                values.append(np.linspace(*bds, ns))
         self._values = np.meshgrid(*values, indexing='ij')
         return self._values
 
@@ -95,7 +103,14 @@ class GridSampling():
             v = np.moveaxis(self.values[dim], dim, -1)
             v = v[0, 0]
             ax[dim].plot(v, mm)
-            ax[dim].axvline(self.params_opt[dim], color='red')
+            popt = self.params_opt[dim]
+            ax[dim].axvline(popt, color='red')
+            text = '{:.4f}  '.format(popt)
+            ax[dim].text(
+                popt, 0.9, text, color='red', ha='right',
+                transform=ax[dim].get_xaxis_transform())
+            if self.sampling_mode[dim] == 'log':
+                ax[dim].set_xscale('log')
             xlabel = params_name[dim]
             unit = params_unit[dim]
             if unit:

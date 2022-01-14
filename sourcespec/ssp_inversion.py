@@ -93,7 +93,9 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
     elif config.inv_algorithm == 'GS':
         minimize_func = objective_func(freq_log, ydata, weight)
         nsteps = (10, 200, 200)  # we do fewer steps in magnitude
-        grid_sampling = GridSampling(minimize_func, bounds.bounds, nsteps)
+        sampling_mode = ('lin', 'log', 'lin')
+        grid_sampling = GridSampling(
+            minimize_func, bounds.bounds, nsteps, sampling_mode)
         grid_sampling.grid_search()
         params_opt = grid_sampling.params_opt
         spec_label = '{} {}'.format(spec.id, spec.stats.instrtype)
