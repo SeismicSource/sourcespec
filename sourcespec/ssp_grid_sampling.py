@@ -47,6 +47,7 @@ class GridSampling():
         self.params_name = params_name
         self.params_unit = params_unit
         self.misfit = None
+        self._cut_misfit = None
         self._values = None
         self._min_idx = None
 
@@ -80,11 +81,111 @@ class GridSampling():
         else:
             return self._min_idx
 
+    def values_1d(self, dim):
+        """Extract a 1D array of parameter values along one dimension."""
+        # same thing for values: we extract a 1d array of values along dim
+        v = np.moveaxis(self.values[dim], dim, -1)
+        return v[0, 0]
+
+    @property
+    def conditional_misfit(self):
+        """
+        Compute conditional misfit along each dimension.
+
+        Conditional misfit is computed by fixing the other parameters to
+        their optimal value.
+        """
+        if self.misfit is None:
+            return None
+        ndim = self.misfit.ndim
+        cond_misfit = []
+        for dim in range(ndim):
+            # `dim` is the dimension to keep
+            # we move `dim` to the last axis
+            mm = np.moveaxis(self.misfit, dim, -1)
+            # we fix ndim-1 coordinates of the minimum
+            idx = tuple(v for n, v in enumerate(self.min_idx) if n != dim)
+            # we extract from mm a 1-d profile along dim,
+            # by fixing all the other dimensions (conditional misfit)
+            mm = mm[idx]
+            cond_misfit.append(mm)
+        return tuple(cond_misfit)
+
     @property
     def params_opt(self):
         if self.misfit is None:
             return None
         return np.array([v[self.min_idx] for v in self.values])
+
+    @property
+    def params_mean(self):
+        """Compute mean values on 10% points closer to the minimum misfit."""
+        if self.misfit is None:
+            return None
+        pdf = np.exp(-0.5*(self.cut_misfit**2))
+        params_mean = []
+        for dim, v in enumerate(self.values):
+            if self.sampling_mode[dim] == 'log':
+                mean = np.average(np.log10(v), weights=pdf)
+                mean = 10**mean
+            else:
+                mean = np.average(v, weights=pdf)
+            params_mean.append(mean)
+        return params_mean
+
+    @property
+    def params_cov(self):
+        """
+        Compute covariance matrix on 10% points closer to the minimum misfit.
+
+        Only the diagonal (i.e., the variance) is computed.
+        """
+        if self.misfit is None:
+            return None
+        pdf = np.exp(-0.5*(self.cut_misfit**2))
+        cov = []
+        for dim, v in enumerate(self.values):
+            if self.sampling_mode[dim] == 'log':
+                mean = np.average(np.log10(v), weights=pdf)
+                var = np.average((np.log10(v)-mean)**2, weights=pdf)
+                mean = 10**mean
+                var = 10**var
+            else:
+                mean = np.average(v, weights=pdf)
+                var = np.average((v-mean)**2, weights=pdf)
+            if var == 0:
+                var = 1e-50
+            cov.append(var)
+        return np.diag(cov)
+
+    @property
+    def cut_misfit(self):
+        """Keep the 10% closer points to the minimum misfit."""
+        if self.misfit is None:
+            return None
+        if self._cut_misfit is not None:
+            return self._cut_misfit
+        # normalized coordinates along the grid dimensions
+        norm_values = []
+        for ns in self.nsteps:
+            norm_values.append(np.linspace(0, 1, ns))
+        norm_values = np.meshgrid(*norm_values, indexing='ij')
+        # minimum point in normlaized coordinates
+        norm_popt = np.array([v[self.min_idx] for v in norm_values])
+        # compute distance from minimum point
+        distance = None
+        for dim, v in enumerate(norm_values):
+            v -= norm_popt[dim]
+            d = v**2
+            if distance is None:
+                distance = d
+            else:
+                distance += d
+        distance **= 0.5
+        # keep points whose distance is < 0.1
+        _cut_misfit = self.misfit.copy()
+        _cut_misfit[distance > 0.1] = 1e99
+        return _cut_misfit
 
     def grid_search(self):
         """Sample the misfit function by simple grid search."""
@@ -98,18 +199,8 @@ class GridSampling():
         """Plot conditional misfit for each parameter."""
         ndim = self.misfit.ndim
         fig, ax = plt.subplots(ndim, 1, figsize=(9, 9), dpi=300)
-        for dim in range(ndim):
-            # `dim` is the dimension to keep
-            # we move `dim` to the last axis
-            mm = np.moveaxis(self.misfit, dim, -1)
-            # we fix ndim-1 coordinates of the minimum
-            idx = tuple(v for n, v in enumerate(self.min_idx) if n != dim)
-            # we extract from mm a 1-d profile along dim,
-            # by fixing all the other dimensions (conditional misfit)
-            mm = mm[idx]
-            # same thing for values: we extract a 1d array of values along dim
-            v = np.moveaxis(self.values[dim], dim, -1)
-            v = v[0, 0]
+        for dim, mm in enumerate(self.conditional_misfit):
+            v = self.values_1d(dim)
             ax[dim].plot(v, mm)
             popt = self.params_opt[dim]
             ax[dim].axvline(popt, color='red')
