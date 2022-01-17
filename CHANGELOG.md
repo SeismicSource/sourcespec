@@ -25,6 +25,7 @@ Earthquake source parameters from S-wave displacement spectra
   - New inversion method: grid search (very slow!)
   - Fix for Basin-hopping algorithm not running
 - Plotting:
+  - Misfit plot (2D and 1D) when using grid search
   - `cartopy` removed as installation dependency, since it is not easily
     installable via `pip`
   - Use GSHHS database to draw coastlines.

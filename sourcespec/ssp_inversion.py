@@ -94,15 +94,24 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         minimize_func = objective_func(freq_log, ydata, weight)
         nsteps = (10, 200, 200)  # we do fewer steps in magnitude
         sampling_mode = ('lin', 'log', 'lin')
+        params_name = ('Mw', 'fc', 't_star')
+        params_unit = ('', 'Hz', 's')
         grid_sampling = GridSampling(
-            minimize_func, bounds.bounds, nsteps, sampling_mode)
+            minimize_func, bounds.bounds, nsteps,
+            sampling_mode, params_name, params_unit)
         grid_sampling.grid_search()
         params_opt = grid_sampling.params_opt
         spec_label = '{} {}'.format(spec.id, spec.stats.instrtype)
-        params_name = ('Mw', 'fc', 't_star')
-        params_unit = ('', 'Hz', 's')
-        grid_sampling.plot_conditional_misfit(
-            config, params_name, params_unit, spec_label)
+        grid_sampling.plot_conditional_misfit(config, spec_label)
+        # fc-t_star
+        plot_par_idx = (1, 2)
+        grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
+        # fc-Mw
+        plot_par_idx = (1, 0)
+        grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
+        # tstar-Mw
+        plot_par_idx = (2, 0)
+        grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
         # trick: use curve_fit() bounded to params_opt
         # to get the covariance
         _, params_cov = curve_fit(
