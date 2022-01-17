@@ -232,6 +232,8 @@ class GridSampling():
             plt.show()
         if config.PLOT_SAVE:
             fig.savefig(figfile, bbox_inches='tight')
+            if not config.PLOT_SHOW:
+                plt.close(fig)
             logger.info(
                 '{}: conditional misfit plot saved to: {}'.format(
                     label, figfile))
@@ -327,6 +329,8 @@ class GridSampling():
             plt.show()
         if config.PLOT_SAVE:
             fig.savefig(figfile, bbox_inches='tight')
+            if not config.PLOT_SHOW:
+                plt.close(fig)
             logger.info(
                 '{}: misfit map saved to: {}'.format(
                     label, figfile))
