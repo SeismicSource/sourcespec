@@ -101,7 +101,6 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
             sampling_mode, params_name, params_unit)
         grid_sampling.grid_search()
         params_opt = grid_sampling.params_opt
-        params_cov = grid_sampling.params_cov
         spec_label = '{} {}'.format(spec.id, spec.stats.instrtype)
         grid_sampling.plot_conditional_misfit(config, spec_label)
         # fc-t_star
@@ -113,6 +112,13 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         # tstar-Mw
         plot_par_idx = (2, 0)
         grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
+        # trick: use curve_fit() bounded to params_opt
+        # to get the covariance
+        _, params_cov = curve_fit(
+            spectral_model, freq_log, ydata,
+            p0=params_opt, sigma=yerr,
+            bounds=(params_opt-(1e-10), params_opt+(1e-10))
+        )
     return params_opt, params_cov
 
 
