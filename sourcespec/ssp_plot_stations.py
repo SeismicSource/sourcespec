@@ -283,10 +283,22 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
         if vmax == vmin:
             vmax = vmean+0.5
             vmin = vmean-0.5
+        cbar_extend = 'neither'
         cmap = cm.Spectral_r
     elif vname == 'fc':
         vmin = np.min(values)
         vmax = np.max(values)
+        cbar_extend = 'neither'
+        # limit colorbar to ±3sigma
+        if vmax > vmean+3*verr_plus:
+            vmax = vmean+3*verr_plus
+            cbar_extend = 'max'
+        if vmin < vmean-3*verr_minus:
+            vmin = vmean-3*verr_minus
+            if cbar_extend == 'max':
+                cbar_extend = 'both'
+            else:
+                cbar_extend = 'min'
         if vmax == vmin:
             vmax = vmean+1
             vmin = vmean-1
@@ -328,7 +340,7 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     sm = cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     fig = ax.get_figure()
-    fig.colorbar(sm, cax=cax)
+    fig.colorbar(sm, cax=cax, extend=cbar_extend)
     cax.get_yaxis().set_visible(True)
     cax.axhline(vmean, lw=2, color='black')
     linestyle = (0, (2, 1))
