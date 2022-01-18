@@ -24,6 +24,7 @@ Earthquake source parameters from S-wave displacement spectra
     during the main inversion. Previously hardcoded to 0.1
   - New inversion method: grid search (very slow!)
   - Fix for Basin-hopping algorithm not running
+  - Remove outliers (>2sigma) when computing event averages
 - Plotting:
   - Misfit plot (2D and 1D) when using grid search
   - `cartopy` removed as installation dependency, since it is not easily
