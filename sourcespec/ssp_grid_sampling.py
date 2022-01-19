@@ -41,7 +41,6 @@ class GridSampling():
         """
         self.misfit_func = misfit_func
         self.bounds = bounds
-        self.truebounds = None
         self.nsteps = nsteps
         self.sampling_mode = sampling_mode
         self.params_name = params_name
@@ -50,12 +49,6 @@ class GridSampling():
         self._cut_misfit = None
         self._values = None
         self._min_idx = None
-
-    @property
-    def values(self):
-        if self._values is not None:
-            return self._values
-        values = []
         self.truebounds = []
         for bds, ns, mode in zip(self.bounds, self.nsteps, self.sampling_mode):
             if None in bds:
@@ -64,11 +57,20 @@ class GridSampling():
             if mode == 'log':
                 if bds[0] == 0:
                     bds = (bds[1]/ns, bds[1])
-                bds = np.log10(bds)
+                bds = tuple(np.log10(bds))
+            self.truebounds.append(bds)
+
+    @property
+    def values(self):
+        if self._values is not None:
+            return self._values
+        values = []
+        for bds, ns, mode in zip(
+                self.truebounds, self.nsteps, self.sampling_mode):
+            if mode == 'log':
                 values.append(np.logspace(*bds, ns))
             else:
                 values.append(np.linspace(*bds, ns))
-            self.truebounds.append(bds)
         self._values = np.meshgrid(*values, indexing='ij')
         return self._values
 
@@ -170,43 +172,41 @@ class GridSampling():
 
     def plot_misfit_2d(self, config, plot_par_idx, label):
         """Plot a 2D misfit map."""
-        # Move axes to keep at the end
-        if plot_par_idx[0] < plot_par_idx[1]:
-            end_idx = (-2, -1)
-        else:
-            end_idx = (-1, -2)
-        mm = np.moveaxis(self.misfit, plot_par_idx, end_idx)
         # Find the index to extract
         idx = tuple(
             v for n, v in enumerate(self.min_idx) if n not in plot_par_idx)
-        # extract a 2D misfit map
-        mm = mm[idx]
+        if plot_par_idx[0] < plot_par_idx[1]:
+            # Move axes to keep at the end
+            end_idx = (-2, -1)
+            mm = np.moveaxis(self.misfit, plot_par_idx, end_idx)
+            # extract a 2D misfit map
+            mm = mm[idx].T
+        else:
+            # Move axes to keep at the end
+            end_idx = (-1, -2)
+            mm = np.moveaxis(self.misfit, plot_par_idx, end_idx)
+            # extract a 2D misfit map
+            mm = mm[idx]
         # set extent for imshow
-        extent = []
-        for n, bds in enumerate(self.truebounds):
-            if n not in plot_par_idx:
-                continue
-            extent += list(bds)
-        params_opt = []
-        for popt, mode in zip(self.params_opt, self.sampling_mode):
-            if mode == 'log':
-                popt = np.log10(popt)
-            params_opt.append(popt)
+        bds = np.take(np.array(self.truebounds), plot_par_idx, axis=0)
+        extent = bds.flatten()
+        # take log of parameters, if necessary
+        cond = np.array(self.sampling_mode) == 'log'
+        params_opt = np.array(self.params_opt)
+        params_opt[cond] = np.log10(params_opt[cond])
         # extract parameter info only for the two selected parameters
-        params_opt = [
-            p for n, p in enumerate(params_opt) if n in plot_par_idx]
-        params_name = [
-            p for n, p in enumerate(self.params_name) if n in plot_par_idx]
-        params_unit = [
-            p for n, p in enumerate(self.params_unit) if n in plot_par_idx]
-        sampling_mode = [
-            p for n, p in enumerate(self.sampling_mode) if n in plot_par_idx]
+        params_opt = np.take(params_opt, plot_par_idx)
+        params_name = np.take(self.params_name, plot_par_idx)
+        params_unit = np.take(self.params_unit, plot_par_idx)
+        sampling_mode = np.take(self.sampling_mode, plot_par_idx)
         fig, ax = plt.subplots(1, 1, figsize=(9, 8), dpi=300)
         # imshow: saturate scale at 2 times the minimum
         mmap = ax.imshow(
-            mm.T, vmax=2*mm.min(), origin='lower', cmap='viridis',
+            mm, vmax=2*mm.min(), origin='lower', cmap='viridis',
             extent=extent, aspect='auto'
         )
+        ax.set_xlim(extent[0], extent[1])
+        ax.set_ylim(extent[2], extent[3])
         ax.scatter(*params_opt, facecolors='none', edgecolors='w')
         ax.set_title(label)
         xlabel = params_name[0]
