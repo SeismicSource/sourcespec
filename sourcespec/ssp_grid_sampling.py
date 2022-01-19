@@ -221,10 +221,10 @@ class GridSampling():
         extent = bds.flatten()
         # take log of parameters, if necessary
         cond = np.array(self.sampling_mode) == 'log'
-        params_opt = np.array(self.params_opt)
-        params_opt[cond] = np.log10(params_opt[cond])
+        params_opt_all = np.array(self.params_opt)
+        params_opt_all[cond] = np.log10(params_opt_all[cond])
         # extract parameter info only for the two selected parameters
-        params_opt = np.take(params_opt, plot_par_idx)
+        params_opt = np.take(params_opt_all, plot_par_idx)
         params_name = np.take(self.params_name, plot_par_idx)
         params_unit = np.take(self.params_unit, plot_par_idx)
         sampling_mode = np.take(self.sampling_mode, plot_par_idx)
@@ -236,14 +236,44 @@ class GridSampling():
         )
         ax.set_xlim(extent[0], extent[1])
         ax.set_ylim(extent[2], extent[3])
-        ax.scatter(*params_opt, facecolors='none', edgecolors='w')
         if self.kdt is not None:
             coords = np.array([cell.coords for cell in self.kdt.cells])
+            #-- The following lines are to extract only the coordinates that
+            #-- lay on the 2D plot plane
+            # parameter space dimension
+            dim = len(self.nsteps)
+            # find the complement to plot_par_idx
+            allidx = np.arange(dim)
+            ii = allidx[~np.isin(allidx, plot_par_idx)]
+            # find coordinates that will be discarded
+            cc = np.take(coords, ii, axis=1)
+            # find optimal parameters that will be discarded
+            pp = np.take(params_opt_all, ii)
+            # find discarded coordinates that are closer to
+            # discarded optimal parameters, i.e. the coordinates that
+            # lay on the 2D plot plane
+            dist = np.abs(cc - pp)
+            # init condition to False
+            cond = np.zeros_like(dist[:, 0]).astype(bool)
+            for d in dist.T:
+                _cond = np.isclose(d, d.min())
+                cond = np.logical_or(cond, _cond)
+            coords_2d = coords[cond]
+            #-- End of code to find coordinates that lay on the 2D plot plane
+            # now take coordinates that will be plotted
+            # we plot all coords in gray
             coords = np.take(coords, plot_par_idx, axis=1)
             ax.scatter(
                 coords[:, 0], coords[:, 1], s=2,
+                facecolor='gray', edgecolors='none'
+            )
+            # coords which lay on the plane are plot in black and larger symbol
+            coords_2d = np.take(coords_2d, plot_par_idx, axis=1)
+            ax.scatter(
+                coords_2d[:, 0], coords_2d[:, 1], s=8,
                 facecolor='k', edgecolors='none'
             )
+        ax.scatter(*params_opt, facecolors='none', edgecolors='w')
         ax.set_title(label)
         xlabel = params_name[0]
         unit = params_unit[0]
