@@ -22,7 +22,10 @@ Earthquake source parameters from S-wave displacement spectra
 - Inversion:
   - New config option: `Mw_0_variability`. Allowed variability around `Mw_0`
     during the main inversion. Previously hardcoded to 0.1
-  - New inversion method: grid search (very slow!)
+  - New inversion methods for grid sampling:
+    - grid search (very slow!)
+    - importance sampling of the misfit grid using k-d tree
+      (faster, but less accurate)
   - Fix for Basin-hopping algorithm not running
   - Remove outliers (>2sigma) when computing event averages
 - Plotting:

@@ -90,7 +90,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
             p0=params_opt, sigma=yerr,
             bounds=(params_opt-(1e-10), params_opt+(1e-10))
         )
-    elif config.inv_algorithm == 'GS':
+    elif config.inv_algorithm in ['GS', 'IS']:
         minimize_func = objective_func(freq_log, ydata, weight)
         nsteps = (20, 150, 150)  # we do fewer steps in magnitude
         sampling_mode = ('lin', 'log', 'lin')
@@ -99,7 +99,10 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         grid_sampling = GridSampling(
             minimize_func, bounds.bounds, nsteps,
             sampling_mode, params_name, params_unit)
-        grid_sampling.grid_search()
+        if config.inv_algorithm == 'GS':
+            grid_sampling.grid_search()
+        elif config.inv_algorithm == 'IS':
+            grid_sampling.kdtree_search()
         params_opt = grid_sampling.params_opt
         spec_label = '{} {}'.format(spec.id, spec.stats.instrtype)
         grid_sampling.plot_conditional_misfit(config, spec_label)
@@ -279,7 +282,8 @@ def spectral_inversion(config, spec_st, weight_st):
         'TNC': 'Using truncated Newton algorithm for inversion.',
         'LM': 'Using Levenberg-Marquardt algorithm for inversion.',
         'BH': 'Using basin-hopping algorithm for inversion.',
-        'GS': 'Using grid search for inversion.'
+        'GS': 'Using grid search for inversion.',
+        'IS': 'Using k-d tree importance sampling for inversion.'
     }
     logger.info(algorithm_messages[config.inv_algorithm])
 

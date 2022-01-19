@@ -15,6 +15,7 @@ The class provides optimal solutions, uncertainties and plotting methods.
 """
 import os
 import numpy as np
+from sourcespec.kdtree import KDTree
 import matplotlib.pyplot as plt
 import logging
 logger = logging.getLogger(__name__.split('.')[-1])
@@ -59,6 +60,7 @@ class GridSampling():
                     bds = (bds[1]/ns, bds[1])
                 bds = tuple(np.log10(bds))
             self.truebounds.append(bds)
+        self.kdt = None
 
     @property
     def values(self):
@@ -126,6 +128,33 @@ class GridSampling():
             return self.misfit_func(args)
         mf = np.vectorize(mf)
         self.misfit = mf(*self.values)
+
+    def kdtree_search(self):
+        # small helper function to transform misfit to pdf and manage logscale
+        def mf(args):
+            newargs = []
+            for a, mode in zip(args, self.sampling_mode):
+                if mode == 'log':
+                    a = 10**a
+                newargs.append(a)
+            return np.exp(-self.misfit_func(newargs))
+        extent = sum(self.truebounds, ())
+        maxdiv = (20, 2000, 200)
+        kdt = KDTree(extent, 2, mf, maxdiv=maxdiv)
+        while kdt.ncells <= np.prod(maxdiv):
+            oldn = kdt.ncells
+            kdt.divide()
+            if kdt.ncells == oldn:
+                break
+        deltas = []
+        for bds, ns in zip(self.truebounds, self.nsteps):
+            deltas.append((bds[1] - bds[0])/ns)
+        pdf, extent = kdt.get_pdf(deltas)
+        self.kdt = kdt
+        self.misfit = -np.log(pdf)
+        self.misfit[np.isnan(self.misfit)] = 1e99
+        self.nsteps = self.misfit.shape
+        self.extent = extent
 
     def plot_conditional_misfit(self, config, label):
         """Plot conditional misfit for each parameter."""
@@ -208,6 +237,13 @@ class GridSampling():
         ax.set_xlim(extent[0], extent[1])
         ax.set_ylim(extent[2], extent[3])
         ax.scatter(*params_opt, facecolors='none', edgecolors='w')
+        if self.kdt is not None:
+            coords = np.array([cell.coords for cell in self.kdt.cells])
+            coords = np.take(coords, plot_par_idx, axis=1)
+            ax.scatter(
+                coords[:, 0], coords[:, 1], s=2,
+                facecolor='k', edgecolors='none'
+            )
         ax.set_title(label)
         xlabel = params_name[0]
         unit = params_unit[0]
