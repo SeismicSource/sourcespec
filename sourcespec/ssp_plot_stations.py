@@ -406,6 +406,9 @@ def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
 
 def plot_stations(config, sourcepar):
     """Plot station map, color coded by magnitude or fc."""
+    # Check config, if we need to plot at all
+    if not config.PLOT_SHOW and not config.PLOT_SAVE:
+        return
     st_ids = [
         k for k in sorted(sourcepar.keys())
         if k not in ['means', 'errors', 'means_weight', 'errors_weight']]
