@@ -43,6 +43,9 @@ def _avg_and_std(values, errors=None, logarithmic=False, std_cutoff=True):
         weights = None
     else:
         weights = 1./(errors**2.)
+        # fix for infinite weight (zero error)
+        weights[np.isinf(weights)] = np.nan
+        weights[np.isnan(weights)] = np.nanmax(weights)
     average = np.average(values, weights=weights)
     variance = np.average((values-average)**2, weights=weights)
     std = np.sqrt(variance)
