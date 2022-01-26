@@ -291,7 +291,7 @@ def spectral_inversion(config, spec_st, weight_st):
     sourcepar_err = OrderedDict()
     stations = set(x.stats.station for x in spec_st)
     spectra = [sp for sta in stations for sp in spec_st.select(station=sta)]
-    for spec in spectra:
+    for spec in sorted(spectra, key=lambda sp: sp.id):
         if spec.stats.channel[-1] != 'H':
             continue
         if spec.stats.ignore:
