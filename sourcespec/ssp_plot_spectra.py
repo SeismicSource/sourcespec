@@ -464,19 +464,21 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 if orientation == 'S':
                     fc = spec.stats.par['fc']
                     if 'par_err' in spec.stats.keys():
-                        fc_err = spec.stats.par_err['fc']
-                        fc_min = fc-fc_err
+                        fc_err_left, fc_err_right = spec.stats.par_err['fc']
+                        fc_min = fc-fc_err_left
                         if fc_min < 0:
                             fc_min = 0.01
-                        ax.axvspan(fc_min, fc+fc_err, color='#bbbbbb',
-                                   alpha=0.3, zorder=1)
+                        ax.axvspan(
+                            fc_min, fc+fc_err_right, color='#bbbbbb',
+                            alpha=0.3, zorder=1)
                     ax.axvline(fc, color='#999999',
                                linewidth=2., zorder=1)
                     Mw = spec.stats.par['Mw']
                     if 'par_err' in spec.stats.keys():
-                        Mw_err = spec.stats.par_err['Mw']
-                        ax2.axhspan(Mw-Mw_err, Mw+Mw_err, color='#bbbbbb',
-                                    alpha=0.3, zorder=1)
+                        Mw_err_left, Mw_err_right = spec.stats.par_err['Mw']
+                        ax2.axhspan(
+                            Mw-Mw_err_left, Mw+Mw_err_right, color='#bbbbbb',
+                            alpha=0.3, zorder=1)
             elif plottype == 'weight':
                 ax.semilogx(
                     spec.get_freq(), spec.data, color=color, alpha=alpha,
@@ -528,22 +530,49 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                 Mo = mag_to_moment(Mw)
                 t_star = spec.stats.par['t_star']
                 if 'par_err' in spec.stats.keys():
-                    fc_err = spec.stats.par_err['fc']
-                    Mw_err = spec.stats.par_err['Mw']
-                    t_star_err = spec.stats.par_err['t_star']
+                    fc_err_left, fc_err_right = spec.stats.par_err['fc']
+                    Mw_err_left, Mw_err_right = spec.stats.par_err['Mw']
+                    t_star_err_left, t_star_err_right =\
+                        spec.stats.par_err['t_star']
                 else:
-                    fc_err = Mw_err = t_star_err = 0.
-                ax.text(0.05, text_y2,
-                        'Mo: %.2g Mw: %.2f±%.2f\n'
-                        'fc: %.2f±%.2f Hz t*: %.2f±%.2fs' %
-                        (Mo, Mw, Mw_err, fc, fc_err, t_star, t_star_err),
-                        horizontalalignment='left',
-                        verticalalignment='bottom',
-                        color=color,
-                        fontsize=9,
-                        transform=ax.transAxes,
-                        zorder=50,
-                        path_effects=path_effects)
+                    fc_err_left = fc_err_right = 0.
+                    Mw_err_left = Mw_err_right = 0.
+                    t_star_err_left = t_star_err_right = 0.
+                Mo_text = 'Mo: {:.2g}'.format(Mo)
+                Mw_text = 'Mw: {:.2f}'.format(Mw)
+                if round(Mw_err_left, 2) == round(Mw_err_right, 2):
+                    Mw_text += '±{:.2f}'.format(Mw_err_left)
+                else:
+                    Mw_text += '[-{:.2f},+{:.2f}]'.format(
+                        Mw_err_left, Mw_err_right)
+                fc_text = 'fc: {:.2f}'.format(fc)
+                if round(fc_err_left, 2) == round(fc_err_right, 2):
+                    fc_text += '±{:.2f}Hz'.format(fc_err_left)
+                else:
+                    fc_text += '[-{:.2f},+{:.2f}]Hz'.format(
+                        fc_err_left, fc_err_right)
+                t_star_text = 't*: {:.2f}'.format(t_star)
+                if round(t_star_err_left, 2) == round(t_star_err_right, 2):
+                    t_star_text += '±{:.2f}s'.format(t_star_err_left)
+                else:
+                    t_star_text += '[-{:.2f},+{:.2f}]s'.format(
+                        t_star_err_left, t_star_err_right)
+                if len(fc_text+t_star_text) > 38:
+                    sep = '\n'
+                    text_y2 -= 0.01
+                else:
+                    sep = ' '
+                text = '{} {}\n{}{}{}'.format(
+                    Mo_text, Mw_text, fc_text, sep, t_star_text)
+                ax.text(
+                    0.05, text_y2, text,
+                    horizontalalignment='left',
+                    verticalalignment='bottom',
+                    color=color,
+                    fontsize=9,
+                    transform=ax.transAxes,
+                    zorder=50,
+                    path_effects=path_effects)
 
     # Add lables and legend for the last figure
     _add_labels(axes, plotn, ncols, plottype)

@@ -42,6 +42,8 @@ def _avg_and_std(values, errors=None, logarithmic=False, std_cutoff=True):
     if errors is None:
         weights = None
     else:
+        # compute a symmetric error
+        errors = (errors[:, 0] + errors[:, 1])/2
         # fix for infinite weight (zero error)
         errors[errors == 0] = np.nanmin(errors[errors > 0])
         weights = 1./(errors**2.)
@@ -143,10 +145,18 @@ def _write_parfile(config, sourcepar, sourcepar_err):
                     parfile.write(formats_none[key].format(key, 'nan'))
             parfile.write('\n')
             err = sourcepar_err[statId]
-            parfile.write('{:>21}\t'.format('--- errors'))
+            parfile.write('{:>21}\t'.format('--- errmin'))
             for key in parkeys:
                 try:
-                    val = err[key]
+                    val = err[key][0]
+                    parfile.write(formats[key].format(key, val))
+                except KeyError:
+                    parfile.write(formats_none[key].format(key, 'nan'))
+            parfile.write('\n')
+            parfile.write('{:>21}\t'.format('--- errmax'))
+            for key in parkeys:
+                try:
+                    val = err[key][1]
                     parfile.write(formats[key].format(key, val))
                 except KeyError:
                     parfile.write(formats_none[key].format(key, 'nan'))
@@ -265,7 +275,9 @@ def _write_db(config, sourcepar, sourcepar_err):
     # Init Station table
     c.execute(
         'create table if not exists Stations '
-        '(stid, evid, Mo, Mw, Mw_err, fc, fc_err, t_star, t_star_err,'
+        '(stid, evid, Mo, Mw, Mw_err_minus, Mw_err_plus,'
+        'fc, fc_err_minus, fc_err_plus,'
+        't_star, t_star_err_minus, t_star_err_plus,'
         'dist, azimuth, Er);')
     # Write station source parameters to database
     nobs = 0
@@ -281,9 +293,9 @@ def _write_db(config, sourcepar, sourcepar_err):
         # Insert new line
         t = (
             statId, evid, par['Mo'],
-            par['Mw'], par_err['Mw'],
-            par['fc'], par_err['fc'],
-            par['t_star'], par_err['t_star'],
+            par['Mw'], *par_err['Mw'],
+            par['fc'], *par_err['fc'],
+            par['t_star'], *par_err['t_star'],
             par['hyp_dist'], par['az'], par['Er']
         )
         # Create a string like ?,?,?,?

@@ -28,6 +28,7 @@ Earthquake source parameters from S-wave displacement spectra
       (faster, but less accurate)
   - Fix for Basin-hopping algorithm not running
   - Remove outliers (>2sigma) when computing event averages
+  - Support for non symmetric error on station spectral parameters
 - Plotting:
   - Misfit plot (2D and 1D) when using grid search
   - `cartopy` removed as installation dependency, since it is not easily

@@ -63,7 +63,9 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
             p0=params_opt, sigma=yerr,
             bounds=(params_opt-(1e-10), params_opt+(1e-10))
         )
-        params_err = np.sqrt(params_cov.diagonal())
+        err = np.sqrt(params_cov.diagonal())
+        # symmetric error
+        params_err = ((e, e) for e in err)
     elif config.inv_algorithm == 'LM':
         bnds = bounds.get_bounds_curve_fit()
         if bnds is not None:
@@ -78,6 +80,8 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
             bounds=bnds
         )
         params_err = np.sqrt(params_cov.diagonal())
+        # symmetric error
+        params_err = ((e, e) for e in err)
     elif config.inv_algorithm == 'BH':
         minimize_func = objective_func(freq_log, ydata, weight)
         res = basinhopping(
@@ -93,6 +97,8 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
             bounds=(params_opt-(1e-10), params_opt+(1e-10))
         )
         params_err = np.sqrt(params_cov.diagonal())
+        # symmetric error
+        params_err = ((e, e) for e in err)
     elif config.inv_algorithm in ['GS', 'IS']:
         minimize_func = objective_func(freq_log, ydata, weight)
         nsteps = (20, 150, 150)  # we do fewer steps in magnitude
@@ -126,6 +132,8 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
             bounds=(params_opt-(1e-10), params_opt+(1e-10))
         )
         params_err = np.sqrt(params_cov.diagonal())
+        # symmetric error
+        params_err = ((e, e) for e in err)
     return params_opt, params_err
 
 

@@ -82,6 +82,15 @@ def _format_exponent(value, reference):
     return '{:5.3f}e{:+03d}'.format(value/10**xp, xp)
 
 
+def _err_text(err, fmt):
+    """Format error text depending on wether error is symmetric or not."""
+    if err[0] == err[1]:
+        text = '±'+fmt.format(err[0])
+    else:
+        text = '-'+fmt.format(err[0])+'<br/>+'+fmt.format(err[1])
+    return text
+
+
 def html_report(config, sourcepar, sourcepar_err):
     """Generate an HTML report."""
     # Read template files
@@ -155,29 +164,29 @@ def html_report(config, sourcepar, sourcepar_err):
         par = sourcepar[statId]
         err = sourcepar_err[statId]
         id, type = statId.split()
-        Mw = par['Mw']
-        Mw_err = err['Mw']
-        fc = par['fc']
-        fc_err = err['fc']
-        t_star = par['t_star']
-        t_star_err = err['t_star']
-        Mo = par['Mo']
-        hyp_dist = par['hyp_dist']
-        az = par['az']
-        Er = par['Er']
+        Mw_text = '{:.3f}'.format(par['Mw'])
+        Mw_err_text = _err_text(err['Mw'], '{:.3f}')
+        fc_text = '{:.3f}'.format(par['fc'])
+        fc_err_text = _err_text(err['fc'], '{:.3f}')
+        t_star_text = '{:.3f}'.format(par['t_star'])
+        t_star_err_text = _err_text(err['t_star'], '{:.3f}')
+        Mo_text = '{:.3e}'.format(par['Mo'])
+        hyp_dist_text = '{:.3f}'.format(par['hyp_dist'])
+        az_text = '{:.3f}'.format(par['az'])
+        Er_text = '{:.3e}'.format(par['Er'])
         replacements = {
             '{STATION_ID}': id,
             '{STATION_TYPE}': type,
-            '{STATION_MW}': '{:.3f}'.format(Mw),
-            '{STATION_MW_ERR}': '{:.3f}'.format(Mw_err),
-            '{STATION_FC}': '{:.3f}'.format(fc),
-            '{STATION_FC_ERR}': '{:.3f}'.format(fc_err),
-            '{STATION_TSTAR}': '{:.3f}'.format(t_star),
-            '{STATION_TSTAR_ERR}': '{:.3f}'.format(t_star_err),
-            '{STATION_M0}': '{:.3e}'.format(Mo),
-            '{STATION_DIST}': '{:.3f}'.format(hyp_dist),
-            '{STATION_AZ}': '{:.3f}'.format(az),
-            '{STATION_ER}': '{:.3e}'.format(Er),
+            '{STATION_MW}': Mw_text,
+            '{STATION_MW_ERR}': Mw_err_text,
+            '{STATION_FC}': fc_text,
+            '{STATION_FC_ERR}': fc_err_text,
+            '{STATION_TSTAR}': t_star_text,
+            '{STATION_TSTAR_ERR}': t_star_err_text,
+            '{STATION_M0}': Mo_text,
+            '{STATION_DIST}': hyp_dist_text,
+            '{STATION_AZ}': az_text,
+            '{STATION_ER}': Er_text,
         }
         station_table_rows += _multireplace(station_table_row, replacements)
 
