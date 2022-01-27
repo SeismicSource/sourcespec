@@ -16,9 +16,63 @@ The class provides optimal solutions, uncertainties and plotting methods.
 import os
 import numpy as np
 from sourcespec.kdtree import KDTree
+from scipy.signal import peak_widths
+from scipy.signal._peak_finding_utils import PeakPropertyWarning
 import matplotlib.pyplot as plt
+import warnings
 import logging
 logger = logging.getLogger(__name__.split('.')[-1])
+
+
+def peak_width(x, peak_idx, rel_height, negative=False):
+    """
+    Find width of a single peak at a given relative height.
+
+    rel_height: float paramter between 0 and 1
+                0 means the base of the curve and 1 the peak value
+                (Note: this is the opposite of scipy.peak_widths)
+    """
+    if rel_height < 0 or rel_height > 1:
+        msg = 'rel_height must be between 0 and 1'
+        raise ValueError(msg)
+    if negative:
+        sign = -1
+    else:
+        sign = 1
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=PeakPropertyWarning)
+        _, width_height, idx_left, idx_right = peak_widths(
+            sign*x, [peak_idx, ], 1-rel_height)
+    idx_left = int(idx_left)
+    idx_right = int(idx_right)
+    width_height = sign*width_height[0]
+    # fall back approach if the previous one fails
+    if idx_left == idx_right:
+        height = x.max() - x.min()
+        if not negative:
+            rel_height = 1 - rel_height
+        width_height = x.max() - rel_height*height
+        # Search for the indexes of the misfit curve points which are
+        # closest to width_height, on the left and on the right
+        #   Note: This assumes that the misfit function is monotonic.
+        #         A safer but less precise approach is the commented one,
+        #         based on "iii"
+        # iii = np.where(np.isclose(x, width_height, rtol=0.1))
+        try:
+            # idx_left = np.min(iii[iii < peak_idx])
+            x2 = x.copy()
+            x2[peak_idx:] = np.inf
+            idx_left = np.argmin(np.abs(x2 - width_height))
+        except ValueError:
+            idx_left = 0
+        try:
+            # idx_right = np.max(iii[iii > peak_idx])
+            x2 = x.copy()
+            x2[:peak_idx] = np.inf
+            idx_right = np.argmin(np.abs(x2 - width_height))
+        except ValueError:
+            idx_right = -1
+    return width_height, idx_left, idx_right
 
 
 class GridSampling():
@@ -47,7 +101,8 @@ class GridSampling():
         self.params_name = params_name
         self.params_unit = params_unit
         self.misfit = None
-        self._cut_misfit = None
+        self._conditional_misfit = None
+        self._conditional_peak_widths = None
         self._values = None
         self._min_idx = None
         self.truebounds = []
@@ -86,11 +141,16 @@ class GridSampling():
         else:
             return self._min_idx
 
-    def values_1d(self, dim):
+    @property
+    def values_1d(self):
         """Extract a 1D array of parameter values along one dimension."""
         # same thing for values: we extract a 1d array of values along dim
-        v = np.moveaxis(self.values[dim], dim, -1)
-        return v[0, 0]
+        ndim = len(self.values)
+        values_1d = []
+        for dim in range(ndim):
+            v = np.moveaxis(self.values[dim], dim, -1)
+            values_1d.append(v[0, 0])
+        return tuple(values_1d)
 
     @property
     def conditional_misfit(self):
@@ -102,6 +162,8 @@ class GridSampling():
         """
         if self.misfit is None:
             return None
+        if self._conditional_misfit is not None:
+            return self._conditional_misfit
         ndim = self.misfit.ndim
         cond_misfit = []
         for dim in range(ndim):
@@ -114,13 +176,43 @@ class GridSampling():
             # by fixing all the other dimensions (conditional misfit)
             mm = mm[idx]
             cond_misfit.append(mm)
-        return tuple(cond_misfit)
+        self._conditional_misfit = tuple(cond_misfit)
+        return self._conditional_misfit
 
     @property
     def params_opt(self):
         if self.misfit is None:
             return None
         return np.array([v[self.min_idx] for v in self.values])
+
+    @property
+    def params_err(self):
+        if self.misfit is None:
+            return None
+        error = []
+        for p, w in zip(self.params_opt, self.conditional_peak_widths):
+            err_left = p-w[1]
+            err_right = w[2]-p
+            error.append((err_left, err_right))
+        return tuple(error)
+
+    @property
+    def conditional_peak_widths(self):
+        """Find width of conditional misfit around its mininum."""
+        if self.misfit is None:
+            return None
+        if self._conditional_peak_widths is not None:
+            return self._conditional_peak_widths
+        peak_widths = []
+        rel_height = np.exp(-0.5)  # height of a gaussian for x=sigma
+        for mm, idx, values in zip(
+                self.conditional_misfit, self.min_idx, self.values_1d):
+            width_height, idx_left, idx_right = peak_width(
+                mm, idx, rel_height, negative=True)
+            peak_widths.append(
+                (width_height, values[idx_left], values[idx_right]))
+        self._conditional_peak_widths = tuple(peak_widths)
+        return self._conditional_peak_widths
 
     def grid_search(self):
         """Sample the misfit function by simple grid search."""
@@ -164,9 +256,11 @@ class GridSampling():
         ndim = self.misfit.ndim
         fig, ax = plt.subplots(ndim, 1, figsize=(9, 9), dpi=300)
         for dim, mm in enumerate(self.conditional_misfit):
-            v = self.values_1d(dim)
+            v = self.values_1d[dim]
             ax[dim].plot(v, mm)
             popt = self.params_opt[dim]
+            w = self.conditional_peak_widths[dim]
+            ax[dim].plot((w[1], w[2]), (w[0], w[0]), color='red', ls='dashed')
             ax[dim].axvline(popt, color='red')
             text = '{:.4f}  '.format(popt)
             ax[dim].text(
