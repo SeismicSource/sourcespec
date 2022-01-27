@@ -158,6 +158,9 @@ class GridSampling():
 
     def plot_conditional_misfit(self, config, label):
         """Plot conditional misfit for each parameter."""
+        # Check config, if we need to plot at all
+        if not config.PLOT_SHOW and not config.PLOT_SAVE:
+            return
         ndim = self.misfit.ndim
         fig, ax = plt.subplots(ndim, 1, figsize=(9, 9), dpi=300)
         for dim, mm in enumerate(self.conditional_misfit):
@@ -201,6 +204,9 @@ class GridSampling():
 
     def plot_misfit_2d(self, config, plot_par_idx, label):
         """Plot a 2D misfit map."""
+        # Check config, if we need to plot at all
+        if not config.PLOT_SHOW and not config.PLOT_SAVE:
+            return
         # Find the index to extract
         idx = tuple(
             v for n, v in enumerate(self.min_idx) if n not in plot_par_idx)
