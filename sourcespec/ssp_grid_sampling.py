@@ -81,7 +81,8 @@ class GridSampling():
         if self.misfit is None:
             return None
         if self._min_idx is None:
-            return np.unravel_index(np.argmin(self.misfit), self.misfit.shape)
+            return np.unravel_index(
+                np.nanargmin(self.misfit), self.misfit.shape)
         else:
             return self._min_idx
 
@@ -152,7 +153,6 @@ class GridSampling():
         pdf, extent = kdt.get_pdf(deltas)
         self.kdt = kdt
         self.misfit = -np.log(pdf)
-        self.misfit[np.isnan(self.misfit)] = 1e99
         self.nsteps = self.misfit.shape
         self.extent = extent
 
