@@ -254,6 +254,16 @@ def _spec_inversion(config, spec, noise_weight):
     # quality factor
     par['Qo'] = quality_factor(par['hyp_dist'], vs, par['t_star'])
 
+    # Check if Brune stress drop is acceptable
+    if config.bsd_min_max is not None:
+        bsd_min, bsd_max = config.bsd_min_max
+        if not (bsd_min <= par['bsd'] <= bsd_max):
+            msg = '{}: bsd: {:.3e} not in allowed range [{:.3e}, {:.3e}]: '
+            msg += 'ignoring inversion results'
+            msg = msg.format(statId, par['bsd'], bsd_min, bsd_max)
+            logger.warning(msg)
+            raise ValueError
+
     par_err = OrderedDict(zip(params_name, params_err))
     return par, par_err
 

@@ -37,6 +37,8 @@ Earthquake source parameters from S-wave displacement spectra
   - Support for non symmetric error on station spectral parameters
   - Compute additional, per-station parameters: source radius, Brune stress
     drop and quality factor
+  - New config option: `bsd_min_max` to reject inversion results (per-station)
+    with extreme Brune stress drop values
 - Plotting:
   - Misfit plot (2D and 1D) when using grid search
   - `cartopy` removed as installation dependency, since it is not easily
