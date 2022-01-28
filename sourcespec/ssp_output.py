@@ -455,6 +455,7 @@ def write_output(config, sourcepar, sourcepar_err):
 
     # Quality factor
     Qo_values = np.array([x['Qo'] for x in sourcepar.values()])
+    Qo_values = Qo_values[~np.isinf(Qo_values)]
     means['Qo'], errors['Qo'] = _avg_and_std(Qo_values)
 
     # Ml
