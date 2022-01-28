@@ -143,6 +143,7 @@ def _spec_inversion(config, spec, noise_weight):
 
     freq_log = spec.freq_log
     ydata = spec.data_log_mag
+    statId = '{} {}'.format(spec.id, spec.stats.instrtype)
 
     noise_weight = noise_weight.data_log
     if config.weighting == 'noise':
@@ -171,10 +172,12 @@ def _spec_inversion(config, spec, noise_weight):
     if not idx_max:
         # if idx_max is empty, then the source and/or noise spectrum
         # is most certainly "strange". In this case, we simply give up.
-        logger.warning('%s: unable to find a frequency range to compute '
-                       'Mw_0' % spec.id)
-        logger.warning('   This is possibly due to an uncommon '
-                       'spectrum for the trace (e.g., a resonance).')
+        logger.warning(
+            '{}: unable to find a frequency range to compute Mw_0'.format(
+                statId))
+        logger.warning(
+            '   This is possibly due to an uncommon '
+            'spectrum for the trace (e.g., a resonance).')
         raise RuntimeError
     idx1 = idx_max[0]
     if idx1 == idx0 and len(idx_max) > 1:
@@ -199,8 +202,7 @@ def _spec_inversion(config, spec, noise_weight):
         t_star_0 = config.t_star_0
 
     initial_values = InitialValues(Mw_0, fc_0, t_star_0)
-    logger.info('%s %s: initial values: %s' %
-                (spec.id, spec.stats.instrtype, str(initial_values)))
+    logger.info('{}: initial values: {}'.format(statId, str(initial_values)))
     bounds = Bounds(config, spec, initial_values)
     bounds.Mw_min = Mw_0 - config.Mw_0_variability
     bounds.Mw_max = Mw_0 + config.Mw_0_variability
@@ -208,24 +210,34 @@ def _spec_inversion(config, spec, noise_weight):
         bounds.t_star_min = t_star_min
     if t_star_max is not None:
         bounds.t_star_max = t_star_max
-    logger.info('%s %s: bounds: %s' %
-                (spec.id, spec.stats.instrtype, str(bounds)))
+    logger.info('{}: bounds: {}'.format(statId, str(bounds)))
     try:
         params_opt, params_err = _curve_fit(
             config, spec, weight, yerr, initial_values, bounds)
     except (RuntimeError, ValueError) as m:
         logger.warning(m)
-        logger.warning('%s %s: unable to fit spectral model' %
-                       (spec.id, spec.stats.instrtype))
+        logger.warning('{}: unable to fit spectral model'.format(statId))
         raise
 
     params_name = ('Mw', 'fc', 't_star')
     par = OrderedDict(zip(params_name, params_opt))
     par_str = '; '.join(['{}: {:.4f}'.format(key, par[key]) for key in par])
-    logger.info(
-        '{} {}: optimal values: {}'.format(
-            spec.id, spec.stats.instrtype, par_str)
-    )
+    logger.info('{}: optimal values: {}'.format(statId, par_str))
+
+    # Ignore spectra with negative fc or t_star
+    t_star = par['t_star']
+    if t_star < 0:
+        logger.warning(
+            '{}: t_star: {:.3f} < 0: ignoring inversion results'.format(
+                statId, t_star))
+        raise ValueError
+    fc = par['fc']
+    if fc < 0:
+        logger.warning(
+            '{}: fc: {:.3f} < 0: ignoring inversion results'.format(
+                statId, fc))
+        raise ValueError
+
     par['Mo'] = mag_to_moment(par['Mw'])
     par['hyp_dist'] = spec.stats.hypo_dist
     par['epi_dist'] = spec.stats.epi_dist
@@ -314,26 +326,9 @@ def spectral_inversion(config, spec_st, weight_st):
         except (RuntimeError, ValueError):
             continue
         spec_st += _synth_spec(config, spec, par, par_err)
-        statId = '%s %s' % (spec.id, spec.stats.instrtype)
+        statId = '{} {}'.format(spec.id, spec.stats.instrtype)
         sourcepar[statId] = par
         sourcepar_err[statId] = par_err
-
-    # Filter stations with negative t_star or fc
-    # Make a copy of sourcepar.keys() since the dictionary
-    # may change during iteration
-    for statId in list(sourcepar.keys()):
-        par = sourcepar[statId]
-        t_star = par['t_star']
-        if t_star < 0:
-            logger.warning('Ignoring station: %s t_star: %f' %
-                           (statId, t_star))
-            sourcepar.pop(statId, None)
-            sourcepar_err.pop(statId, None)
-        fc = par['fc']
-        if fc < 0:
-            logger.warning('Ignoring station: %s fc: %f' % (statId, fc))
-            sourcepar.pop(statId, None)
-            sourcepar_err.pop(statId, None)
 
     radiated_energy(config, spec_st, sourcepar)
 
