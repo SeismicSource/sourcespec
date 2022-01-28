@@ -110,7 +110,7 @@ def _write_parfile(config, sourcepar, sourcepar_err):
                 hypo.origin_time))
         parfile.write('*** Station source parameters ***\n')
         parkeys = (
-            'Mw', 'fc', 't_star', 'Mo', 'hyp_dist', 'az', 'Er'
+            'Mw', 'fc', 't_star', 'Qo', 'Mo', 'bsd', 'hyp_dist', 'az', 'Er'
         )
         formats = dict(
             Mo='  {} {:.3e} ',
@@ -119,7 +119,9 @@ def _write_parfile(config, sourcepar, sourcepar_err):
             az='  {} {:7.3f} ',
             Mw='  {} {:6.3f} ',
             fc='  {} {:6.3f} ',
+            bsd='  {} {:.3e} ',
             t_star='  {} {:6.3f} ',
+            Qo='  {} {:5.1f} ',
             Ml='  {} {:6.3f} '
         )
         formats_none = dict(
@@ -129,7 +131,9 @@ def _write_parfile(config, sourcepar, sourcepar_err):
             az='  {} {:>7} ',
             Mw='  {} {:>6} ',
             fc='  {} {:>6} ',
+            bsd='  {} {:>9} ',
             t_star='  {} {:>6} ',
+            Qo='  {} {:>5} ',
             Ml='  {} {:>6} '
         )
         for statId in sorted(sourcepar.keys()):
@@ -210,6 +214,11 @@ def _write_parfile(config, sourcepar, sourcepar_err):
         parfile.write('t_star (weighted): {:.3f} +/- {:.3f} s\n'.format(
             t_star_mean_weight, t_star_error_weight))
 
+        Qo_mean = means['Qo']
+        Qo_error = errors['Qo']
+        parfile.write('Qo: {:.1f} +/- {:.1f}\n'.format(
+            Qo_mean, Qo_error))
+
         ra_mean = means['ra']
         ra_minus, ra_plus = errors['ra']
         parfile.write('Source radius: {:.3f} /- {:.3f} /+ {:.3f} m\n'.format(
@@ -278,7 +287,7 @@ def _write_db(config, sourcepar, sourcepar_err):
         '(stid, evid, Mo, Mw, Mw_err_minus, Mw_err_plus,'
         'fc, fc_err_minus, fc_err_plus,'
         't_star, t_star_err_minus, t_star_err_plus,'
-        'dist, azimuth, Er);')
+        'Qo, bsd, dist, azimuth, Er);')
     # Write station source parameters to database
     nobs = 0
     for statId in sorted(sourcepar.keys()):
@@ -296,6 +305,7 @@ def _write_db(config, sourcepar, sourcepar_err):
             par['Mw'], *par_err['Mw'],
             par['fc'], *par_err['fc'],
             par['t_star'], *par_err['t_star'],
+            par['Qo'], par['bsd'],
             par['hyp_dist'], par['az'], par['Er']
         )
         # Create a string like ?,?,?,?
@@ -319,6 +329,7 @@ def _write_db(config, sourcepar, sourcepar_err):
         'fc_wavg, fc_wavg_err_minus, fc_wavg_err_plus,'
         't_star, t_star_err,'
         't_star_wavg, t_star_wavg_err,'
+        'Qo, Qo_err,'
         'ra, ra_err_minus, ra_err_plus,'
         'bsd, bsd_err_minus, bsd_err_plus,'
         'Er, Er_err_minus, Er_err_plus,'
@@ -342,6 +353,7 @@ def _write_db(config, sourcepar, sourcepar_err):
         means_weight['fc'], *errors_weight['fc'],
         means['t_star'], errors['t_star'],
         means_weight['t_star'], errors_weight['t_star'],
+        means['Qo'], errors['Qo'],
         means['ra'], *errors['ra'],
         means['bsd'], *errors['bsd'],
         means['Er'], *errors['Er'],
@@ -434,16 +446,16 @@ def write_output(config, sourcepar, sourcepar_err):
         _avg_and_std(t_star_values, errors=t_star_err)
 
     # ra, radius (meters)
-    vs_m = config.hypo.vs*1e3
-    # Madariaga (2009), doi:10.1007/978-1-4419-7695-6_22, eq. 31:
-    ra_values = 0.3724 * vs_m / fc_values
+    ra_values = np.array([x['ra'] for x in sourcepar.values()])
     means['ra'], errors['ra'] = _avg_and_std(ra_values, logarithmic=True)
 
     # bsd, Brune stress drop (MPa)
-    Mo_values = mag_to_moment(Mw_values)
-    # Madariaga (2009), doi:10.1007/978-1-4419-7695-6_22, eq. 27:
-    bsd_values = 7./16 * Mo_values / np.power(ra_values, 3) * 1e-6
+    bsd_values = np.array([x['bsd'] for x in sourcepar.values()])
     means['bsd'], errors['bsd'] = _avg_and_std(bsd_values, logarithmic=True)
+
+    # Quality factor
+    Qo_values = np.array([x['Qo'] for x in sourcepar.values()])
+    means['Qo'], errors['Qo'] = _avg_and_std(Qo_values)
 
     # Ml
     # build Ml_values: use np.nan for missing values

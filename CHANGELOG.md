@@ -17,6 +17,9 @@ Earthquake source parameters from S-wave displacement spectra
   - Removed `-C` argument to apply station correction to spectra. Now spectra
     are automatically corrected if `residuals_filepath` is specified in the
     configuration file
+  - Save an additional event parameter to output files: average quality factor
+  - Save additional station parameters to output files:
+    source radius, Brune stress drop, quality factor
 - Processing:
   - New approach for trace clipping detection (requires just one configuration
     parameter, named `clip_max_percent`)
@@ -32,6 +35,8 @@ Earthquake source parameters from S-wave displacement spectra
   - Fix for Basin-hopping algorithm not running
   - Remove outliers (>2sigma) when computing event averages
   - Support for non symmetric error on station spectral parameters
+  - Compute additional, per-station parameters: source radius, Brune stress
+    drop and quality factor
 - Plotting:
   - Misfit plot (2D and 1D) when using grid search
   - `cartopy` removed as installation dependency, since it is not easily

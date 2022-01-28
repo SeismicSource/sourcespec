@@ -170,7 +170,11 @@ def html_report(config, sourcepar, sourcepar_err):
         fc_err_text = _err_text(err['fc'], '{:.3f}')
         t_star_text = '{:.3f}'.format(par['t_star'])
         t_star_err_text = _err_text(err['t_star'], '{:.3f}')
+        Qo_text = '{:.1f}'.format(par['Qo'])
         Mo_text = '{:.3e}'.format(par['Mo'])
+        bsd_text = '{:.3e}'.format(par['bsd'])
+        # replace dash (if negative exponent) by non breaking dash
+        bsd_text = bsd_text.replace('-', '&#8722;')
         hyp_dist_text = '{:.3f}'.format(par['hyp_dist'])
         az_text = '{:.3f}'.format(par['az'])
         Er_text = '{:.3e}'.format(par['Er'])
@@ -183,7 +187,9 @@ def html_report(config, sourcepar, sourcepar_err):
             '{STATION_FC_ERR}': fc_err_text,
             '{STATION_TSTAR}': t_star_text,
             '{STATION_TSTAR_ERR}': t_star_err_text,
+            '{STATION_Q0}': Qo_text,
             '{STATION_M0}': Mo_text,
+            '{STATION_BSD}': bsd_text,
             '{STATION_DIST}': hyp_dist_text,
             '{STATION_AZ}': az_text,
             '{STATION_ER}': Er_text,
@@ -211,6 +217,8 @@ def html_report(config, sourcepar, sourcepar_err):
     t_star_error = errors['t_star']
     t_star_mean_weight = means_weight['t_star']
     t_star_error_weight = errors_weight['t_star']
+    Qo_mean = means['Qo']
+    Qo_error = errors['Qo']
     ra_mean = means['ra']
     ra_minus, ra_plus = errors['ra']
     bsd_mean = means['bsd']
@@ -247,6 +255,8 @@ def html_report(config, sourcepar, sourcepar_err):
         '{TSTAR_ERR}': '{:.3f}'.format(t_star_error),
         '{TSTAR_WEIGHT}': '{:.3f}'.format(t_star_mean_weight),
         '{TSTAR_WEIGHT_ERR}': '{:.3f}'.format(t_star_error_weight),
+        '{Q0}': '{:.1f}'.format(Qo_mean),
+        '{Q0_ERR}': '{:.1f}'.format(Qo_error),
         '{RADIUS}': '{:.3f}'.format(ra_mean),
         '{RADIUS_ERR_MINUS}': '{:.3f}'.format(ra_minus),
         '{RADIUS_ERR_PLUS}': '{:.3f}'.format(ra_plus),

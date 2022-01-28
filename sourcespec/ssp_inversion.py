@@ -26,9 +26,10 @@ from scipy.optimize import curve_fit, minimize, basinhopping
 from scipy.signal import argrelmax
 from obspy import Stream
 from obspy.geodetics import gps2dist_azimuth
-from sourcespec.ssp_spectral_model import (spectral_model, objective_func,
-                                           callback)
-from sourcespec.ssp_util import mag_to_moment, select_trace, smooth
+from sourcespec.ssp_spectral_model import (
+    spectral_model, objective_func, callback)
+from sourcespec.ssp_util import (
+    mag_to_moment, source_radius, bsd, quality_factor, select_trace, smooth)
 from sourcespec.ssp_radiated_energy import radiated_energy
 from sourcespec.ssp_inversion_types import InitialValues, Bounds
 from sourcespec.ssp_grid_sampling import GridSampling
@@ -231,6 +232,15 @@ def _spec_inversion(config, spec, noise_weight):
     par['az'] = az
     par['lon'] = spec.stats.coords.longitude
     par['lat'] = spec.stats.coords.latitude
+
+    # additional parameters, computed from fc, Mw and t_star
+    vs = config.hypo.vs
+    # source radius in meters
+    par['ra'] = source_radius(par['fc'], vs*1e3)
+    # Brune stress drop in MPa
+    par['bsd'] = bsd(par['Mo'], par['ra'])
+    # quality factor
+    par['Qo'] = quality_factor(par['hyp_dist'], vs, par['t_star'])
 
     par_err = OrderedDict(zip(params_name, params_err))
     return par, par_err

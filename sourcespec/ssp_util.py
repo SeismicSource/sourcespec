@@ -20,7 +20,6 @@ import math
 import numpy as np
 from obspy.signal.invsim import cosine_taper as _cos_taper
 from obspy.geodetics import gps2dist_azimuth, kilometers2degrees
-from sourcespec.ssp_setup import ssp_exit
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -45,16 +44,6 @@ def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
         if freq_max > freq_minmax[1]:
             freq_minmax[1] = freq_max
     return amp_minmax, freq_minmax
-
-
-def moment_to_mag(moment):
-    """Convert moment to magnitude."""
-    return (np.log10(moment) - 9.1) / 1.5
-
-
-def mag_to_moment(magnitude):
-    """Convert magnitude to moment."""
-    return np.power(10, (1.5 * magnitude + 9.1))
 
 
 def select_trace(stream, traceid, instrtype):
@@ -89,6 +78,41 @@ def get_vel(lon, lat, depth, wave, config):
         slow_len = grd.get_value(lon, lat, depth)
         vel = grd.dx / slow_len
     return vel
+# -----------------------------------------------------------------------------
+
+
+# SOURCE PARAMETERS -----------------------------------------------------------
+def moment_to_mag(moment):
+    """Convert moment to magnitude."""
+    return (np.log10(moment) - 9.1) / 1.5
+
+
+def mag_to_moment(magnitude):
+    """Convert magnitude to moment."""
+    return np.power(10, (1.5 * magnitude + 9.1))
+
+
+def source_radius(fc_in_hz, vs_in_m_per_s):
+    """
+    Compute source radius in meters.
+
+    Madariaga (2009), doi:10.1007/978-1-4419-7695-6_22, eq. 31
+    """
+    return 0.3724 * vs_in_m_per_s / fc_in_hz
+
+
+def bsd(Mo_in_N_m, ra_in_m):
+    """
+    Compute Brune stress drop in MPa.
+
+    Madariaga (2009), doi:10.1007/978-1-4419-7695-6_22, eq. 27
+    """
+    return 7./16 * Mo_in_N_m / ra_in_m**3 * 1e-6
+
+
+def quality_factor(hyp_dist_in_km, vs_in_km_per_s, t_star_in_s):
+    """Compute quality factor from t_star, distance and vs."""
+    return hyp_dist_in_km/(t_star_in_s*vs_in_km_per_s)
 # -----------------------------------------------------------------------------
 
 
