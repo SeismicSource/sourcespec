@@ -33,9 +33,6 @@ def station_correction(spec_st, config):
     """
     res_filepath = config.residuals_filepath
     if res_filepath is None:
-        msg = "'-C' option set, but 'residuals_filepath' not specified "
-        msg += "in config file: ignoring station correction"
-        logger.warning(msg)
         return spec_st
     with open(res_filepath, 'rb') as fp:
         residual = pickle.load(fp)
@@ -57,7 +54,7 @@ def station_correction(spec_st, config):
             # convert mag to moment
             spec.data = mag_to_moment(spec.data_mag)
             spec.data_log = mag_to_moment(spec.data_log_mag)
-
-            logger.info('%s corrected, frequency range is: %f %f'
-                        % (spec.id, fmin, fmax))
+            logger.info(
+                '{} corrected, frequency range is: {:.2f} {:.2f} Hz'.format(
+                    spec.id, fmin, fmax))
     return spec_st

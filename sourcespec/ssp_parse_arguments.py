@@ -148,12 +148,6 @@ def _update_parser(parser, progname):
             help='save output to OUTDIR (default: sspec_out)',
             metavar='OUTDIR'
         )
-        parser.add_argument(
-            '-C', '--correction', dest='correction',
-            action='store_true', default=False,
-            help='apply station correction to the "H" component of the '
-                 'spectra'
-        )
     elif progname == 'source_model':
         parser.add_argument(
             '-f', '--fmin', dest='fmin', action='store',

@@ -384,9 +384,8 @@ def build_spectra(config, st, noise_weight=False):
         spec.data_mag = moment_to_mag(spec.data)
         spec.data_log_mag = moment_to_mag(spec.data_log)
 
-    # optionally, apply station correction
-    if config.options.correction:
-        spec_st = station_correction(spec_st, config)
+    # apply station correction if a residula file is specified in config
+    spec_st = station_correction(spec_st, config)
 
     logger.info('Building spectra: done')
     if noise_weight:

@@ -14,6 +14,9 @@ Earthquake source parameters from S-wave displacement spectra
   - SQLite output: added radiated energy, weighted averages,
     errors on parameters, number of observations, hypocentral location
     and origin time
+  - Removed `-C` argument to apply station correction to spectra. Now spectra
+    are automatically corrected if `residuals_filepath` is specified in the
+    configuration file
 - Processing:
   - New approach for trace clipping detection (requires just one configuration
     parameter, named `clip_max_percent`)
