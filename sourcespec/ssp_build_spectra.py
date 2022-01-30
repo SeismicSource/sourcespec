@@ -262,10 +262,13 @@ def _build_weight(spec, specnoise):
         # The inversion is done in magnitude units,
         # so let's take log10 of weight
         weight.data = np.log10(weight.data)
-        # Make sure weight is positive
-        weight.data[weight.data <= 0] = 0.001
         _smooth_spectrum(weight, npts=11)
         weight.data /= np.max(weight.data)
+        # slightly taper weight at low frequencies, to avoid overestimating
+        # weight at low frequencies, in cases where noise is underestimated
+        cosine_taper(weight.data, spec.stats.delta/4, left_taper=True)
+        # Make sure weight is positive
+        weight.data[weight.data <= 0] = 0.001
     else:
         logger.warning('%s: No available noise window: '
                        % weight.get_id()[0:-1] +

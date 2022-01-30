@@ -119,11 +119,13 @@ def quality_factor(hyp_dist_in_km, vs_in_km_per_s, t_star_in_s):
 
 
 # SIGNAL ANALYSIS -------------------------------------------------------------
-def cosine_taper(signal, width):
+def cosine_taper(signal, width, left_taper=False):
     # TODO: this taper looks more like a hanning...
     npts = len(signal)
     p = 2 * width
     tap = _cos_taper(npts, p)
+    if left_taper:
+        tap[int(npts/2):] = 1.
     signal *= tap
 
 
