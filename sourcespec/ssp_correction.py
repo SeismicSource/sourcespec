@@ -21,6 +21,7 @@ except ImportError:
     import pickle
 import logging
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
+from sourcespec.ssp_setup import ssp_exit
 from scipy.interpolate import interp1d
 logger = logging.getLogger(__name__.split('.')[-1])
 
@@ -34,8 +35,12 @@ def station_correction(spec_st, config):
     res_filepath = config.residuals_filepath
     if res_filepath is None:
         return spec_st
-    with open(res_filepath, 'rb') as fp:
-        residual = pickle.load(fp)
+    try:
+        with open(res_filepath, 'rb') as fp:
+            residual = pickle.load(fp)
+    except Exception as msg:
+        logger.error(msg)
+        ssp_exit(1)
 
     for spec in [spec for spec in spec_st if (spec.stats.channel[-1] == 'H')]:
         station = spec.stats.station
