@@ -78,17 +78,8 @@ def _get_cut_times(config, tr):
                             max_len=9e99, max_len_delete=False)[0]
     t0 = p_arrival_time
     t1 = t0 + trigger[-1] * tr.stats.delta
-    # import matplotlib.pyplot as plt
-    # fig, ax = plt.subplots(2, 1, sharex=True)
-    # fig.suptitle(tr.id)
-    # ax[0].plot(tr.times(), tr, color='k')
-    # ax[0].grid(True)
-    # ax[1].plot(tr_env.times(), tr_env, color='k')
-    # ax[1].axvline(t0 - tr.stats.starttime, color='k', linestyle='--')
-    # ax[1].axvline(t1 - tr.stats.starttime, color='k', linestyle='--')
-    # ax[1].grid(True)
-    # ax[1].set_xlabel('Time (s)')
-    # plt.show()
+    if t1 > tr.stats.endtime:
+        t1 = tr.stats.endtime
     return t0, t1
 
 
