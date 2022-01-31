@@ -171,11 +171,17 @@ def html_report(config, sourcepar, sourcepar_err):
         t_star_text = '{:.3f}'.format(par['t_star'])
         t_star_err_text = _err_text(err['t_star'], '{:.3f}')
         Qo_text = '{:.1f}'.format(par['Qo'])
+        Qo_err_text = _err_text(err['Qo'], '{:.1f}')
         Mo_text = '{:.3e}'.format(par['Mo'])
+        Mo_err_text = _err_text(err['Mo'], '{:.3e}')
         bsd_text = '{:.3e}'.format(par['bsd'])
         # replace dash (if negative exponent) by non breaking dash
         bsd_text = bsd_text.replace('-', '&#8722;')
+        bsd_err_text = _err_text(err['bsd'], '{:.3e}')
+        # replace dash (if negative exponent) by non breaking dash
+        bsd_err_text = bsd_err_text.replace('-', '&#8722;')
         ra_text = '{:.3f}'.format(par['ra'])
+        ra_err_text = _err_text(err['ra'], '{:.3f}')
         hyp_dist_text = '{:.3f}'.format(par['hyp_dist'])
         az_text = '{:.3f}'.format(par['az'])
         Er_text = '{:.3e}'.format(par['Er'])
@@ -189,9 +195,13 @@ def html_report(config, sourcepar, sourcepar_err):
             '{STATION_TSTAR}': t_star_text,
             '{STATION_TSTAR_ERR}': t_star_err_text,
             '{STATION_Q0}': Qo_text,
+            '{STATION_Q0_ERR}': Qo_err_text,
             '{STATION_M0}': Mo_text,
+            '{STATION_M0_ERR}': Mo_err_text,
             '{STATION_BSD}': bsd_text,
+            '{STATION_BSD_ERR}': bsd_err_text,
             '{STATION_RA}': ra_text,
+            '{STATION_RA_ERR}': ra_err_text,
             '{STATION_DIST}': hyp_dist_text,
             '{STATION_AZ}': az_text,
             '{STATION_ER}': Er_text,
@@ -221,10 +231,16 @@ def html_report(config, sourcepar, sourcepar_err):
     t_star_error_weight = errors_weight['t_star']
     Qo_mean = means['Qo']
     Qo_error = errors['Qo']
+    Qo_mean_weight = means_weight['Qo']
+    Qo_error_weight = errors_weight['Qo']
     ra_mean = means['ra']
     ra_minus, ra_plus = errors['ra']
+    ra_mean_weight = means_weight['ra']
+    ra_minus_weight, ra_plus_weight = errors_weight['ra']
     bsd_mean = means['bsd']
     bsd_minus, bsd_plus = errors['bsd']
+    bsd_mean_weight = means_weight['bsd']
+    bsd_minus_weight, bsd_plus_weight = errors_weight['bsd']
     Er_mean = means['Er']
     Er_minus, Er_plus = errors['Er']
     replacements = {
@@ -259,12 +275,22 @@ def html_report(config, sourcepar, sourcepar_err):
         '{TSTAR_WEIGHT_ERR}': '{:.3f}'.format(t_star_error_weight),
         '{Q0}': '{:.1f}'.format(Qo_mean),
         '{Q0_ERR}': '{:.1f}'.format(Qo_error),
+        '{Q0_WEIGHT}': '{:.1f}'.format(Qo_mean_weight),
+        '{Q0_WEIGHT_ERR}': '{:.1f}'.format(Qo_error_weight),
         '{RADIUS}': '{:.3f}'.format(ra_mean),
         '{RADIUS_ERR_MINUS}': '{:.3f}'.format(ra_minus),
         '{RADIUS_ERR_PLUS}': '{:.3f}'.format(ra_plus),
+        '{RADIUS_WEIGHT}': '{:.3f}'.format(ra_mean_weight),
+        '{RADIUS_WEIGHT_ERR_MINUS}': '{:.3f}'.format(ra_minus_weight),
+        '{RADIUS_WEIGHT_ERR_PLUS}': '{:.3f}'.format(ra_plus_weight),
         '{BSD}': '{:.3e}'.format(bsd_mean),
         '{BSD_ERR_MINUS}': '{}'.format(_format_exponent(bsd_minus, bsd_mean)),
         '{BSD_ERR_PLUS}': '{}'.format(_format_exponent(bsd_plus, bsd_mean)),
+        '{BSD_WEIGHT}': '{:.3e}'.format(bsd_mean_weight),
+        '{BSD_WEIGHT_ERR_MINUS}': '{}'.format(
+            _format_exponent(bsd_minus_weight, bsd_mean_weight)),
+        '{BSD_WEIGHT_ERR_PLUS}': '{}'.format(
+            _format_exponent(bsd_plus_weight, bsd_mean_weight)),
         '{ER}': '{:.3e}'.format(Er_mean),
         '{ER_ERR_MINUS}': '{}'.format(_format_exponent(Er_minus, Er_mean)),
         '{ER_ERR_PLUS}': '{}'.format(_format_exponent(Er_plus, Er_mean)),

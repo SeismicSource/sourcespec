@@ -219,13 +219,21 @@ def _write_parfile(config, sourcepar, sourcepar_err):
 
         Qo_mean = means['Qo']
         Qo_error = errors['Qo']
-        parfile.write('Qo: {:.1f} +/- {:.1f}\n'.format(
-            Qo_mean, Qo_error))
+        parfile.write('Qo: {:.1f} +/- {:.1f}\n'.format(Qo_mean, Qo_error))
+        Qo_mean_weight = means_weight['Qo']
+        Qo_error_weight = errors_weight['Qo']
+        parfile.write('Qo (weighted): {:.1f} +/- {:.1f}\n'.format(
+            Qo_mean_weight, Qo_error_weight))
 
         ra_mean = means['ra']
         ra_minus, ra_plus = errors['ra']
         parfile.write('Source radius: {:.3f} /- {:.3f} /+ {:.3f} m\n'.format(
             ra_mean, ra_minus, ra_plus))
+        ra_mean_weight = means_weight['ra']
+        ra_minus_weight, ra_plus_weight = errors_weight['ra']
+        parfile.write(
+            'Source radius (weighted): {:.3f} /- {:.3f} /+ {:.3f} m\n'.format(
+                ra_mean_weight, ra_minus_weight, ra_plus_weight))
 
         bsd_mean = means['bsd']
         bsd_minus, bsd_plus = errors['bsd']
@@ -233,6 +241,13 @@ def _write_parfile(config, sourcepar, sourcepar_err):
         bsd_plus_str = _format_exponent(bsd_plus, bsd_mean)
         parfile.write('Brune stress drop: {:.3e} /- {} /+ {} MPa\n'.format(
             bsd_mean, bsd_minus_str, bsd_plus_str))
+        bsd_mean_weight = means_weight['bsd']
+        bsd_minus_weight, bsd_plus_weight = errors_weight['bsd']
+        bsd_minus_str = _format_exponent(bsd_minus_weight, bsd_mean_weight)
+        bsd_plus_str = _format_exponent(bsd_plus_weight, bsd_mean_weight)
+        parfile.write(
+            'Brune stress drop (weighted): {:.3e} /- {} /+ {} MPa\n'.format(
+                bsd_mean_weight, bsd_minus_str, bsd_plus_str))
 
         if means['Ml'] is not None:
             Ml_mean = means['Ml']
@@ -287,10 +302,15 @@ def _write_db(config, sourcepar, sourcepar_err):
     # Init Station table
     c.execute(
         'create table if not exists Stations '
-        '(stid, evid, Mo, Mw, Mw_err_minus, Mw_err_plus,'
+        '(stid, evid,'
+        'Mo, Mo_err_minus, Mo_err_plus,'
+        'Mw, Mw_err_minus, Mw_err_plus,'
         'fc, fc_err_minus, fc_err_plus,'
         't_star, t_star_err_minus, t_star_err_plus,'
-        'Qo, bsd, ra, dist, azimuth, Er);')
+        'Qo, Qo_err_minus, Qo_err_plus,'
+        'bsd, bsd_err_minus, bsd_err_plus,'
+        'ra, ra_err_minus, ra_err_plus,'
+        'dist, azimuth, Er);')
     # Write station source parameters to database
     nobs = 0
     for statId in sorted(sourcepar.keys()):
@@ -304,11 +324,14 @@ def _write_db(config, sourcepar, sourcepar_err):
         c.execute('delete from Stations where stid=? and evid=?;', t)
         # Insert new line
         t = (
-            statId, evid, par['Mo'],
+            statId, evid,
+            par['Mo'], *par_err['Mo'],
             par['Mw'], *par_err['Mw'],
             par['fc'], *par_err['fc'],
             par['t_star'], *par_err['t_star'],
-            par['Qo'], par['bsd'], par['ra'],
+            par['Qo'], *par_err['Qo'],
+            par['bsd'], *par_err['bsd'],
+            par['ra'], *par_err['ra'],
             par['hyp_dist'], par['az'], par['Er']
         )
         # Create a string like ?,?,?,?
@@ -333,8 +356,11 @@ def _write_db(config, sourcepar, sourcepar_err):
         't_star, t_star_err,'
         't_star_wavg, t_star_wavg_err,'
         'Qo, Qo_err,'
+        'Qo_wavg, Qo_wavg_err,'
         'ra, ra_err_minus, ra_err_plus,'
+        'ra_wavg, ra_wavg_err_minus, ra_wavg_err_plus,'
         'bsd, bsd_err_minus, bsd_err_plus,'
+        'bsd_wavg, bsd_wavg_err_minus, bsd_wavg_err_plus,'
         'Er, Er_err_minus, Er_err_plus,'
         'Ml, Ml_err);')
     means = sourcepar['means']
@@ -357,8 +383,11 @@ def _write_db(config, sourcepar, sourcepar_err):
         means['t_star'], errors['t_star'],
         means_weight['t_star'], errors_weight['t_star'],
         means['Qo'], errors['Qo'],
+        means_weight['Qo'], errors_weight['Qo'],
         means['ra'], *errors['ra'],
+        means_weight['ra'], *errors_weight['ra'],
         means['bsd'], *errors['bsd'],
+        means_weight['bsd'], *errors_weight['bsd'],
         means['Er'], *errors['Er'],
         means['Ml'], errors['Ml']
     )
@@ -450,16 +479,27 @@ def write_output(config, sourcepar, sourcepar_err):
 
     # ra, radius (meters)
     ra_values = np.array([x['ra'] for x in sourcepar.values()])
+    ra_err = np.array([x['ra'] for x in sourcepar_err.values()])
     means['ra'], errors['ra'] = _avg_and_std(ra_values, logarithmic=True)
+    means_weight['ra'], errors_weight['ra'] = \
+        _avg_and_std(ra_values, errors=ra_err, logarithmic=True)
 
     # bsd, Brune stress drop (MPa)
     bsd_values = np.array([x['bsd'] for x in sourcepar.values()])
+    bsd_err = np.array([x['bsd'] for x in sourcepar_err.values()])
     means['bsd'], errors['bsd'] = _avg_and_std(bsd_values, logarithmic=True)
+    means_weight['bsd'], errors_weight['bsd'] = \
+        _avg_and_std(bsd_values, errors=bsd_err, logarithmic=True)
 
     # Quality factor
     Qo_values = np.array([x['Qo'] for x in sourcepar.values()])
-    Qo_values = Qo_values[~np.isinf(Qo_values)]
-    means['Qo'], errors['Qo'] = _avg_and_std(Qo_values)
+    Qo_err = np.array([x['Qo'] for x in sourcepar_err.values()])
+    cond = ~np.isinf(Qo_values)
+    means['Qo'], errors['Qo'] = _avg_and_std(Qo_values[cond])
+    cond_err = np.logical_and(~np.isinf(Qo_err[:, 0]), ~np.isinf(Qo_err[:, 1]))
+    cond = np.logical_and(cond, cond_err)
+    means_weight['Qo'], errors_weight['Qo'] = \
+        _avg_and_std(Qo_values[cond], errors=Qo_err[cond])
 
     # Ml
     # build Ml_values: use np.nan for missing values

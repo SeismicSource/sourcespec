@@ -238,7 +238,6 @@ def _spec_inversion(config, spec, noise_weight):
                 statId, fc))
         raise ValueError
 
-    par['Mo'] = mag_to_moment(par['Mw'])
     par['hyp_dist'] = spec.stats.hypo_dist
     par['epi_dist'] = spec.stats.epi_dist
     par['az'] = az
@@ -247,6 +246,8 @@ def _spec_inversion(config, spec, noise_weight):
 
     # additional parameters, computed from fc, Mw and t_star
     vs = config.hypo.vs
+    # seismic moment
+    par['Mo'] = mag_to_moment(par['Mw'])
     # source radius in meters
     par['ra'] = source_radius(par['fc'], vs*1e3)
     # Brune stress drop in MPa
@@ -265,6 +266,31 @@ def _spec_inversion(config, spec, noise_weight):
             raise ValueError
 
     par_err = OrderedDict(zip(params_name, params_err))
+    # additional parameter errors, computed from fc, Mw and t_star
+    vs = config.hypo.vs
+    # seismic moment
+    Mw_min = par['Mw'] - par_err['Mw'][0]
+    Mw_max = par['Mw'] + par_err['Mw'][1]
+    Mo_min = mag_to_moment(Mw_min)
+    Mo_max = mag_to_moment(Mw_max)
+    par_err['Mo'] = (par['Mo'] - Mo_min, Mo_max - par['Mo'])
+    # source radius in meters
+    fc_min = par['fc'] - par_err['fc'][0]
+    fc_max = par['fc'] + par_err['fc'][1]
+    ra_min = source_radius(fc_max, vs*1e3)
+    ra_max = source_radius(fc_min, vs*1e3)
+    par_err['ra'] = (par['ra']-ra_min, ra_max-par['ra'])
+    # Brune stress drop in MPa
+    bsd_min = bsd(Mo_min, ra_max)
+    bsd_max = bsd(Mo_max, ra_min)
+    par_err['bsd'] = (par['bsd']-bsd_min, bsd_max-par['bsd'])
+    # quality factor
+    t_star_min = par['t_star'] - par_err['t_star'][0]
+    t_star_max = par['t_star'] + par_err['t_star'][1]
+    Qo_min = quality_factor(par['hyp_dist'], vs, t_star_max)
+    Qo_max = quality_factor(par['hyp_dist'], vs, t_star_min)
+    par_err['Qo'] = (par['Qo']-Qo_min, Qo_max-par['Qo'])
+
     return par, par_err
 
 
