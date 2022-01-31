@@ -175,6 +175,7 @@ def html_report(config, sourcepar, sourcepar_err):
         bsd_text = '{:.3e}'.format(par['bsd'])
         # replace dash (if negative exponent) by non breaking dash
         bsd_text = bsd_text.replace('-', '&#8722;')
+        ra_text = '{:.3f}'.format(par['ra'])
         hyp_dist_text = '{:.3f}'.format(par['hyp_dist'])
         az_text = '{:.3f}'.format(par['az'])
         Er_text = '{:.3e}'.format(par['Er'])
@@ -190,6 +191,7 @@ def html_report(config, sourcepar, sourcepar_err):
             '{STATION_Q0}': Qo_text,
             '{STATION_M0}': Mo_text,
             '{STATION_BSD}': bsd_text,
+            '{STATION_RA}': ra_text,
             '{STATION_DIST}': hyp_dist_text,
             '{STATION_AZ}': az_text,
             '{STATION_ER}': Er_text,

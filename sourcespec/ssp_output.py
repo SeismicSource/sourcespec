@@ -110,7 +110,8 @@ def _write_parfile(config, sourcepar, sourcepar_err):
                 hypo.origin_time))
         parfile.write('*** Station source parameters ***\n')
         parkeys = (
-            'Mw', 'fc', 't_star', 'Qo', 'Mo', 'bsd', 'hyp_dist', 'az', 'Er'
+            'Mw', 'fc', 't_star', 'Qo', 'Mo',
+            'bsd', 'ra', 'hyp_dist', 'az', 'Er'
         )
         formats = dict(
             Mo='  {} {:.3e} ',
@@ -120,6 +121,7 @@ def _write_parfile(config, sourcepar, sourcepar_err):
             Mw='  {} {:6.3f} ',
             fc='  {} {:6.3f} ',
             bsd='  {} {:.3e} ',
+            ra='  {} {:7.3f} ',
             t_star='  {} {:6.3f} ',
             Qo='  {} {:5.1f} ',
             Ml='  {} {:6.3f} '
@@ -132,6 +134,7 @@ def _write_parfile(config, sourcepar, sourcepar_err):
             Mw='  {} {:>6} ',
             fc='  {} {:>6} ',
             bsd='  {} {:>9} ',
+            ra='  {} {:>7} ',
             t_star='  {} {:>6} ',
             Qo='  {} {:>5} ',
             Ml='  {} {:>6} '
@@ -287,7 +290,7 @@ def _write_db(config, sourcepar, sourcepar_err):
         '(stid, evid, Mo, Mw, Mw_err_minus, Mw_err_plus,'
         'fc, fc_err_minus, fc_err_plus,'
         't_star, t_star_err_minus, t_star_err_plus,'
-        'Qo, bsd, dist, azimuth, Er);')
+        'Qo, bsd, ra, dist, azimuth, Er);')
     # Write station source parameters to database
     nobs = 0
     for statId in sorted(sourcepar.keys()):
@@ -305,7 +308,7 @@ def _write_db(config, sourcepar, sourcepar_err):
             par['Mw'], *par_err['Mw'],
             par['fc'], *par_err['fc'],
             par['t_star'], *par_err['t_star'],
-            par['Qo'], par['bsd'],
+            par['Qo'], par['bsd'], par['ra'],
             par['hyp_dist'], par['az'], par['Er']
         )
         # Create a string like ?,?,?,?
