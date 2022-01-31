@@ -20,6 +20,7 @@ Earthquake source parameters from S-wave displacement spectra
   - Save an additional event parameter to output files: average quality factor
   - Save additional station parameters to output files:
     source radius, Brune stress drop, quality factor
+  - Colored console output for log messages! (Not supported on Windows)
 - Processing:
   - New approach for trace clipping detection (requires just one configuration
     parameter, named `clip_max_percent`)
