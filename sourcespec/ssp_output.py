@@ -37,6 +37,10 @@ def _avg_and_std(values, errors=None, logarithmic=False, std_cutoff=True):
     - logarithmic average and standard deviation
     - cutoff outlier values that are larger than 2*std
     """
+    if len(values) == 0:
+        return np.nan, np.nan
+    if errors is not None and len(errors) == 0:
+        return np.nan, np.nan
     if logarithmic:
         values = np.log10(values)
     if errors is None:
