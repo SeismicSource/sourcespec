@@ -85,7 +85,7 @@ def _format_exponent(value, reference):
 def _err_text(err, fmt):
     """Format error text depending on wether error is symmetric or not."""
     if err[0] == err[1]:
-        text = '±'+fmt.format(err[0])
+        text = '&#177;'+fmt.format(err[0])  # use HTML code for ±
     else:
         text = '-'+fmt.format(err[0])+'<br/>+'+fmt.format(err[1])
     return text
