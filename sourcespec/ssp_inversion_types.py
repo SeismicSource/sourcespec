@@ -100,9 +100,9 @@ class Bounds(object):
         vs = self.config.vs_tt
         if vs is None:
             vs = self.config.hypo.vs
-        t_star_max, t_star_min =\
+        t_star_bounds =\
             self.hd/(vs*np.array(self.config.Qo_min_max))
-        return t_star_min, t_star_max
+        return sorted(t_star_bounds)
 
     def _fix_initial_values_t_star(self):
         if self.ini_values.t_star_0 is not None:
