@@ -276,6 +276,8 @@ def _spec_inversion(config, spec, noise_weight):
     par_err['Mo'] = (par['Mo'] - Mo_min, Mo_max - par['Mo'])
     # source radius in meters
     fc_min = par['fc'] - par_err['fc'][0]
+    if fc_min <= 0:
+        fc_min = freq_log[0]
     fc_max = par['fc'] + par_err['fc'][1]
     ra_min = source_radius(fc_max, vs*1e3)
     ra_max = source_radius(fc_min, vs*1e3)
@@ -286,6 +288,8 @@ def _spec_inversion(config, spec, noise_weight):
     par_err['bsd'] = (par['bsd']-bsd_min, bsd_max-par['bsd'])
     # quality factor
     t_star_min = par['t_star'] - par_err['t_star'][0]
+    if t_star_min <= 0:
+        t_star_min = 0.001
     t_star_max = par['t_star'] + par_err['t_star'][1]
     Qo_min = quality_factor(par['hyp_dist'], vs, t_star_max)
     Qo_max = quality_factor(par['hyp_dist'], vs, t_star_min)
