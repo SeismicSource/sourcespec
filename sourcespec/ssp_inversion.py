@@ -80,7 +80,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
             p0=initial_values.get_params0(), sigma=yerr,
             bounds=bnds
         )
-        params_err = np.sqrt(params_cov.diagonal())
+        err = np.sqrt(params_cov.diagonal())
         # symmetric error
         params_err = ((e, e) for e in err)
     elif config.inv_algorithm == 'BH':
