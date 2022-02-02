@@ -44,7 +44,7 @@ Earthquake source parameters from S-wave displacement spectra
   - Compute errors for all station parameters
   - Compute weighted averages for all event parameters (except radiated energy)
 - Plotting:
-  - Misfit plot (2D and 1D) when using grid search
+  - Misfit plot (2D and 1D) when using grid sampling
   - `cartopy` removed as installation dependency, since it is not easily
     installable via `pip`
   - Use GSHHS database to draw coastlines.
