@@ -172,13 +172,11 @@ def _spec_inversion(config, spec, noise_weight):
     if not idx_max:
         # if idx_max is empty, then the source and/or noise spectrum
         # is most certainly "strange". In this case, we simply give up.
-        logger.warning(
-            '{}: unable to find a frequency range to compute Mw_0'.format(
-                statId))
-        logger.warning(
-            '   This is possibly due to an uncommon '
-            'spectrum for the trace (e.g., a resonance).')
-        raise RuntimeError
+        msg = '{}: unable to find a frequency range to compute Mw_0. '
+        msg += 'This is possibly due to an uncommon spectrum '
+        msg += '(e.g., a resonance).'
+        msg = msg.format(statId)
+        raise RuntimeError(msg)
     idx1 = idx_max[0]
     if idx1 == idx0 and len(idx_max) > 1:
         idx1 = idx_max[1]
@@ -215,9 +213,9 @@ def _spec_inversion(config, spec, noise_weight):
         params_opt, params_err = _curve_fit(
             config, spec, weight, yerr, initial_values, bounds)
     except (RuntimeError, ValueError) as m:
-        logger.warning(m)
-        logger.warning('{}: unable to fit spectral model'.format(statId))
-        raise
+        msg = m + '\n'
+        msg += '{}: unable to fit spectral model'.format(statId)
+        raise RuntimeError(msg)
 
     params_name = ('Mw', 'fc', 't_star')
     par = OrderedDict(zip(params_name, params_opt))
@@ -232,16 +230,14 @@ def _spec_inversion(config, spec, noise_weight):
         msg = '{}: t_star: {:.3f} not in allowed range [{:.3f}, {:.3f}]: '
         msg += 'ignoring inversion results'
         msg = msg.format(statId, t_star, pi_t_star_min, pi_t_star_max)
-        logger.warning(msg)
-        raise ValueError
+        raise ValueError(msg)
     fc = par['fc']
     pi_fc_min, pi_fc_max = config.pi_fc_min_max or (-np.inf, np.inf)
     if not (pi_fc_min <= fc <= pi_fc_max):
         msg = '{}: fc: {:.3f} not in allowed range [{:.3f}, {:.3f}]: '
         msg += 'ignoring inversion results'
         msg = msg.format(statId, fc, pi_fc_min, pi_fc_max)
-        logger.warning(msg)
-        raise ValueError
+        raise ValueError(msg)
 
     par['hyp_dist'] = spec.stats.hypo_dist
     par['epi_dist'] = spec.stats.epi_dist
@@ -268,8 +264,7 @@ def _spec_inversion(config, spec, noise_weight):
         msg = '{}: bsd: {:.3e} not in allowed range [{:.3e}, {:.3e}]: '
         msg += 'ignoring inversion results'
         msg = msg.format(statId, par['bsd'], pi_bsd_min, pi_bsd_max)
-        logger.warning(msg)
-        raise ValueError
+        raise ValueError(msg)
 
     par_err = OrderedDict(zip(params_name, params_err))
     # additional parameter errors, computed from fc, Mw and t_star
@@ -371,7 +366,8 @@ def spectral_inversion(config, spec_st, weight_st):
         noise_weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
         try:
             par, par_err = _spec_inversion(config, spec, noise_weight)
-        except (RuntimeError, ValueError):
+        except (RuntimeError, ValueError) as msg:
+            logger.warning(msg)
             continue
         spec_st += _synth_spec(config, spec, par, par_err)
         statId = '{} {}'.format(spec.id, spec.stats.instrtype)
