@@ -50,6 +50,9 @@ def _avg_and_std(values, errors=None, logarithmic=False, std_cutoff=True):
         errors = (errors[:, 0] + errors[:, 1])/2
         # fix for infinite weight (zero error)
         errors[errors == 0] = np.nanmin(errors[errors > 0])
+        if logarithmic:
+            # use relative errors in logarithmic statistics
+            errors /= values
         weights = 1./(errors**2.)
     average = np.average(values, weights=weights)
     variance = np.average((values-average)**2, weights=weights)
