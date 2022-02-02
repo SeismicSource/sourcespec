@@ -34,14 +34,15 @@ Earthquake source parameters from S-wave displacement spectra
     - importance sampling of the misfit grid using k-d tree
       (faster, but less accurate)
   - Fix for Basin-hopping algorithm not running
+- Post-Inversion:
+  - New set of post-inversion parameters to reject certain inversion results,
+    per-station: `pi_fc_min_max`, `pi_t_star_min_max`, `pi_bsd_min_max`
   - Remove outliers (>2sigma) when computing event averages
   - Support for non symmetric error on station spectral parameters
   - Compute additional, per-station parameters: source radius, Brune stress
     drop and quality factor
   - Compute errors for all station parameters
   - Compute weighted averages for all event parameters (except radiated energy)
-  - New config option: `bsd_min_max` to reject inversion results (per-station)
-    with extreme Brune stress drop values
 - Plotting:
   - Misfit plot (2D and 1D) when using grid search
   - `cartopy` removed as installation dependency, since it is not easily

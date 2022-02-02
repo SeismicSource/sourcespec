@@ -224,18 +224,23 @@ def _spec_inversion(config, spec, noise_weight):
     par_str = '; '.join(['{}: {:.4f}'.format(key, par[key]) for key in par])
     logger.info('{}: optimal values: {}'.format(statId, par_str))
 
-    # Ignore spectra with negative fc or t_star
+    # Check post-inversion bounds for t_star and fc
     t_star = par['t_star']
-    if t_star < 0:
-        logger.warning(
-            '{}: t_star: {:.3f} < 0: ignoring inversion results'.format(
-                statId, t_star))
+    pi_t_star_min, pi_t_star_max =\
+        config.pi_t_star_min_max or (-np.inf, np.inf)
+    if not (pi_t_star_min <= t_star <= pi_t_star_max):
+        msg = '{}: t_star: {:.3f} not in allowed range [{:.3f}, {:.3f}]: '
+        msg += 'ignoring inversion results'
+        msg = msg.format(statId, t_star, pi_t_star_min, pi_t_star_max)
+        logger.warning(msg)
         raise ValueError
     fc = par['fc']
-    if fc < 0:
-        logger.warning(
-            '{}: fc: {:.3f} < 0: ignoring inversion results'.format(
-                statId, fc))
+    pi_fc_min, pi_fc_max = config.pi_fc_min_max or (-np.inf, np.inf)
+    if not (pi_fc_min <= fc <= pi_fc_max):
+        msg = '{}: fc: {:.3f} not in allowed range [{:.3f}, {:.3f}]: '
+        msg += 'ignoring inversion results'
+        msg = msg.format(statId, fc, pi_fc_min, pi_fc_max)
+        logger.warning(msg)
         raise ValueError
 
     par['hyp_dist'] = spec.stats.hypo_dist
@@ -257,15 +262,14 @@ def _spec_inversion(config, spec, noise_weight):
     # quality factor
     par['Qo'] = quality_factor(par['hyp_dist'], vs_tt, par['t_star'])
 
-    # Check if Brune stress drop is acceptable
-    if config.bsd_min_max is not None:
-        bsd_min, bsd_max = config.bsd_min_max
-        if not (bsd_min <= par['bsd'] <= bsd_max):
-            msg = '{}: bsd: {:.3e} not in allowed range [{:.3e}, {:.3e}]: '
-            msg += 'ignoring inversion results'
-            msg = msg.format(statId, par['bsd'], bsd_min, bsd_max)
-            logger.warning(msg)
-            raise ValueError
+    # Check post-inversion bounds for bsd
+    pi_bsd_min, pi_bsd_max = config.pi_bsd_min_max or (-np.inf, np.inf)
+    if not (pi_bsd_min <= par['bsd'] <= pi_bsd_max):
+        msg = '{}: bsd: {:.3e} not in allowed range [{:.3e}, {:.3e}]: '
+        msg += 'ignoring inversion results'
+        msg = msg.format(statId, par['bsd'], pi_bsd_min, pi_bsd_max)
+        logger.warning(msg)
+        raise ValueError
 
     par_err = OrderedDict(zip(params_name, params_err))
     # additional parameter errors, computed from fc, Mw and t_star
