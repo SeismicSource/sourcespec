@@ -49,8 +49,8 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
     """
     freq_log = spec.freq_log
     ydata = spec.data_log_mag
+    minimize_func = objective_func(freq_log, ydata, weight)
     if config.inv_algorithm == 'TNC':
-        minimize_func = objective_func(freq_log, ydata, weight)
         res = minimize(
             minimize_func,
             x0=initial_values.get_params0(), method='TNC',
@@ -84,7 +84,6 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         # symmetric error
         params_err = ((e, e) for e in err)
     elif config.inv_algorithm == 'BH':
-        minimize_func = objective_func(freq_log, ydata, weight)
         res = basinhopping(
             minimize_func, x0=initial_values.get_params0(), niter=100,
             accept_test=bounds
@@ -101,7 +100,6 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         # symmetric error
         params_err = ((e, e) for e in err)
     elif config.inv_algorithm in ['GS', 'IS']:
-        minimize_func = objective_func(freq_log, ydata, weight)
         nsteps = (20, 150, 150)  # we do fewer steps in magnitude
         sampling_mode = ('lin', 'log', 'lin')
         params_name = ('Mw', 'fc', 't_star')
@@ -126,7 +124,8 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         # tstar-Mw
         plot_par_idx = (2, 0)
         grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
-    return params_opt, params_err
+    misfit = minimize_func(params_opt)
+    return params_opt, params_err, misfit
 
 
 def _spec_inversion(config, spec, noise_weight):
@@ -210,7 +209,7 @@ def _spec_inversion(config, spec, noise_weight):
         bounds.t_star_max = t_star_max
     logger.info('{}: bounds: {}'.format(statId, str(bounds)))
     try:
-        params_opt, params_err = _curve_fit(
+        params_opt, params_err, misfit = _curve_fit(
             config, spec, weight, yerr, initial_values, bounds)
     except (RuntimeError, ValueError) as m:
         msg = m + '\n'
@@ -221,6 +220,13 @@ def _spec_inversion(config, spec, noise_weight):
     par = OrderedDict(zip(params_name, params_opt))
     par_str = '; '.join(['{}: {:.4f}'.format(key, par[key]) for key in par])
     logger.info('{}: optimal values: {}'.format(statId, par_str))
+    logger.info('{}: misfit: {:.3f}'.format(statId, misfit))
+    misfit_max = config.pi_misfit_max or np.inf
+    if misfit > misfit_max:
+        msg = '{}: misfit larger than pi_misfit_max: {:.3f} > {:.3f}: '
+        msg += 'ignoring inversion results'
+        msg = msg.format(statId, misfit, misfit_max)
+        raise ValueError(msg)
 
     # Check post-inversion bounds for t_star and fc
     t_star = par['t_star']

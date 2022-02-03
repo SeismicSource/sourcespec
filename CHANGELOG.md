@@ -36,7 +36,8 @@ Earthquake source parameters from S-wave displacement spectra
   - Fix for Basin-hopping algorithm not running
 - Post-Inversion:
   - New set of post-inversion parameters to reject certain inversion results,
-    per-station: `pi_fc_min_max`, `pi_t_star_min_max`, `pi_bsd_min_max`
+    per-station: `pi_fc_min_max`, `pi_t_star_min_max`, `pi_bsd_min_max`,
+    `pi_misfit_max`
   - Use relative error for weighted logarithmic averages
   - Remove outliers (>2sigma) when computing event averages
   - Support for non symmetric error on station spectral parameters
