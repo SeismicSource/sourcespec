@@ -221,6 +221,19 @@ def _spec_inversion(config, spec, noise_weight):
     par_str = '; '.join(['{}: {:.4f}'.format(key, par[key]) for key in par])
     logger.info('{}: optimal values: {}'.format(statId, par_str))
     logger.info('{}: misfit: {:.3f}'.format(statId, misfit))
+
+    if np.isclose(par['fc'], bounds.fc_min, rtol=1e-4):
+        msg = '{}: optimal fc too close to fc_min: {:.3f} ~= {:.3f}: '
+        msg += 'ignoring inversion results'
+        msg = msg.format(statId, par['fc'], bounds.fc_min)
+        raise ValueError(msg)
+
+    if np.isclose(par['fc'], bounds.fc_max, rtol=1e-4):
+        msg = '{}: optimal fc too close to fc_max: {:.3f} ~= {:.3f}: '
+        msg += 'ignoring inversion results'
+        msg = msg.format(statId, par['fc'], bounds.fc_max)
+        raise ValueError(msg)
+
     misfit_max = config.pi_misfit_max or np.inf
     if misfit > misfit_max:
         msg = '{}: misfit larger than pi_misfit_max: {:.3f} > {:.3f}: '

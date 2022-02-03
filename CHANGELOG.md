@@ -38,6 +38,8 @@ Earthquake source parameters from S-wave displacement spectra
   - New set of post-inversion parameters to reject certain inversion results,
     per-station: `pi_fc_min_max`, `pi_t_star_min_max`, `pi_bsd_min_max`,
     `pi_misfit_max`
+  - Reject inversion results when inverted `fc` is too close to `fc_min` or
+    `fc_max`
   - Use relative error for weighted logarithmic averages
   - Remove outliers (>2sigma) when computing event averages
   - Support for non symmetric error on station spectral parameters
