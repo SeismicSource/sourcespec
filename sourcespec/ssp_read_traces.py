@@ -238,6 +238,7 @@ def _add_instrtype(trace, config):
         band_code = None
         instr_code = None
     # SEED standard instrument codes:
+    # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
     instr_codes_vel = ['H', 'L']
     instr_codes_acc = ['N', ]
     # User-defined instrument codes:
@@ -259,9 +260,11 @@ def _add_instrtype(trace, config):
     if instr_code_acc_user is not None:
         instr_codes_acc.append(instr_code_acc_user)
     if instr_code in instr_codes_vel:
-        if band_code in ['E', 'S']:
+        # SEED standard band codes from higher to lower sampling rate
+        # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
+        if band_code in ['G', 'D', 'E', 'S']:
             instrtype = 'shortp'
-        if band_code in ['B', 'C', 'H']:
+        if band_code in ['F', 'C', 'H', 'B']:
             instrtype = 'broadb'
     if instr_code in instr_codes_acc:
         instrtype = 'acc'
