@@ -212,7 +212,7 @@ def _spec_inversion(config, spec, noise_weight):
         params_opt, params_err, misfit = _curve_fit(
             config, spec, weight, yerr, initial_values, bounds)
     except (RuntimeError, ValueError) as m:
-        msg = m + '\n'
+        msg = str(m) + '\n'
         msg += '{}: unable to fit spectral model'.format(statId)
         raise RuntimeError(msg)
 
