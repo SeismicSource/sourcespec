@@ -52,13 +52,18 @@ def main():
 
     resdir = args[0]
     min_spectra = int(options.min_spectra)
+    outdir = 'sspec_residuals'
 
     residual_dict = defaultdict(Stream)
     for resfile in glob(os.path.join(resdir, '*-res*.pickle')):
+        print(resfile)
         with open(resfile, 'rb') as fp:
             residual_st = pickle.load(fp)
         for spec in residual_st:
             residual_dict[spec.id].append(spec)
+
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
 
     residual_mean = Stream()
     for stat_id in sorted(residual_dict.keys()):
@@ -97,7 +102,7 @@ def main():
         # plot traces
         if options.plot:
             stnm = spec_mean.stats.station
-            figurefile = os.path.join(resdir, stnm + '-res.png')
+            figurefile = os.path.join(outdir, stnm + '-res.png')
             fig = plt.figure(dpi=160)
             for spec in res:
                 plt.semilogx(spec.get_freq(), spec.data_mag, 'b-')
@@ -107,7 +112,8 @@ def main():
             plt.title(
                 'residuals : ' + stnm + ', ' + str(len(res)) + ' records')
             fig.savefig(figurefile, bbox_inches='tight')
+            plt.close()
 
     # writes the mean residuals (the stations corrections)
-    with open(os.path.join(resdir, 'residual_mean.pickle'), 'wb') as fp:
+    with open(os.path.join(outdir, 'residual_mean.pickle'), 'wb') as fp:
         pickle.dump(residual_mean, fp)
