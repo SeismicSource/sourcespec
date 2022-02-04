@@ -46,8 +46,8 @@ def _avg_and_std(values, errors=None, logarithmic=False, std_cutoff=True):
     if errors is None:
         weights = None
     else:
-        # compute a symmetric error
-        errors = (errors[:, 0] + errors[:, 1])/2
+        # compute the width of the error bar
+        errors = errors[:, 0] + errors[:, 1]
         # fix for infinite weight (zero error)
         errors[errors == 0] = np.nanmin(errors[errors > 0])
         if logarithmic:
