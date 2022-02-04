@@ -222,14 +222,14 @@ def _spec_inversion(config, spec, noise_weight):
     logger.info('{}: optimal values: {}'.format(statId, par_str))
     logger.info('{}: misfit: {:.3f}'.format(statId, misfit))
 
-    if np.isclose(par['fc'], bounds.fc_min, rtol=1e-4):
-        msg = '{}: optimal fc too close to fc_min: {:.3f} ~= {:.3f}: '
+    if np.isclose(par['fc'], bounds.fc_min, rtol=0.1):
+        msg = '{}: optimal fc within 10% of fc_min: {:.3f} ~= {:.3f}: '
         msg += 'ignoring inversion results'
         msg = msg.format(statId, par['fc'], bounds.fc_min)
         raise ValueError(msg)
 
     if np.isclose(par['fc'], bounds.fc_max, rtol=1e-4):
-        msg = '{}: optimal fc too close to fc_max: {:.3f} ~= {:.3f}: '
+        msg = '{}: optimal fc within 10% of fc_max: {:.3f} ~= {:.3f}: '
         msg += 'ignoring inversion results'
         msg = msg.format(statId, par['fc'], bounds.fc_max)
         raise ValueError(msg)
