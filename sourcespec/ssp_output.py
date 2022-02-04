@@ -41,20 +41,23 @@ def _avg_and_std(values, errors=None, logarithmic=False, std_cutoff=True):
         return np.nan, np.nan
     if errors is not None and len(errors) == 0:
         return np.nan, np.nan
-    if logarithmic:
-        values = np.log10(values)
     if errors is None:
         weights = None
     else:
-        # compute the width of the error bar
-        errors = errors[:, 0] + errors[:, 1]
-        # fix for infinite weight (zero error)
-        errors[errors == 0] = np.nanmin(errors[errors > 0])
         if logarithmic:
-            errors = np.log10(errors)
-            # use relative errors in logarithmic statistics
-            errors /= values
-        weights = 1./(errors**2.)
+            # compute the width of the error bar in log10 units
+            values_log_minus = np.log10(values - errors[:, 0])
+            values_log_plus = np.log10(values + errors[:, 1])
+            errors_width = values_log_plus - values_log_minus
+        else:
+            # compute the width of the error bar
+            errors_width = errors[:, 0] + errors[:, 1]
+        # fix for infinite weight (zero error width)
+        errors_width[errors_width == 0] =\
+            np.nanmin(errors_width[errors_width > 0])
+        weights = 1./(errors_width**2.)
+    if logarithmic:
+        values = np.log10(values)
     average = np.average(values, weights=weights)
     variance = np.average((values-average)**2, weights=weights)
     std = np.sqrt(variance)

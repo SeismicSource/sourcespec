@@ -40,7 +40,8 @@ Earthquake source parameters from S-wave displacement spectra
     `pi_misfit_max`
   - Reject inversion results when inverted `fc` is within 10% of `fc_min` or
     `fc_max`
-  - Use relative error for weighted logarithmic averages
+  - Fix: use logarithmic error width for weighted logarithmic averages
+    - previous way of computing weighted logarithmic averages was not correct!
   - Remove outliers (>2sigma) when computing event averages
   - Support for non symmetric error on station spectral parameters
   - Compute additional, per-station parameters: source radius, Brune stress
