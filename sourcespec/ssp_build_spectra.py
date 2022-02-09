@@ -77,9 +77,9 @@ def _cut_spectrum(config, spec):
             freq1 = float(config['freq1_' + instrtype])
             freq2 = float(config['freq2_' + instrtype])
         except KeyError:
-            logger.warning('%s: Unknown instrument type: %s: '
-                           'skipping spectrum' % (spec.id, instrtype))
-            raise ValueError
+            msg = '{}: Unknown instrument type: {}: skipping spectrum'
+            msg = msg.format(spec.id, instrtype)
+            raise ValueError(msg)
     return spec.slice(freq1, freq2)
 
 
@@ -128,18 +128,14 @@ def _check_data_len(config, trace):
     trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     npts = len(trace_cut.data)
     if npts == 0:
-        logger.warning(
-            '{}: No data for the selected cut interval: '
-            'skipping trace'.format(traceId)
-        )
-        raise RuntimeError
+        msg = '{}: No data for the selected cut interval: skipping trace'
+        msg = msg.format(traceId)
+        raise RuntimeError(msg)
     nzeros = len(np.where(trace_cut.data == 0)[0])
     if nzeros > npts/4:
-        logger.warning(
-            '{}: S-wave window is zero for more than 25%: '
-            'skipping trace'.format(traceId)
-        )
-        raise RuntimeError
+        msg = '{}: S-wave window is zero for more than 25%: skipping trace'
+        msg = msg.format(traceId)
+        raise RuntimeError(msg)
 
 
 def _cut_signal_noise(config, trace):
@@ -189,9 +185,10 @@ def _check_noise_level(trace_signal, trace_noise):
     trace_signal_rms = ((trace_signal.data**2).sum())**0.5
     trace_noise_rms = ((trace_noise.data**2).sum())**0.5
     if trace_noise_rms/trace_signal_rms < 1e-6:
-        logger.warning('%s: Noise level is too low or zero: '
-                       'ignoring for noise weighting' % traceId)
-        raise RuntimeError
+        msg =\
+            '{}: Noise level is too low or zero: ignoring for noise weighting'
+        msg = msg.format(traceId)
+        raise RuntimeError(msg)
 
 
 def _displacement_to_moment(stats, config):
@@ -270,9 +267,9 @@ def _build_weight(spec, specnoise):
         # Make sure weight is positive
         weight.data[weight.data <= 0] = 0.001
     else:
-        logger.warning('%s: No available noise window: '
-                       % weight.get_id()[0:-1] +
-                       'a uniform weight will be applied')
+        msg = '{}: No available noise window: a uniform weight will be applied'
+        msg = msg.format(weight.get_id()[0:-1])
+        logger.warning(msg)
         weight.data = np.ones(len(spec.data))
     # interpolate to log-frequencies
     f = interp1d(weight.get_freq(), weight.data, fill_value='extrapolate')
@@ -345,9 +342,10 @@ def build_spectra(config, st, noise_weight=False):
             _check_data_len(config, trace)
             trace_signal, trace_noise = _cut_signal_noise(config, trace)
             _check_noise_level(trace_signal, trace_noise)
-        except (ValueError, RuntimeError):
+            spec = _build_spectrum(config, trace_signal)
+        except (ValueError, RuntimeError) as msg:
+            logger.warning(msg)
             continue
-        spec = _build_spectrum(config, trace_signal)
         if noise_weight:
             specnoise = _build_spectrum(config, trace_noise)
             weight = _build_weight(spec, specnoise)
@@ -360,14 +358,16 @@ def build_spectra(config, st, noise_weight=False):
             spectral_snratio =\
                 weight.data_raw[idx].sum()/len(weight.data_raw[idx])
             spec.stats.spectral_snratio = spectral_snratio
-            logger.info('%s: spectral S/N: %.2f' %
-                        (spec.get_id(), spectral_snratio))
+            logger.info(
+                '{}: spectral S/N: {:.2f}'.format(
+                    spec.get_id(), spectral_snratio))
             if config.spectral_sn_min:
                 ssnmin = config.spectral_sn_min
                 if spectral_snratio < ssnmin:
-                    logger.warning('%s: spectral S/N smaller than %.2f: '
-                                   'ignoring spectrum' %
-                                   (spec.get_id(), ssnmin))
+                    msg = '{}: spectral S/N smaller than {:.2f}: '
+                    msg += 'ignoring spectrum'
+                    msg = msg.format(spec.get_id(), ssnmin)
+                    logger.warning(msg)
                     trace.stats.ignore = True
                     spec.stats.ignore = True
                     specnoise.stats.ignore = True
