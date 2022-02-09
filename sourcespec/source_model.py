@@ -83,6 +83,8 @@ def main():
     from sourcespec.ssp_build_spectra import build_spectra
     from obspy.core import Stream
 
+    # We don't use weighting in source_model
+    config.weighting = None
     if len(config.options.trace_path) > 0:
         st = read_traces(config)
         # Deconvolve, filter, cut traces:

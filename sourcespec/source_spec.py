@@ -48,8 +48,7 @@ def main():
 
     # Build spectra (amplitude in magnitude units)
     from sourcespec.ssp_build_spectra import build_spectra
-    spec_st, specnoise_st, weight_st =\
-        build_spectra(config, proc_st, noise_weight=True)
+    spec_st, specnoise_st, weight_st = build_spectra(config, proc_st)
 
     plotter = init_plotting(config)
     ntr = len(set(t.id[:-1] for t in proc_st))

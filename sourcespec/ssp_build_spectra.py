@@ -79,7 +79,7 @@ def _cut_spectrum(config, spec):
         except KeyError:
             msg = '{}: Unknown instrument type: {}: skipping spectrum'
             msg = msg.format(spec.id, instrtype)
-            raise ValueError(msg)
+            raise RuntimeError(msg)
     return spec.slice(freq1, freq2)
 
 
@@ -323,7 +323,30 @@ def _build_H_and_weight(spec_st, specnoise_st, wave_type='S'):
     return weight_st
 
 
-def build_spectra(config, st, noise_weight=False):
+def _check_spectral_sn_ratio(config, spec, specnoise):
+    weight = _build_weight(spec, specnoise)
+    if config.spectral_sn_freq_range is not None:
+        sn_fmin, sn_fmax = config.spectral_sn_freq_range
+        freqs = weight.get_freq()
+        idx = np.where((sn_fmin <= freqs)*(freqs <= sn_fmax))
+    else:
+        idx = range(len(weight.data_raw))
+    spectral_snratio =\
+        weight.data_raw[idx].sum()/len(weight.data_raw[idx])
+    spec.stats.spectral_snratio = spectral_snratio
+    logger.info(
+        '{}: spectral S/N: {:.2f}'.format(
+            spec.get_id(), spectral_snratio))
+    if config.spectral_sn_min:
+        ssnmin = config.spectral_sn_min
+        if spectral_snratio < ssnmin:
+            msg = '{}: spectral S/N smaller than {:.2f}: '
+            msg += 'ignoring spectrum'
+            msg = msg.format(spec.get_id(), ssnmin)
+            raise ValueError(msg)
+
+
+def build_spectra(config, st):
     """
     Build spectra and the spec_st object.
 
@@ -343,36 +366,20 @@ def build_spectra(config, st, noise_weight=False):
             trace_signal, trace_noise = _cut_signal_noise(config, trace)
             _check_noise_level(trace_signal, trace_noise)
             spec = _build_spectrum(config, trace_signal)
-        except (ValueError, RuntimeError) as msg:
+            specnoise = _build_spectrum(config, trace_noise)
+            _check_spectral_sn_ratio(config, spec, specnoise)
+        except RuntimeError as msg:
+            # RuntimeError is for skipped spectra
             logger.warning(msg)
             continue
-        if noise_weight:
-            specnoise = _build_spectrum(config, trace_noise)
-            weight = _build_weight(spec, specnoise)
-            if config.spectral_sn_freq_range is not None:
-                sn_fmin, sn_fmax = config.spectral_sn_freq_range
-                freqs = weight.get_freq()
-                idx = np.where((sn_fmin <= freqs)*(freqs <= sn_fmax))
-            else:
-                idx = range(len(weight.data_raw))
-            spectral_snratio =\
-                weight.data_raw[idx].sum()/len(weight.data_raw[idx])
-            spec.stats.spectral_snratio = spectral_snratio
-            logger.info(
-                '{}: spectral S/N: {:.2f}'.format(
-                    spec.get_id(), spectral_snratio))
-            if config.spectral_sn_min:
-                ssnmin = config.spectral_sn_min
-                if spectral_snratio < ssnmin:
-                    msg = '{}: spectral S/N smaller than {:.2f}: '
-                    msg += 'ignoring spectrum'
-                    msg = msg.format(spec.get_id(), ssnmin)
-                    logger.warning(msg)
-                    trace.stats.ignore = True
-                    spec.stats.ignore = True
-                    specnoise.stats.ignore = True
-            specnoise_st.append(specnoise)
+        except ValueError as msg:
+            # ValueError is for ignored spectra, which are still stored
+            logger.warning(msg)
+            trace.stats.ignore = True
+            spec.stats.ignore = True
+            specnoise.stats.ignore = True
         spec_st.append(spec)
+        specnoise_st.append(specnoise)
 
     if not spec_st:
         logger.error('No spectra left! Exiting.')
@@ -390,7 +397,7 @@ def build_spectra(config, st, noise_weight=False):
     spec_st = station_correction(spec_st, config)
 
     logger.info('Building spectra: done')
-    if noise_weight:
+    if config.weighting == 'noise':
         for specnoise in specnoise_st:
             specnoise.data_mag = moment_to_mag(specnoise.data)
         return spec_st, specnoise_st, weight_st
