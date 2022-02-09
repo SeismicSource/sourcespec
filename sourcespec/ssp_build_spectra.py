@@ -339,9 +339,8 @@ def build_spectra(config, st, noise_weight=False):
     spec_st = Stream()
     specnoise_st = Stream()
 
-    # sort by sampling rate: this limits the number of times on which
-    # konno-ohmachi smoothing matrix is recomputed
-    for trace in st.sort(keys=['sampling_rate', 'station']):
+    # sort by trace id
+    for trace in sorted(st, key=lambda tr: tr.id):
         try:
             _check_data_len(config, trace)
             trace_signal, trace_noise = _cut_signal_noise(config, trace)
