@@ -177,8 +177,12 @@ def _spec_inversion(config, spec, noise_weight):
         msg = msg.format(statId)
         raise RuntimeError(msg)
     idx1 = idx_max[0]
-    if idx1 == idx0 and len(idx_max) > 1:
-        idx1 = idx_max[1]
+    if idx1 == idx0:
+        try:
+            idx1 = idx_max[1]
+        except IndexError:
+            # if there are no other maxima, just take 5 points
+            idx1 = idx0+5
     # first maximum is a proxy for fc, we use it for fc_0:
     fc_0 = freq_log[idx1]
 
