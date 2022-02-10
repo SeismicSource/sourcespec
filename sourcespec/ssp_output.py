@@ -46,8 +46,12 @@ def _avg_and_std(values, errors=None, logarithmic=False, std_cutoff=True):
     else:
         if logarithmic:
             # compute the width of the error bar in log10 units
-            values_log_minus = np.log10(values - errors[:, 0])
-            values_log_plus = np.log10(values + errors[:, 1])
+            values_minus = values - errors[:, 0]
+            # replace negative left values with 1/10 of the central value
+            values_minus[values_minus <= 0] = values[values_minus <= 0]/10
+            values_log_minus = np.log10(values_minus)
+            values_plus = values + errors[:, 1]
+            values_log_plus = np.log10(values_plus)
             errors_width = values_log_plus - values_log_minus
         else:
             # compute the width of the error bar
