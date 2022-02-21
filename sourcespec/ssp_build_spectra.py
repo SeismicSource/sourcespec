@@ -277,50 +277,49 @@ def _build_weight(spec, specnoise):
     return weight
 
 
-def _build_H_and_weight(spec_st, specnoise_st, wave_type='S'):
+def _build_weight_st(spec_st, specnoise_st):
+    """Build the weight spectrum."""
+    weight_st = Stream()
+    spec_ids = set(sp.id[:-1] for sp in spec_st if not sp.stats.ignore)
+    for specid in spec_ids:
+        try:
+            spec_h = _select_spectra(spec_st, specid + 'H')[0]
+            specnoise_h = _select_spectra(specnoise_st, specid + 'H')[0]
+        except Exception:
+            continue
+        weight = _build_weight(spec_h, specnoise_h)
+        weight_st.append(weight)
+    return weight_st
+
+
+def _select_spectra(spec_st, specid):
+    """Select spectra from stream, based on specid."""
+    network, station, location, channel = specid.split('.')
+    channel = channel + '?'*(3-len(channel))
+    spec_st_sel = spec_st.select(
+        network=network, station=station, location=location, channel=channel)
+    spec_st_sel = Stream(sp for sp in spec_st_sel if not sp.stats.ignore)
+    return spec_st_sel
+
+
+def _build_H(spec_st, specnoise_st=None, wave_type='S'):
     """
-    Add to spec_st the "H" component.
+    Add to spec_st and specnoise_st the "H" component.
 
     H component is obtained from the modulus of all the available components.
-
-    The same for noise, if requested. In this case we compute
-    weighting function as well.
     """
-    if specnoise_st:
-        noise_weight = True
-    else:
-        noise_weight = False
-    weight_st = Stream()
-    stalist = set(sp.id[:-1] for sp in spec_st if not sp.stats.ignore)
-    for specid in stalist:
-        network, station, location, code = specid.split('.')
-        spec_st_sel = spec_st.select(
-            network=network, station=station, location=location)
-        spec_st_sel = Stream(sp for sp in spec_st_sel if not sp.stats.ignore)
-        if noise_weight:
-            specnoise_st_sel = specnoise_st.select(
-                network=network, station=station, location=location)
-            specnoise_st_sel = Stream(
-                sp for sp in specnoise_st_sel if not sp.stats.ignore)
+    spec_ids = set(sp.id[:-1] for sp in spec_st if not sp.stats.ignore)
+    for specid in spec_ids:
+        spec_st_sel = _select_spectra(spec_st, specid)
+        specnoise_st_sel = _select_spectra(specnoise_st, specid)
         # 'code' is band+instrument code
         for code in set(x.stats.channel[:-1] for x in spec_st_sel):
             spec_h = _compute_h(spec_st_sel, code, wave_type)
-            if spec_h is None:
-                continue
-            spec_st.append(spec_h)
-
-            # Compute "H" component for noise, if requested,
-            # and weighting function.
-            if noise_weight:
-                specnoise_h = _compute_h(specnoise_st_sel, code, wave_type)
-                if specnoise_h is not None:
-                    specnoise_st.append(specnoise_h)
-
-                # Weighting function is the ratio between "H" components
-                # of signal and noise
-                weight = _build_weight(spec_h, specnoise_h)
-                weight_st.append(weight)
-    return weight_st
+            if spec_h is not None:
+                spec_st.append(spec_h)
+            specnoise_h = _compute_h(specnoise_st_sel, code, wave_type)
+            if specnoise_h is not None:
+                specnoise_st.append(specnoise_h)
 
 
 def _check_spectral_sn_ratio(config, spec, specnoise):
@@ -385,16 +384,19 @@ def build_spectra(config, st):
         logger.error('No spectra left! Exiting.')
         ssp_exit()
 
-    # build H component and weight_st
-    weight_st = _build_H_and_weight(spec_st, specnoise_st, config.wave_type)
+    # build H component
+    _build_H(spec_st, specnoise_st, config.wave_type)
 
     # convert the spectral amplitudes to moment magnitude
     for spec in spec_st:
         spec.data_mag = moment_to_mag(spec.data)
         spec.data_log_mag = moment_to_mag(spec.data_log)
 
-    # apply station correction if a residula file is specified in config
+    # apply station correction if a residual file is specified in config
     spec_st = station_correction(spec_st, config)
+
+    # build the weight spectrum
+    weight_st = _build_weight_st(spec_st, specnoise_st)
 
     logger.info('Building spectra: done')
     if config.weighting == 'noise':

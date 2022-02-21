@@ -22,6 +22,8 @@ Earthquake source parameters from S-wave displacement spectra
     source radius, Brune stress drop, source radius, quality factor
   - Colored console output for log messages! (Not supported on Windows)
 - Processing:
+  - Compute spectral weights after spectral correction (when a station
+    residuals file is specified via `residuals_filepath`)
   - New approach for trace clipping detection (requires just one configuration
     parameter, named `clip_max_percent`)
     - Check for trace clipping only in the processing window
