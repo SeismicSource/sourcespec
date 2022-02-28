@@ -209,16 +209,29 @@ def _displacement_to_moment(stats, config):
     return coeff
 
 
-def _smooth_spectrum(spec, npts=5):
-    """Smooth spectrum in a log_freq space."""
+def _smooth_spectrum(spec, smooth_width_decades=0.2):
+    """Smooth spectrum in a log10-freq space."""
+    # 1. Generate log10-spaced frequencies
     freq = spec.get_freq()
-    f = interp1d(freq, spec.data, fill_value='extrapolate')
-    freq_log = np.logspace(np.log10(freq[0]), np.log10(freq[-1]))
+    _log_freq = np.log10(freq)
+    # frequencies in logarithmic spacing
+    freq_log = np.logspace(_log_freq[0], _log_freq[-1], len(_log_freq))
     spec.freq_log = freq_log
-    spec.data_log = f(freq_log)
-    spec.data_log = smooth(spec.data_log, window_len=npts)
+    # 2. Reinterpolate data using log10 frequencies
+    # make sure that extrapolation does not create negative values
+    f = interp1d(freq, spec.data, fill_value='extrapolate')
+    _data_log = f(freq_log)
+    _data_log[_data_log <= 0] = np.min(spec.data)
+    # 3. Smooth log10-spaced data points
+    log_df = np.log10(freq_log[1]) - np.log10(freq_log[0])
+    npts = max(1, int(round(smooth_width_decades/log_df)))
+    spec.data_log = smooth(_data_log, window_len=npts)
+    # 4. Reinterpolate to linear frequencies
+    # make sure that extrapolation does not create negative values
     f = interp1d(freq_log, spec.data_log, fill_value='extrapolate')
-    spec.data = f(freq)
+    _data = f(freq)
+    _data[_data <= 0] = np.min(spec.data)
+    spec.data = _data
 
 
 def _build_spectrum(config, trace):
@@ -246,11 +259,11 @@ def _build_spectrum(config, trace):
     # for radiated_energy()
     spec.coeff = coeff
     # smooth
-    _smooth_spectrum(spec, npts=5)
+    _smooth_spectrum(spec, config.spectral_smooth_width_decades)
     return spec
 
 
-def _build_weight(spec, specnoise):
+def _build_weight(config, spec, specnoise):
     weight = spec.copy()
     if specnoise is not None:
         weight.data /= specnoise.data
@@ -259,7 +272,8 @@ def _build_weight(spec, specnoise):
         # The inversion is done in magnitude units,
         # so let's take log10 of weight
         weight.data = np.log10(weight.data)
-        _smooth_spectrum(weight, npts=11)
+        # Weight spectrum is smoothed once more
+        _smooth_spectrum(weight, config.spectral_smooth_width_decades)
         weight.data /= np.max(weight.data)
         # slightly taper weight at low frequencies, to avoid overestimating
         # weight at low frequencies, in cases where noise is underestimated
@@ -277,7 +291,7 @@ def _build_weight(spec, specnoise):
     return weight
 
 
-def _build_weight_st(spec_st, specnoise_st):
+def _build_weight_st(config, spec_st, specnoise_st):
     """Build the weight spectrum."""
     weight_st = Stream()
     spec_ids = set(sp.id[:-1] for sp in spec_st if not sp.stats.ignore)
@@ -287,7 +301,7 @@ def _build_weight_st(spec_st, specnoise_st):
             specnoise_h = _select_spectra(specnoise_st, specid + 'H')[0]
         except Exception:
             continue
-        weight = _build_weight(spec_h, specnoise_h)
+        weight = _build_weight(config, spec_h, specnoise_h)
         weight_st.append(weight)
     return weight_st
 
@@ -323,7 +337,7 @@ def _build_H(spec_st, specnoise_st=None, wave_type='S'):
 
 
 def _check_spectral_sn_ratio(config, spec, specnoise):
-    weight = _build_weight(spec, specnoise)
+    weight = _build_weight(config, spec, specnoise)
     if config.spectral_sn_freq_range is not None:
         sn_fmin, sn_fmax = config.spectral_sn_freq_range
         freqs = weight.get_freq()
@@ -396,7 +410,7 @@ def build_spectra(config, st):
     spec_st = station_correction(spec_st, config)
 
     # build the weight spectrum
-    weight_st = _build_weight_st(spec_st, specnoise_st)
+    weight_st = _build_weight_st(config, spec_st, specnoise_st)
 
     logger.info('Building spectra: done')
     if config.weighting == 'noise':
