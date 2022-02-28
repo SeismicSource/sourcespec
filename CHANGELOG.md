@@ -28,6 +28,7 @@ Earthquake source parameters from S-wave displacement spectra
     parameter, named `clip_max_percent`)
     - Check for trace clipping only in the processing window
     - Use histogram of samples to detect clipping
+  - Fix for wrong component used for 'SV' spectra (#3)
 - Inversion:
   - New config option: `Mw_0_variability`. Allowed variability around `Mw_0`
     during the main inversion. Previously hardcoded to 0.1
