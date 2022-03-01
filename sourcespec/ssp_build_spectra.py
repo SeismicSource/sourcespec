@@ -215,23 +215,33 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
     freq = spec.get_freq()
     _log_freq = np.log10(freq)
     # frequencies in logarithmic spacing
-    freq_log = np.logspace(_log_freq[0], _log_freq[-1], len(_log_freq))
-    spec.freq_log = freq_log
+    log_df = _log_freq[-1] - _log_freq[-2]
+    freq_logspace =\
+        10**(np.arange(_log_freq[0], _log_freq[-1]+log_df, log_df))
     # 2. Reinterpolate data using log10 frequencies
     # make sure that extrapolation does not create negative values
     f = interp1d(freq, spec.data, fill_value='extrapolate')
-    _data_log = f(freq_log)
-    _data_log[_data_log <= 0] = np.min(spec.data)
+    data_logspace = f(freq_logspace)
+    data_logspace[data_logspace <= 0] = np.min(spec.data)
     # 3. Smooth log10-spaced data points
-    log_df = np.log10(freq_log[1]) - np.log10(freq_log[0])
     npts = max(1, int(round(smooth_width_decades/log_df)))
-    spec.data_log = smooth(_data_log, window_len=npts)
+    data_logspace = smooth(data_logspace, window_len=npts)
     # 4. Reinterpolate to linear frequencies
     # make sure that extrapolation does not create negative values
-    f = interp1d(freq_log, spec.data_log, fill_value='extrapolate')
-    _data = f(freq)
-    _data[_data <= 0] = np.min(spec.data)
-    spec.data = _data
+    f = interp1d(freq_logspace, data_logspace, fill_value='extrapolate')
+    data = f(freq)
+    data[data <= 0] = np.min(spec.data)
+    spec.data = data
+    # 5. Optimize the sampling rate of log spectrum,
+    #    based on the width of the smoothing window
+    # make sure that extrapolation does not create negative values
+    log_df = smooth_width_decades/5
+    freq_logspace =\
+        10**(np.arange(_log_freq[0], _log_freq[-1]+log_df, log_df))
+    spec.freq_log = freq_logspace
+    data_logspace = f(freq_logspace)
+    data_logspace[data_logspace <= 0] = np.min(spec.data)
+    spec.data_log = data_logspace
 
 
 def _build_spectrum(config, trace):
