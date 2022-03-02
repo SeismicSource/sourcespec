@@ -450,9 +450,10 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             else:
                 alpha = 1.0
             if plottype == 'regular':
-                ax.loglog(spec.get_freq(), spec.data, color=color, alpha=alpha,
-                          linestyle=linestyle, linewidth=linewidth,
-                          zorder=20)
+                ax.loglog(
+                    spec.freq_log, spec.data_log, color=color, alpha=alpha,
+                    linestyle=linestyle, linewidth=linewidth,
+                    zorder=20)
                 # Write spectral S/N for regular Z,N,E components
                 if orientation not in ['S', 's', 't', 'H']:
                     _text = 'S/N: {:.1f}'.format(spec.stats.spectral_snratio)

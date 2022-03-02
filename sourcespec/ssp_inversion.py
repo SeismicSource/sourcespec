@@ -330,12 +330,15 @@ def _synth_spec(config, spec, par, par_err):
     params_opt = [par[key] for key in ('Mw', 'fc', 't_star')]
 
     freq = spec.get_freq()
+    freq_log = spec.freq_log
     spec_synth = spec.copy()
     spec_synth.stats.channel = spec.stats.channel[:-1] + 'S'
     spec_synth.stats.par = par
     spec_synth.stats.par_err = par_err
     spec_synth.data_mag = spectral_model(freq, *params_opt)
     spec_synth.data = mag_to_moment(spec_synth.data_mag)
+    spec_synth.data_log_mag = spectral_model(freq_log, *params_opt)
+    spec_synth.data_log = mag_to_moment(spec_synth.data_log_mag)
     spec_st.append(spec_synth)
 
     # Add an extra spectrum with no attenuation
@@ -346,6 +349,8 @@ def _synth_spec(config, spec, par, par_err):
         _params[-1] = 0
         spec_synth.data_mag = spectral_model(freq, *_params)
         spec_synth.data = mag_to_moment(spec_synth.data_mag)
+        spec_synth.data_log_mag = spectral_model(freq_log, *_params)
+        spec_synth.data_log = mag_to_moment(spec_synth.data_log_mag)
         spec_st.append(spec_synth)
 
     if config.plot_spectra_no_fc:
@@ -355,6 +360,8 @@ def _synth_spec(config, spec, par, par_err):
         _params[1] = 1e999
         spec_synth.data_mag = spectral_model(freq, *_params)
         spec_synth.data = mag_to_moment(spec_synth.data_mag)
+        spec_synth.data_log_mag = spectral_model(freq_log, *_params)
+        spec_synth.data_log = mag_to_moment(spec_synth.data_log_mag)
         spec_st.append(spec_synth)
     return spec_st
 

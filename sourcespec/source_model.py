@@ -53,8 +53,12 @@ def make_synth(config, spec_st, trace_spec=None):
                           'alpha': alpha}
 
         freq = spec.get_freq()
+        freq_log = trace_spec.freq_log
+        spec.freq_log = freq_log
         spec.data_mag = spectral_model(freq, mag, fc, t_star, alpha)
         spec.data = mag_to_moment(spec.data_mag)
+        spec.data_log_mag = spectral_model(freq_log, mag, fc, t_star, alpha)
+        spec.data_log = mag_to_moment(spec.data_log_mag)
         spec_st.append(spec)
 
         if trace_spec:
