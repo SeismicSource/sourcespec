@@ -78,9 +78,9 @@ def main():
     from sourcespec.ssp_plot_spectra import plot_spectra
     nspec = len(set(s.id[:-1] for s in spec_st))
     ncols = 4 if nspec > 6 else 3
-    plot_spectra(config, spec_st, specnoise_st, plottype='regular',
+    plot_spectra(config, spec_st, specnoise_st, plot_type='regular',
                  ncols=ncols, async_plotter=plotter)
-    plot_spectra(config, weight_st, plottype='weight',
+    plot_spectra(config, weight_st, plot_type='weight',
                  ncols=ncols, async_plotter=plotter)
     if config.plot_station_map:
         # We import here, cause we check for Cartopy at runtime

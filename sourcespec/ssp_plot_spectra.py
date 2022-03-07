@@ -43,7 +43,22 @@ synth_colors = [
 ]
 
 
-def _nplots(config, spec_st, specnoise_st, maxlines, ncols, plottype):
+class PlotParams():
+    def __init__(self):
+        self.plot_type = None
+        self.stack_plots = False
+        self.nlines = 0
+        self.ncols = 0
+        self.freq_minmax = None
+        self.moment_minmax = None
+        self.mag_minmax = None
+        self.plotn = 0
+        self.figures = list()
+        self.axes = None
+        self.ax0 = None
+
+
+def _set_plot_params(config, spec_st, specnoise_st, ncols, plot_params):
     """Determine the number of plots and axes min and max."""
     nplots = 0
     moment_minmax = None
@@ -69,18 +84,25 @@ def _nplots(config, spec_st, specnoise_st, maxlines, ncols, plottype):
         for code in set(x.stats.channel[:-1] for x in spec_st_sel):
             nplots += 1
     nlines = int(math.ceil(nplots/ncols))
+    maxlines = config.plot_spectra_maxrows
     if nlines > maxlines:
         nlines = maxlines
-    if plottype != 'weight':
+    if plot_params.plot_type != 'weight':
         moment_minmax[1] *= 10
         mag_minmax = moment_to_mag(moment_minmax)
     else:
         mag_minmax = None
-    return nlines, ncols, freq_minmax, moment_minmax, mag_minmax
+    plot_params.nlines = nlines
+    plot_params.ncols = ncols
+    plot_params.freq_minmax = freq_minmax
+    plot_params.moment_minmax = moment_minmax
+    plot_params.mag_minmax = mag_minmax
 
 
-def _make_fig(config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
-              stack_plots, plottype):
+def _make_fig(config, plot_params):
+    nlines = plot_params.nlines
+    ncols = plot_params.ncols
+    stack_plots = plot_params.stack_plots
     if nlines <= 3 or stack_plots:
         figsize = (16, 9)
     else:
@@ -124,28 +146,33 @@ def _make_fig(config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
                 ax = fig.add_subplot(nlines, ncols, plotn)
         else:
             if not stack_plots:
-                ax = fig.add_subplot(nlines, ncols, plotn,
-                                     sharex=axes[0][0], sharey=axes[0][0])
-        ax.set_xlim(freq_minmax)
-        ax.set_ylim(moment_minmax)
-        ax.grid(True, which='both', linestyle='solid', color='#DDDDDD',
-                zorder=0)
+                ax = fig.add_subplot(
+                    nlines, ncols, plotn,
+                    sharex=axes[0][0], sharey=axes[0][0])
+        ax.set_xlim(plot_params.freq_minmax)
+        ax.set_ylim(plot_params.moment_minmax)
+        ax.grid(
+            True, which='both', linestyle='solid', color='#DDDDDD', zorder=0)
         ax.set_axisbelow(True)
         ax.xaxis.set_tick_params(which='both', labelbottom=False)
         ax.yaxis.set_tick_params(which='both', labelleft=False)
         ax.tick_params(width=2)  # FIXME: ticks are below grid lines!
         # ax2 has magnitude units
-        if plottype != 'weight':
+        if plot_params.plot_type != 'weight':
             if ((stack_plots and plotn == 1) or not stack_plots):
                 ax2 = ax.twinx()
-                ax2.set_ylim(mag_minmax)
+                ax2.set_ylim(plot_params.mag_minmax)
                 ax2.yaxis.set_tick_params(
                     which='both', labelright=False, width=0)
         else:
             ax2 = None
+        ax.has_station_text = False
         axes.append((ax, ax2))
     fig.subplots_adjust(hspace=.025, wspace=.03)
-    return fig, axes, ax0
+    plot_params.figures.append(fig)
+    plot_params.axes = axes
+    plot_params.ax0 = ax0
+    plot_params.plotn = 0
 
 
 def _savefig(config, plottype, figures, async_plotter):
@@ -184,12 +211,16 @@ def _savefig(config, plottype, figures, async_plotter):
             plt.close(fig)
 
 
-def _add_labels(axes, plotn, ncols, plottype):
+def _add_labels(plot_params):
     """
     Add xlabels to the last row plots.
 
     Add ylabels to the first and last columns.
     """
+    plotn = plot_params.plotn
+    ncols = plot_params.ncols
+    plot_type = plot_params.plot_type
+    axes = plot_params.axes
     # A row has "ncols" plots: the last row is from `plotn-ncols` to `plotn`
     n0 = plotn-ncols if plotn-ncols > 0 else 0
     for ax, ax2 in axes[n0:plotn]:
@@ -208,7 +239,7 @@ def _add_labels(axes, plotn, ncols, plottype):
             continue
         ax.yaxis.set_tick_params(which='both', labelleft=True)
         ax.set_ylabel('Weight')
-        if plottype != 'weight':
+        if plot_type != 'weight':
             ax.set_ylabel('Seismic moment (Nm)')
             if ax2:
                 ax2.yaxis.set_tick_params(
@@ -266,7 +297,10 @@ def _color_lines(config, orientation, plotn, stack_plots):
     return color, linestyle, linewidth
 
 
-def _add_legend(config, ax0, spec_st, specnoise_st, stack_plots, plottype):
+def _add_legend(config, plot_params, spec_st, specnoise_st):
+    stack_plots = plot_params.stack_plots
+    plot_type = plot_params.plot_type
+    ax0 = plot_params.ax0
     # check the available channel codes
     channel_codes = set(s.stats.channel[-1] for s in spec_st)
     ncol0 = 0
@@ -277,7 +311,7 @@ def _add_legend(config, ax0, spec_st, specnoise_st, stack_plots, plottype):
         color, linestyle, linewidth =\
             _color_lines(config, orientation, 0, stack_plots)
         linewidth = 2
-        if plottype == 'weight':
+        if plot_type == 'weight':
             label = 'Weight'
         else:
             label = 'Root sum of squares'
@@ -392,8 +426,188 @@ def _add_legend(config, ax0, spec_st, specnoise_st, stack_plots, plottype):
         h.set_visible(False)
 
 
+def _plot_spec(config, plot_params, spec, spec_noise):
+    """Plot one spectrum (and its associated noise)."""
+    plotn = plot_params.plotn
+    plot_type = plot_params.plot_type
+    stack_plots = plot_params.stack_plots
+    axes = plot_params.axes
+    ax, ax2 = axes[plotn-1]
+    orientation = spec.stats.channel[-1]
+    special_orientations = ['S', 's', 't', 'H', 'h']
+    sn_text_ypos = 0.95
+    # Path effect to contour text in white
+    path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
+    color, linestyle, linewidth =\
+        _color_lines(config, orientation, plotn, stack_plots)
+    # dim out ignored spectra
+    if spec.stats.ignore:
+        alpha = 0.3
+    else:
+        alpha = 1.0
+    if plot_type == 'regular':
+        ax.loglog(
+            spec.freq_log, spec.data_log, color=color, alpha=alpha,
+            linestyle=linestyle, linewidth=linewidth,
+            zorder=20)
+        # Write spectral S/N for regular Z,N,E components
+        if orientation not in special_orientations:
+            _text = 'S/N: {:.1f}'.format(spec.stats.spectral_snratio)
+            ax.text(
+                0.95, sn_text_ypos, _text, ha='right', va='top',
+                fontsize=8, color=color, path_effects=path_effects,
+                transform=ax.transAxes, zorder=20)
+            sn_text_ypos -= 0.05
+        if orientation == 'S':
+            fc = spec.stats.par['fc']
+            if 'par_err' in spec.stats.keys():
+                fc_err_left, fc_err_right = spec.stats.par_err['fc']
+                fc_min = fc-fc_err_left
+                if fc_min < 0:
+                    fc_min = 0.01
+                ax.axvspan(
+                    fc_min, fc+fc_err_right, color='#bbbbbb',
+                    alpha=0.3, zorder=1)
+            ax.axvline(fc, color='#999999',
+                       linewidth=2., zorder=1)
+            Mw = spec.stats.par['Mw']
+            if 'par_err' in spec.stats.keys():
+                Mw_err_left, Mw_err_right = spec.stats.par_err['Mw']
+                ax2.axhspan(
+                    Mw-Mw_err_left, Mw+Mw_err_right, color='#bbbbbb',
+                    alpha=0.3, zorder=1)
+    elif plot_type == 'weight':
+        ax.semilogx(
+            spec.get_freq(), spec.data, color=color, alpha=alpha,
+            zorder=20)
+    else:
+        raise ValueError('Unknown plot type: {}'.format(plot_type))
+
+    if spec_noise:
+        ax.loglog(
+            spec_noise.get_freq(), spec_noise.data,
+            linestyle=':', linewidth=linewidth,
+            color=color, alpha=alpha, zorder=20)
+
+    ax_text = '{} {}'.format(spec.id[:-1], spec.stats.instrtype)
+    if stack_plots:
+        text_y = 0.05 + (plotn-1) * 0.05
+    else:
+        text_y = 0.15
+        color = 'black'
+        ax_text += '\n{:.1f} km ({:.1f} km)'.format(
+            spec.stats.hypo_dist, spec.stats.epi_dist)
+    if not ax.has_station_text:
+        ax.text(0.05, text_y, ax_text,
+                horizontalalignment='left',
+                verticalalignment='bottom',
+                color=color,
+                transform=ax.transAxes,
+                zorder=50,
+                path_effects=path_effects)
+        ax.has_station_text = True
+
+    if orientation == 'S':
+        if stack_plots:
+            text_y2 = text_y - 0.04
+        else:
+            text_y2 = 0.03
+            color = 'black'
+        fc = spec.stats.par['fc']
+        Mw = spec.stats.par['Mw']
+        Mo = mag_to_moment(Mw)
+        t_star = spec.stats.par['t_star']
+        if 'par_err' in spec.stats.keys():
+            fc_err_left, fc_err_right = spec.stats.par_err['fc']
+            Mw_err_left, Mw_err_right = spec.stats.par_err['Mw']
+            t_star_err_left, t_star_err_right =\
+                spec.stats.par_err['t_star']
+        else:
+            fc_err_left = fc_err_right = 0.
+            Mw_err_left = Mw_err_right = 0.
+            t_star_err_left = t_star_err_right = 0.
+        Mo_text = 'Mo: {:.2g}'.format(Mo)
+        Mw_text = 'Mw: {:.2f}'.format(Mw)
+        if round(Mw_err_left, 2) == round(Mw_err_right, 2):
+            Mw_text += '±{:.2f}'.format(Mw_err_left)
+        else:
+            Mw_text += '[-{:.2f},+{:.2f}]'.format(
+                Mw_err_left, Mw_err_right)
+        fc_text = 'fc: {:.2f}'.format(fc)
+        if round(fc_err_left, 2) == round(fc_err_right, 2):
+            fc_text += '±{:.2f}Hz'.format(fc_err_left)
+        else:
+            fc_text += '[-{:.2f},+{:.2f}]Hz'.format(
+                fc_err_left, fc_err_right)
+        t_star_text = 't*: {:.2f}'.format(t_star)
+        if round(t_star_err_left, 2) == round(t_star_err_right, 2):
+            t_star_text += '±{:.2f}s'.format(t_star_err_left)
+        else:
+            t_star_text += '[-{:.2f},+{:.2f}]s'.format(
+                t_star_err_left, t_star_err_right)
+        if len(fc_text+t_star_text) > 38:
+            sep = '\n'
+            text_y2 -= 0.01
+        else:
+            sep = ' '
+        text = '{} {}\n{}{}{}'.format(
+            Mo_text, Mw_text, fc_text, sep, t_star_text)
+        ax.text(
+            0.05, text_y2, text,
+            horizontalalignment='left',
+            verticalalignment='bottom',
+            color=color,
+            fontsize=9,
+            transform=ax.transAxes,
+            zorder=50,
+            path_effects=path_effects)
+
+
+def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
+    """Plot all spectra having the same specid."""
+    plotn = plot_params.plotn + 1
+    nlines = plot_params.nlines
+    ncols = plot_params.ncols
+    # 'code' is band+instrument code
+    network, station, location, code = specid.split('.')
+    spec_st_sel = spec_st.select(
+        network=network, station=station, location=location)
+    if plotn > nlines*ncols:
+        # Add lables and legend before making a new figure
+        _add_labels(plot_params)
+        _add_legend(config, plot_params, spec_st, specnoise_st)
+        _make_fig(config, plot_params)
+        plotn = 1
+    plot_params.plotn = plotn
+    special_orientations = ['S', 's', 't', 'H', 'h']
+    orientations = [sp.stats.channel[-1] for sp in spec_st_sel]
+    # compute the number of instrument components (N, Z, E, 1, 2, ...)
+    ncomponents = len(
+        [o for o in orientations if o not in special_orientations])
+    for spec in spec_st_sel:
+        if spec.stats.channel[:-1] != code:
+            continue
+        if not config.plot_spectra_ignored and spec.stats.ignore:
+            continue
+        # If there is only one component, do not plot the 'H' spectrum
+        # which would coincide with the component spectrum
+        # (but if the spectrum is corrected, e.g., the 'h' component is
+        # available, then plot it)
+        orientation = spec.stats.channel[-1]
+        if ncomponents < 2 and orientation == 'H' and 'h' not in orientations:
+            continue
+        spec_noise = None
+        if orientation not in ['S', 's', 't', 'h']:
+            specid = spec.get_id()
+            try:
+                spec_noise = specnoise_st.select(id=specid)[0]
+            except IndexError:
+                pass
+        _plot_spec(config, plot_params, spec, spec_noise)
+
+
 def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
-                 stack_plots=False, plottype='regular', async_plotter=None):
+                 stack_plots=False, plot_type='regular', async_plotter=None):
     """
     Plot spectra for signal and noise.
 
@@ -405,20 +619,13 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
 
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
 
-    nlines, ncols, freq_minmax, moment_minmax, mag_minmax =\
-        _nplots(config, spec_st, specnoise_st,
-                config.plot_spectra_maxrows, ncols, plottype)
-    figures = []
-    fig, axes, ax0 = _make_fig(
-        config, nlines, ncols, freq_minmax, moment_minmax, mag_minmax,
-        stack_plots, plottype)
-    figures.append(fig)
-
-    # Path effect to contour text in white
-    path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
+    plot_params = PlotParams()
+    plot_params.plot_type = plot_type
+    plot_params.stack_plots = stack_plots
+    _set_plot_params(config, spec_st, specnoise_st, ncols, plot_params)
+    _make_fig(config, plot_params)
 
     # Plot!
-    plotn = 0
     if config.plot_spectra_ignored:
         stalist = sorted(set(
             (sp.stats.hypo_dist, sp.id[:-1]) for sp in spec_st
@@ -428,182 +635,14 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             (sp.stats.hypo_dist, sp.id[:-1]) for sp in spec_st
             if not sp.stats.ignore
         ))
-    for t in stalist:
-        plotn += 1
-        _, specid = t
-        # 'code' is band+instrument code
-        network, station, location, code = specid.split('.')
-        spec_st_sel = spec_st.select(
-            network=network, station=station, location=location)
-        if plotn > nlines*ncols:
-            # Add lables and legend before making a new figure
-            _add_labels(axes, plotn-1, ncols, plottype)
-            _add_legend(
-                config, ax0, spec_st, specnoise_st, stack_plots, plottype)
-            fig, axes, ax0 = _make_fig(
-                config, nlines, ncols,
-                freq_minmax, moment_minmax, mag_minmax,
-                stack_plots, plottype)
-            figures.append(fig)
-            plotn = 1
-        ax_text = False
-        ax, ax2 = axes[plotn-1]
-        sn_text_ypos = 0.95
-        special_orientations = ['S', 's', 't', 'H', 'h']
-        orientations = [sp.stats.channel[-1] for sp in spec_st_sel]
-        # compute the number of instrument components (N, Z, E, 1, 2, ...)
-        ncomponents = len(
-            [o for o in orientations if o not in special_orientations])
-        for spec in spec_st_sel.traces:
-            if spec.stats.channel[:-1] != code:
-                continue
-            if not config.plot_spectra_ignored and spec.stats.ignore:
-                continue
-            orientation = spec.stats.channel[-1]
-            # If there is only one component, do not plot the 'H' spectrum
-            # which would coincide with the component spectrum
-            # (but if the spectrum is corrected, e.g., the 'h' component is
-            # available, then plot it)
-            if ncomponents == 1 and orientation == 'H' \
-                    and 'h' not in orientations:
-                continue
-            color, linestyle, linewidth =\
-                _color_lines(config, orientation, plotn, stack_plots)
-            # dim out ignored spectra
-            if spec.stats.ignore:
-                alpha = 0.3
-            else:
-                alpha = 1.0
-            if plottype == 'regular':
-                ax.loglog(
-                    spec.freq_log, spec.data_log, color=color, alpha=alpha,
-                    linestyle=linestyle, linewidth=linewidth,
-                    zorder=20)
-                # Write spectral S/N for regular Z,N,E components
-                if orientation not in special_orientations:
-                    _text = 'S/N: {:.1f}'.format(spec.stats.spectral_snratio)
-                    ax.text(
-                        0.95, sn_text_ypos, _text, ha='right', va='top',
-                        fontsize=8, color=color, path_effects=path_effects,
-                        transform=ax.transAxes, zorder=20)
-                    sn_text_ypos -= 0.05
-                if orientation == 'S':
-                    fc = spec.stats.par['fc']
-                    if 'par_err' in spec.stats.keys():
-                        fc_err_left, fc_err_right = spec.stats.par_err['fc']
-                        fc_min = fc-fc_err_left
-                        if fc_min < 0:
-                            fc_min = 0.01
-                        ax.axvspan(
-                            fc_min, fc+fc_err_right, color='#bbbbbb',
-                            alpha=0.3, zorder=1)
-                    ax.axvline(fc, color='#999999',
-                               linewidth=2., zorder=1)
-                    Mw = spec.stats.par['Mw']
-                    if 'par_err' in spec.stats.keys():
-                        Mw_err_left, Mw_err_right = spec.stats.par_err['Mw']
-                        ax2.axhspan(
-                            Mw-Mw_err_left, Mw+Mw_err_right, color='#bbbbbb',
-                            alpha=0.3, zorder=1)
-            elif plottype == 'weight':
-                ax.semilogx(
-                    spec.get_freq(), spec.data, color=color, alpha=alpha,
-                    zorder=20)
-            else:
-                raise ValueError('Unknown plot type: %s' % plottype)
-
-            if specnoise_st:
-                if spec.stats.channel[-1] not in ['S', 's', 't', 'h']:
-                    specid = spec.get_id()
-                    try:
-                        sp_noise = specnoise_st.select(id=specid)[0]
-                    except IndexError:
-                        continue
-                    orientation = sp_noise.stats.channel[-1]
-                    ax.loglog(
-                        sp_noise.get_freq(), sp_noise.data,
-                        linestyle=':', linewidth=linewidth,
-                        color=color, alpha=alpha, zorder=20)
-
-            if not ax_text:
-                ax_text = '%s %s' % (spec.id[:-1], spec.stats.instrtype)
-                if stack_plots:
-                    text_y = 0.05 + (plotn-1) * 0.05
-                else:
-                    text_y = 0.15
-                    color = 'black'
-                    ax_text += '\n%.1f km (%.1f km)' % (
-                                                    spec.stats.hypo_dist,
-                                                    spec.stats.epi_dist)
-                ax.text(0.05, text_y, ax_text,
-                        horizontalalignment='left',
-                        verticalalignment='bottom',
-                        color=color,
-                        transform=ax.transAxes,
-                        zorder=50,
-                        path_effects=path_effects)
-                ax_text = True
-
-            if orientation == 'S':
-                if stack_plots:
-                    text_y2 = text_y - 0.04
-                else:
-                    text_y2 = 0.03
-                    color = 'black'
-                fc = spec.stats.par['fc']
-                Mw = spec.stats.par['Mw']
-                Mo = mag_to_moment(Mw)
-                t_star = spec.stats.par['t_star']
-                if 'par_err' in spec.stats.keys():
-                    fc_err_left, fc_err_right = spec.stats.par_err['fc']
-                    Mw_err_left, Mw_err_right = spec.stats.par_err['Mw']
-                    t_star_err_left, t_star_err_right =\
-                        spec.stats.par_err['t_star']
-                else:
-                    fc_err_left = fc_err_right = 0.
-                    Mw_err_left = Mw_err_right = 0.
-                    t_star_err_left = t_star_err_right = 0.
-                Mo_text = 'Mo: {:.2g}'.format(Mo)
-                Mw_text = 'Mw: {:.2f}'.format(Mw)
-                if round(Mw_err_left, 2) == round(Mw_err_right, 2):
-                    Mw_text += '±{:.2f}'.format(Mw_err_left)
-                else:
-                    Mw_text += '[-{:.2f},+{:.2f}]'.format(
-                        Mw_err_left, Mw_err_right)
-                fc_text = 'fc: {:.2f}'.format(fc)
-                if round(fc_err_left, 2) == round(fc_err_right, 2):
-                    fc_text += '±{:.2f}Hz'.format(fc_err_left)
-                else:
-                    fc_text += '[-{:.2f},+{:.2f}]Hz'.format(
-                        fc_err_left, fc_err_right)
-                t_star_text = 't*: {:.2f}'.format(t_star)
-                if round(t_star_err_left, 2) == round(t_star_err_right, 2):
-                    t_star_text += '±{:.2f}s'.format(t_star_err_left)
-                else:
-                    t_star_text += '[-{:.2f},+{:.2f}]s'.format(
-                        t_star_err_left, t_star_err_right)
-                if len(fc_text+t_star_text) > 38:
-                    sep = '\n'
-                    text_y2 -= 0.01
-                else:
-                    sep = ' '
-                text = '{} {}\n{}{}{}'.format(
-                    Mo_text, Mw_text, fc_text, sep, t_star_text)
-                ax.text(
-                    0.05, text_y2, text,
-                    horizontalalignment='left',
-                    verticalalignment='bottom',
-                    color=color,
-                    fontsize=9,
-                    transform=ax.transAxes,
-                    zorder=50,
-                    path_effects=path_effects)
+    for _, specid in stalist:
+        _plot_specid(config, plot_params, specid, spec_st, specnoise_st)
 
     # Add lables and legend for the last figure
-    _add_labels(axes, plotn, ncols, plottype)
-    _add_legend(config, ax0, spec_st, specnoise_st, stack_plots, plottype)
+    _add_labels(plot_params)
+    _add_legend(config, plot_params, spec_st, specnoise_st)
     # Turn off the unused axes
-    for ax, ax2 in axes[plotn:]:
+    for ax, ax2 in plot_params.axes[plot_params.plotn:]:
         ax.set_axis_off()
         if ax2:
             ax2.set_axis_off()
@@ -611,4 +650,4 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     if config.PLOT_SHOW:
         plt.show()
     if config.PLOT_SAVE:
-        _savefig(config, plottype, figures, async_plotter)
+        _savefig(config, plot_type, plot_params.figures, async_plotter)
