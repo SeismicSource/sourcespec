@@ -67,6 +67,7 @@ Earthquake source parameters from S-wave displacement spectra
     window
   - Do not plot 'H' spectrum if there is only one instrument component
     (since it will coincide with the only component)
+  - Plot uncorrected spectrum when station correction is used
 
 
 ## v1.4 - 2021-10-13

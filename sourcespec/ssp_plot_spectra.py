@@ -236,10 +236,17 @@ def _color_lines(config, orientation, plotn, stack_plots):
         linestyle = 'solid'
         linewidth = 1
     if orientation == 'H':
+        # root sum of squares spectrum, corrected
         color = 'red'
+        linestyle = 'solid'
+        linewidth = 2
+    if orientation == 'h':
+        # root sum of squares spectrum, uncorrected
+        color = 'chocolate'
         linestyle = 'solid'
         linewidth = 1
     if orientation == 'S':
+        # synthetic spectrum
         if stack_plots:
             color = synth_colors[(plotn-1) % len(synth_colors)]
         else:
@@ -247,10 +254,12 @@ def _color_lines(config, orientation, plotn, stack_plots):
         linestyle = 'solid'
         linewidth = 2
     if orientation == 's':
+        # synthetic spectrum, no attenuation
         color = 'gray'
         linestyle = 'solid'
         linewidth = 1
     if orientation == 't':
+        # synthetic spectrum, no corner frequency
         color = 'gray'
         linestyle = 'dashed'
         linewidth = 1
@@ -272,6 +281,18 @@ def _add_legend(config, ax0, spec_st, specnoise_st, stack_plots, plottype):
             label = 'Weight'
         else:
             label = 'Root sum of squares'
+            if 'h' in channel_codes:
+                label += ', corr.'
+        _h, = ax0.plot(range(2), linestyle=linestyle, linewidth=linewidth,
+                       color=color, label=label)
+        handles0.append(_h)
+    if 'h' in channel_codes:
+        ncol0 += 1
+        orientation = 'h'
+        color, linestyle, linewidth =\
+            _color_lines(config, orientation, 0, stack_plots)
+        linewidth = 2
+        label = 'RSS, uncorr.'
         _h, = ax0.plot(range(2), linestyle=linestyle, linewidth=linewidth,
                        color=color, label=label)
         handles0.append(_h)
@@ -341,7 +362,7 @@ def _add_legend(config, ax0, spec_st, specnoise_st, stack_plots, plottype):
         color, linestyle, linewidth =\
             _color_lines(config, orientation, 0, stack_plots)
         linewidth = 2
-        label = 'Brune fit no att.'
+        label = 'Brune fit no attenuation'
         _h, = ax1.plot(range(2), linestyle=linestyle, linewidth=linewidth,
                        color=color, label=label)
         handles1.append(_h)
@@ -428,10 +449,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         ax_text = False
         ax, ax2 = axes[plotn-1]
         sn_text_ypos = 0.95
+        special_orientations = ['S', 's', 't', 'H', 'h']
         orientations = [sp.stats.channel[-1] for sp in spec_st_sel]
         # compute the number of instrument components (N, Z, E, 1, 2, ...)
         ncomponents = len(
-            [o for o in orientations if o not in ['S', 's', 't', 'H']])
+            [o for o in orientations if o not in special_orientations])
         for spec in spec_st_sel.traces:
             if spec.stats.channel[:-1] != code:
                 continue
@@ -440,7 +462,10 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
             orientation = spec.stats.channel[-1]
             # If there is only one component, do not plot the 'H' spectrum
             # which would coincide with the component spectrum
-            if ncomponents == 1 and orientation == 'H':
+            # (but if the spectrum is corrected, e.g., the 'h' component is
+            # available, then plot it)
+            if ncomponents == 1 and orientation == 'H' \
+                    and 'h' not in orientations:
                 continue
             color, linestyle, linewidth =\
                 _color_lines(config, orientation, plotn, stack_plots)
@@ -455,7 +480,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     linestyle=linestyle, linewidth=linewidth,
                     zorder=20)
                 # Write spectral S/N for regular Z,N,E components
-                if orientation not in ['S', 's', 't', 'H']:
+                if orientation not in special_orientations:
                     _text = 'S/N: {:.1f}'.format(spec.stats.spectral_snratio)
                     ax.text(
                         0.95, sn_text_ypos, _text, ha='right', va='top',
@@ -486,10 +511,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
                     zorder=20)
             else:
                 raise ValueError('Unknown plot type: %s' % plottype)
-            # leg = ax.legend(('N', 'E', 'H'), 'lower right')
 
             if specnoise_st:
-                if spec.stats.channel[-1] != 'S':
+                if spec.stats.channel[-1] not in ['S', 's', 't', 'h']:
                     specid = spec.get_id()
                     try:
                         sp_noise = specnoise_st.select(id=specid)[0]

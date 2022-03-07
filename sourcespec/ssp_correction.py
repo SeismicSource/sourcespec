@@ -52,14 +52,18 @@ def station_correction(spec_st, config):
             fmax = freq.max()
             corr = corr.slice(fmin, fmax)
             corr.data_mag = moment_to_mag(corr.data)
-            spec.data_mag -= corr.data_mag
+            spec_corr = spec.copy()
+            # uncorrected spectrum will have component name 'h'
+            spec.stats.channel = spec.stats.channel[:-1] + 'h'
+            spec_corr.data_mag -= corr.data_mag
             # interpolate the corrected data_mag to log frequencies
-            f = interp1d(freq, spec.data_mag, fill_value='extrapolate')
-            spec.data_log_mag = f(spec.freq_log)
+            f = interp1d(freq, spec_corr.data_mag, fill_value='extrapolate')
+            spec_corr.data_log_mag = f(spec_corr.freq_log)
             # convert mag to moment
-            spec.data = mag_to_moment(spec.data_mag)
-            spec.data_log = mag_to_moment(spec.data_log_mag)
+            spec_corr.data = mag_to_moment(spec_corr.data_mag)
+            spec_corr.data_log = mag_to_moment(spec_corr.data_log_mag)
+            spec_st.append(spec_corr)
             logger.info(
                 '{} corrected, frequency range is: {:.2f} {:.2f} Hz'.format(
-                    spec.id, fmin, fmax))
+                    spec_corr.id, fmin, fmax))
     return spec_st
