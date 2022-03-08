@@ -20,6 +20,7 @@ from __future__ import (absolute_import, division, print_function,
 import os
 import math
 import logging
+from collections import defaultdict
 from obspy import Stream
 from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
 from sourcespec._version import get_versions
@@ -456,8 +457,8 @@ def _station_text(spec, ax, color, path_effects, stack_plots):
 
 
 def _params_text(spec, ax, color, path_effects, stack_plots):
+    global station_text_ypos
     if stack_plots:
-        global station_text_ypos
         params_text_ypos = station_text_ypos - 0.04
     else:
         params_text_ypos = 0.03
@@ -497,6 +498,7 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
     if len(fc_text+t_star_text) > 38:
         sep = '\n'
         params_text_ypos -= 0.01
+        station_text_ypos += 0.06
     else:
         sep = ' '
     params_text = '{} {}\n{}{}{}'.format(
@@ -548,10 +550,11 @@ def _plot_spec(config, plot_params, spec, spec_noise):
     else:
         alpha = 1.0
     if plot_type == 'regular':
+        zorder = defaultdict(lambda: 20, {'S': 21, 'H': 22})
         ax.loglog(
             spec.freq_log, spec.data_log, color=color, alpha=alpha,
             linestyle=linestyle, linewidth=linewidth,
-            zorder=20)
+            zorder=zorder[orientation])
         # Write spectral S/N for regular Z,N,E components
         if orientation not in special_orientations:
             _snratio_text(spec, ax, color, path_effects)
@@ -570,11 +573,11 @@ def _plot_spec(config, plot_params, spec, spec_noise):
             spec_noise.get_freq(), spec_noise.data,
             linestyle=':', linewidth=linewidth,
             color=color, alpha=alpha, zorder=20)
-
-    _station_text(spec, ax, color, path_effects, stack_plots)
-
     if orientation == 'S':
         _params_text(spec, ax, color, path_effects, stack_plots)
+    # station_text must be written after params_text, since it might move up
+    # if params_text is too tall
+    _station_text(spec, ax, color, path_effects, stack_plots)
 
 
 def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
@@ -605,7 +608,12 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
         station_text_ypos = 0.05 + 0.10*(plotn-1)
     else:
         station_text_ypos = 0.15
-    for spec in spec_st_sel:
+    # sort specs by orientation letter, so that synthetic is plotted first
+    # sort_order[...] gives 10 if the key is not present
+    sort_order = defaultdict(lambda: 10, {'S': 0, 's': 1, 't': 2, 'H': 99})
+    spec_st_sel_sort = sorted(
+        spec_st_sel, key=lambda s: sort_order[s.stats.channel[-1]])
+    for spec in spec_st_sel_sort:
         if spec.stats.channel[:-1] != code:
             continue
         if not config.plot_spectra_ignored and spec.stats.ignore:
