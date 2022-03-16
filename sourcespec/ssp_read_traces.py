@@ -456,29 +456,33 @@ def _complete_picks(st):
 def _read_metadata(path):
     if path is None:
         return None
+    logger.info('Reading station metadata...')
+    metadata = None
 
     # Try to read the file as StationXML
-    if not os.path.isdir(path):
-        try:
-            inv = read_inventory(path)
-            return inv
-        except TypeError:
-            pass
-        except IOError as err:
-            logger.error(err)
-            ssp_exit()
-
-    logger.info('Reading station metadata...')
-    metadata = dict()
     if os.path.isdir(path):
-        listing = os.listdir(path)
-        for filename in listing:
-            fullpath = os.path.join(path, filename)
-            try:
-                metadata[filename] = Parser(fullpath)
-            except Exception:
-                continue
-        # TODO: manage the case in which "path" is a file name
+        _path = os.path.join(path, '*')
+    else:
+        _path = path
+    try:
+        metadata = read_inventory(_path)
+    except Exception:
+        pass
+    except IOError as err:
+        logger.error(err)
+        ssp_exit()
+
+    if metadata is None:
+        metadata = dict()
+        if os.path.isdir(path):
+            listing = os.listdir(path)
+            for filename in listing:
+                fullpath = os.path.join(path, filename)
+                try:
+                    metadata[filename] = Parser(fullpath)
+                except Exception:
+                    continue
+            # TODO: manage the case in which "path" is a file name
     logger.info('Reading station metadata: done')
     return metadata
 
