@@ -219,6 +219,10 @@ def _add_paz_and_coords(trace, metadata, paz_dict=None):
         _add_paz_and_coords.skipped.append(traceid)
         raise Exception(
             '%s: could not find coords for trace: skipping trace' % traceid)
+    if trace.stats.coords.latitude == trace.stats.coords.longitude == 0:
+        logger.warning(
+            '{}: trace has latitude and longitude equal to zero!'.format(
+                traceid))
 
 
 # list to keep track of skipped traces
