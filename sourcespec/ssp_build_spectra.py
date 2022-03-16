@@ -298,6 +298,7 @@ def _build_weight(config, spec, specnoise):
     # interpolate to log-frequencies
     f = interp1d(weight.get_freq(), weight.data, fill_value='extrapolate')
     weight.data_log = f(weight.freq_log)
+    weight.data_log /= np.max(weight.data_log)
     return weight
 
 
