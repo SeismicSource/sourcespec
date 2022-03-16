@@ -569,7 +569,7 @@ def _parse_qml(qml_file, evid=None):
     hypo.latitude = origin.latitude
     hypo.longitude = origin.longitude
     hypo.depth = origin.depth/1000.
-    hypo.evid = ev.resource_id.id.split('/')[-1]
+    hypo.evid = ev.resource_id.id.split('/')[-1].split('=')[-1]
 
     # See if there is a focal mechanism with nodal planes
     try:
