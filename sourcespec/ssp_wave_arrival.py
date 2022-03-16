@@ -97,18 +97,17 @@ def _wave_arrival_vel(trace, phase, vel):
 def _wave_arrival_taup(trace, phase):
     """Travel time and takeoff angle using taup."""
     phase_list = [phase.lower(), phase]
+    kwargs = dict(
+        source_depth_in_km=trace.stats.hypo.depth,
+        distance_in_degree=trace.stats.gcarc,
+        phase_list=phase_list)
     with warnings.catch_warnings(record=True) as warns:
         try:
-            arrivals = model.get_travel_times(
-                        source_depth_in_km=trace.stats.hypo.depth,
-                        distance_in_degree=trace.stats.gcarc,
-                        phase_list=phase_list)
+            arrivals = model.get_travel_times(**kwargs)
         except Exception:
             trace.stats.hypo.depth = 0.
-            arrivals = model.get_travel_times(
-                        source_depth_in_km=trace.stats.hypo.depth,
-                        distance_in_degree=trace.stats.gcarc,
-                        phase_list=phase_list)
+            kwargs['source_depth_in_km'] = 0.
+            arrivals = model.get_travel_times(**kwargs)
         for w in warns:
             message = str(w.message)
             # Ignore a specific obspy.taup warning we do not care about
