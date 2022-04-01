@@ -264,36 +264,40 @@ def _add_hypo_dist_and_arrivals(config, st):
         trace.stats.arrivals['N2'] = ('N2', t2)
 
 
+def _skip_ignored(config, id):
+    """Skip traces ignored from config."""
+    network, station, location, channel = id.split('.')
+    # build a list of all possible ids, from station only
+    # to full net.sta.loc.chan
+    ss = [station, ]
+    ss.append('.'.join((network, station)))
+    ss.append('.'.join((network, station, location)))
+    ss.append('.'.join((network, station, location, channel)))
+    if config.use_traceids is not None:
+        combined = (
+            "(" + ")|(".join(config.use_traceids) + ")"
+            ).replace('.', r'\.')
+        if not any(re.match(combined, s) for s in ss):
+            msg = '{}: ignored from config file'.format(id)
+            raise RuntimeError(msg)
+    if config.ignore_traceids is not None:
+        combined = (
+            "(" + ")|(".join(config.ignore_traceids) + ")"
+            ).replace('.', r'\.')
+        if any(re.match(combined, s) for s in ss):
+            msg = '{}: ignored from config file'.format(id)
+            raise RuntimeError(msg)
+
+
 def process_traces(config, st):
     """Remove mean, deconvolve and ignore unwanted components."""
     logger.info('Processing traces...')
     out_st = Stream()
     for id in sorted(set(tr.id for tr in st)):
-        # We still use a stream, since the trace can have
-        # gaps or overlaps
+        # We still use a stream, since the trace can have gaps or overlaps
         st_sel = st.select(id=id)
-        network, station, location, channel = id.split('.')
-        # build a list of all possible ids, from station only
-        # to full net.sta.loc.chan
-        ss = [station, ]
-        ss.append('.'.join((network, station)))
-        ss.append('.'.join((network, station, location)))
-        ss.append('.'.join((network, station, location, channel)))
-        if config.use_traceids is not None:
-            combined = (
-                "(" + ")|(".join(config.use_traceids) + ")"
-                ).replace('.', r'\.')
-            if not any(re.match(combined, s) for s in ss):
-                logger.warning('{}: ignored from config file'.format(id))
-                continue
-        if config.ignore_traceids is not None:
-            combined = (
-                "(" + ")|(".join(config.ignore_traceids) + ")"
-                ).replace('.', r'\.')
-            if any(re.match(combined, s) for s in ss):
-                logger.warning('{}: ignored from config file'.format(id))
-                continue
         try:
+            _skip_ignored(config, id)
             _add_hypo_dist_and_arrivals(config, st_sel)
             trace = _merge_stream(config, st_sel)
             trace.stats.ignore = False
