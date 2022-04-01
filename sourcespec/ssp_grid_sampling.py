@@ -338,8 +338,8 @@ class GridSampling():
         ax.set_ylim(extent[2], extent[3])
         if self.kdt is not None:
             coords = np.array([cell.coords for cell in self.kdt.cells])
-            #-- The following lines are to extract only the coordinates that
-            #-- lay on the 2D plot plane
+            # -- The following lines are to extract only the coordinates that
+            # -- lay on the 2D plot plane
             # parameter space dimension
             dim = len(self.nsteps)
             # find the complement to plot_par_idx
@@ -359,7 +359,7 @@ class GridSampling():
                 _cond = np.isclose(d, d.min())
                 cond = np.logical_or(cond, _cond)
             coords_2d = coords[cond]
-            #-- End of code to find coordinates that lay on the 2D plot plane
+            # -- End of code to find coordinates that lay on the 2D plot plane
             # now take coordinates that will be plotted
             # we plot all coords in gray
             coords = np.take(coords, plot_par_idx, axis=1)
