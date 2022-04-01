@@ -290,14 +290,14 @@ def process_traces(config, st):
         if config.use_traceids is not None:
             combined = (
                 "(" + ")|(".join(config.use_traceids) + ")"
-                ).replace('.', '\.')
+                ).replace('.', r'\.')
             if not any(re.match(combined, s) for s in ss):
                 logger.warning('{}: ignored from config file'.format(id))
                 continue
         if config.ignore_traceids is not None:
             combined = (
                 "(" + ")|(".join(config.ignore_traceids) + ")"
-                ).replace('.', '\.')
+                ).replace('.', r'\.')
             if any(re.match(combined, s) for s in ss):
                 logger.warning('{}: ignored from config file'.format(id))
                 continue
