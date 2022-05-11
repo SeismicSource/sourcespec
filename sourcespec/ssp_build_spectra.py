@@ -34,18 +34,18 @@ logger = logging.getLogger(__name__.split('.')[-1])
 
 
 def _get_nint(config, trace):
-    if config.n_integration_steps == 'auto':
+    if config.trace_units == 'auto':
         instrtype = trace.stats.instrtype
-        if instrtype == 'acc':
-            nint = 2
-        elif instrtype == 'shortp':
-            nint = 1
-        elif instrtype == 'broadb':
-            nint = 1
-        else:
-            raise ValueError
     else:
-        nint = int(config.n_integration_steps)
+        instrtype = config.trace_units
+    if instrtype == 'acc':
+        nint = 2
+    elif instrtype in ['broadb', 'shortp', 'vel']:
+        nint = 1
+    elif instrtype == 'disp':
+        nint = 0
+    else:
+        raise ValueError
     return nint
 
 

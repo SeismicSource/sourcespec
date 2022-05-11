@@ -266,12 +266,17 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
             plotn = 1
         ax_text = False
         ax = axes[plotn-1]
-        instrtype = [t.stats.instrtype for t in st_sel.traces
-                     if t.stats.channel[:-1] == code][0]
+        if config.trace_units == 'auto':
+            instrtype = [t.stats.instrtype for t in st_sel.traces
+                        if t.stats.channel[:-1] == code][0]
+        else:
+            instrtype = config.trace_units
         if instrtype == 'acc':
             ax.set_ylabel(u'Acceleration (m/s²)', fontsize=8, labelpad=0)
-        elif instrtype == 'shortp' or instrtype == 'broadb':
+        elif instrtype in ['broadb', 'shortp', 'vel']:
             ax.set_ylabel('Velocity (m/s)', fontsize=8, labelpad=0)
+        elif instrtype in ['disp']:
+            ax.set_ylabel('Displacement (m)', fontsize=8, labelpad=0)
         # Custom transformation for plotting phase labels:
         # x coords are data, y coords are axes
         trans = transforms.blended_transform_factory(ax.transData,
