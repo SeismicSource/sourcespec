@@ -33,16 +33,24 @@ from sourcespec.ssp_radiation_pattern import get_radiation_pattern_coefficient
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
-def _time_integrate(config, trace):
-    instrtype = trace.stats.instrtype
-    if instrtype == 'acc':
-        nint = 2
-    elif instrtype == 'shortp':
-        nint = 1
-    elif instrtype == 'broadb':
-        nint = 1
+def _get_nint(config, trace):
+    if config.n_integration_steps == 'auto':
+        instrtype = trace.stats.instrtype
+        if instrtype == 'acc':
+            nint = 2
+        elif instrtype == 'shortp':
+            nint = 1
+        elif instrtype == 'broadb':
+            nint = 1
+        else:
+            raise ValueError
     else:
-        raise ValueError
+        nint = int(config.n_integration_steps)
+    return nint
+
+
+def _time_integrate(config, trace):
+    nint = _get_nint(config, trace)
     trace.detrend(type='constant')
     trace.detrend(type='linear')
     for i in range(0, nint):
@@ -52,15 +60,7 @@ def _time_integrate(config, trace):
 
 
 def _frequency_integrate(config, spec):
-    instrtype = spec.stats.instrtype
-    if instrtype == 'acc':
-        nint = 2
-    elif instrtype == 'shortp':
-        nint = 1
-    elif instrtype == 'broadb':
-        nint = 1
-    else:
-        raise ValueError
+    nint = _get_nint(config, spec)
     for i in range(0, nint):
         spec.data /= (2 * math.pi * spec.get_freq())
 

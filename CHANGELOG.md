@@ -26,6 +26,8 @@ Earthquake source parameters from S-wave displacement spectra
     in terms of frequency decades: `spectral_smooth_width_decades`
   - Compute spectral weights after spectral correction (when a station
     residuals file is specified via `residuals_filepath`)
+  - New parameter for specifying the number of integration steps to transform
+    traces into displacement: `n_integration_steps` (defaults to `auto`)
   - New approach for trace clipping detection (requires just one configuration
     parameter, named `clip_max_percent`)
     - Check for trace clipping only in the processing window
