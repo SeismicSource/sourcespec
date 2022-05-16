@@ -109,7 +109,29 @@ def _correct_station_name(station, traceid_file):
     return correct_station
 
 
-def _add_paz_and_coords(trace, metadata, paz_dict=None):
+def _compute_sensitivity(trace, config):
+    # Securize the string before calling eval()
+    # see https://stackoverflow.com/a/25437733/2021880
+    inp = re.sub(r'\.(?![0-9])', '', config.sensitivity)
+    # Check if string contains letters, meaning that
+    # it must contain SAC header fields and trace must be in SAC format
+    namespace = None
+    if re.search(r'[a-zA-Z]', inp):
+        try:
+            namespace = trace.stats.sac
+        except Exception:
+            raise Exception(
+                '{}: trace must be in SAC format'.format(trace.id))
+    try:
+        sensitivity = eval(inp, {}, namespace)
+    except NameError as msg:
+        hdr_field = str(msg).split()[1]
+        logger.error('SAC header field {} does not exist'.format(hdr_field))
+        ssp_exit(1)
+    return sensitivity
+
+
+def _add_paz_and_coords(trace, metadata, paz_dict, config):
     traceid = trace.get_id()
     # If we already know that traceid is skipped, raise a silent exception
     if traceid in _add_paz_and_coords.skipped:
@@ -152,45 +174,30 @@ def _add_paz_and_coords(trace, metadata, paz_dict=None):
     except Exception:
         pass
     # If we couldn't find any PAZ in the dataless dictionary
-    # or in the Inventory, we try to attach paz from the paz dictionary
-    # passed as argument
+    # or in the Inventory, we try to attach paz from a paz dictionary
     if trace.stats.paz is None and paz_dict is not None:
         # Look for traceid or for a generic paz
         net, sta, loc, chan = trace.id.split('.')
-        ids = [trace.id,
-               '.'.join(('__', '__', '__', '__')),
-               '.'.join((net, '__', '__', '__')),
-               '.'.join((net, sta, '__', '__')),
-               '.'.join((net, sta, loc, '__')),
-               'default']
+        ids = [
+            trace.id,
+            '.'.join(('__', '__', '__', '__')),
+            '.'.join((net, '__', '__', '__')),
+            '.'.join((net, sta, '__', '__')),
+            '.'.join((net, sta, loc, '__')),
+            'default'
+        ]
         for id in ids:
             try:
                 paz = paz_dict[id]
                 trace.stats.paz = paz
             except KeyError:
                 pass
-    # If we're still out of luck,
-    # we try to build the sensitivity from the
-    # user2 and user3 header fields (ISNet format)
-    if trace.stats.paz is None and trace.stats.format == 'ISNet':
-        try:
-            # instrument constants
-            u2 = trace.stats.sac.user2
-            u3 = trace.stats.sac.user3
-            paz = AttribDict()
-            paz.sensitivity = u3/u2
-            paz.poles = []
-            paz.zeros = []
-            paz.gain = 1
-            trace.stats.paz = paz
-        except AttributeError:
-            pass
-    # Still no paz? Antilles or IPOC format!
-    if (trace.stats.paz is None and
-        (trace.stats.format == 'Antilles' or
-         trace.stats.format == 'IPOC')):
+    # If a "sensitivity" config option is provided, override the paz computed
+    # from metadata or paz_dict
+    if config.sensitivity is not None:
+        # instrument constants
         paz = AttribDict()
-        paz.sensitivity = 1
+        paz.sensitivity = _compute_sensitivity(trace, config)
         paz.poles = []
         paz.zeros = []
         paz.gain = 1
@@ -926,7 +933,7 @@ def read_traces(config):
     # read metadata
     metadata = _read_metadata(config.station_metadata)
     # read PAZ (normally this is an alternative to dataless)
-    paz = _read_paz(config.paz)
+    paz_dict = _read_paz(config.paz)
 
     hypo = picks = None
     # parse hypocenter file
@@ -940,7 +947,7 @@ def read_traces(config):
         hypo, picks = _parse_qml(config.options.qml_file, config.options.evid)
 
     # finally, read traces
-    # traces can be defined in a pickle catalog (Antilles format)...
+    # traces can be defined in a pickle catalog...
     if config.pickle_catalog:
         sys.path.append(config.pickle_classpath)
         with open(config.pickle_catalog, 'rb') as fp:
@@ -959,13 +966,12 @@ def read_traces(config):
                 continue
             for trace in tmpst.traces:
                 st.append(trace)
-                trace.stats.format = config.trace_format
-                _add_paz_and_coords(trace, metadata, paz)
+                _add_paz_and_coords(trace, metadata, paz_dict, config)
                 _add_hypocenter(trace, hypo)
                 _add_picks(trace, picks)  # FIXME: actually add picks!
                 # _add_instrtype(trace)
                 trace.stats.instrtype = 'acc'  # FIXME
-    # ...or in standard files (CRL and ISNet)
+    # ...or in standard files supported by obspy.read()
     else:
         logger.info('Reading traces...')
         # phase 1: build a file list
@@ -1003,10 +1009,9 @@ def read_traces(config):
                 if config.options.station is not None:
                     if not trace.stats.station == config.options.station:
                         continue
-                trace.stats.format = config.trace_format
                 _correct_traceid(trace, config.traceid_mapping_file)
                 try:
-                    _add_paz_and_coords(trace, metadata, paz)
+                    _add_paz_and_coords(trace, metadata, paz_dict, config)
                     _add_instrtype(trace, config)
                     _add_hypocenter(trace, hypo)
                     _add_picks(trace, picks)

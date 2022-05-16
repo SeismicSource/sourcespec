@@ -324,6 +324,12 @@ def _check_deprecated_config_options(config_obj):
             '(current value in your config file: {}%)\n'.format(
                 config_obj['clip_nmax'])
         )
+    if 'trace_format' in config_obj:
+        deprecation_msgs.append(
+            '> "trace_format" config parameter is no more supported.\n'
+            '   Use "sensitivity" to manually specify how sensor sensitivity '
+            'should be computed.\n'
+        )
     if deprecation_msgs:
         sys.stderr.write(
             'Error: your config file contains deprecated parameters:\n\n')

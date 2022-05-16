@@ -26,6 +26,10 @@ Earthquake source parameters from S-wave displacement spectra
     in terms of frequency decades: `spectral_smooth_width_decades`
   - Compute spectral weights after spectral correction (when a station
     residuals file is specified via `residuals_filepath`)
+  - Removed configuration parameter `trace_format`
+  - New configuration parameter `sensitivity` to provide a constant sensor
+    sensitivity (flat response curve), which ovverides any response curve
+    provided in metadata
   - New parameter for manually specifying trace units: `trace_units`
     (defaults to `auto`)
   - New approach for trace clipping detection (requires just one configuration
