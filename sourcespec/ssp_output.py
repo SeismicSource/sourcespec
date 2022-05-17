@@ -97,6 +97,11 @@ def _avg_and_std(values, errors=None, logarithmic=False, std_cutoff=True):
         values = np.log10(values)
     if std_cutoff:
         values, weights, outliers = _remove_outliers(values, weights)
+    notnan = ~np.isnan(values)
+    if weights is not None:
+        notnan = np.logical_and(notnan, ~np.isnan(weights))
+        weights = weights[notnan]
+    values = values[notnan]
     average = np.average(values, weights=weights)
     variance = np.average((values-average)**2, weights=weights)
     std = np.sqrt(variance)
@@ -448,7 +453,7 @@ def _write_hypo(config, sourcepar):
 
     means = sourcepar['means']
     mw_str = '{:03.2f}'.format(means['Mw'])
-    if means['Ml'] is not None:
+    if means['Ml'] is not None and ~np.isnan(means['Ml']):
         ml_str = '{:03.2f}'.format(means['Ml'])
     else:
         ml_str = ' '*4
