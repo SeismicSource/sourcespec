@@ -478,8 +478,8 @@ def write_output(config, sourcepar):
 
     # Compute average source parameters
     # Mw
-    Mw_values = np.array([x['Mw'] for x in sourcepar.values()])
-    Mw_err = np.array([x['Mw_err'] for x in sourcepar.values()])
+    Mw_values = sourcepar.value_array('Mw')
+    Mw_err = sourcepar.error_array('Mw')
     means['Mw'], errors['Mw'] = _avg_and_std(Mw_values)
     means_weight['Mw'], errors_weight['Mw'] = \
         _avg_and_std(Mw_values, errors=Mw_err)
@@ -490,36 +490,36 @@ def write_output(config, sourcepar):
         _M0_avg_and_std(means_weight['Mw'], errors_weight['Mw'])
 
     # fc , hertz
-    fc_values = np.array([x['fc'] for x in sourcepar.values()])
-    fc_err = np.array([x['fc_err'] for x in sourcepar.values()])
+    fc_values = sourcepar.value_array('fc')
+    fc_err = sourcepar.error_array('fc')
     means['fc'], errors['fc'] = _avg_and_std(fc_values, logarithmic=True)
     means_weight['fc'], errors_weight['fc'] = \
         _avg_and_std(fc_values, errors=fc_err, logarithmic=True)
 
     # t_star
-    t_star_values = np.array([x['t_star'] for x in sourcepar.values()])
-    t_star_err = np.array([x['t_star_err'] for x in sourcepar.values()])
+    t_star_values = sourcepar.value_array('t_star')
+    t_star_err = sourcepar.error_array('t_star')
     means['t_star'], errors['t_star'] = _avg_and_std(t_star_values)
     means_weight['t_star'], errors_weight['t_star'] = \
         _avg_and_std(t_star_values, errors=t_star_err)
 
     # ra, radius (meters)
-    ra_values = np.array([x['ra'] for x in sourcepar.values()])
-    ra_err = np.array([x['ra_err'] for x in sourcepar.values()])
+    ra_values = sourcepar.value_array('ra')
+    ra_err = sourcepar.error_array('ra')
     means['ra'], errors['ra'] = _avg_and_std(ra_values, logarithmic=True)
     means_weight['ra'], errors_weight['ra'] = \
         _avg_and_std(ra_values, errors=ra_err, logarithmic=True)
 
     # bsd, Brune stress drop (MPa)
-    bsd_values = np.array([x['bsd'] for x in sourcepar.values()])
-    bsd_err = np.array([x['bsd_err'] for x in sourcepar.values()])
+    bsd_values = sourcepar.value_array('bsd')
+    bsd_err = sourcepar.error_array('bsd')
     means['bsd'], errors['bsd'] = _avg_and_std(bsd_values, logarithmic=True)
     means_weight['bsd'], errors_weight['bsd'] = \
         _avg_and_std(bsd_values, errors=bsd_err, logarithmic=True)
 
     # Quality factor
-    Qo_values = np.array([x['Qo'] for x in sourcepar.values()])
-    Qo_err = np.array([x['Qo_err'] for x in sourcepar.values()])
+    Qo_values = sourcepar.value_array('Qo')
+    Qo_err = sourcepar.error_array('Qo')
     cond = ~np.isinf(Qo_values)
     means['Qo'], errors['Qo'] = _avg_and_std(Qo_values[cond])
     cond_err = np.logical_and(~np.isinf(Qo_err[:, 0]), ~np.isinf(Qo_err[:, 1]))
@@ -528,8 +528,7 @@ def write_output(config, sourcepar):
         _avg_and_std(Qo_values[cond], errors=Qo_err[cond])
 
     # Ml
-    # build Ml_values: use np.nan for missing values
-    Ml_values = np.array([x.get('Ml', np.nan) for x in sourcepar.values()])
+    Ml_values = sourcepar.value_array('Ml')
     Ml_values = Ml_values[~np.isnan(Ml_values)]
     if Ml_values.size:
         means['Ml'], errors['Ml'] = _avg_and_std(Ml_values)
@@ -538,7 +537,7 @@ def write_output(config, sourcepar):
         errors['Ml'] = None
 
     # Er
-    Er_values = np.array([x['Er'] for x in sourcepar.values()])
+    Er_values = sourcepar.value_array('Er')
     means['Er'], errors['Er'] = _avg_and_std(Er_values, logarithmic=True)
 
     sourcepar['means'] = means

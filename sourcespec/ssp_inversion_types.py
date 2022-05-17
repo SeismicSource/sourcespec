@@ -177,4 +177,11 @@ class StationSourceParameters(dict):
 
 
 class SourceParameters(dict):
-    pass
+    """Source parameters for all stations."""
+
+    def value_array(self, key):
+        return np.array([x.get(key, np.nan) for x in self.values()])
+
+    def error_array(self, key):
+        key += '_err'
+        return np.array([x.get(key, np.nan) for x in self.values()])
