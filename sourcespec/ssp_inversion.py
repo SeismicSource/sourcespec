@@ -31,7 +31,8 @@ from sourcespec.ssp_spectral_model import (
 from sourcespec.ssp_util import (
     mag_to_moment, source_radius, bsd, quality_factor, select_trace, smooth)
 from sourcespec.ssp_radiated_energy import radiated_energy
-from sourcespec.ssp_inversion_types import InitialValues, Bounds
+from sourcespec.ssp_inversion_types import (
+    InitialValues, Bounds, StationSourceParameters, SourceParameters)
 from sourcespec.ssp_grid_sampling import GridSampling
 logger = logging.getLogger(__name__.split('.')[-1])
 
@@ -384,8 +385,7 @@ def spectral_inversion(config, spec_st, weight_st):
     }
     logger.info(algorithm_messages[config.inv_algorithm])
 
-    sourcepar = OrderedDict()
-    sourcepar_err = OrderedDict()
+    sourcepar = SourceParameters()
     stations = set(x.stats.station for x in spec_st)
     spectra = [sp for sta in stations for sp in spec_st.select(station=sta)]
     for spec in sorted(spectra, key=lambda sp: sp.id):
@@ -401,10 +401,10 @@ def spectral_inversion(config, spec_st, weight_st):
             continue
         spec_st += _synth_spec(config, spec, par, par_err)
         statId = '{} {}'.format(spec.id, spec.stats.instrtype)
+        par = StationSourceParameters(statId, par, par_err)
         sourcepar[statId] = par
-        sourcepar_err[statId] = par_err
 
     radiated_energy(config, spec_st, sourcepar)
 
     logger.info('Inverting spectra: done')
-    return sourcepar, sourcepar_err
+    return sourcepar

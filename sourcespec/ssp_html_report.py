@@ -91,7 +91,7 @@ def _err_text(err, fmt):
     return text
 
 
-def html_report(config, sourcepar, sourcepar_err):
+def html_report(config, sourcepar):
     """Generate an HTML report."""
     # Read template files
     template_dir = os.path.join(
@@ -162,26 +162,25 @@ def html_report(config, sourcepar, sourcepar_err):
         if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
             continue
         par = sourcepar[statId]
-        err = sourcepar_err[statId]
         id, type = statId.split()
         Mw_text = '{:.3f}'.format(par['Mw'])
-        Mw_err_text = _err_text(err['Mw'], '{:.3f}')
+        Mw_err_text = _err_text(par['Mw_err'], '{:.3f}')
         fc_text = '{:.3f}'.format(par['fc'])
-        fc_err_text = _err_text(err['fc'], '{:.3f}')
+        fc_err_text = _err_text(par['fc_err'], '{:.3f}')
         t_star_text = '{:.3f}'.format(par['t_star'])
-        t_star_err_text = _err_text(err['t_star'], '{:.3f}')
+        t_star_err_text = _err_text(par['t_star_err'], '{:.3f}')
         Qo_text = '{:.1f}'.format(par['Qo'])
-        Qo_err_text = _err_text(err['Qo'], '{:.1f}')
+        Qo_err_text = _err_text(par['Qo_err'], '{:.1f}')
         Mo_text = '{:.3e}'.format(par['Mo'])
-        Mo_err_text = _err_text(err['Mo'], '{:.3e}')
+        Mo_err_text = _err_text(par['Mo_err'], '{:.3e}')
         bsd_text = '{:.3e}'.format(par['bsd'])
         # replace dash (if negative exponent) by non breaking dash
         bsd_text = bsd_text.replace('-', '&#8722;')
-        bsd_err_text = _err_text(err['bsd'], '{:.3e}')
+        bsd_err_text = _err_text(par['bsd_err'], '{:.3e}')
         # replace dash (if negative exponent) by non breaking dash
         bsd_err_text = bsd_err_text.replace('-', '&#8722;')
         ra_text = '{:.3f}'.format(par['ra'])
-        ra_err_text = _err_text(err['ra'], '{:.3f}')
+        ra_err_text = _err_text(par['ra_err'], '{:.3f}')
         hyp_dist_text = '{:.3f}'.format(par['hyp_dist'])
         az_text = '{:.3f}'.format(par['az'])
         Er_text = '{:.3e}'.format(par['Er'])

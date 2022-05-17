@@ -58,17 +58,16 @@ def main():
 
     # Spectral inversion
     from sourcespec.ssp_inversion import spectral_inversion
-    sourcepar, sourcepar_err =\
-        spectral_inversion(config, spec_st, weight_st)
+    sourcepar = spectral_inversion(config, spec_st, weight_st)
 
     # Local magnitude
     from sourcespec.ssp_local_magnitude import local_magnitude
     if config.compute_local_magnitude:
-        local_magnitude(config, st, proc_st, sourcepar, sourcepar_err)
+        local_magnitude(config, st, proc_st, sourcepar)
 
     # Save output
     from sourcespec.ssp_output import write_output
-    sourcepar_mean = write_output(config, sourcepar, sourcepar_err)
+    sourcepar_mean = write_output(config, sourcepar)
 
     # Save residuals
     from sourcespec.ssp_residuals import spectral_residuals
@@ -89,7 +88,7 @@ def main():
 
     if config.html_report:
         from sourcespec.ssp_html_report import html_report
-        html_report(config, sourcepar, sourcepar_err)
+        html_report(config, sourcepar)
 
     ssp_exit()
 

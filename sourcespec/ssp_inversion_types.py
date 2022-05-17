@@ -157,3 +157,24 @@ class Bounds(object):
         bnds[0, np.isnan(bnds[0])] = -1e100
         bnds[1, np.isnan(bnds[1])] = 1e100
         return bnds
+
+
+class StationSourceParameters(dict):
+    """Source parameters for one station."""
+
+    def __init__(self, statId, params, errors):
+        self['statId'] = statId
+        for key, val in dict(params).items():
+            self[key] = val
+        for key, val in dict(errors).items():
+            self[key + '_err'] = val
+
+    def __getattr__(self, attr):
+        return self[attr]
+
+    def __setattr__(self, attr, value):
+        self[attr] = value
+
+
+class SourceParameters(dict):
+    pass

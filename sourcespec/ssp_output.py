@@ -121,7 +121,7 @@ def _format_exponent(value, reference):
     return '{:5.3f}e{:+03d}'.format(value/10**xp, xp)
 
 
-def _write_parfile(config, sourcepar, sourcepar_err):
+def _write_parfile(config, sourcepar):
     """Write station source parameters to file."""
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
@@ -179,20 +179,19 @@ def _write_parfile(config, sourcepar, sourcepar_err):
                 else:
                     parfile.write(formats_none[key].format(key, 'nan'))
             parfile.write('\n')
-            err = sourcepar_err[statId]
             parfile.write('{:>21}\t'.format('--- errmin'))
             for key in parkeys:
                 try:
-                    val = err[key][0]
-                    parfile.write(formats[key].format(key, val))
+                    err = par[key + '_err'][0]
+                    parfile.write(formats[key].format(key, err))
                 except KeyError:
                     parfile.write(formats_none[key].format(key, 'nan'))
             parfile.write('\n')
             parfile.write('{:>21}\t'.format('--- errmax'))
             for key in parkeys:
                 try:
-                    val = err[key][1]
-                    parfile.write(formats[key].format(key, val))
+                    err = par[key + '_err'][1]
+                    parfile.write(formats[key].format(key, err))
                 except KeyError:
                     parfile.write(formats_none[key].format(key, 'nan'))
             parfile.write('\n')
@@ -312,7 +311,7 @@ def _log_db_write_error(db_err, db_file):
     ssp_exit(1)
 
 
-def _write_db(config, sourcepar, sourcepar_err):
+def _write_db(config, sourcepar):
     try:
         database_file = config.database_file
     except KeyError:
@@ -346,20 +345,19 @@ def _write_db(config, sourcepar, sourcepar_err):
             continue
         nobs += 1
         par = sourcepar[statId]
-        par_err = sourcepar_err[statId]
         # Remove existing line, if present
         t = (statId, evid)
         c.execute('delete from Stations where stid=? and evid=?;', t)
         # Insert new line
         t = (
             statId, evid,
-            par['Mo'], *par_err['Mo'],
-            par['Mw'], *par_err['Mw'],
-            par['fc'], *par_err['fc'],
-            par['t_star'], *par_err['t_star'],
-            par['Qo'], *par_err['Qo'],
-            par['bsd'], *par_err['bsd'],
-            par['ra'], *par_err['ra'],
+            par['Mo'], *par['Mo_err'],
+            par['Mw'], *par['Mw_err'],
+            par['fc'], *par['fc_err'],
+            par['t_star'], *par['t_star_err'],
+            par['Qo'], *par['Qo_err'],
+            par['bsd'], *par['bsd_err'],
+            par['ra'], *par['ra_err'],
             par['hyp_dist'], par['az'], par['Er']
         )
         # Create a string like ?,?,?,?
@@ -467,7 +465,7 @@ def _write_hypo(config, sourcepar):
     logger.info('Hypo file written to: ' + hypo_file_out)
 
 
-def write_output(config, sourcepar, sourcepar_err):
+def write_output(config, sourcepar):
     """Write results to a plain text file and/or to a SQLite database file."""
     if len(sourcepar) == 0:
         logger.info('No source parameter calculated')
@@ -481,7 +479,7 @@ def write_output(config, sourcepar, sourcepar_err):
     # Compute average source parameters
     # Mw
     Mw_values = np.array([x['Mw'] for x in sourcepar.values()])
-    Mw_err = np.array([x['Mw'] for x in sourcepar_err.values()])
+    Mw_err = np.array([x['Mw_err'] for x in sourcepar.values()])
     means['Mw'], errors['Mw'] = _avg_and_std(Mw_values)
     means_weight['Mw'], errors_weight['Mw'] = \
         _avg_and_std(Mw_values, errors=Mw_err)
@@ -493,35 +491,35 @@ def write_output(config, sourcepar, sourcepar_err):
 
     # fc , hertz
     fc_values = np.array([x['fc'] for x in sourcepar.values()])
-    fc_err = np.array([x['fc'] for x in sourcepar_err.values()])
+    fc_err = np.array([x['fc_err'] for x in sourcepar.values()])
     means['fc'], errors['fc'] = _avg_and_std(fc_values, logarithmic=True)
     means_weight['fc'], errors_weight['fc'] = \
         _avg_and_std(fc_values, errors=fc_err, logarithmic=True)
 
     # t_star
     t_star_values = np.array([x['t_star'] for x in sourcepar.values()])
-    t_star_err = np.array([x['t_star'] for x in sourcepar_err.values()])
+    t_star_err = np.array([x['t_star_err'] for x in sourcepar.values()])
     means['t_star'], errors['t_star'] = _avg_and_std(t_star_values)
     means_weight['t_star'], errors_weight['t_star'] = \
         _avg_and_std(t_star_values, errors=t_star_err)
 
     # ra, radius (meters)
     ra_values = np.array([x['ra'] for x in sourcepar.values()])
-    ra_err = np.array([x['ra'] for x in sourcepar_err.values()])
+    ra_err = np.array([x['ra_err'] for x in sourcepar.values()])
     means['ra'], errors['ra'] = _avg_and_std(ra_values, logarithmic=True)
     means_weight['ra'], errors_weight['ra'] = \
         _avg_and_std(ra_values, errors=ra_err, logarithmic=True)
 
     # bsd, Brune stress drop (MPa)
     bsd_values = np.array([x['bsd'] for x in sourcepar.values()])
-    bsd_err = np.array([x['bsd'] for x in sourcepar_err.values()])
+    bsd_err = np.array([x['bsd_err'] for x in sourcepar.values()])
     means['bsd'], errors['bsd'] = _avg_and_std(bsd_values, logarithmic=True)
     means_weight['bsd'], errors_weight['bsd'] = \
         _avg_and_std(bsd_values, errors=bsd_err, logarithmic=True)
 
     # Quality factor
     Qo_values = np.array([x['Qo'] for x in sourcepar.values()])
-    Qo_err = np.array([x['Qo'] for x in sourcepar_err.values()])
+    Qo_err = np.array([x['Qo_err'] for x in sourcepar.values()])
     cond = ~np.isinf(Qo_values)
     means['Qo'], errors['Qo'] = _avg_and_std(Qo_values[cond])
     cond_err = np.logical_and(~np.isinf(Qo_err[:, 0]), ~np.isinf(Qo_err[:, 1]))
@@ -549,10 +547,10 @@ def write_output(config, sourcepar, sourcepar_err):
     sourcepar['errors_weight'] = errors_weight
 
     # Write to parfile
-    _write_parfile(config, sourcepar, sourcepar_err)
+    _write_parfile(config, sourcepar)
 
     # Write to database, if requested
-    _write_db(config, sourcepar, sourcepar_err)
+    _write_db(config, sourcepar)
 
     # Write to hypo file, if requested
     _write_hypo(config, sourcepar)

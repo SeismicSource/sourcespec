@@ -141,7 +141,7 @@ def _compute_local_magnitude(config, amp, h_dist):
     return ml
 
 
-def local_magnitude(config, st, proc_st, sourcepar, sourcepar_err):
+def local_magnitude(config, st, proc_st, sourcepar):
     """Compute local magnitude from max absolute W-A amplitude."""
     logger.info('Computing local magnitude...')
     # We only use traces selected for proc_st
