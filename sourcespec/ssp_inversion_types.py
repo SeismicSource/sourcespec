@@ -185,3 +185,11 @@ class SourceParameters(dict):
     def error_array(self, key):
         key += '_err'
         return np.array([x.get(key, np.nan) for x in self.values()])
+
+    def set_outliers(self, key, outliers):
+        station_parameters = self.values()
+        if len(station_parameters) != len(outliers):
+            raise ValueError
+        key += '_outlier'
+        for par, outl in zip(station_parameters, outliers):
+            par[key] = outl
