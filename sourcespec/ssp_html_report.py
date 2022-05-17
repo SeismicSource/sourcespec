@@ -82,13 +82,28 @@ def _format_exponent(value, reference):
     return '{:5.3f}e{:+03d}'.format(value/10**xp, xp)
 
 
-def _err_text(err, fmt):
-    """Format error text depending on wether error is symmetric or not."""
-    if err[0] == err[1]:
-        text = '&#177;'+fmt.format(err[0])  # use HTML code for ±
-    else:
-        text = '-'+fmt.format(err[0])+'<br/>+'+fmt.format(err[1])
-    return text
+def _value_and_err_text(par, key, fmt):
+    """Format value and error text."""
+    value = par[key]
+    value_text = fmt.format(value)
+    # replace dash by non breaking dash
+    value_text = value_text.replace('-', '&#8722;')
+    outlier = par.get(key + '_outlier', False)
+    if outlier:
+        value_text = '<span style="color:#979A9A">' + value_text + '</span>'
+    try:
+        err = par[key + '_err']
+        if err[0] == err[1]:
+            err_text = '&#177;'+fmt.format(err[0])  # use HTML code for ±
+        else:
+            err_text = '-'+fmt.format(err[0])+'<br/>+'+fmt.format(err[1])
+        # replace dash by non breaking dash
+        err_text = err_text.replace('-', '&#8722;')
+        if outlier:
+            err_text = '<span style="color:#979A9A">' + err_text + '</span>'
+    except KeyError:
+        err_text = None
+    return value_text, err_text
 
 
 def html_report(config, sourcepar):
@@ -163,27 +178,17 @@ def html_report(config, sourcepar):
             continue
         par = sourcepar[statId]
         id, type = statId.split()
-        Mw_text = '{:.3f}'.format(par['Mw'])
-        Mw_err_text = _err_text(par['Mw_err'], '{:.3f}')
-        fc_text = '{:.3f}'.format(par['fc'])
-        fc_err_text = _err_text(par['fc_err'], '{:.3f}')
-        t_star_text = '{:.3f}'.format(par['t_star'])
-        t_star_err_text = _err_text(par['t_star_err'], '{:.3f}')
-        Qo_text = '{:.1f}'.format(par['Qo'])
-        Qo_err_text = _err_text(par['Qo_err'], '{:.1f}')
-        Mo_text = '{:.3e}'.format(par['Mo'])
-        Mo_err_text = _err_text(par['Mo_err'], '{:.3e}')
-        bsd_text = '{:.3e}'.format(par['bsd'])
-        # replace dash (if negative exponent) by non breaking dash
-        bsd_text = bsd_text.replace('-', '&#8722;')
-        bsd_err_text = _err_text(par['bsd_err'], '{:.3e}')
-        # replace dash (if negative exponent) by non breaking dash
-        bsd_err_text = bsd_err_text.replace('-', '&#8722;')
-        ra_text = '{:.3f}'.format(par['ra'])
-        ra_err_text = _err_text(par['ra_err'], '{:.3f}')
-        hyp_dist_text = '{:.3f}'.format(par['hyp_dist'])
-        az_text = '{:.3f}'.format(par['az'])
-        Er_text = '{:.3e}'.format(par['Er'])
+        Mw_text, Mw_err_text = _value_and_err_text(par, 'Mw', '{:.3f}')
+        fc_text, fc_err_text = _value_and_err_text(par, 'fc', '{:.3f}')
+        t_star_text, t_star_err_text =\
+            _value_and_err_text(par, 't_star', '{:.3f}')
+        Qo_text, Qo_err_text = _value_and_err_text(par, 'Qo', '{:.1f}')
+        Mo_text, Mo_err_text = _value_and_err_text(par, 'Mo', '{:.3e}')
+        bsd_text, bsd_err_text = _value_and_err_text(par, 'bsd', '{:.3e}')
+        ra_text, ra_err_text = _value_and_err_text(par, 'ra', '{:.3f}')
+        hyp_dist_text, _ = _value_and_err_text(par, 'hyp_dist', '{:.3f}')
+        az_text, _ = _value_and_err_text(par, 'az', '{:.3f}')
+        Er_text, _ = _value_and_err_text(par, 'Er', '{:.3e}')
         replacements = {
             '{STATION_ID}': id,
             '{STATION_TYPE}': type,

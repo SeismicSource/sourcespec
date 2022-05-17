@@ -20,7 +20,7 @@ Earthquake source parameters from S-wave displacement spectra
   - Save an additional event parameter to output files: average quality factor
   - Save additional station parameters to output files:
     source radius, Brune stress drop, source radius, quality factor
-  - Mark outliers in `.out` file
+  - Mark outliers in `.out` file and in html report
   - Colored console output for log messages! (Not supported on Windows)
 - Processing:
   - New parameter for setting the width of the spectral smoothing window

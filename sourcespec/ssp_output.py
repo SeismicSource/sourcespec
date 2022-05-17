@@ -233,7 +233,7 @@ def _write_parfile(config, sourcepar):
 
         parfile.write('\n*** Average source parameters ***\n')
         parfile.write(
-            '*** Note: averages do not include outliers ***\n')
+            '*** Note: averages computed after removing outliers ****\n')
 
         Mw_mean = means['Mw']
         Mw_error = errors['Mw']
