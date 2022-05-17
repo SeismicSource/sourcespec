@@ -146,35 +146,37 @@ def _write_parfile(config, sourcepar):
                 hypo.evid, hypo.longitude, hypo.latitude, hypo.depth,
                 hypo.origin_time))
         parfile.write('*** Station source parameters ***\n')
+        parfile.write(
+            '*** Note: outliers are prepended by a star (*) symbol ***\n')
         parkeys = (
             'Mw', 'fc', 't_star', 'Qo', 'Mo',
             'bsd', 'ra', 'hyp_dist', 'az', 'Er'
         )
         formats = dict(
-            Mo='  {} {:.3e} ',
-            Er='  {} {:.3e} ',
-            hyp_dist='  {} {:7.3f} ',
-            az='  {} {:7.3f} ',
-            Mw='  {} {:6.3f} ',
-            fc='  {} {:6.3f} ',
-            bsd='  {} {:.3e} ',
-            ra='  {} {:7.3f} ',
-            t_star='  {} {:6.3f} ',
-            Qo='  {} {:5.1f} ',
-            Ml='  {} {:6.3f} '
+            Mo='{:.3e} ',
+            Er='{:.3e} ',
+            hyp_dist='{:7.3f} ',
+            az='{:7.3f} ',
+            Mw='{:6.3f} ',
+            fc='{:6.3f} ',
+            bsd='{:.3e} ',
+            ra='{:7.3f} ',
+            t_star='{:6.3f} ',
+            Qo='{:5.1f} ',
+            Ml='{:6.3f} '
         )
         formats_none = dict(
-            Mo='  {} {:>9} ',
-            Er='  {} {:>9} ',
-            hyp_dist='  {} {:>7} ',
-            az='  {} {:>7} ',
-            Mw='  {} {:>6} ',
-            fc='  {} {:>6} ',
-            bsd='  {} {:>9} ',
-            ra='  {} {:>7} ',
-            t_star='  {} {:>6} ',
-            Qo='  {} {:>5} ',
-            Ml='  {} {:>6} '
+            Mo='{:>9} ',
+            Er='{:>9} ',
+            hyp_dist='{:>7} ',
+            az='{:>7} ',
+            Mw='{:>6} ',
+            fc='{:>6} ',
+            bsd='{:>9} ',
+            ra='{:>7} ',
+            t_star='{:>6} ',
+            Qo='{:>5} ',
+            Ml='{:>6} '
         )
         for statId in sorted(sourcepar.keys()):
             if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
@@ -183,26 +185,44 @@ def _write_parfile(config, sourcepar):
             parfile.write('{:>14} {:>6}\t'.format(*statId.split()))
             for key in parkeys:
                 val = par[key]
-                if val is not None:
-                    parfile.write(formats[key].format(key, val))
+                outl = par.get(key + '_outlier', False)
+                if outl:
+                    space = ' *'
                 else:
-                    parfile.write(formats_none[key].format(key, 'nan'))
+                    space = '  '
+                parfile.write('{}{} '.format(space, key))
+                if val is not None:
+                    parfile.write(formats[key].format(val))
+                else:
+                    parfile.write(formats_none[key].format('nan'))
             parfile.write('\n')
             parfile.write('{:>21}\t'.format('--- errmin'))
             for key in parkeys:
+                outl = par.get(key + '_outlier', False)
+                if outl:
+                    space = ' *'
+                else:
+                    space = '  '
+                parfile.write('{}{} '.format(space, key))
                 try:
                     err = par[key + '_err'][0]
-                    parfile.write(formats[key].format(key, err))
+                    parfile.write(formats[key].format(err))
                 except KeyError:
-                    parfile.write(formats_none[key].format(key, 'nan'))
+                    parfile.write(formats_none[key].format('nan'))
             parfile.write('\n')
             parfile.write('{:>21}\t'.format('--- errmax'))
             for key in parkeys:
+                outl = par.get(key + '_outlier', False)
+                if outl:
+                    space = ' *'
+                else:
+                    space = '  '
+                parfile.write('{}{} '.format(space, key))
                 try:
                     err = par[key + '_err'][1]
-                    parfile.write(formats[key].format(key, err))
+                    parfile.write(formats[key].format(err))
                 except KeyError:
-                    parfile.write(formats_none[key].format(key, 'nan'))
+                    parfile.write(formats_none[key].format('nan'))
             parfile.write('\n')
 
         means = sourcepar['means']
@@ -211,6 +231,8 @@ def _write_parfile(config, sourcepar):
         errors_weight = sourcepar['errors_weight']
 
         parfile.write('\n*** Average source parameters ***\n')
+        parfile.write(
+            '*** Note: averages do not include outliers ***\n')
 
         Mw_mean = means['Mw']
         Mw_error = errors['Mw']
