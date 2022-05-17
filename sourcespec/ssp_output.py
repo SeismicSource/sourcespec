@@ -28,6 +28,35 @@ from sourcespec.ssp_util import mag_to_moment
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
+def _remove_outliers(values, weights, nstd=2):
+    """Remove extreme values that are larger than nstd*std."""
+    _values = values.copy()
+    nval = len(_values)
+    outliers = np.zeros(nval).astype(bool)
+    for _ in range(nval):
+        # find the extreme value
+        argextreme = np.nanargmax(np.abs(_values))
+        extreme = values[argextreme]
+        # trim the extreme value and compute statistics
+        # for the remaining values
+        values_trim = np.delete(_values, argextreme)
+        vmean = np.nanmean(values_trim)
+        vstd = np.nanstd(values_trim)
+        if np.abs(extreme - vmean) > nstd*vstd:
+            _values[argextreme] = np.nan
+            outliers[argextreme] = True
+        else:
+            # if no outlier is found, break
+            break
+        if np.sum(~outliers) == 3:
+            # if only 3 non-outliers remain, break
+            break
+    values = values[~outliers]
+    if weights is not None:
+        weights = weights[~outliers]
+    return values, weights, outliers
+
+
 def _avg_and_std(values, errors=None, logarithmic=False, std_cutoff=True):
     """
     Return the average and standard deviation.
@@ -62,27 +91,11 @@ def _avg_and_std(values, errors=None, logarithmic=False, std_cutoff=True):
         weights = 1./(errors_width**2.)
     if logarithmic:
         values = np.log10(values)
+    if std_cutoff:
+        values, weights, outliers = _remove_outliers(values, weights)
     average = np.average(values, weights=weights)
     variance = np.average((values-average)**2, weights=weights)
     std = np.sqrt(variance)
-    if std_cutoff and std > 0:
-        nstd = 2
-        for _ in range(10):
-            condition = np.abs(values-average) < nstd*std
-            # break if condition is always true: no reason to go on
-            if np.all(condition):
-                break
-            values = values[condition]
-            # break if less than three values: no std can be computed
-            if len(values) < 3:
-                break
-            if weights is not None:
-                weights = weights[condition]
-            average = np.average(values, weights=weights)
-            variance = np.average((values-average)**2, weights=weights)
-            std = np.sqrt(variance)
-            # raise nstd for subsequent iterations
-            nstd = 2.5
     if logarithmic:
         log_average = 10.**average
         minus = log_average - 10.**(average-std)
