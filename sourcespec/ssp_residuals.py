@@ -34,7 +34,7 @@ def spectral_residuals(config, spec_st, sourcepar):
     Saves a stream of residuals to disk using pickle.
     """
     # Use weighted means
-    means = sourcepar['means_weight']
+    means = sourcepar.means_weight
     params_name = ('Mw', 'fc', 't_star')
     sourcepar_mean = dict(
         zip(params_name, [means['Mw'], means['fc'], means['t_star']]))

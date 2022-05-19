@@ -83,10 +83,11 @@ def _write_parfile(config, sourcepar):
             Qo='{:>5} ',
             Ml='{:>6} '
         )
-        for statId in sorted(sourcepar.keys()):
+        stationpar = sourcepar.station_parameters
+        for statId in sorted(stationpar.keys()):
             if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
                 continue
-            par = sourcepar[statId]
+            par = stationpar[statId]
             parfile.write('{:>14} {:>6}\t'.format(*statId.split()))
             for key in parkeys:
                 val = par[key]
@@ -130,10 +131,10 @@ def _write_parfile(config, sourcepar):
                     parfile.write(formats_none[key].format('nan'))
             parfile.write('\n')
 
-        means = sourcepar['means']
-        errors = sourcepar['errors']
-        means_weight = sourcepar['means_weight']
-        errors_weight = sourcepar['errors_weight']
+        means = sourcepar.means
+        errors = sourcepar.errors
+        means_weight = sourcepar.means_weight
+        errors_weight = sourcepar.errors_weight
 
         parfile.write('\n*** Average source parameters ***\n')
         parfile.write(
@@ -276,11 +277,12 @@ def _write_db(config, sourcepar):
         'dist, azimuth, Er);')
     # Write station source parameters to database
     nobs = 0
-    for statId in sorted(sourcepar.keys()):
+    stationpar = sourcepar.station_parameters
+    for statId in sorted(stationpar.keys()):
         if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
             continue
         nobs += 1
-        par = sourcepar[statId]
+        par = stationpar[statId]
         # Remove existing line, if present
         t = (statId, evid)
         c.execute('delete from Stations where stid=? and evid=?;', t)
@@ -325,10 +327,10 @@ def _write_db(config, sourcepar):
         'bsd_wavg, bsd_wavg_err_minus, bsd_wavg_err_plus,'
         'Er, Er_err_minus, Er_err_plus,'
         'Ml, Ml_err);')
-    means = sourcepar['means']
-    means_weight = sourcepar['means_weight']
-    errors = sourcepar['errors']
-    errors_weight = sourcepar['errors_weight']
+    means = sourcepar.means
+    means_weight = sourcepar.means_weight
+    errors = sourcepar.errors
+    errors_weight = sourcepar.errors_weight
     # Remove event from Event table, if present
     t = (evid, )
     c.execute('delete from Events where evid=?;', t)
@@ -378,7 +380,7 @@ def _write_hypo(config, sourcepar):
             line = fp.readline()
         line = list(line)
 
-    means = sourcepar['means']
+    means = sourcepar.means
     mw_str = '{:03.2f}'.format(means['Mw'])
     if means['Ml'] is not None and ~np.isnan(means['Ml']):
         ml_str = '{:03.2f}'.format(means['Ml'])

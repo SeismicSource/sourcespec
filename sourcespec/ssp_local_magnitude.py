@@ -146,6 +146,7 @@ def local_magnitude(config, st, proc_st, sourcepar):
     logger.info('Computing local magnitude...')
     # We only use traces selected for proc_st
     trace_ids = set(tr.id for tr in proc_st)
+    stationpar = sourcepar.station_parameters
     for tr_id in sorted(trace_ids):
         tr = st.select(id=tr_id)[0]
 
@@ -153,7 +154,7 @@ def local_magnitude(config, st, proc_st, sourcepar):
         # source parameters defined
         key = '%sH %s' % (tr_id[:-1], tr.stats.instrtype)
         try:
-            par = sourcepar[key]
+            par = stationpar[key]
         except KeyError:
             continue
 
@@ -183,7 +184,7 @@ def local_magnitude(config, st, proc_st, sourcepar):
 
     # average local magnitude
     # build ml_values: use np.nan for missing values
-    ml_values = np.array([x.get('Ml', np.nan) for x in sourcepar.values()])
+    ml_values = np.array([x.get('Ml', np.nan) for x in stationpar.values()])
     ml_values = ml_values[~np.isnan(ml_values)]
     if len(ml_values) == 0:
         logger.warning('No Ml values could be computed')

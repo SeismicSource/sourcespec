@@ -176,30 +176,37 @@ class StationSourceParameters(dict):
         self[attr] = value
 
 
-class SourceParameters(dict):
+class SourceParameters():
     """Source parameters for all stations."""
 
+    def __init__(self):
+        self.station_parameters = dict()
+        self.means = dict()
+        self.errors = dict()
+        self.means_weight = dict()
+        self.errors_weight = dict()
+
     def value_array(self, key, filter_outliers=False):
-        self.station_parameters = self.values()
-        vals = np.array([x.get(key, np.nan) for x in self.station_parameters])
+        vals = np.array(
+            [x.get(key, np.nan) for x in self.station_parameters.values()])
         if filter_outliers:
             outliers = self.outlier_array(key)
             vals = vals[~outliers]
         return vals
 
     def error_array(self, key, filter_outliers=False):
-        self.station_parameters = self.values()
-        errs = np.array(
-            [x.get(key + '_err', np.nan) for x in self.station_parameters])
+        errs = np.array([
+            x.get(key + '_err', np.nan)
+            for x in self.station_parameters.values()
+        ])
         if filter_outliers:
             outliers = self.outlier_array(key)
             errs = errs[~outliers]
         return errs
 
     def outlier_array(self, key):
-        self.station_parameters = self.values()
         key += '_outlier'
-        return np.array([x.get(key) for x in self.station_parameters])
+        return np.array([x.get(key) for x in self.station_parameters.values()])
 
     def find_outliers(self, key, nstd):
         """Find extreme values that are larger than nstd*std."""
@@ -228,9 +235,8 @@ class SourceParameters(dict):
             if np.sum(~outliers) == 3:
                 # if only 3 non-outliers remain, break
                 break
-        self.station_parameters = self.values()
         if len(self.station_parameters) != len(outliers):
             raise ValueError
         key += '_outlier'
-        for par, outl in zip(self.station_parameters, outliers):
+        for par, outl in zip(self.station_parameters.values(), outliers):
             par[key] = outl

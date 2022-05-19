@@ -402,7 +402,7 @@ def spectral_inversion(config, spec_st, weight_st):
         spec_st += _synth_spec(config, spec, par, par_err)
         statId = '{} {}'.format(spec.id, spec.stats.instrtype)
         par = StationSourceParameters(statId, par, par_err)
-        sourcepar[statId] = par
+        sourcepar.station_parameters[statId] = par
 
     radiated_energy(config, spec_st, sourcepar)
 

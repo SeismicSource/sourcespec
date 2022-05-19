@@ -409,21 +409,20 @@ def plot_stations(config, sourcepar):
     # Check config, if we need to plot at all
     if not config.PLOT_SHOW and not config.PLOT_SAVE:
         return
-    st_ids = [
-        k for k in sorted(sourcepar.keys())
-        if k not in ['means', 'errors', 'means_weight', 'errors_weight']]
+    stationpar = sourcepar.station_parameters
+    st_ids = sorted(stationpar.keys())
     lonlat_dist = np.array([
-        (sourcepar[k]['lon'], sourcepar[k]['lat'], sourcepar[k]['epi_dist'])
+        (stationpar[k]['lon'], stationpar[k]['lat'], stationpar[k]['epi_dist'])
         for k in st_ids])
     maxdist = np.max(lonlat_dist[:, 2])
     # empirical rule to define overlapping station spread
     spread = maxdist/4e3
     _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=spread)
-    mag = np.array([sourcepar[k]['Mw'] for k in st_ids])
-    magmean = sourcepar['means_weight']['Mw']
-    magerr = sourcepar['errors_weight']['Mw']
+    mag = np.array([stationpar[k]['Mw'] for k in st_ids])
+    magmean = sourcepar.means_weight['Mw']
+    magerr = sourcepar.errors_weight['Mw']
     _plot_stations(config, lonlat_dist, st_ids, mag, magmean, magerr, 'mag')
-    fc = np.array([sourcepar[k]['fc'] for k in st_ids])
-    fcmean = sourcepar['means_weight']['fc']
-    fcerr = sourcepar['errors_weight']['fc']
+    fc = np.array([stationpar[k]['fc'] for k in st_ids])
+    fcmean = sourcepar.means_weight['fc']
+    fcerr = sourcepar.errors_weight['fc']
     _plot_stations(config, lonlat_dist, st_ids, fc, fcmean, fcerr, 'fc')

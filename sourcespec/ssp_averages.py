@@ -82,7 +82,7 @@ def _M0_avg_and_std(Mw_mean, Mw_error):
 
 def compute_averages(sourcepar):
     """Compute average source parameters, find outliers"""
-    if len(sourcepar) == 0:
+    if len(sourcepar.station_parameters) == 0:
         logger.info('No source parameter calculated')
         ssp_exit()
 
@@ -156,10 +156,10 @@ def compute_averages(sourcepar):
     Er_values = sourcepar.value_array('Er', filter_outliers=True)
     means['Er'], errors['Er'] = _avg_and_std(Er_values, logarithmic=True)
 
-    sourcepar['means'] = means
-    sourcepar['errors'] = errors
-    sourcepar['means_weight'] = means_weight
-    sourcepar['errors_weight'] = errors_weight
+    sourcepar.means = means
+    sourcepar.errors = errors
+    sourcepar.means_weight = means_weight
+    sourcepar.errors_weight = errors_weight
 
     params_name = ('Mw', 'fc', 't_star')
     sourcepar_mean = dict(
@@ -169,5 +169,3 @@ def compute_averages(sourcepar):
         zip(params_name,
             [means_weight['Mw'], means_weight['fc'], means_weight['t_star']]))
     logger.info('params_mean_weighted: {}'.format(sourcepar_mean_weight))
-
-    return sourcepar_mean

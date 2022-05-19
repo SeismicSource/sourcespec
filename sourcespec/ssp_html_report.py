@@ -173,10 +173,11 @@ def html_report(config, sourcepar):
     # Station table
     station_table_row = open(station_table_row_html).read()
     station_table_rows = ''
-    for statId in sorted(sourcepar.keys()):
+    stationpar = sourcepar.station_parameters
+    for statId in sorted(stationpar.keys()):
         if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
             continue
-        par = sourcepar[statId]
+        par = stationpar[statId]
         id, type = statId.split()
         Mw_text, Mw_err_text = _value_and_err_text(par, 'Mw', '{:.3f}')
         fc_text, fc_err_text = _value_and_err_text(par, 'fc', '{:.3f}')
@@ -213,10 +214,10 @@ def html_report(config, sourcepar):
         station_table_rows += _multireplace(station_table_row, replacements)
 
     # Main HTML page
-    means = sourcepar['means']
-    errors = sourcepar['errors']
-    means_weight = sourcepar['means_weight']
-    errors_weight = sourcepar['errors_weight']
+    means = sourcepar.means
+    errors = sourcepar.errors
+    means_weight = sourcepar.means_weight
+    errors_weight = sourcepar.errors_weight
     Mw_mean = means['Mw']
     Mw_error = errors['Mw']
     Mw_mean_weight = means_weight['Mw']

@@ -27,7 +27,7 @@ def radiated_energy(config, spec_st, sourcepar):
     for spec in [spec for spec in spec_st if (spec.stats.channel[-1] == 'H')]:
         statId = '%s %s' % (spec.id, spec.stats.instrtype)
         try:
-            par = sourcepar[statId]
+            par = sourcepar.station_parameters[statId]
         except KeyError:
             continue
         t_star = par['t_star']
