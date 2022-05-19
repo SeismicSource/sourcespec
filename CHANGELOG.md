@@ -61,6 +61,7 @@ Earthquake source parameters from S-wave displacement spectra
     drop and quality factor
   - Compute errors for all station parameters
   - Compute weighted averages for all event parameters (except radiated energy)
+  - Compute spectral residuals using weighted average spectral parameters
 - Plotting:
   - Misfit plot (2D and 1D) when using grid sampling
   - `cartopy` removed as installation dependency, since it is not easily

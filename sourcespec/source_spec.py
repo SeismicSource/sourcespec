@@ -67,7 +67,7 @@ def main():
 
     # Compute averages, find outliers
     from sourcespec.ssp_averages import compute_averages
-    sourcepar_mean = compute_averages(sourcepar)
+    compute_averages(sourcepar)
 
     # Save output
     from sourcespec.ssp_output import write_output
@@ -75,7 +75,7 @@ def main():
 
     # Save residuals
     from sourcespec.ssp_residuals import spectral_residuals
-    spectral_residuals(config, spec_st, sourcepar_mean)
+    spectral_residuals(config, spec_st, sourcepar)
 
     # Plotting
     from sourcespec.ssp_plot_spectra import plot_spectra
