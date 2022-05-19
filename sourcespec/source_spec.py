@@ -65,9 +65,13 @@ def main():
     if config.compute_local_magnitude:
         local_magnitude(config, st, proc_st, sourcepar)
 
+    # Compute averages, find outliers
+    from sourcespec.ssp_averages import compute_averages
+    sourcepar_mean = compute_averages(sourcepar)
+
     # Save output
     from sourcespec.ssp_output import write_output
-    sourcepar_mean = write_output(config, sourcepar)
+    write_output(config, sourcepar)
 
     # Save residuals
     from sourcespec.ssp_residuals import spectral_residuals
