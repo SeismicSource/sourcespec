@@ -19,53 +19,21 @@ from sourcespec.ssp_util import mag_to_moment
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
-def _remove_outliers(values, weights, nstd):
-    """Remove extreme values that are larger than nstd*std."""
-    _values = values.copy()
-    nval = len(_values)
-    outliers = np.zeros(nval).astype(bool)
-    for _ in range(nval):
-        # find the extreme value
-        vmean = np.nanmean(_values)
-        argextreme = np.nanargmax(np.abs(_values-vmean))
-        extreme = values[argextreme]
-        # trim the extreme value and compute statistics
-        # for the remaining values
-        values_trim = np.delete(_values, argextreme)
-        vmean = np.nanmean(values_trim)
-        vstd = np.nanstd(values_trim)
-        if np.abs(extreme - vmean) > nstd*vstd:
-            _values[argextreme] = np.nan
-            outliers[argextreme] = True
-        else:
-            # if no outlier is found, break
-            break
-        if np.sum(~outliers) == 3:
-            # if only 3 non-outliers remain, break
-            break
-    values = values[~outliers]
-    if weights is not None:
-        weights = weights[~outliers]
-    return values, weights, outliers
-
-
-def _avg_and_std(values, errors=None, logarithmic=False, nstd=None):
+def _avg_and_std(values, errors=None, logarithmic=False):
     """
     Return the average and standard deviation.
 
     Optionally:
     - errors can be specfied for weighted statistics
     - logarithmic average and standard deviation
-    - cutoff outlier values that are larger than nstd*std
     """
     average = std = np.nan
-    outliers = np.zeros_like(values).astype(bool)
     if len(values) == 0:
-        return average, std, outliers
+        return average, std
     if errors is not None and len(errors) == 0:
-        return average, std, outliers
+        return average, std
     if np.all(np.isnan(values)):
-        return average, std, outliers
+        return average, std
     if errors is None:
         weights = None
     else:
@@ -87,8 +55,6 @@ def _avg_and_std(values, errors=None, logarithmic=False, nstd=None):
         weights = 1./(errors_width**2.)
     if logarithmic:
         values = np.log10(values)
-    if nstd is not None:
-        values, weights, outliers = _remove_outliers(values, weights, nstd)
     notnan = ~np.isnan(values)
     if weights is not None:
         notnan = np.logical_and(notnan, ~np.isnan(weights))
@@ -101,9 +67,9 @@ def _avg_and_std(values, errors=None, logarithmic=False, nstd=None):
         log_average = 10.**average
         minus = log_average - 10.**(average-std)
         plus = 10.**(average+std) - log_average
-        return log_average, (minus, plus), outliers
+        return log_average, (minus, plus)
     else:
-        return average, std, outliers
+        return average, std
 
 
 def _M0_avg_and_std(Mw_mean, Mw_error):
@@ -126,12 +92,11 @@ def compute_averages(sourcepar):
     errors_weight = dict()
 
     # Mw
-    Mw_values = sourcepar.value_array('Mw')
-    Mw_err = sourcepar.error_array('Mw')
-    means['Mw'], errors['Mw'], _ = _avg_and_std(Mw_values, nstd=3)
-    means_weight['Mw'], errors_weight['Mw'], outliers = \
-        _avg_and_std(Mw_values, errors=Mw_err, nstd=3)
-    sourcepar.set_outliers('Mw', outliers)
+    sourcepar.find_outliers('Mw', nstd=3)
+    Mw_values = sourcepar.value_array('Mw', filter_outliers=True)
+    Mw_err = sourcepar.error_array('Mw', filter_outliers=True)
+    means['Mw'], errors['Mw'] = _avg_and_std(Mw_values)
+    means_weight['Mw'], errors_weight['Mw'] = _avg_and_std(Mw_values, Mw_err)
 
     # Mo (N.m)
     means['Mo'], errors['Mo'] = _M0_avg_and_std(means['Mw'], errors['Mw'])
@@ -139,62 +104,57 @@ def compute_averages(sourcepar):
         _M0_avg_and_std(means_weight['Mw'], errors_weight['Mw'])
 
     # fc (Hz)
-    fc_values = sourcepar.value_array('fc')
-    fc_err = sourcepar.error_array('fc')
-    means['fc'], errors['fc'], _ =\
-        _avg_and_std(fc_values, logarithmic=True, nstd=2)
-    means_weight['fc'], errors_weight['fc'], outliers = \
-        _avg_and_std(fc_values, errors=fc_err, logarithmic=True, nstd=2)
-    sourcepar.set_outliers('fc', outliers)
+    sourcepar.find_outliers('fc', nstd=2)
+    fc_values = sourcepar.value_array('fc', filter_outliers=True)
+    fc_err = sourcepar.error_array('fc', filter_outliers=True)
+    means['fc'], errors['fc'] = _avg_and_std(fc_values, logarithmic=True)
+    means_weight['fc'], errors_weight['fc'] =\
+        _avg_and_std(fc_values, fc_err, logarithmic=True)
 
     # t_star (s)
-    t_star_values = sourcepar.value_array('t_star')
-    t_star_err = sourcepar.error_array('t_star')
-    means['t_star'], errors['t_star'], _ = _avg_and_std(t_star_values, nstd=2)
-    means_weight['t_star'], errors_weight['t_star'], outliers = \
-        _avg_and_std(t_star_values, errors=t_star_err, nstd=2)
-    sourcepar.set_outliers('t_star', outliers)
+    sourcepar.find_outliers('t_star', nstd=2)
+    t_star_values = sourcepar.value_array('t_star', filter_outliers=True)
+    t_star_err = sourcepar.error_array('t_star', filter_outliers=True)
+    means['t_star'], errors['t_star'] = _avg_and_std(t_star_values)
+    means_weight['t_star'], errors_weight['t_star'] =\
+        _avg_and_std(t_star_values, t_star_err)
 
     # ra, radius (meters)
-    ra_values = sourcepar.value_array('ra')
-    ra_err = sourcepar.error_array('ra')
-    means['ra'], errors['ra'], _ =\
-        _avg_and_std(ra_values, logarithmic=True, nstd=2)
-    means_weight['ra'], errors_weight['ra'], outliers = \
-        _avg_and_std(ra_values, errors=ra_err, logarithmic=True, nstd=2)
-    sourcepar.set_outliers('ra', outliers)
+    sourcepar.find_outliers('ra', nstd=2)
+    ra_values = sourcepar.value_array('ra', filter_outliers=True)
+    ra_err = sourcepar.error_array('ra', filter_outliers=True)
+    means['ra'], errors['ra'] = _avg_and_std(ra_values, logarithmic=True)
+    means_weight['ra'], errors_weight['ra'] =\
+        _avg_and_std(ra_values, ra_err, logarithmic=True)
 
     # bsd, Brune stress drop (MPa)
-    bsd_values = sourcepar.value_array('bsd')
-    bsd_err = sourcepar.error_array('bsd')
-    means['bsd'], errors['bsd'], _ =\
-        _avg_and_std(bsd_values, logarithmic=True, nstd=2)
-    means_weight['bsd'], errors_weight['bsd'], outliers = \
-        _avg_and_std(bsd_values, errors=bsd_err, logarithmic=True, nstd=2)
-    sourcepar.set_outliers('bsd', outliers)
+    sourcepar.find_outliers('bsd', nstd=2)
+    bsd_values = sourcepar.value_array('bsd', filter_outliers=True)
+    bsd_err = sourcepar.error_array('bsd', filter_outliers=True)
+    means['bsd'], errors['bsd'] = _avg_and_std(bsd_values, logarithmic=True)
+    means_weight['bsd'], errors_weight['bsd'] =\
+        _avg_and_std(bsd_values, bsd_err, logarithmic=True)
 
     # Quality factor
-    Qo_values = sourcepar.value_array('Qo')
-    Qo_err = sourcepar.error_array('Qo')
+    sourcepar.find_outliers('Qo', nstd=2)
+    Qo_values = sourcepar.value_array('Qo', filter_outliers=True)
+    Qo_err = sourcepar.error_array('Qo', filter_outliers=True)
     Qo_values[np.isinf(Qo_values)] = np.nan
-    means['Qo'], errors['Qo'], _ = _avg_and_std(Qo_values, nstd=2)
+    means['Qo'], errors['Qo'] = _avg_and_std(Qo_values)
     cond_err = np.logical_or(np.isinf(Qo_err[:, 0]), np.isinf(Qo_err[:, 1]))
     Qo_values[cond_err] = np.nan
     Qo_err[cond_err] = np.nan
-    means_weight['Qo'], errors_weight['Qo'], outliers = \
-        _avg_and_std(Qo_values, errors=Qo_err, nstd=2)
-    sourcepar.set_outliers('Qo', outliers)
+    means_weight['Qo'], errors_weight['Qo'] = _avg_and_std(Qo_values, Qo_err)
 
     # Ml
-    Ml_values = sourcepar.value_array('Ml')
-    means['Ml'], errors['Ml'], outliers = _avg_and_std(Ml_values, nstd=3)
-    sourcepar.set_outliers('Ml', outliers)
+    sourcepar.find_outliers('Ml', nstd=3)
+    Ml_values = sourcepar.value_array('Ml', filter_outliers=True)
+    means['Ml'], errors['Ml'] = _avg_and_std(Ml_values)
 
     # Er (N.m)
-    Er_values = sourcepar.value_array('Er')
-    means['Er'], errors['Er'], outliers =\
-        _avg_and_std(Er_values, logarithmic=True, nstd=2)
-    sourcepar.set_outliers('Er', outliers)
+    sourcepar.find_outliers('Er', nstd=2)
+    Er_values = sourcepar.value_array('Er', filter_outliers=True)
+    means['Er'], errors['Er'] = _avg_and_std(Er_values, logarithmic=True)
 
     sourcepar['means'] = means
     sourcepar['errors'] = errors

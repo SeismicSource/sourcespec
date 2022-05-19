@@ -179,17 +179,58 @@ class StationSourceParameters(dict):
 class SourceParameters(dict):
     """Source parameters for all stations."""
 
-    def value_array(self, key):
-        return np.array([x.get(key, np.nan) for x in self.values()])
+    def value_array(self, key, filter_outliers=False):
+        self.station_parameters = self.values()
+        vals = np.array([x.get(key, np.nan) for x in self.station_parameters])
+        if filter_outliers:
+            outliers = self.outlier_array(key)
+            vals = vals[~outliers]
+        return vals
 
-    def error_array(self, key):
-        key += '_err'
-        return np.array([x.get(key, np.nan) for x in self.values()])
+    def error_array(self, key, filter_outliers=False):
+        self.station_parameters = self.values()
+        errs = np.array(
+            [x.get(key + '_err', np.nan) for x in self.station_parameters])
+        if filter_outliers:
+            outliers = self.outlier_array(key)
+            errs = errs[~outliers]
+        return errs
 
-    def set_outliers(self, key, outliers):
-        station_parameters = self.values()
-        if len(station_parameters) != len(outliers):
+    def outlier_array(self, key):
+        self.station_parameters = self.values()
+        key += '_outlier'
+        return np.array([x.get(key) for x in self.station_parameters])
+
+    def find_outliers(self, key, nstd):
+        """Find extreme values that are larger than nstd*std."""
+        values = self.value_array(key)
+        _values = values.copy()
+        nval = len(_values)
+        outliers = np.zeros(nval).astype(bool)
+        for _ in range(nval):
+            if np.all(np.isnan(values)):
+                break
+            # find the extreme value
+            vmean = np.nanmean(_values)
+            argextreme = np.nanargmax(np.abs(_values-vmean))
+            extreme = values[argextreme]
+            # trim the extreme value and compute statistics
+            # for the remaining values
+            values_trim = np.delete(_values, argextreme)
+            vmean = np.nanmean(values_trim)
+            vstd = np.nanstd(values_trim)
+            if np.abs(extreme - vmean) > nstd*vstd:
+                _values[argextreme] = np.nan
+                outliers[argextreme] = True
+            else:
+                # if no outlier is found, break
+                break
+            if np.sum(~outliers) == 3:
+                # if only 3 non-outliers remain, break
+                break
+        self.station_parameters = self.values()
+        if len(self.station_parameters) != len(outliers):
             raise ValueError
         key += '_outlier'
-        for par, outl in zip(station_parameters, outliers):
+        for par, outl in zip(self.station_parameters, outliers):
             par[key] = outl
