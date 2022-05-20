@@ -54,8 +54,8 @@ Earthquake source parameters from S-wave displacement spectra
     `fc_max`
   - Fix: use logarithmic error width for weighted logarithmic averages
     - previous way of computing weighted logarithmic averages was not correct!
-  - Remove outliers (>2.sigma; >3.sigma for magnitude) when computing event
-    averages
+  - Option to reject outliers using the IQR (interquartile range) method:
+    parameter `nIQR`
   - Support for non symmetric error on station spectral parameters
   - Compute additional, per-station parameters: source radius, Brune stress
     drop and quality factor

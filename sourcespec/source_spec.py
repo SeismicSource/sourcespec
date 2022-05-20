@@ -67,7 +67,7 @@ def main():
 
     # Compute averages, find outliers
     from sourcespec.ssp_averages import compute_averages
-    compute_averages(sourcepar)
+    compute_averages(config, sourcepar)
 
     # Save output
     from sourcespec.ssp_output import write_output

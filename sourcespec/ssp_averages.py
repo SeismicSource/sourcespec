@@ -80,7 +80,7 @@ def _M0_avg_and_std(Mw_mean, Mw_error):
     return Mo_mean, (Mo_mean - Mo_min, Mo_max - Mo_mean)
 
 
-def compute_averages(sourcepar):
+def compute_averages(config, sourcepar):
     """Compute average source parameters, find outliers"""
     if len(sourcepar.station_parameters) == 0:
         logger.info('No source parameter calculated')
@@ -91,8 +91,10 @@ def compute_averages(sourcepar):
     means_weight = dict()
     errors_weight = dict()
 
+    nIQR = config.nIQR
+
     # Mw
-    sourcepar.find_outliers('Mw', nstd=3)
+    sourcepar.find_outliers('Mw', n=nIQR)
     Mw_values = sourcepar.value_array('Mw', filter_outliers=True)
     Mw_err = sourcepar.error_array('Mw', filter_outliers=True)
     means['Mw'], errors['Mw'] = _avg_and_std(Mw_values)
@@ -104,7 +106,7 @@ def compute_averages(sourcepar):
         _M0_avg_and_std(means_weight['Mw'], errors_weight['Mw'])
 
     # fc (Hz)
-    sourcepar.find_outliers('fc', nstd=2)
+    sourcepar.find_outliers('fc', n=nIQR)
     fc_values = sourcepar.value_array('fc', filter_outliers=True)
     fc_err = sourcepar.error_array('fc', filter_outliers=True)
     means['fc'], errors['fc'] = _avg_and_std(fc_values, logarithmic=True)
@@ -112,7 +114,7 @@ def compute_averages(sourcepar):
         _avg_and_std(fc_values, fc_err, logarithmic=True)
 
     # t_star (s)
-    sourcepar.find_outliers('t_star', nstd=2)
+    sourcepar.find_outliers('t_star', n=nIQR)
     t_star_values = sourcepar.value_array('t_star', filter_outliers=True)
     t_star_err = sourcepar.error_array('t_star', filter_outliers=True)
     means['t_star'], errors['t_star'] = _avg_and_std(t_star_values)
@@ -120,7 +122,7 @@ def compute_averages(sourcepar):
         _avg_and_std(t_star_values, t_star_err)
 
     # ra, radius (meters)
-    sourcepar.find_outliers('ra', nstd=2)
+    sourcepar.find_outliers('ra', n=nIQR)
     ra_values = sourcepar.value_array('ra', filter_outliers=True)
     ra_err = sourcepar.error_array('ra', filter_outliers=True)
     means['ra'], errors['ra'] = _avg_and_std(ra_values, logarithmic=True)
@@ -128,7 +130,7 @@ def compute_averages(sourcepar):
         _avg_and_std(ra_values, ra_err, logarithmic=True)
 
     # bsd, Brune stress drop (MPa)
-    sourcepar.find_outliers('bsd', nstd=2)
+    sourcepar.find_outliers('bsd', n=nIQR)
     bsd_values = sourcepar.value_array('bsd', filter_outliers=True)
     bsd_err = sourcepar.error_array('bsd', filter_outliers=True)
     means['bsd'], errors['bsd'] = _avg_and_std(bsd_values, logarithmic=True)
@@ -136,7 +138,7 @@ def compute_averages(sourcepar):
         _avg_and_std(bsd_values, bsd_err, logarithmic=True)
 
     # Quality factor
-    sourcepar.find_outliers('Qo', nstd=2)
+    sourcepar.find_outliers('Qo', n=nIQR)
     Qo_values = sourcepar.value_array('Qo', filter_outliers=True)
     Qo_err = sourcepar.error_array('Qo', filter_outliers=True)
     Qo_values[np.isinf(Qo_values)] = np.nan
@@ -147,12 +149,12 @@ def compute_averages(sourcepar):
     means_weight['Qo'], errors_weight['Qo'] = _avg_and_std(Qo_values, Qo_err)
 
     # Ml
-    sourcepar.find_outliers('Ml', nstd=3)
+    sourcepar.find_outliers('Ml', n=nIQR)
     Ml_values = sourcepar.value_array('Ml', filter_outliers=True)
     means['Ml'], errors['Ml'] = _avg_and_std(Ml_values)
 
     # Er (N.m)
-    sourcepar.find_outliers('Er', nstd=2)
+    sourcepar.find_outliers('Er', n=nIQR)
     Er_values = sourcepar.value_array('Er', filter_outliers=True)
     means['Er'], errors['Er'] = _avg_and_std(Er_values, logarithmic=True)
 

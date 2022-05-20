@@ -208,35 +208,30 @@ class SourceParameters():
         key += '_outlier'
         return np.array([x.get(key) for x in self.station_parameters.values()])
 
-    def find_outliers(self, key, nstd):
-        """Find extreme values that are larger than nstd*std."""
+    def find_outliers(self, key, n):
+        """
+        Find outliers using the IQR method.
+
+            Q1-n*IQR   Q1   median  Q3    Q3+n*IQR
+                        |-----:-----|
+        o      |--------|     :     |--------|    o  o
+                        |-----:-----|
+        outlier         <----------->            outliers
+                            IQR
+
+        If n is None, then the above check is skipped.
+        Nan and inf values are also marked as outliers.
+        """
         values = self.value_array(key)
-        _values = values.copy()
-        nval = len(_values)
-        outliers = np.zeros(nval).astype(bool)
-        for _ in range(nval):
-            if np.all(np.isnan(values)):
-                break
-            # find the extreme value
-            vmean = np.nanmean(_values)
-            argextreme = np.nanargmax(np.abs(_values-vmean))
-            extreme = values[argextreme]
-            # trim the extreme value and compute statistics
-            # for the remaining values
-            values_trim = np.delete(_values, argextreme)
-            vmean = np.nanmean(values_trim)
-            vstd = np.nanstd(values_trim)
-            if np.abs(extreme - vmean) > nstd*vstd:
-                _values[argextreme] = np.nan
-                outliers[argextreme] = True
-            else:
-                # if no outlier is found, break
-                break
-            if np.sum(~outliers) == 3:
-                # if only 3 non-outliers remain, break
-                break
-        if len(self.station_parameters) != len(outliers):
-            raise ValueError
+        naninf = np.logical_or(np.isnan(values), np.isinf(values))
+        _values = values[~naninf]
+        if n is not None and len(_values) > 0:
+            Q1, _, Q3 = np.percentile(_values, [25, 50, 75])
+            IQR = Q3-Q1
+            outliers = np.logical_or(values < Q1 - n*IQR, values > Q3 + n*IQR)
+            outliers = np.logical_or(outliers, naninf)
+        else:
+            outliers = naninf
         key += '_outlier'
         for par, outl in zip(self.station_parameters.values(), outliers):
             par[key] = outl
