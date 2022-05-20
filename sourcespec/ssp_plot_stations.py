@@ -205,6 +205,9 @@ def _make_basemap(config, maxdist):
         else:
             tile_zoom_level = 8
         logger.info('Map zoom level autoset to: {}'.format(tile_zoom_level))
+    # Add the image twice, so that the CachedTiler has time to cache
+    # (avoids white tiles on map)
+    ax.add_image(stamen_terrain, tile_zoom_level)
     ax.add_image(stamen_terrain, tile_zoom_level)
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     # add coastlines from GSHHS

@@ -55,8 +55,7 @@ class CachedTiler(object):
             cache_dir, '_'.join(str(v) for v in tile) + '.png')
         if not os.path.exists(tile_fname):
             try:
-                response = requests.get(self._image_url(tile),
-                                        stream=True)
+                response = requests.get(self._image_url(tile), stream=True)
             except requests.exceptions.RequestException:
                 logger.warning(
                     'Cannot download map tiles. Check internet connection.')
