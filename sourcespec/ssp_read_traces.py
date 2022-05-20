@@ -369,7 +369,18 @@ def _add_hypocenter(trace, hypo):
 
         hypo = AttribDict()
         hypo.origin_time = origin_time
-        hypo.evid = _evid_time.strftime('%Y%m%d_%H%M%S')
+        try:
+            kevnm = trace.stats.sac.kevnm
+            # if string is empty, raise Exception
+            if not kevnm:
+                raise Exception
+            # if string has spaces, then kevnm is not a code,
+            # so raise Exception
+            if ' ' in kevnm:
+                raise Exception
+            hypo.evid = kevnm
+        except Exception:
+            hypo.evid = _evid_time.strftime('%Y%m%d_%H%M%S')
         hypo.latitude = evla
         hypo.longitude = evlo
         hypo.depth = evdp
