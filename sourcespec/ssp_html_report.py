@@ -139,6 +139,7 @@ def html_report(config, sourcepar):
     log_file = '{}.ssp.log'.format(evid)
     map_mag = '{}.map_mag.png'.format(evid)
     map_fc = '{}.map_fc.png'.format(evid)
+    box_plots = '{}.boxplot.png'.format(evid)
 
     # Trace plot files
     traces_plot = open(traces_plot_html).read()
@@ -309,6 +310,7 @@ def html_report(config, sourcepar):
         '{MAP_FC}': map_fc,
         '{TRACES_PLOTS}': traces_plots,
         '{SPECTRA_PLOTS}': spectra_plots,
+        '{BOX_PLOTS}': box_plots,
         '{STATION_TABLE_ROWS}': station_table_rows,
     }
     index = open(index_html).read()

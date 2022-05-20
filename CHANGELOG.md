@@ -63,6 +63,8 @@ Earthquake source parameters from S-wave displacement spectra
   - Compute weighted averages for all event parameters (except radiated energy)
   - Compute spectral residuals using weighted average spectral parameters
 - Plotting:
+  - Source parameter box plots to evaluate parameter dispersion across stations
+    and visually detect outliers
   - Misfit plot (2D and 1D) when using grid sampling
   - `cartopy` removed as installation dependency, since it is not easily
     installable via `pip`
