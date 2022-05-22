@@ -22,18 +22,17 @@ from sourcespec.adjustText import adjust_text
 from pyproj import Geod
 from sourcespec.cached_tiler import CachedTiler
 from sourcespec._version import get_versions
-logger = logging.getLogger(__name__.split('.')[-1])
-
 import matplotlib
-matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
-# Reduce logging level for Matplotlib to avoid DEBUG messages
-mpl_logger = logging.getLogger('matplotlib')
-mpl_logger.setLevel(logging.WARNING)
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 import matplotlib.patheffects as PathEffects
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
+logger = logging.getLogger(__name__.split('.')[-1])
+matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
+# Reduce logging level for Matplotlib to avoid DEBUG messages
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
 
 
 # TODO:

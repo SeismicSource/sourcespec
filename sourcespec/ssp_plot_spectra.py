@@ -21,15 +21,14 @@ from collections import defaultdict
 from obspy import Stream
 from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
 from sourcespec._version import get_versions
-logger = logging.getLogger(__name__.split('.')[-1])
-
 import matplotlib
-# Reduce logging level for Matplotlib to avoid DEBUG messages
-mpl_logger = logging.getLogger('matplotlib')
-mpl_logger.setLevel(logging.WARNING)
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.patheffects as PathEffects
+logger = logging.getLogger(__name__.split('.')[-1])
+# Reduce logging level for Matplotlib to avoid DEBUG messages
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
 
 
 synth_colors = [

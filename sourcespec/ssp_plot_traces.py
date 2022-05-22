@@ -13,18 +13,19 @@ import os
 import math
 import logging
 from sourcespec._version import get_versions
-logger = logging.getLogger(__name__.split('.')[-1])
-
 import matplotlib
-# Reduce logging level for Matplotlib to avoid DEBUG messages
-mpl_logger = logging.getLogger('matplotlib')
-mpl_logger.setLevel(logging.WARNING)
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.transforms as transforms
 import matplotlib.patches as patches
 import matplotlib.patheffects as PathEffects
 from matplotlib.ticker import ScalarFormatter as sf
+logger = logging.getLogger(__name__.split('.')[-1])
+# Reduce logging level for Matplotlib to avoid DEBUG messages
+mpl_logger = logging.getLogger('matplotlib')
+mpl_logger.setLevel(logging.WARNING)
+
+
 class ScalarFormatter(sf):  #NOQA
     def _set_format(self, vmin=None, vmax=None):
         self.format = '%1.1f'

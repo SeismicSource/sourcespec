@@ -12,21 +12,18 @@ Compute station residuals from source_spec.py output.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-import matplotlib
-matplotlib.use('Agg')  # NOQA
-import matplotlib.pyplot as plt
 import sys
 import os
 from glob import glob
 from collections import defaultdict
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 from optparse import OptionParser
 from obspy.core import Stream
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
 from sourcespec.spectrum import Spectrum
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use('Agg')  # NOQA
 
 
 def main():
