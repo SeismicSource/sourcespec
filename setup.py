@@ -54,7 +54,7 @@ setup(
         'numpy>=1.10',
         'scipy>=0.17',
         'matplotlib>=2.2',
-        'obspy>=1.1.0',
+        'obspy>=1.2.0',
         'pyproj',
         'tzlocal']
     )

@@ -307,8 +307,6 @@ def _add_instrtype(trace, config):
 
 
 def _add_hypocenter(trace, hypo):
-    # we need to lazy-import here, so that OBSPY_VERSION is defined
-    from sourcespec.ssp_setup import OBSPY_VERSION
     if hypo is None:
         # Try to get hypocenter information from the SAC header
         try:
@@ -331,16 +329,8 @@ def _add_hypocenter(trace, hypo):
             if origin_time.microsecond >= 500000:
                 _second += 1
             _microsecond = 0
-            if OBSPY_VERSION > (1, 1, 1):
-                # UTCDateTime objects will become immutable in future
-                # versions of ObsPy
-                _evid_time = origin_time.replace(
-                    second=_second, microsecond=_microsecond)
-            else:
-                # For old versions, UTCDateTime objects are mutable
-                _evid_time = UTCDateTime(origin_time)
-                _evid_time.second = _second
-                _evid_time.microsecond = _microsecond
+            _evid_time = origin_time.replace(
+                second=_second, microsecond=_microsecond)
         else:
             # make a copy of starttime and round it to the nearest minute
             _starttime = trace.stats.starttime
@@ -349,17 +339,8 @@ def _add_hypocenter(trace, hypo):
                 _minute += 1
             _second = 0
             _microsecond = 0
-            if OBSPY_VERSION > (1, 1, 1):
-                # UTCDateTime objects will become immutable in future
-                # versions of ObsPy
-                _evid_time = _starttime.replace(
-                    minute=_minute, second=_second, microsecond=_microsecond)
-            else:
-                # For old versions, UTCDateTime objects are mutable
-                _evid_time = UTCDateTime(_starttime)
-                _evid_time.minute = _minute
-                _evid_time.second = _second
-                _evid_time.microsecond = _microsecond
+            _evid_time = _starttime.replace(
+                minute=_minute, second=_second, microsecond=_microsecond)
 
         hypo = AttribDict()
         hypo.origin_time = origin_time
@@ -824,8 +805,6 @@ def _is_hypo71_picks(pick_file):
 
 
 def _parse_hypo71_picks(config):
-    # we need to lazy-import here, so that OBSPY_VERSION is defined
-    from sourcespec.ssp_setup import OBSPY_VERSION
     pick_file = config.options.pick_file
     if pick_file is None:
         return None
@@ -891,15 +870,7 @@ def _parse_hypo71_picks(config):
         # than pick.time
         # We therefore make a copy of pick.time,
         # and set seconds and microseconds to 0
-        if OBSPY_VERSION > (1, 1, 1):
-            # UTCDateTime objects will become immutable in future
-            # versions of ObsPy
-            pick2.time = pick.time.replace(second=0, microsecond=0)
-        else:
-            # For old versions, UTCDateTime objects are mutable
-            pick2.time = UTCDateTime(pick.time)
-            pick2.time.second = 0
-            pick2.time.microsecond = 0
+        pick2.time = pick.time.replace(second=0, microsecond=0)
         # finally we add stime
         pick2.time += float(stime)
         picks.append(pick2)
