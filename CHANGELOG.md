@@ -4,7 +4,18 @@ Earthquake source parameters from S-wave displacement spectra
 
 (c) 2011-2022 Claudio Satriano <satriano@ipgp.fr>
 
-## unreleased
+## v1.5 - 2022-05-22
+
+This is a pretty big release coming after several months of work on a large
+dataset of more than 5000 events in Mayotte.
+
+Please read through the changelog to discover all the improvements and new
+features.
+
+You will need to update your old config files via
+`source_spec -U CONFIG_FILE_NAME`
+
+Note that v1.5 is no more compatible with Python 2!
 
 - Input/output:
   - Write output files into a subdirectory of OUTDIR, whose name is
