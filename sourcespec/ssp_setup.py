@@ -33,18 +33,8 @@ from sourcespec._version import get_versions
 # note: ANSI colors do not work on Windows standard terminal
 if sys.stdout.isatty() and sys.platform != 'win32':
     try:
-        import IPython
-        IP_VERSION = tuple(map(int, IPython.__version__.split('.')[:3]))
-        len(IP_VERSION) > 2 or IP_VERSION.append(0)
-        if IP_VERSION < (0, 11, 0):
-            from IPython.Shell import IPShellEmbed
-            ipshell = IPShellEmbed()
-        if (0, 11, 0) <= IP_VERSION < (1, 0, 0):
-            from IPython.frontend.terminal.embed import InteractiveShellEmbed
-            ipshell = InteractiveShellEmbed()
-        elif IP_VERSION >= (1, 0, 0):
-            from IPython.terminal.embed import InteractiveShellEmbed
-            ipshell = InteractiveShellEmbed()
+        from IPython.terminal.embed import InteractiveShellEmbed
+        ipshell = InteractiveShellEmbed()
     except ImportError:
         ipshell = None
 else:
