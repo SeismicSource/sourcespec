@@ -203,13 +203,9 @@ def _write_sample_config(configspec, progname):
     configfile = progname + '.conf'
     write_file = True
     if os.path.exists(configfile):
-        # Workaround for python2/3 compatibility
-        try:
-            raw_input = input
-        except NameError:
-            pass
-        ans = raw_input('%s already exists. '
-                        'Do you want to overwrite it? [y/N] ' % configfile)
+        ans = input(
+            '{} already exists. Do you want to overwrite it? [y/N] '.format(
+                configfile))
         if ans in ['y', 'Y']:
             write_file = True
         else:
@@ -227,12 +223,7 @@ def _update_config_file(config_file, configspec):
     mod_time = datetime.fromtimestamp(os.path.getmtime(config_file))
     mod_time_str = mod_time.strftime('%Y%m%d_%H%M%S')
     config_file_old = '{}.{}'.format(config_file, mod_time_str)
-    # Workaround for python2/3 compatibility
-    try:
-        raw_input = input
-    except NameError:
-        pass
-    ans = raw_input(
+    ans = input(
         'Ok to update {}? [y/N]\n(Old file will be saved as {}) '.format(
             config_file, config_file_old))
     if ans not in ['y', 'Y']:
