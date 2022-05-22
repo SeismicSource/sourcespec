@@ -1,8 +1,8 @@
 # SourceSpec
+
 Earthquake source parameters from S-wave displacement spectra
 
 (c) 2011-2022 Claudio Satriano <satriano@ipgp.fr>
-
 
 ## unreleased
 
@@ -80,7 +80,6 @@ Earthquake source parameters from S-wave displacement spectra
     (since it will coincide with the only component)
   - Plot uncorrected spectrum when station correction is used
 
-
 ## v1.4 - 2021-10-13
 
 - New config option `rps_from_focal_mechanism` to compute station-specific
@@ -104,30 +103,25 @@ Earthquake source parameters from S-wave displacement spectra
   having to delete the output directory first
 - Fixed (Windows): use same timezone names than Linux and macOS
 
-
 ## v1.3.1 - 2021-09-13
 
 - Fix for HTML report not showing trace and spectral plots
 - HTML report: add Corner Frequency in Event Summary
-
 
 ## v1.3 - 2021-08-20
 
 - HTML reports
 - Option to provide station-specific spectral windowing
 
-
 ## v1.2 - 2021-05-20
 
 - Use `python-versioneer` to manage version numbers
-
 
 ## v1.1 - 2021-04-07
 
 - Bug fixes:
   - Accept band code `C` for broadband seismometers sampled at >=250 Hz
   - Require `cartopy>=0.18` for compatibility with `matplotlib>=3.3`
-
 
 ## v1.0 - 2021-03-03
 
@@ -151,7 +145,6 @@ Earthquake source parameters from S-wave displacement spectra
   - Pay attention to location code when building average spectra
   - Plotting: avoid overlapping traces with different location code
   - Plotting: avoid overlapping spectra with different location code
-
 
 ## v0.9 - 2020-04-24
 
@@ -203,14 +196,12 @@ Earthquake source parameters from S-wave displacement spectra
 - BUGFIX: Fix a major bug in reading hypo pick file
 - BUGFIX: Fix for pick file not read in `source_model`
 
-
 ## v0.8 - 2014-07-11
 
 - Trace plot showing S and noise time windows
 - Improved handling of paz files
 - Per-station Mo on output file
 - Code cleaning and optimization
-
 
 ## v0.7 - 2014-04-07
 
@@ -221,7 +212,6 @@ Earthquake source parameters from S-wave displacement spectra
 - `source_model` can now output tables of trade-off between parameters
 - Fix in the way noise trace is computed and processed
 - Documentation!
-
 
 ## v0.6 - 2013-06-05
 
@@ -235,7 +225,6 @@ Earthquake source parameters from S-wave displacement spectra
 - `source_model`: a code for plotting theoretical spectra
 - Code refactoring
 
-
 ## v0.5 - 2013-02-10
 
 - Azimuth computation
@@ -243,12 +232,10 @@ Earthquake source parameters from S-wave displacement spectra
 - Local magnitude computation
 - konnoOhmachiSmoothing
 
-
 ## v0.4 - 2012-04-10
 
 - Logging infrastructure
 - Code reorganization
-
 
 ## v0.3 - 2012-02-10
 
@@ -256,11 +243,9 @@ Earthquake source parameters from S-wave displacement spectra
 - The plots can be saved to a file as well
 - We differentiate between short periods and broad bands
 
-
 ## v0.2 - 2012-02-06
 
 Extended and generalized for the CRL application.
-
 
 ## v0.1 - 2012-01-17
 
