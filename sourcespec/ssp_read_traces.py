@@ -15,9 +15,6 @@ Read traces in multiple formats of data and metadata.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 import sys
 import os
 import io
@@ -27,10 +24,7 @@ import warnings
 import shutil
 import tarfile
 import tempfile
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 import json
 from datetime import datetime
 from obspy.core import Stream, read, UTCDateTime

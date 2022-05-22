@@ -12,13 +12,7 @@ Spectral station correction calculated from ssp_residuals.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 import logging
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
 from sourcespec.ssp_setup import ssp_exit

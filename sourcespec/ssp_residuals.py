@@ -12,15 +12,9 @@ Spectral residual routine for sourcespec.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 import os
 import logging
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 from obspy.core import Stream
 from sourcespec.ssp_spectral_model import spectral_model
 from sourcespec.ssp_util import mag_to_moment

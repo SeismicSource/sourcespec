@@ -9,9 +9,6 @@ Generate an HTML report for source_spec.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 import os
 import logging
 import shutil

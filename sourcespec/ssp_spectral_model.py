@@ -15,9 +15,6 @@ Spectral model and objective function.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 import math
 import numpy as np
 

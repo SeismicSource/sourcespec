@@ -14,9 +14,6 @@ Trace processing for sourcespec.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 import logging
 import numpy as np
 import re

@@ -15,10 +15,6 @@ Setup functions for sourcespec.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-from future.utils import iteritems
-
 import sys
 import os
 import platform
@@ -363,7 +359,7 @@ def configure(options, progname):
     config_obj = _read_config(options.config_file, configspec)
 
     # Set to None all the 'None' strings
-    for key, value in iteritems(config_obj.dict()):
+    for key, value in config_obj.dict().items():
         if value == 'None':
             config_obj[key] = None
 
