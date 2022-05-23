@@ -333,7 +333,8 @@ def _write_db(config, sourcepar):
     c.execute('delete from Events where evid=?;', t)
     t = (
         evid,
-        str(hypo.origin_time), hypo.longitude, hypo.latitude, hypo.depth,
+        str(hypo.origin_time),
+        float(hypo.longitude), float(hypo.latitude), float(hypo.depth),
         nobs,
         means['Mo'], *errors['Mo'],
         means_weight['Mo'], *errors_weight['Mo'],
