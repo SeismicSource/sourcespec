@@ -103,6 +103,101 @@ def _value_and_err_text(par, key, fmt):
     return value_text, err_text
 
 
+def _misfit_table_rows(misfit_plot_files):
+    template_dir = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        'html_report_template'
+    )
+    misfit_table_column_html = os.path.join(
+        template_dir, 'misfit_table_column.html')
+    misfit_table_column = open(misfit_table_column_html).read()
+    misfit_table_rows = ''
+    for n, misfit_plot_file in enumerate(sorted(misfit_plot_files)):
+        if n % 3 == 0:
+            misfit_table_rows += '<tr>\n'
+        misfit_plot_file = os.path.join(
+            'misfit', os.path.basename(misfit_plot_file))
+        misfit_table_rows += misfit_table_column.replace(
+            '{MISFIT_PLOT}', misfit_plot_file)
+        misfit_table_rows += '\n'
+        if n % 3 == 2:
+            misfit_table_rows += 10*' '
+            misfit_table_rows += '</tr>\n'
+            misfit_table_rows += 10*' '
+    misfit_table_rows += 10*' '
+    misfit_table_rows += '</tr>'
+    return misfit_table_rows
+
+
+def _misfit_page(config):
+    """Generate an HTML page with misfit plots."""
+    # Read template files
+    template_dir = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        'html_report_template'
+    )
+    misfit_html = os.path.join(template_dir, 'misfit.html')
+    misfit_html_out = os.path.join(config.options.outdir, 'misfit.html')
+
+    # Version and run completed
+    ssp_version = get_versions()['version']
+    run_completed = '{} {}'.format(
+        config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
+        config.end_of_run_tz
+    )
+
+    # event info
+    hypo = config.hypo
+    evid = hypo.evid
+
+    # 1d conditional misfit plots
+    misfit_plot_files = glob(
+        os.path.join(
+            config.options.outdir, 'misfit',
+            '{}.cond_misfit_*.png'.format(evid)
+        ))
+    one_d_misfit_table_rows = _misfit_table_rows(misfit_plot_files)
+
+    # 2d conditional misfit plots: fc-Mw
+    misfit_plot_files = glob(
+        os.path.join(
+            config.options.outdir, 'misfit',
+            '{}.misfit_fc-Mw_*.png'.format(evid)
+        ))
+    two_d_misfit_table_rows_fc_mw = _misfit_table_rows(misfit_plot_files)
+
+    # 2d conditional misfit plots: fc-tstar
+    misfit_plot_files = glob(
+        os.path.join(
+            config.options.outdir, 'misfit',
+            '{}.misfit_fc-t_star_*.png'.format(evid)
+        ))
+    two_d_misfit_table_rows_fc_tstar = _misfit_table_rows(misfit_plot_files)
+
+    # 2d conditional misfit plots: tstar-Mw
+    misfit_plot_files = glob(
+        os.path.join(
+            config.options.outdir, 'misfit',
+            '{}.misfit_t_star-Mw_*.png'.format(evid)
+        ))
+    two_d_misfit_table_rows_tstar_mw = _misfit_table_rows(misfit_plot_files)
+
+    # Main HTML page
+    replacements = {
+        '{VERSION}': ssp_version,
+        '{RUN_COMPLETED}': run_completed,
+        '{EVENTID}': evid,
+        '{1D_MISFIT_TABLE_ROWS}': one_d_misfit_table_rows,
+        '{2D_MISFIT_TABLE_ROWS_FC_MW}': two_d_misfit_table_rows_fc_mw,
+        '{2D_MISFIT_TABLE_ROWS_FC_TSTAR}': two_d_misfit_table_rows_fc_tstar,
+        '{2D_MISFIT_TABLE_ROWS_TSTAR_MW}': two_d_misfit_table_rows_tstar_mw
+    }
+    misfit = open(misfit_html).read()
+    misfit = _multireplace(misfit, replacements)
+    with open(misfit_html_out, 'w') as fp:
+        fp.write(misfit)
+
+
 def html_report(config, sourcepar):
     """Generate an HTML report."""
     # Read template files
@@ -310,6 +405,34 @@ def html_report(config, sourcepar):
         '{BOX_PLOTS}': box_plots,
         '{STATION_TABLE_ROWS}': station_table_rows,
     }
+
+    # Misfit plots (when using grid search)
+    if os.path.exists(os.path.join(config.options.outdir, 'misfit')):
+        misfit_plot_link = '''
+        <div class="page-break"></div>
+        <div class="line" id="misfit_plots"></div>
+        <h2>Misfit plots</h2>
+        <i class="fas fa-image"></i>&nbsp;&nbsp;
+        <a href="misfit.html">Click here to go to misfit plot page</a>
+        '''
+        misfit_plot_sidebar_link = '''
+          <li>
+            <a href="#misfit_plots">
+              <i class="fas fa-image"></i>
+              &nbsp;&nbsp;
+              Misfit Plots
+            </a>
+          </li>
+        '''
+        _misfit_page(config)
+    else:
+        misfit_plot_sidebar_link = ''
+        misfit_plot_link = ''
+    replacements.update({
+        '{MISFIT_PLOT_SIDEBAR_LINK}': misfit_plot_sidebar_link,
+        '{MISFIT_PLOT_LINK}': misfit_plot_link
+    })
+
     index = open(index_html).read()
     index = _multireplace(index, replacements)
     with open(index_html_out, 'w') as fp:

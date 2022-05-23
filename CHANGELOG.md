@@ -7,6 +7,7 @@ Earthquake source parameters from S-wave displacement spectra
 ## unreleased
 
 - Fix for negative weights
+- HTML page for misfit plots (when using grid search or importance sampling)
 
 ## v1.5 - 2022-05-22
 
