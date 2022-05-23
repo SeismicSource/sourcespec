@@ -254,7 +254,7 @@ class GridSampling():
         if not config.PLOT_SHOW and not config.PLOT_SAVE:
             return
         ndim = self.misfit.ndim
-        fig, ax = plt.subplots(ndim, 1, figsize=(9, 9), dpi=300)
+        fig, ax = plt.subplots(ndim, 1, figsize=(5, 5), dpi=300)
         for dim, mm in enumerate(self.conditional_misfit):
             v = self.values_1d[dim]
             ax[dim].plot(v, mm)
@@ -262,9 +262,15 @@ class GridSampling():
             w = self.conditional_peak_widths[dim]
             ax[dim].plot((w[1], w[2]), (w[0], w[0]), color='red', ls='dashed')
             ax[dim].axvline(popt, color='red')
-            text = '{:.4f}  '.format(popt)
+            text = '  {:.3f}  '.format(popt)
+            # set horizontal alignement based on wether we are
+            # on the left or right part of the plot
+            if popt < np.nanmean(v):
+                ha = 'left'
+            else:
+                ha = 'right'
             ax[dim].text(
-                popt, 0.9, text, color='red', ha='right',
+                popt, 0.9, text, color='red', ha=ha, va='top',
                 transform=ax[dim].get_xaxis_transform())
             if self.sampling_mode[dim] == 'log':
                 ax[dim].set_xscale('log')
@@ -297,7 +303,7 @@ class GridSampling():
                     label, figfile))
 
     def plot_misfit_2d(self, config, plot_par_idx, label):
-        """Plot a 2D misfit map."""
+        """Plot a 2D conditional misfit map."""
         # Check config, if we need to plot at all
         if not config.PLOT_SHOW and not config.PLOT_SAVE:
             return
@@ -328,7 +334,7 @@ class GridSampling():
         params_name = np.take(self.params_name, plot_par_idx)
         params_unit = np.take(self.params_unit, plot_par_idx)
         sampling_mode = np.take(self.sampling_mode, plot_par_idx)
-        fig, ax = plt.subplots(1, 1, figsize=(9, 8), dpi=300)
+        fig, ax = plt.subplots(1, 1, figsize=(5, 4), dpi=300)
         # imshow: saturate scale at 2 times the minimum
         mmap = ax.imshow(
             mm, vmax=2*mm.min(), origin='lower', cmap='viridis',
@@ -428,5 +434,5 @@ class GridSampling():
             if not config.PLOT_SHOW:
                 plt.close(fig)
             logger.info(
-                '{}: misfit map saved to: {}'.format(
+                '{}: conditional misfit map saved to: {}'.format(
                     label, figfile))
