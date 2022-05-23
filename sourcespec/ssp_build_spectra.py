@@ -296,6 +296,8 @@ def _build_weight(config, spec, specnoise):
     f = interp1d(weight.get_freq(), weight.data, fill_value='extrapolate')
     weight.data_log = f(weight.freq_log)
     weight.data_log /= np.max(weight.data_log)
+    # Make sure weight is positive
+    weight.data_log[weight.data_log <= 0] = 0.001
     return weight
 
 

@@ -4,6 +4,10 @@ Earthquake source parameters from S-wave displacement spectra
 
 (c) 2011-2022 Claudio Satriano <satriano@ipgp.fr>
 
+## unreleased
+
+- Fix for negative weights
+
 ## v1.5 - 2022-05-22
 
 This is a pretty big release coming after several months of work on a large
