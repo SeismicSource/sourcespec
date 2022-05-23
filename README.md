@@ -4,8 +4,9 @@
 
 Earthquake source parameters from S-wave displacement spectra
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3688587.svg)](
-  https://doi.org/10.5281/zenodo.3688587)
+[![PyPI-badge]][PyPI-link]
+[![license-badge]][license-link]
+[![DOI-badge]][DOI-link]
 
 (c) 2011-2022 Claudio Satriano <satriano@ipgp.fr>
 
@@ -100,3 +101,10 @@ If you used SourceSpec for a scientific paper, please cite it as:
 > displacement spectra (X.Y). https://doi.org/10.5281/ZENODO.3688587
 
 Please replace `X.Y` with the SourceSpec version number you used.
+
+[PyPI-badge]: http://img.shields.io/pypi/v/sourcespec.svg
+[PyPI-link]: https://pypi.python.org/pypi/sourcespec
+[license-badge]: https://img.shields.io/badge/license-CeCILL--2.1-green
+[license-link]: http://www.cecill.info/licences.en.html
+[DOI-badge]: https://zenodo.org/badge/DOI/10.5281/zenodo.3688587.svg
+[DOI-link]: https://doi.org/10.5281/zenodo.3688587
