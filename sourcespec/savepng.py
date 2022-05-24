@@ -21,3 +21,4 @@ def savepng(fig, figfile, **kwargs):
     img = PIL.Image.open(buf)
     img = img.convert('P', palette=PIL.Image.ADAPTIVE, colors=256)
     img.save(figfile, optimize=True)
+    img.close()
