@@ -601,7 +601,7 @@ def init_plotting(config):
     if not config.PLOT_SHOW:
         plt.switch_backend('Agg')
     global plotter
-    if OS == 'nt':
+    if OS == 'nt' or not config.ASYNC_PLOTTER:
         # AsyncPlotter() doesn't work on Windows. TODO: fix this
         plotter = None
     else:
