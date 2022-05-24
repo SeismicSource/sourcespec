@@ -15,6 +15,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as mpe
 import logging
+from sourcespec.savepng import savepng
 matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
 logger = logging.getLogger(__name__.split('.')[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
@@ -92,5 +93,8 @@ def box_plots(config, sourcepar):
     if config.PLOT_SHOW:
         plt.show()
     if config.PLOT_SAVE:
-        fig.savefig(figfile, bbox_inches='tight')
+        if fmt == 'png':
+            savepng(fig, figfile, bbox_inches='tight')
+        else:
+            fig.savefig(figfile, bbox_inches='tight')
         logger.info('Parameters box plot saved to: ' + figfile)

@@ -9,6 +9,7 @@ Earthquake source parameters from S-wave displacement spectra
 - Fix for negative weights
 - Fix bug when event coordinates are written into sqlite as binary blobs
 - HTML page for misfit plots (when using grid search or importance sampling)
+- Reduce PNG figures file size, while improving their resolution 😃
 
 ## v1.5 - 2022-05-22
 

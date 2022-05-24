@@ -21,6 +21,7 @@ from obspy.imaging.beachball import beach
 from sourcespec.adjustText import adjust_text
 from pyproj import Geod
 from sourcespec.cached_tiler import CachedTiler
+from sourcespec.savepng import savepng
 from sourcespec._version import get_versions
 import matplotlib
 import matplotlib.pyplot as plt
@@ -178,7 +179,7 @@ def _make_basemap(config, maxdist):
     stamen_terrain = CachedTiler(cimgt.Stamen('terrain-background'), tile_dir)
     # Create a GeoAxes
     figsize = (7.5, 7.5)
-    fig = plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize, dpi=200)
     ax = fig.add_subplot(111, projection=stamen_terrain.crs)
     # Add event information as a title
     textstr = 'evid: {} \nlon: {:.3f} lat: {:.3f} depth: {:.1f} km'
@@ -379,7 +380,10 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     if config.PLOT_SHOW:
         plt.show()
     if config.PLOT_SAVE:
-        fig.savefig(figfile, bbox_inches='tight')
+        if fmt == 'png':
+            savepng(fig, figfile, bbox_inches='tight')
+        else:
+            fig.savefig(figfile, bbox_inches='tight')
         if vname == 'mag':
             logger.info('Station-magnitude map saved to: ' + figfile)
         elif vname == 'fc':

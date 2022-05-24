@@ -104,7 +104,7 @@ def _make_fig(config, plot_params):
         figsize = (16, 9)
     else:
         figsize = (16, 18)
-    fig = plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize, dpi=300)
     # Create an invisible axis and use it for title and footer
     ax0 = fig.add_subplot(111, label='ax0')
     ax0.set_axis_off()
@@ -202,7 +202,7 @@ def _savefig(config, plottype, figures, async_plotter):
         if config.PLOT_SHOW or (async_plotter is None):
             fig.savefig(figfile, bbox_inches=bbox)
         else:
-            async_plotter.save(fig, figfile, bbox_inches=bbox)
+            async_plotter.save(fig, figfile, fmt, bbox_inches=bbox)
         logger.info(message + ' plots saved to: ' + figfile)
         if not config.PLOT_SHOW:
             plt.close(fig)

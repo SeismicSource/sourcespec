@@ -13,13 +13,17 @@ Modified from: https://gist.github.com/astrofrog/1453933
 """
 import multiprocessing as mp
 import time
+from sourcespec.savepng import savepng
 
 
-def _async_plotter(nc, processes, fig, filename, **kwargs):
+def _async_plotter(nc, processes, fig, filename, fmt, **kwargs):
     while nc.value >= processes:
         time.sleep(0.1)
     nc.value += 1
-    fig.savefig(filename, **kwargs)
+    if fmt == 'png':
+        savepng(fig, filename, **kwargs)
+    else:
+        fig.savefig(filename, **kwargs)
     nc.value -= 1
 
 
@@ -30,10 +34,10 @@ class AsyncPlotter():
         self.pids = []
         self.processes = processes
 
-    def save(self, fig, filename, **kwargs):
+    def save(self, fig, filename, fmt, **kwargs):
         p = mp.Process(
             target=_async_plotter,
-            args=(self.nc, self.processes, fig, filename),
+            args=(self.nc, self.processes, fig, fmt, filename),
             kwargs=kwargs
         )
         p.start()
