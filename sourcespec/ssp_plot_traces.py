@@ -12,6 +12,7 @@ Trace plotting routine.
 import os
 import math
 import logging
+from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
 import matplotlib
 import matplotlib.pyplot as plt
@@ -125,7 +126,7 @@ def _savefig(config, figures, async_plotter):
         else:
             figfile = figfile_base + '{:02d}.{}'.format(n, fmt)
         if config.PLOT_SHOW or (async_plotter is None):
-            fig.savefig(figfile, bbox_inches=bbox)
+            savefig(fig, figfile, fmt, bbox_inches=bbox)
         else:
             async_plotter.save(fig, figfile, fmt, bbox_inches=bbox)
         logger.info('Trace plots saved to: ' + figfile)

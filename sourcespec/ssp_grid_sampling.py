@@ -16,7 +16,7 @@ The class provides optimal solutions, uncertainties and plotting methods.
 import os
 import numpy as np
 from sourcespec.kdtree import KDTree
-from sourcespec.savepng import savepng
+from sourcespec.savefig import savefig
 from scipy.signal import peak_widths
 from scipy.signal._peak_finding_utils import PeakPropertyWarning
 import matplotlib.pyplot as plt
@@ -296,10 +296,7 @@ class GridSampling():
         if config.PLOT_SHOW:
             plt.show()
         if config.PLOT_SAVE:
-            if fmt == 'png':
-                savepng(fig, figfile, bbox_inches='tight')
-            else:
-                fig.savefig(figfile, bbox_inches='tight')
+            savefig(fig, figfile, fmt, bbox_inches='tight')
             if not config.PLOT_SHOW:
                 plt.close(fig)
             logger.info(
@@ -434,10 +431,7 @@ class GridSampling():
         if config.PLOT_SHOW:
             plt.show()
         if config.PLOT_SAVE:
-            if fmt == 'png':
-                savepng(fig, figfile, bbox_inches='tight')
-            else:
-                fig.savefig(figfile, bbox_inches='tight')
+            savefig(fig, figfile, fmt, bbox_inches='tight')
             if not config.PLOT_SHOW:
                 plt.close(fig)
             logger.info(

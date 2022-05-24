@@ -21,7 +21,7 @@ from obspy.imaging.beachball import beach
 from sourcespec.adjustText import adjust_text
 from pyproj import Geod
 from sourcespec.cached_tiler import CachedTiler
-from sourcespec.savepng import savepng
+from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
 import matplotlib
 import matplotlib.pyplot as plt
@@ -380,10 +380,7 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     if config.PLOT_SHOW:
         plt.show()
     if config.PLOT_SAVE:
-        if fmt == 'png':
-            savepng(fig, figfile, bbox_inches='tight')
-        else:
-            fig.savefig(figfile, bbox_inches='tight')
+        savefig(fig, figfile, fmt, bbox_inches='tight')
         if vname == 'mag':
             logger.info('Station-magnitude map saved to: ' + figfile)
         elif vname == 'fc':

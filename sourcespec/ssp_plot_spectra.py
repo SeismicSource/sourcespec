@@ -20,6 +20,7 @@ import logging
 from collections import defaultdict
 from obspy import Stream
 from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
+from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
 import matplotlib
 import matplotlib.pyplot as plt
@@ -200,7 +201,7 @@ def _savefig(config, plottype, figures, async_plotter):
         else:
             figfile = figfile_base + '{:02d}.{}'.format(n, fmt)
         if config.PLOT_SHOW or (async_plotter is None):
-            fig.savefig(figfile, bbox_inches=bbox)
+            savefig(fig, figfile, fmt, bbox_inches=bbox)
         else:
             async_plotter.save(fig, figfile, fmt, bbox_inches=bbox)
         logger.info(message + ' plots saved to: ' + figfile)
