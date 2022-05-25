@@ -380,7 +380,7 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     if config.PLOT_SHOW:
         plt.show()
     if config.PLOT_SAVE:
-        savefig(fig, figfile, fmt, bbox_inches='tight')
+        savefig(fig, figfile, fmt, quantize_colors=False, bbox_inches='tight')
         if vname == 'mag':
             logger.info('Station-magnitude map saved to: ' + figfile)
         elif vname == 'fc':

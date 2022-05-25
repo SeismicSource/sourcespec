@@ -13,14 +13,18 @@ import io
 import PIL
 
 
-def savefig(fig, figfile, fmt, **kwargs):
+def savefig(fig, figfile, fmt, quantize_colors=True, **kwargs):
     """Save Matplotlib figure. Optimize PNG format using PIL."""
     if fmt == 'png':
         buf = io.BytesIO()
         fig.savefig(buf, format='png', **kwargs)
         buf.seek(0)
         img = PIL.Image.open(buf)
-        img = img.convert('P', palette=PIL.Image.ADAPTIVE, colors=256)
+        if quantize_colors:
+            img = img.convert('P', palette=PIL.Image.ADAPTIVE, colors=256)
+        else:
+            # just remove the alpha channel
+            img = img.convert('RGB')
         img.save(figfile, optimize=True)
         img.close()
     else:
