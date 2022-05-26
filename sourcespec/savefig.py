@@ -11,6 +11,10 @@ Save Matplotlib figure. Optimize PNG format using PIL.
 """
 import io
 import PIL
+import logging
+# Reduce logging level for PIL to avoid DEBUG messages
+mpl_logger = logging.getLogger('PIL')
+mpl_logger.setLevel(logging.WARNING)
 
 
 def savefig(fig, figfile, fmt, quantize_colors=True, **kwargs):
