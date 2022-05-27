@@ -10,18 +10,22 @@ Wrapper to run source_residuals.py from source tree.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 import sys
 import os
 import inspect
 
-# Make sure we use current-dir version over installed one
-path = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(
-    inspect.currentframe())), os.pardir))
-sys.path.insert(0, path)
-from sourcespec.source_residuals import main
-
 if __name__ == '__main__':
-    main()
+    try:
+        # Make sure we use current-dir version over installed one
+        path = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(
+            inspect.currentframe())), os.pardir))
+        sys.path.insert(0, path)
+        from sourcespec.source_residuals import main
+        main()
+    except ImportError as msg:
+        mod_name = msg.name
+        s = "Error: module '{}' is required by source_residuals.".format(
+            mod_name)
+        s += " Please install it.\n"
+        sys.stderr.write(s)
+        sys.exit(1)
