@@ -20,6 +20,9 @@ if __name__ == '__main__':
         path = os.path.abspath(os.path.join(os.path.dirname(inspect.getfile(
             inspect.currentframe())), os.pardir))
         sys.path.insert(0, path)
+        # Try to import obspy, which requires most of the
+        # source_residuals dependencies
+        import obspy #NOQA
         from sourcespec.source_residuals import main
         main()
     except ImportError as msg:
