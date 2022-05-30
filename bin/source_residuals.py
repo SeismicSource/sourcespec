@@ -27,6 +27,8 @@ if __name__ == '__main__':
         main()
     except ImportError as msg:
         mod_name = msg.name
+        if mod_name == 'PIL':
+            mod_name = 'pillow'
         s = "Error: module '{}' is required by source_residuals.".format(
             mod_name)
         s += " Please install it.\n"
