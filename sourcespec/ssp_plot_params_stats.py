@@ -47,7 +47,7 @@ def box_plots(config, sourcepar):
         mpe.Normal()
     ]
 
-    fig, axes = plt.subplots(npars, 1, figsize=(8, 8))
+    fig, axes = plt.subplots(npars, 1, figsize=(8, 8), dpi=300)
     fig.set_tight_layout(True)
     for ax, (param, (name, unit, color)) in zip(
             axes, param_names_units_colors.items()):
