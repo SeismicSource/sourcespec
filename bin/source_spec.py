@@ -23,6 +23,8 @@ if __name__ == '__main__':
         # Try to import obspy, which requires most of the
         # source_spec dependencies
         import obspy #NOQA
+        # Try to import tzlocal, which is required at the end of the run
+        import tzlocal #NOQA
         from sourcespec.source_spec import main
         main()
     except ImportError as msg:
