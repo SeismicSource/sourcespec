@@ -56,8 +56,8 @@ def main():
     sourcepar = spectral_inversion(config, spec_st, weight_st)
 
     # Local magnitude
-    from sourcespec.ssp_local_magnitude import local_magnitude
     if config.compute_local_magnitude:
+        from sourcespec.ssp_local_magnitude import local_magnitude
         local_magnitude(config, st, proc_st, sourcepar)
 
     # Compute averages, find outliers
