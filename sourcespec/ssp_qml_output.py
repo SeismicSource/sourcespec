@@ -70,8 +70,8 @@ def write_qml(config, sourcepar):
     try:
         ev = [e for e in cat if evid in str(e.resource_id)][0]
     except Exception:
-        logging.warning('Unable to find evid "%s" in QuakeML file. '
-                        'QuakeML output will not be written.' % evid)
+        logging.warning('Unable to find evid "{}" in QuakeML file. '
+                        'QuakeML output will not be written.'.format(evid))
 
     origin = ev.preferred_origin()
     if origin is None:
@@ -87,7 +87,7 @@ def write_qml(config, sourcepar):
     cr_info = CreationInfo()
     cr_info.agency_id = config.agency_id
     if config.author is None:
-        author = '%s@%s' % (getuser(), gethostname())
+        author = '{}@{}'.format(getuser(), gethostname())
     else:
         author = config.author
     cr_info.author = author
