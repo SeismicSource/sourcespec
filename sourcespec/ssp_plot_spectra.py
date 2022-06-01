@@ -630,7 +630,7 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
         _plot_spec(config, plot_params, spec, spec_noise)
 
 
-def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
+def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
                  stack_plots=False, plot_type='regular'):
     """
     Plot spectra for signal and noise.
@@ -642,6 +642,10 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
         return
 
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
+
+    if ncols is None:
+        nspec = len(set(s.id[:-1] for s in spec_st))
+        ncols = 4 if nspec > 6 else 3
 
     plot_params = PlotParams()
     plot_params.plot_type = plot_type

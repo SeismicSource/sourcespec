@@ -219,7 +219,7 @@ def _trim_traces(config, st):
         trace.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
 
 
-def plot_traces(config, st, ncols=4, block=True):
+def plot_traces(config, st, ncols=None, block=True):
     """
     Plot traces in the original instrument unit (velocity or acceleration).
 
@@ -230,6 +230,10 @@ def plot_traces(config, st, ncols=4, block=True):
         return
 
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
+
+    if ncols is None:
+        ntr = len(set(t.id[:-1] for t in st))
+        ncols = 4 if ntr > 6 else 3
 
     nlines, ncols = _nplots(config, st, config.plot_traces_maxrows, ncols)
     figures = []
