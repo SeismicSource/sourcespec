@@ -82,8 +82,6 @@ def _write_parfile(config, sourcepar):
         )
         stationpar = sourcepar.station_parameters
         for statId in sorted(stationpar.keys()):
-            if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
-                continue
             par = stationpar[statId]
             parfile.write('{:>14} {:>6}\t'.format(*statId.split()))
             for key in parkeys:
@@ -276,8 +274,6 @@ def _write_db(config, sourcepar):
     nobs = 0
     stationpar = sourcepar.station_parameters
     for statId in sorted(stationpar.keys()):
-        if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
-            continue
         nobs += 1
         par = stationpar[statId]
         # Remove existing line, if present
