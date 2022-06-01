@@ -104,7 +104,7 @@ def _make_fig(config, nlines, ncols):
     return fig, axes
 
 
-def _savefig(config, figures, async_plotter):
+def _savefig(config, figures):
     evid = config.hypo.evid
     figfile_base = os.path.join(config.options.outdir, evid + '.traces.')
     fmt = config.PLOT_SAVE_FORMAT
@@ -125,10 +125,7 @@ def _savefig(config, figures, async_plotter):
             figfile = figfile_base + fmt
         else:
             figfile = figfile_base + '{:02d}.{}'.format(n, fmt)
-        if config.PLOT_SHOW or (async_plotter is None):
-            savefig(fig, figfile, fmt, bbox_inches=bbox)
-        else:
-            async_plotter.save(fig, figfile, fmt, bbox_inches=bbox)
+        savefig(fig, figfile, fmt, bbox_inches=bbox)
         logger.info('Trace plots saved to: ' + figfile)
         if not config.PLOT_SHOW:
             plt.close(fig)
@@ -222,8 +219,7 @@ def _trim_traces(config, st):
         trace.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
 
 
-def plot_traces(config, st, spec_st=None, ncols=4, block=True,
-                async_plotter=None):
+def plot_traces(config, st, ncols=4, block=True):
     """
     Plot traces in the original instrument unit (velocity or acceleration).
 
@@ -267,7 +263,7 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
         ax = axes[plotn-1]
         if config.trace_units == 'auto':
             instrtype = [t.stats.instrtype for t in st_sel.traces
-                        if t.stats.channel[:-1] == code][0]
+                         if t.stats.channel[:-1] == code][0]
         else:
             instrtype = config.trace_units
         if instrtype == 'acc':
@@ -307,4 +303,4 @@ def plot_traces(config, st, spec_st=None, ncols=4, block=True,
     if config.PLOT_SHOW:
         plt.show(block=block)
     if config.PLOT_SAVE:
-        _savefig(config, figures, async_plotter)
+        _savefig(config, figures)

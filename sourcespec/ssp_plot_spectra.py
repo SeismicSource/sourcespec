@@ -173,7 +173,7 @@ def _make_fig(config, plot_params):
     plot_params.plotn = 0
 
 
-def _savefig(config, plottype, figures, async_plotter):
+def _savefig(config, plottype, figures):
     evid = config.hypo.evid
     if plottype == 'regular':
         suffix = '.ssp.'
@@ -200,10 +200,7 @@ def _savefig(config, plottype, figures, async_plotter):
             figfile = figfile_base + fmt
         else:
             figfile = figfile_base + '{:02d}.{}'.format(n, fmt)
-        if config.PLOT_SHOW or (async_plotter is None):
-            savefig(fig, figfile, fmt, bbox_inches=bbox)
-        else:
-            async_plotter.save(fig, figfile, fmt, bbox_inches=bbox)
+        savefig(fig, figfile, fmt, bbox_inches=bbox)
         logger.info(message + ' plots saved to: ' + figfile)
         if not config.PLOT_SHOW:
             plt.close(fig)
@@ -634,7 +631,7 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
 
 
 def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
-                 stack_plots=False, plot_type='regular', async_plotter=None):
+                 stack_plots=False, plot_type='regular'):
     """
     Plot spectra for signal and noise.
 
@@ -677,4 +674,4 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=4,
     if config.PLOT_SHOW:
         plt.show()
     if config.PLOT_SAVE:
-        _savefig(config, plot_type, plot_params.figures, async_plotter)
+        _savefig(config, plot_type, plot_params.figures)

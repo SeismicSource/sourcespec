@@ -10,9 +10,6 @@ Earthquake source parameters from S-wave displacement spectra
 - Fix bug when event coordinates are written into sqlite as binary blobs
 - HTML page for misfit plots (when using grid search or importance sampling)
 - Reduce PNG figures file size, while improving their resolution 😃
-- New configuration option to toggle the async plotter (`ASYNC_PLOTTER`,
-  default: `True`). The async plotter allows faster execution but has higher
-  memory footprint
 
 ## v1.5 - 2022-05-22
 

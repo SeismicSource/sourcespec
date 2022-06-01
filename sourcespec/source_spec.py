@@ -25,7 +25,7 @@ def main():
     # Setup stage
     from sourcespec.ssp_setup import (
         configure, move_outdir, remove_old_outdir, setup_logging,
-        save_config, init_plotting, ssp_exit)
+        save_config, ssp_exit)
     config = configure(options, progname='source_spec')
     setup_logging(config)
 
@@ -48,11 +48,10 @@ def main():
     from sourcespec.ssp_build_spectra import build_spectra
     spec_st, specnoise_st, weight_st = build_spectra(config, proc_st)
 
-    plotter = init_plotting(config)
     ntr = len(set(t.id[:-1] for t in proc_st))
     ncols = 4 if ntr > 6 else 3
     from sourcespec.ssp_plot_traces import plot_traces
-    plot_traces(config, proc_st, ncols=ncols, async_plotter=plotter)
+    plot_traces(config, proc_st, ncols=ncols)
 
     # Spectral inversion
     from sourcespec.ssp_inversion import spectral_inversion
@@ -80,9 +79,9 @@ def main():
     nspec = len(set(s.id[:-1] for s in spec_st))
     ncols = 4 if nspec > 6 else 3
     plot_spectra(config, spec_st, specnoise_st, plot_type='regular',
-                 ncols=ncols, async_plotter=plotter)
+                 ncols=ncols)
     plot_spectra(config, weight_st, plot_type='weight',
-                 ncols=ncols, async_plotter=plotter)
+                 ncols=ncols)
     from sourcespec.ssp_plot_params_stats import box_plots
     box_plots(config, sourcepar)
     if config.plot_station_map:

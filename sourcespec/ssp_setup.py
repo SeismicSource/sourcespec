@@ -26,7 +26,6 @@ from datetime import datetime
 from sourcespec.configobj import ConfigObj
 from sourcespec.configobj.validate import Validator
 from sourcespec.config import Config
-from sourcespec.AsyncPlotter import AsyncPlotter
 from sourcespec._version import get_versions
 
 # define ipshell(), if possible
@@ -44,7 +43,6 @@ else:
 OS = os.name
 DEBUG = False
 oldlogfile = None
-plotter = None
 logger = None
 ssp_exit_called = False
 OBSPY_VERSION = None
@@ -320,6 +318,12 @@ def _check_deprecated_config_options(config_obj):
         sys.exit(1)
 
 
+def _init_plotting(plot_show):
+    import matplotlib.pyplot as plt
+    if not plot_show:
+        plt.switch_backend('Agg')
+
+
 def configure(options, progname):
     """
     Parse command line arguments and read config file.
@@ -426,6 +430,7 @@ def configure(options, progname):
             sys.stderr.write(str(err))
             sys.exit(1)
 
+    _init_plotting(config.PLOT_SHOW)
     return config
 
 
@@ -596,19 +601,6 @@ def setup_logging(config, basename=None, progname='source_spec'):
         logger.warning(msg)
 
 
-def init_plotting(config):
-    import matplotlib.pyplot as plt
-    if not config.PLOT_SHOW:
-        plt.switch_backend('Agg')
-    global plotter
-    if OS == 'nt' or not config.ASYNC_PLOTTER:
-        # AsyncPlotter() doesn't work on Windows. TODO: fix this
-        plotter = None
-    else:
-        plotter = AsyncPlotter()
-    return plotter
-
-
 def ssp_exit(retval=0, abort=False):
     # ssp_exit might have already been called if multiprocessing
     global ssp_exit_called
@@ -621,12 +613,6 @@ def ssp_exit(retval=0, abort=False):
     else:
         logger.debug('source_spec END')
     logging.shutdown()
-    global plotter
-    if plotter is not None:
-        if abort:
-            plotter.terminate()
-        else:
-            plotter.join()
     sys.exit(retval)
 
 
