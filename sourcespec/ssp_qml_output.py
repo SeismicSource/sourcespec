@@ -93,8 +93,8 @@ def write_qml(config, sourcepar):
     cr_info.author = author
     cr_info.creation_time = UTCDateTime()
 
-    means = sourcepar.means
-    errors = sourcepar.errors
+    means = sourcepar.means_weight
+    errors = sourcepar.errors_weight
     stationpar = sourcepar.station_parameters
 
     # Magnitude
