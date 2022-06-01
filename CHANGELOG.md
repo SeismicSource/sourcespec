@@ -6,6 +6,7 @@ Earthquake source parameters from S-wave displacement spectra
 
 ## unreleased
 
+- QuakeML output (when using QuakeML input)
 - Fix for negative weights
 - Fix bug when event coordinates are written into sqlite as binary blobs
 - HTML page for misfit plots (when using grid search or importance sampling)
