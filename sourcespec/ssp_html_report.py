@@ -212,6 +212,8 @@ def html_report(config, sourcepar):
     spectra_plot_html = os.path.join(template_dir, 'spectra_plot.html')
     station_table_row_html = os.path.join(
         template_dir, 'station_table_row.html')
+    quakeml_file_link_html = os.path.join(
+        template_dir, 'quakeml_file_link.html')
 
     # Copy CSS to output dir
     shutil.copy(style_css, config.options.outdir)
@@ -229,6 +231,7 @@ def html_report(config, sourcepar):
     config_file = '{}.ssp.conf'.format(evid)
     out_file = '{}.ssp.out'.format(evid)
     log_file = '{}.ssp.log'.format(evid)
+    quakeml_file = '{}.xml'.format(evid)
     map_mag = '{}.map_mag.png'.format(evid)
     map_fc = '{}.map_fc.png'.format(evid)
     box_plots = '{}.boxplot.png'.format(evid)
@@ -431,6 +434,18 @@ def html_report(config, sourcepar):
     replacements.update({
         '{MISFIT_PLOT_SIDEBAR_LINK}': misfit_plot_sidebar_link,
         '{MISFIT_PLOT_LINK}': misfit_plot_link
+    })
+
+    # QuakeML file (if produced)
+    if os.path.exists(os.path.join(config.options.outdir, quakeml_file)):
+        quakeml_file_link = open(quakeml_file_link_html).read()
+        quakeml_file_link = quakeml_file_link\
+            .replace('{QUAKEML_FILE}', quakeml_file)\
+            .replace('{QUAKEML_FILE_BNAME}', quakeml_file)
+    else:
+        quakeml_file_link = ''
+    replacements.update({
+        '{QUAKEML_FILE_LINK}': quakeml_file_link
     })
 
     index = open(index_html).read()
