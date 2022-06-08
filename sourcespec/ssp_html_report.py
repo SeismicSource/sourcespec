@@ -411,29 +411,15 @@ def html_report(config, sourcepar):
 
     # Misfit plots (when using grid search)
     if os.path.exists(os.path.join(config.options.outdir, 'misfit')):
-        misfit_plot_link = '''
-        <div class="page-break"></div>
-        <div class="line" id="misfit_plots"></div>
-        <h2>Misfit plots</h2>
-        <i class="fas fa-image"></i>&nbsp;&nbsp;
-        <a href="misfit.html">Click here to go to misfit plot page</a>
-        '''
-        misfit_plot_sidebar_link = '''
-          <li>
-            <a href="#misfit_plots">
-              <i class="fas fa-image"></i>
-              &nbsp;&nbsp;
-              Misfit Plots
-            </a>
-          </li>
-        '''
+        misfit_plot_comment_begin = ''
+        misfit_plot_comment_end = ''
         _misfit_page(config)
     else:
-        misfit_plot_sidebar_link = ''
-        misfit_plot_link = ''
+        misfit_plot_comment_begin = '<!--'
+        misfit_plot_comment_end = '-->'
     replacements.update({
-        '{MISFIT_PLOT_SIDEBAR_LINK}': misfit_plot_sidebar_link,
-        '{MISFIT_PLOT_LINK}': misfit_plot_link
+        '{MISFIT_PLOT_COMMENT_BEGIN}': misfit_plot_comment_begin,
+        '{MISFIT_PLOT_COMMENT_END}': misfit_plot_comment_end
     })
 
     # QuakeML file (if produced)
