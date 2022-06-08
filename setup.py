@@ -14,6 +14,12 @@ with open('README.md', 'rb') as f:
         '({}CHANGELOG.md)'.format(cdn_baseurl)
     )
 
+project_urls = {
+    'Homepage': 'https://sourcespec.seismicsource.org',
+    'Source': 'https://github.com/SeismicSource/sourcespec',
+    'Documentation': 'https://sourcespec.readthedocs.io'
+}
+
 setup(
     name='sourcespec',
     packages=['sourcespec', 'sourcespec.configobj', 'sourcespec.adjustText'],
@@ -32,7 +38,7 @@ setup(
     long_description_content_type='text/markdown',
     author='Claudio Satriano',
     author_email='satriano@ipgp.fr',
-    url='https://github.com/SeismicSource/sourcespec',
+    project_urls=project_urls,
     license='CeCILL Free Software License Agreement, Version 2.1',
     platforms='OS Independent',
     classifiers=[
