@@ -4,14 +4,16 @@
 from setuptools import setup
 import versioneer
 
-cdn_baseurl = 'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec/'
+revision = versioneer.get_versions()['full-revisionid']
+cdn_baseurl = 'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec@{}'\
+    .format(revision)
 with open('README.md', 'rb') as f:
     long_descr = f.read().decode('utf-8').replace(
         'logo/SourceSpec_logo.svg',
-        '{}logo/SourceSpec_logo.svg'.format(cdn_baseurl)
+        '{}/logo/SourceSpec_logo.svg'.format(cdn_baseurl)
     ).replace(
         '(CHANGELOG.md)',
-        '({}CHANGELOG.md)'.format(cdn_baseurl)
+        '({}/CHANGELOG.md)'.format(cdn_baseurl)
     )
 
 project_urls = {
