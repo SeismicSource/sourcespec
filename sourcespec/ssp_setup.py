@@ -571,7 +571,7 @@ def setup_logging(config, basename=None, progname='source_spec'):
     console.setLevel(logging.INFO)
 
     # Add logger color coding on all platforms but win32
-    if sys.platform != 'win32':
+    if sys.platform != 'win32' and sys.stdout.isatty():
         console.emit = _color_handler_emit(console.emit)
     logger_root.addHandler(console)
 
