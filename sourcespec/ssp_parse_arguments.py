@@ -104,6 +104,16 @@ def _init_parser(description, epilog, nargs):
         metavar='FILE'
     )
     parser.add_argument(
+        '-g', '--green', nargs=nargs,
+        help='path to Green funtion trace file(s) or trace dir'
+    )
+    parser.add_argument(
+        '-x', '--greenqml', dest='greenqml_file',
+        action='store', default=None,
+        help='get picks and hypocenter information of Green from QuakeML FILE',
+        metavar='FILE'
+    )
+    parser.add_argument(
         '-H', '--hypocenter', dest='hypo_file',
         action='store', default=None,
         help='get hypocenter information from FILE.\n'
