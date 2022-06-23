@@ -275,7 +275,7 @@ def _build_filelist(path, filelist, tmpdir):
             filelist.append(path)
 
 
-def _read_trace_files(config, inventory, hypo, picks):
+def _read_trace_files(config, inventory, hypo, picks, green=False):
     """
     Read trace files from a given path. Complete trace metadata and
     return a stream object.
@@ -285,7 +285,9 @@ def _read_trace_files(config, inventory, hypo, picks):
     #         to move files to it and extract all tar archives
     tmpdir = tempfile.mkdtemp()
     filelist = []
-    for trace_path in config.options.trace_path:
+    config_trace_path =\
+        config.options.green_path if green else config.options.trace_path
+    for trace_path in config_trace_path:
         _build_filelist(trace_path, filelist, tmpdir)
     # ph 1.2: rerun '_build_filelist()' in tmpdir to add to the
     #         filelist all the extraceted files
@@ -342,8 +344,8 @@ def read_traces(config):
     # read station metadata into an ObsPy ``Inventory`` object
     inventory = read_station_metadata(config.station_metadata)
 
-    picks = []
-    hypo = None
+    picks, picksG = [], []
+    hypo, hypoG = None, None
     # parse hypocenter file
     if config.options.hypo_file is not None:
         hypo, picks = parse_hypo_file(config.options.hypo_file)
@@ -353,6 +355,10 @@ def read_traces(config):
     # parse QML file
     if config.options.qml_file is not None:
         hypo, picks = parse_qml(config.options.qml_file, config.options.evid)
+
+    if config.options.greenqml_file is not None:
+        hypoG, picksG = parse_qml(
+            config.options.greenqml_file, config.options.evid)
 
     # finally, read trace files
     logger.info('Reading traces...')
@@ -380,6 +386,22 @@ def read_traces(config):
     _hypo_vel(hypo, config)
     # add hypo to config file
     config.hypo = hypo
+
+    # if green function traces are available, read traces
+    if config.options.green_path is not None:
+        logger.info('Green function traces available')
+        # read green function traces and adds it to a stream
+        st_green = _read_trace_files(
+            config, inventory, hypoG, picksG, green=True)
+        logger.info('Reading green function traces: done')
+        if len(st_green) == 0:
+            logger.info('No green function trace loaded')
+            ssp_exit()
+        _complete_picks(st_green)
+        # add green function to the main stream object
+        # Traces of the main event and of the green function
+        # are identified by evid metadata in the stream
+        st = st + st_green
 
     st.sort()
     return st

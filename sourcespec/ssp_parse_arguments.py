@@ -104,7 +104,7 @@ def _init_parser(description, epilog, nargs):
         metavar='FILE'
     )
     parser.add_argument(
-        '-g', '--green', nargs=nargs,
+        '-g', '--green_path', nargs=nargs,
         help='path to Green funtion trace file(s) or trace dir'
     )
     parser.add_argument(
