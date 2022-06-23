@@ -386,7 +386,9 @@ def read_traces(config):
     _hypo_vel(hypo, config)
     # add hypo to config file
     config.hypo = hypo
-
+    # add hypoG to config file (if does exits)
+    if hypoG is not None:
+        config.hypoG = hypoG
     # if green function traces are available, read traces
     if config.options.green_path is not None:
         logger.info('Green function traces available')
