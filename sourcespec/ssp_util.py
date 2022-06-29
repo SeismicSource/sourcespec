@@ -14,6 +14,7 @@ from glob import glob
 import logging
 import math
 import numpy as np
+from obspy import Stream
 from obspy.signal.invsim import cosine_taper as _cos_taper
 from obspy.geodetics import gps2dist_azimuth, kilometers2degrees
 from obspy.taup import TauPyModel
@@ -131,6 +132,11 @@ def get_vel(lon, lat, depth_in_km, wave, config):
             logger.warning(msg)
             logger.warning(f'Using {wave} velocity from config')
     return vel
+
+
+def select_evid(st, evid):
+    """Select trace from stream based on the event id in the hypo metadata."""
+    return Stream([tr for tr in st if tr.stats.hypo.evid == evid])
 # -----------------------------------------------------------------------------
 
 
