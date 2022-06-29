@@ -445,11 +445,13 @@ def process_traces(config, st):
     # gets event id
     evids = [config.hypo.evid]
     # gets green function id (if available)
+    green_id = None
     if config.hypoG is not None:
+        green_id = config.hypoG.evid
         evids.append(config.hypoG.evid)
     out_st = Stream()
     for evid in evids:
-        if evid == config.hypoG.evid:
+        if evid == green_id:
             logger.info('Green function traces..')
         # select traces for each evid
         st_evid = select_evid(st, evid)
