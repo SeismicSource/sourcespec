@@ -22,7 +22,7 @@ from obspy.core import Stream
 from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
-    remove_instr_response, station_to_event_position)
+    remove_instr_response, station_to_event_position, select_evid)
 from sourcespec.ssp_wave_arrival import add_arrival_to_trace
 from sourcespec.clipping_detection import clipping_score, clipping_peaks
 logger = logging.getLogger(__name__.split('.')[-1])
@@ -397,7 +397,7 @@ def _skip_ignored(config, id):
             raise RuntimeError(f'{id}: ignored from config file')
 
 
-def process_traces(config, st):
+def _process_event_traces(config, st):
     """Remove mean, deconvolve and ignore unwanted components."""
     logger.info('Processing traces...')
     out_st = Stream()
@@ -436,4 +436,23 @@ def process_traces(config, st):
             st_sel.rotate('NE->RT')
 
     logger.info('Processing traces: done')
+    return out_st
+
+
+def process_traces(config, st):
+    """Remove mean, deconvolve and ignore unwanted components of
+       both the input event and the green function (if available)"""
+    # gets event id
+    evids = [config.hypo.evid]
+    # gets green function id (if available)
+    if config.hypoG is not None:
+        evids.append(config.hypoG.evid)
+    out_st = Stream()
+    for evid in evids:
+        if evid == config.hypoG.evid:
+            logger.info('Green function traces..')
+        # select traces for each evid
+        st_evid = select_evid(st, evid)
+        # proces traces for each evid
+        out_st += _process_event_traces(config, st_evid)
     return out_st

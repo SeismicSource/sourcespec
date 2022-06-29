@@ -382,13 +382,17 @@ def read_traces(config):
                 '(if you use the SAC format).\n'
             )
             ssp_exit()
-    # add vs to hypo
+    # add vp and vs to hypo
     _hypo_vel(hypo, config)
     # add hypo to config file
     config.hypo = hypo
-    # add hypoG to config file (if does exits)
+    # same for hypoG, if available
     if hypoG is not None:
+        _hypo_vel(hypoG, config)
         config.hypoG = hypoG
+    else:
+        config.hypoG = None
+
     # if green function traces are available, read traces
     if config.options.green_path is not None:
         logger.info('Green function traces available')

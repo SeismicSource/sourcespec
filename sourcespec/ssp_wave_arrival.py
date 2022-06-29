@@ -189,8 +189,8 @@ def add_arrival_to_trace(trace, phase, config):
         if phase == 'P' else
         config.s_arrival_tolerance
     )
-    key = f'{trace.id}_{phase}'
     trst = trace.stats
+    key = f'{trace.id}_{trst.hypo.evid}_{phase}'
     # First, see if there are cached values
     with contextlib.suppress(KeyError):
         trst.arrivals[phase] = add_arrival_to_trace.pick_cache[key]
