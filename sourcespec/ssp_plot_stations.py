@@ -373,13 +373,13 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     evid = config.hypo.evid
     figfile_base = os.path.join(config.options.outdir, evid)
     figfile_base += '.map_{}.'.format(vname)
-    fmt = config.PLOT_SAVE_FORMAT
+    fmt = config.plot_save_format
     if fmt == 'pdf_multipage':
         fmt = 'pdf'
     figfile = figfile_base + fmt
-    if config.PLOT_SHOW:
+    if config.plot_show:
         plt.show()
-    if config.PLOT_SAVE:
+    if config.plot_save:
         savefig(fig, figfile, fmt, quantize_colors=False, bbox_inches='tight')
         if vname == 'mag':
             logger.info('Station-magnitude map saved to: ' + figfile)
@@ -407,7 +407,7 @@ def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
 def plot_stations(config, sourcepar):
     """Plot station map, color coded by magnitude or fc."""
     # Check config, if we need to plot at all
-    if not config.PLOT_SHOW and not config.PLOT_SAVE:
+    if not config.plot_show and not config.plot_save:
         return
     stationpar = sourcepar.station_parameters
     st_ids = sorted(stationpar.keys())

@@ -109,10 +109,10 @@ def main():
         make_synth(config, spec_st)
 
     if config.options.plot:
-        config.PLOT_SHOW = True
+        config.plot_show = True
     else:
-        config.PLOT_SHOW = False
-    config.PLOT_SAVE = False
+        config.plot_show = False
+    config.plot_save = False
 
     from sourcespec.ssp_plot_spectra import plot_spectra
     from sourcespec.ssp_plot_traces import plot_traces

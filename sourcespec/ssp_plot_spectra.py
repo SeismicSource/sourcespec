@@ -182,7 +182,7 @@ def _savefig(config, plottype, figures):
         suffix = '.sspweight.'
         message = 'Weight'
     figfile_base = os.path.join(config.options.outdir, evid + suffix)
-    fmt = config.PLOT_SAVE_FORMAT
+    fmt = config.plot_save_format
     pad_inches = matplotlib.rcParams['savefig.pad_inches']
     bbox = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
     bbox = bbox.padded(pad_inches)
@@ -191,7 +191,7 @@ def _savefig(config, plottype, figures):
         with PdfPages(figfile) as pdf:
             for fig in figures:
                 pdf.savefig(fig, bbox_inches=bbox)
-                if not config.PLOT_SHOW:
+                if not config.plot_show:
                     plt.close(fig)
         logger.info(message + ' plots saved to: ' + figfile)
         return
@@ -202,7 +202,7 @@ def _savefig(config, plottype, figures):
             figfile = figfile_base + '{:02d}.{}'.format(n, fmt)
         savefig(fig, figfile, fmt, bbox_inches=bbox)
         logger.info(message + ' plots saved to: ' + figfile)
-        if not config.PLOT_SHOW:
+        if not config.plot_show:
             plt.close(fig)
 
 
@@ -638,7 +638,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
     Display to screen and/or save to file.
     """
     # Check config, if we need to plot at all
-    if not config.PLOT_SHOW and not config.PLOT_SAVE:
+    if not config.plot_show and not config.plot_save:
         return
 
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
@@ -675,7 +675,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
         if ax2:
             ax2.set_axis_off()
 
-    if config.PLOT_SHOW:
+    if config.plot_show:
         plt.show()
-    if config.PLOT_SAVE:
+    if config.plot_save:
         _savefig(config, plot_type, plot_params.figures)

@@ -107,7 +107,7 @@ def _make_fig(config, nlines, ncols):
 def _savefig(config, figures):
     evid = config.hypo.evid
     figfile_base = os.path.join(config.options.outdir, evid + '.traces.')
-    fmt = config.PLOT_SAVE_FORMAT
+    fmt = config.plot_save_format
     pad_inches = matplotlib.rcParams['savefig.pad_inches']
     bbox = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
     bbox = bbox.padded(pad_inches)
@@ -116,7 +116,7 @@ def _savefig(config, figures):
         with PdfPages(figfile) as pdf:
             for fig in figures:
                 pdf.savefig(fig, bbox_inches=bbox)
-                if not config.PLOT_SHOW:
+                if not config.plot_show:
                     plt.close(fig)
         logger.info('Trace plots saved to: ' + figfile)
         return
@@ -127,7 +127,7 @@ def _savefig(config, figures):
             figfile = figfile_base + '{:02d}.{}'.format(n, fmt)
         savefig(fig, figfile, fmt, bbox_inches=bbox)
         logger.info('Trace plots saved to: ' + figfile)
-        if not config.PLOT_SHOW:
+        if not config.plot_show:
             plt.close(fig)
 
 
@@ -226,7 +226,7 @@ def plot_traces(config, st, ncols=None, block=True):
     Display to screen and/or save to file.
     """
     # Check config, if we need to plot at all
-    if not config.PLOT_SHOW and not config.PLOT_SAVE:
+    if not config.plot_show and not config.plot_save:
         return
 
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
@@ -304,7 +304,7 @@ def plot_traces(config, st, ncols=None, block=True):
     for ax in axes[plotn:]:
         ax.set_axis_off()
 
-    if config.PLOT_SHOW:
+    if config.plot_show:
         plt.show(block=block)
-    if config.PLOT_SAVE:
+    if config.plot_save:
         _savefig(config, figures)

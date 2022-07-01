@@ -252,7 +252,7 @@ class GridSampling():
     def plot_conditional_misfit(self, config, label):
         """Plot conditional misfit for each parameter."""
         # Check config, if we need to plot at all
-        if not config.PLOT_SHOW and not config.PLOT_SAVE:
+        if not config.plot_show and not config.plot_save:
             return
         ndim = self.misfit.ndim
         fig, ax = plt.subplots(ndim, 1, figsize=(5, 5), dpi=300)
@@ -289,15 +289,15 @@ class GridSampling():
         evid = config.hypo.evid
         figfile_base = os.path.join(outdir, evid)
         figfile_base += '.cond_misfit_{}.'.format(label.replace(' ', '_'))
-        fmt = config.PLOT_SAVE_FORMAT
+        fmt = config.plot_save_format
         if fmt == 'pdf_multipage':
             fmt = 'pdf'
         figfile = figfile_base + fmt
-        if config.PLOT_SHOW:
+        if config.plot_show:
             plt.show()
-        if config.PLOT_SAVE:
+        if config.plot_save:
             savefig(fig, figfile, fmt, bbox_inches='tight')
-            if not config.PLOT_SHOW:
+            if not config.plot_show:
                 plt.close(fig)
             logger.info(
                 '{}: conditional misfit plot saved to: {}'.format(
@@ -306,7 +306,7 @@ class GridSampling():
     def plot_misfit_2d(self, config, plot_par_idx, label):
         """Plot a 2D conditional misfit map."""
         # Check config, if we need to plot at all
-        if not config.PLOT_SHOW and not config.PLOT_SAVE:
+        if not config.plot_show and not config.plot_save:
             return
         # Find the index to extract
         idx = tuple(
@@ -424,15 +424,15 @@ class GridSampling():
         suffix = '{}-{}'.format(*params_name)
         figfile_base += '.misfit_{}_{}.'.format(
             suffix, label.replace(' ', '_'))
-        fmt = config.PLOT_SAVE_FORMAT
+        fmt = config.plot_save_format
         if fmt == 'pdf_multipage':
             fmt = 'pdf'
         figfile = figfile_base + fmt
-        if config.PLOT_SHOW:
+        if config.plot_show:
             plt.show()
-        if config.PLOT_SAVE:
+        if config.plot_save:
             savefig(fig, figfile, fmt, bbox_inches='tight')
-            if not config.PLOT_SHOW:
+            if not config.plot_show:
                 plt.close(fig)
             logger.info(
                 '{}: conditional misfit map saved to: {}'.format(

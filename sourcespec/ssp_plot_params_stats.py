@@ -26,7 +26,7 @@ mpl_logger.setLevel(logging.WARNING)
 def box_plots(config, sourcepar):
     """Show parameter statistics through box plots."""
     # Check config, if we need to plot at all
-    if not config.PLOT_SHOW and not config.PLOT_SAVE:
+    if not config.plot_show and not config.plot_save:
         return
 
     param_names_units_colors = {
@@ -86,12 +86,12 @@ def box_plots(config, sourcepar):
     evid = config.hypo.evid
     figfile_base = os.path.join(config.options.outdir, evid)
     figfile_base += '.boxplot.'
-    fmt = config.PLOT_SAVE_FORMAT
+    fmt = config.plot_save_format
     if fmt == 'pdf_multipage':
         fmt = 'pdf'
     figfile = figfile_base + fmt
-    if config.PLOT_SHOW:
+    if config.plot_show:
         plt.show()
-    if config.PLOT_SAVE:
+    if config.plot_save:
         savefig(fig, figfile, fmt, bbox_inches='tight')
         logger.info('Parameters box plot saved to: ' + figfile)

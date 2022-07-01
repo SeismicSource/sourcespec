@@ -237,7 +237,10 @@ def _update_config_file(config_file, configspec):
         'ignore_stations': 'ignore_traceids',
         'use_stations': 'use_traceids',
         'dataless': 'station_metadata',
-        'clip_nmax': 'clip_max_percent'
+        'clip_nmax': 'clip_max_percent',
+        'PLOT_SHOW': 'plot_show',
+        'PLOT_SAVE': 'plot_save',
+        'PLOT_SAVE_FORMAT': 'plot_save_format',
     }
     for old_opt, new_opt in migrate_options.items():
         if old_opt in config_obj:
@@ -296,6 +299,19 @@ def _check_deprecated_config_options(config_obj):
             '> "trace_format" config parameter is no more supported.\n'
             '   Use "sensitivity" to manually specify how sensor sensitivity '
             'should be computed.\n'
+        )
+    if 'PLOT_SHOW' in config_obj:
+        deprecation_msgs.append(
+            '> "PLOT_SHOW" config parameter has been renamed to "plot_show".\n'
+        )
+    if 'PLOT_SAVE' in config_obj:
+        deprecation_msgs.append(
+            '> "PLOT_SAVE" config parameter has been renamed to "plot_save".\n'
+        )
+    if 'PLOT_SAVE_FORMAT' in config_obj:
+        deprecation_msgs.append(
+            '> "PLOT_SAVE_FORMAT" config parameter has been renamed to '
+            '"plot_save_format".\n'
         )
     if deprecation_msgs:
         sys.stderr.write(
@@ -384,18 +400,18 @@ def configure(options, progname):
     config.warnings = list()
 
     if config.html_report:
-        if not config.PLOT_SAVE:
+        if not config.plot_save:
             msg = (
-                'The "html_report" option is selected but "PLOT_SAVE" '
-                'is "False". Setting "PLOT_SAVE" to "True".')
+                'The "html_report" option is selected but "plot_save" '
+                'is "False". Setting "plot_save" to "True".')
             config.warnings.append(msg)
-            config.PLOT_SAVE = True
-        if config.PLOT_SAVE_FORMAT != 'png':
+            config.plot_save = True
+        if config.plot_save_format != 'png':
             msg = (
-                'The "html_report" option is selected but "PLOT_SAVE_FORMAT" '
-                'is not "png". Setting "PLOT_SAVE_FORMAT" to "png".')
+                'The "html_report" option is selected but "plot_save_format" '
+                'is not "png". Setting "plot_save_format" to "png".')
             config.warnings.append(msg)
-            config.PLOT_SAVE_FORMAT = 'png'
+            config.plot_save_format = 'png'
         if not config.plot_station_map:
             msg = (
                 'The "html_report" option is selected but "plot_station_map" '
@@ -420,7 +436,7 @@ def configure(options, progname):
             sys.stderr.write(str(err))
             sys.exit(1)
 
-    _init_plotting(config.PLOT_SHOW)
+    _init_plotting(config.plot_show)
     return config
 
 
