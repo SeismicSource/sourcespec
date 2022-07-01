@@ -41,7 +41,6 @@ else:
 
 # global variables
 OS = os.name
-DEBUG = False
 oldlogfile = None
 logger = None
 ssp_exit_called = False
@@ -158,13 +157,6 @@ def _check_library_versions():
         msg += ' You have version: %s\n' % MATPLOTLIB_VERSION_STR
         sys.stderr.write(msg)
         sys.exit(1)
-
-
-def dprint(string):
-    """Print debug information."""
-    if DEBUG:
-        sys.stderr.write(string)
-        sys.stderr.write('\n')
 
 
 def _read_config(config_file, configspec=None):
@@ -374,8 +366,6 @@ def configure(options, progname):
 
     # Create a Config object
     config = Config(config_obj.dict().copy())
-    global DEBUG
-    DEBUG = config.DEBUG
 
     # Add options to config:
     config.options = options
