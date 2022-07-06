@@ -395,19 +395,17 @@ def read_traces(config):
 
     # if green function traces are available, read traces
     if config.options.green_path is not None:
-        logger.info('Green function traces available')
+        logger.info("Reading Green's function traces...")
         # read green function traces and adds it to a stream
         st_green = _read_trace_files(
             config, inventory, hypoG, picksG, green=True)
         logger.info('Reading green function traces: done')
         if len(st_green) == 0:
-            logger.info('No green function trace loaded')
+            logger.info("No Green's function trace loaded")
             ssp_exit()
         _complete_picks(st_green)
-        # add green function to the main stream object
-        # Traces of the main event and of the green function
-        # are identified by evid metadata in the stream
-        st = st + st_green
+        # add green function traces to event stream
+        st += st_green
 
     st.sort()
     return st
