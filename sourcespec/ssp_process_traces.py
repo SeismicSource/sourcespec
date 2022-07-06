@@ -399,7 +399,6 @@ def _skip_ignored(config, id):
 
 def _process_event_traces(config, st):
     """Remove mean, deconvolve and ignore unwanted components."""
-    logger.info('Processing traces...')
     out_st = Stream()
     for id in sorted({tr.id for tr in st}):
         try:
@@ -434,27 +433,34 @@ def _process_event_traces(config, st):
             t1 = min(tr.stats.endtime for tr in st_sel)
             st_sel.trim(t0, t1)
             st_sel.rotate('NE->RT')
-
-    logger.info('Processing traces: done')
     return out_st
 
 
 def process_traces(config, st):
-    """Remove mean, deconvolve and ignore unwanted components of
-       both the input event and the green function (if available)"""
+    """
+    Process traces for the input event and the Green's function.
+
+    Remove mean, deconvolve and ignore unwanted components.
+    """
     # gets event id
     evids = [config.hypo.evid]
     # gets green function id (if available)
     green_id = None
     if config.hypoG is not None:
         green_id = config.hypoG.evid
-        evids.append(config.hypoG.evid)
-    out_st = Stream()
+        evids.append(green_id)
+    proc_st = Stream()
     for evid in evids:
         if evid == green_id:
-            logger.info('Green function traces..')
+            logger.info("Processing Green's function traces...")
+        else:
+            logger.info('Processing traces...')
         # select traces for each evid
         st_evid = select_evid(st, evid)
-        # proces traces for each evid
-        out_st += _process_event_traces(config, st_evid)
-    return out_st
+        # process traces for each evid
+        proc_st += _process_event_traces(config, st_evid)
+        if evid == green_id:
+            logger.info("Processing Green's function traces: done")
+        else:
+            logger.info('Processing traces: done')
+    return proc_st
