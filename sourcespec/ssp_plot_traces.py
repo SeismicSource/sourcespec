@@ -23,6 +23,8 @@ import matplotlib.transforms as transforms
 import matplotlib.patches as patches
 import matplotlib.patheffects as PathEffects
 from matplotlib.ticker import ScalarFormatter as sf
+
+from sourcespec.ssp_util import select_evid
 logger = logging.getLogger(__name__.split('.')[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')
@@ -53,7 +55,7 @@ def _nplots(config, st, maxlines, ncols):
     return nlines, ncols
 
 
-def _make_fig(config, nlines, ncols):
+def _make_fig(config, hypo, nlines, ncols):
     figsize = (16, 9) if nlines <= 3 else (16, 18)
     # high dpi needed to rasterize png
     # vector formats (pdf, svg) do not have rasters
@@ -63,7 +65,6 @@ def _make_fig(config, nlines, ncols):
     ax0 = fig.add_subplot(111, label='ax0')
     ax0.set_axis_off()
     # Add event information as a title
-    hypo = config.hypo
     textstr = (
         f'evid: {hypo.evid} lon: {hypo.longitude:.3f} '
         f'lat: {hypo.latitude:.3f} depth: {hypo.depth:.1f} km'
@@ -118,8 +119,7 @@ def _make_fig(config, nlines, ncols):
     return fig, axes
 
 
-def _savefig(config, figures):
-    evid = config.hypo.evid
+def _savefig(config, evid, figures):
     figfile_base = os.path.join(config.options.outdir, f'{evid}.traces.')
     fmt = config.plot_save_format
     pad_inches = matplotlib.rcParams['savefig.pad_inches']
@@ -328,7 +328,7 @@ def _trim_traces(config, st):
         trace.stats.time_offset = trace.stats.starttime - min_starttime
 
 
-def plot_traces(config, st, ncols=None, block=True):
+def _plot_event_traces(config, st, hypo, ncols=None, block=True):
     """
     Plot traces in the original instrument unit (velocity or acceleration).
 
@@ -345,7 +345,7 @@ def plot_traces(config, st, ncols=None, block=True):
         ncols = 4 if ntr > 6 else 3
 
     nlines, ncols = _nplots(config, st, config.plot_traces_maxrows, ncols)
-    fig, axes = _make_fig(config, nlines, ncols)
+    fig, axes = _make_fig(config, hypo, nlines, ncols)
     figures = [fig]
     # Path effect to contour text in white
     path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
@@ -374,7 +374,7 @@ def plot_traces(config, st, ncols=None, block=True):
         if plotn > nlines*ncols:
             _set_ylim(axes)
             _add_labels(axes, plotn-1, ncols)
-            fig, axes = _make_fig(config, nlines, ncols)
+            fig, axes = _make_fig(config, hypo, nlines, ncols)
             figures.append(fig)
             plotn = 1
         ax = axes[plotn-1]
@@ -416,4 +416,26 @@ def plot_traces(config, st, ncols=None, block=True):
     if config.plot_show:
         plt.show(block=block)
     if config.plot_save:
-        _savefig(config, figures)
+        evid = hypo.evid
+        _savefig(config, evid, figures)
+
+
+def plot_traces(config, st):
+    # gets event id
+    evids = [config.hypo.evid]
+    # gets green function id (if available)
+    green_id = None
+    if config.hypoG is not None:
+        green_id = config.hypoG.evid
+        evids.append(green_id)
+    for evid in evids:
+        # select traces for each evid
+        st_evid = select_evid(st, evid)
+        if evid == green_id:
+            logger.info("Plot Green's function traces...")
+            hypo = config.hypoG
+        else:
+            logger.info("Plot traces...")
+            hypo = config.hypo
+        # proces traces for each evid
+        _plot_event_traces(config, st_evid, hypo, ncols=None, block=True)

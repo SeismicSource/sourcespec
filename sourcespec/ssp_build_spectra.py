@@ -673,7 +673,8 @@ def build_spectra(config, st):
         # select traces for each evid
         st_evid = select_evid(st, evid)
         # proces traces for each evid
-        spec_st, specnoise_st, weight_st = _build_event_spectra(config, st_evid)
+        spec_st, specnoise_st, weight_st =\
+            _build_event_spectra(config, st_evid)
         # add the current evid built spectrum to the output stream
         out_spec += spec_st
         # add the current evid noise spectrum to the to its output stream
