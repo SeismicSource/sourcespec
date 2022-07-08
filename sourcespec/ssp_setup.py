@@ -344,6 +344,10 @@ def configure(options, progname):
     _check_library_versions()
 
     configspec = _parse_configspec()
+    # The 'unused' field in configspec is a hack to fix a configobj bug with
+    # the first comment when writing or updating the config file.
+    # We remove it here.
+    del configspec['unused']
     if options.sampleconf:
         _write_sample_config(configspec, progname)
         sys.exit(0)
