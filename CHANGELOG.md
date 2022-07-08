@@ -14,7 +14,7 @@ Earthquake source parameters from S-wave displacement spectra
   - Config parameters `PLOT_SHOW`, `PLOT_SAVE` and `PLOT_SAVE_FORMAT` are now
     lowercase (`plot_show`, `plot_save` and `plot_save_format`)
   - New, optional, general config parameters for specyfing author and agency
-    information
+    information. This information is written to output files, if specified.
   - Removed `DEBUG` config parameter
   - Parameters from `GENERAL PARAMETERS` section reorganized into a new
     section called `TRACE AND METADATA PARAMETERS`
