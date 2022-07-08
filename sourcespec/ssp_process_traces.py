@@ -442,24 +442,19 @@ def process_traces(config, st):
 
     Remove mean, deconvolve and ignore unwanted components.
     """
-    # gets event id
-    evids = [config.hypo.evid]
-    # gets green function id (if available)
-    green_id = None
-    if config.hypoG is not None:
-        green_id = config.hypoG.evid
-        evids.append(green_id)
     proc_st = Stream()
-    for evid in evids:
-        if evid == green_id:
+    for hypo in config.hypo, config.hypoG:
+        if hypo is None:
+            continue
+        if hypo.green:
             logger.info("Processing Green's function traces...")
         else:
             logger.info('Processing traces...')
         # select traces for each evid
-        st_evid = select_evid(st, evid)
+        st_evid = select_evid(st, hypo.evid)
         # process traces for each evid
         proc_st += _process_event_traces(config, st_evid)
-        if evid == green_id:
+        if hypo.green:
             logger.info("Processing Green's function traces: done")
         else:
             logger.info('Processing traces: done')
