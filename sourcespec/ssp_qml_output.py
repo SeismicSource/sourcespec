@@ -12,8 +12,6 @@ QuakeML output for source_spec.
 """
 import os
 import logging
-from socket import gethostname
-from getpass import getuser
 from obspy import read_events, UTCDateTime
 from obspy.core import AttribDict
 from obspy.core.event import (CreationInfo, FocalMechanism, Magnitude,
@@ -85,12 +83,10 @@ def write_qml(config, sourcepar):
     ssp_version = get_versions()['version']
     method_id = config.smi_base + '/sourcespec/' + ssp_version
     cr_info = CreationInfo()
-    cr_info.agency_id = config.agency_id
-    if config.author is None:
-        author = '{}@{}'.format(getuser(), gethostname())
-    else:
-        author = config.author
-    cr_info.author = author
+    if config.agency_short_name is not None:
+        cr_info.agency_id = config.agency_short_name
+    if config.author_name is not None:
+        cr_info.author = config.author_name
     cr_info.creation_time = UTCDateTime()
 
     means = sourcepar.means_weight

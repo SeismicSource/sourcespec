@@ -6,15 +6,31 @@ Earthquake source parameters from S-wave displacement spectra
 
 ## unreleased
 
-- Config parameters `PLOT_SHOW`, `PLOT_SAVE` and `PLOT_SAVE_FORMAT` are now
-  lowercase (`plot_show`, `plot_save` and `plot_save_format`).
-- Removed option to read event information and traces from a pickle file
+- Config file:
+
+  Note: you will need to upgrade your old config files, manually or using
+  `source_spec -U CONFIG_FILE_NAME`
+
+  - Config parameters `PLOT_SHOW`, `PLOT_SAVE` and `PLOT_SAVE_FORMAT` are now
+    lowercase (`plot_show`, `plot_save` and `plot_save_format`)
+  - New, optional, general config parameters for specyfing author and agency
+    information
+  - Removed `DEBUG` config parameter
+  - Parameters from `GENERAL PARAMETERS` section reorganized into a new
+    section called `TRACE AND METADATA PARAMETERS`
+
+- Features:
+  - QuakeML output (when using QuakeML input)
+  - Removed option to read event information and traces from a pickle file
   (rarely used)
-- QuakeML output (when using QuakeML input)
-- Fix for negative weights
-- Fix bug when event coordinates are written into sqlite as binary blobs
-- HTML page for misfit plots (when using grid search or importance sampling)
-- Reduce PNG figures file size, while improving their resolution 😃
+  - HTML page for misfit plots (when using grid search or importance sampling)
+
+- Improvements:
+  - Reduce PNG figures file size, while improving their resolution 😃
+
+- Bugfixes:
+  - Fix for negative weights
+  - Fix bug when event coordinates are written into sqlite as binary blobs
 
 ## v1.5 - 2022-05-22
 
