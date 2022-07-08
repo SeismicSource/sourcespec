@@ -71,6 +71,35 @@ def _multireplace(string, replacements, ignore_case=False):
         lambda match: replacements[normalize_old(match.group(0))], string)
 
 
+def _author_and_agency(config):
+    author = ''
+    if config.author_name is not None:
+        author = config.author_name
+    elif config.author_email is not None:
+        author = config.author_email
+    if config.author_email is not None:
+        author = '<a href="mailto:{}">{}</a>'.format(
+            config.author_email, author)
+    agency = ''
+    if config.agency_full_name is not None:
+        agency = config.agency_full_name
+        if config.agency_short_name is not None:
+            agency += ' ({})'.format(config.agency_short_name)
+    elif config.agency_short_name is not None:
+        agency = config.agency_short_name
+    elif config.agency_url is not None:
+        agency = config.agency_url
+    if config.agency_url is not None:
+        agency = '<a href="{}">{}</a>'.format(config.agency_url, agency)
+    if author != '':
+        author = '<br/><br/>' + author
+    if author == '' and agency != '':
+        agency = '<br/><br/>' + agency
+    if author != '' and agency != '':
+        agency = '<br/>' + agency
+    return author, agency
+
+
 def _format_exponent(value, reference):
     """Format `value` to a string having the same exponent than `reference`."""
     # get the exponent of reference value
@@ -146,6 +175,9 @@ def _misfit_page(config):
         config.end_of_run_tz
     )
 
+    # Author and agency
+    author, agency = _author_and_agency(config)
+
     # event info
     hypo = config.hypo
     evid = hypo.evid
@@ -186,6 +218,8 @@ def _misfit_page(config):
     replacements = {
         '{VERSION}': ssp_version,
         '{RUN_COMPLETED}': run_completed,
+        '{AUTHOR}': author,
+        '{AGENCY}': agency,
         '{EVENTID}': evid,
         '{1D_MISFIT_TABLE_ROWS}': one_d_misfit_table_rows,
         '{2D_MISFIT_TABLE_ROWS_FC_MW}': two_d_misfit_table_rows_fc_mw,
@@ -224,6 +258,9 @@ def html_report(config, sourcepar):
         config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
         config.end_of_run_tz
     )
+
+    # Author and agency
+    author, agency = _author_and_agency(config)
 
     # Output files and maps
     hypo = config.hypo
@@ -347,6 +384,8 @@ def html_report(config, sourcepar):
     replacements = {
         '{VERSION}': ssp_version,
         '{RUN_COMPLETED}': run_completed,
+        '{AUTHOR}': author,
+        '{AGENCY}': agency,
         '{EVENTID}': evid,
         '{EVENT_LONGITUDE}': '{:8.3f}'.format(hypo.longitude),
         '{EVENT_LATITUDE}': '{:7.3f}'.format(hypo.latitude),

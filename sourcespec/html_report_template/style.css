@@ -83,7 +83,7 @@ table.stations {
 
 #sidebar .sidebar-footer {
   padding-left: 20px;
-  font-size: 0.9em;
+  font-size: 0.8em;
   color: #94AFAB;
 }
 
@@ -97,8 +97,8 @@ table.stations {
 }
 
 #sidebar ul li a {
-  padding-top: 15px;
-  padding-bottom: 15px;
+  padding-top: 13px;
+  padding-bottom: 13px;
   padding-left: 20px;
   padding-right: 10px;
   font-size: 1.0em;
