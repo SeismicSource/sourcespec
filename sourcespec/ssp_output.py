@@ -348,7 +348,9 @@ def _write_db(config, sourcepar):
         'bsd, bsd_err_minus, bsd_err_plus,'
         'bsd_wavg, bsd_wavg_err_minus, bsd_wavg_err_plus,'
         'Er, Er_err_minus, Er_err_plus,'
-        'Ml, Ml_err);')
+        'Ml, Ml_err,'
+        'author_name, author_email,'
+        'agency_full_name, agency_short_name, agency_url);')
     means = sourcepar.means
     means_weight = sourcepar.means_weight
     errors = sourcepar.errors
@@ -376,7 +378,10 @@ def _write_db(config, sourcepar):
         means['bsd'], *errors['bsd'],
         means_weight['bsd'], *errors_weight['bsd'],
         means['Er'], *errors['Er'],
-        means['Ml'], errors['Ml']
+        means['Ml'], errors['Ml'],
+        config.author_name, config.author_email,
+        config.agency_full_name, config.agency_short_name,
+        config.agency_url
     )
     # Create a string like ?,?,?,?
     values = ','.join('?'*len(t))
