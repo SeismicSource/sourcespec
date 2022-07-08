@@ -71,6 +71,8 @@ def _make_fig(config, hypo, nlines, ncols):
     )
     with contextlib.suppress(AttributeError):
         textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
+    if hypo.green:
+        textstr += " Green's function"
     ax0.text(0., 1.06, textstr, fontsize=12,
              ha='left', va='top', transform=ax0.transAxes)
     if config.options.evname is not None:
@@ -119,7 +121,8 @@ def _make_fig(config, hypo, nlines, ncols):
     return fig, axes
 
 
-def _savefig(config, evid, figures):
+def _savefig(config, hypo, figures):
+    evid = hypo.evid
     figfile_base = os.path.join(config.options.outdir, f'{evid}.traces.')
     fmt = config.plot_save_format
     pad_inches = matplotlib.rcParams['savefig.pad_inches']
@@ -143,7 +146,10 @@ def _savefig(config, evid, figures):
         if not config.plot_show:
             plt.close(figures[n])
     for figfile in figfiles:
-        logger.info(f'Trace plots saved to: {figfile}')
+        if hypo.green:
+            logger.info(f"Green's function trace plots saved to: {figfile}")
+        else:
+            logger.info(f'Trace plots saved to: {figfile}')
     config.figures['traces'] += figfiles
     if fmt == 'pdf_multipage':
         pdf.close()
@@ -328,7 +334,7 @@ def _trim_traces(config, st):
         trace.stats.time_offset = trace.stats.starttime - min_starttime
 
 
-def _plot_event_traces(config, st, hypo, ncols=None, block=True):
+def _plot_event_traces(config, st, ncols=None, block=True):
     """
     Plot traces in the original instrument unit (velocity or acceleration).
 
@@ -345,6 +351,8 @@ def _plot_event_traces(config, st, hypo, ncols=None, block=True):
         ncols = 4 if ntr > 6 else 3
 
     nlines, ncols = _nplots(config, st, config.plot_traces_maxrows, ncols)
+    # All traces in Stream have the same hypo (either main hypo or Green's)
+    hypo = st[0].stats.hypo
     fig, axes = _make_fig(config, hypo, nlines, ncols)
     figures = [fig]
     # Path effect to contour text in white
@@ -416,26 +424,14 @@ def _plot_event_traces(config, st, hypo, ncols=None, block=True):
     if config.plot_show:
         plt.show(block=block)
     if config.plot_save:
-        evid = hypo.evid
-        _savefig(config, evid, figures)
+        _savefig(config, hypo, figures)
 
 
 def plot_traces(config, st):
-    # gets event id
-    evids = [config.hypo.evid]
-    # gets green function id (if available)
-    green_id = None
-    if config.hypoG is not None:
-        green_id = config.hypoG.evid
-        evids.append(green_id)
-    for evid in evids:
+    for hypo in config.hypo, config.hypoG:
+        if hypo is None:
+            continue
         # select traces for each evid
-        st_evid = select_evid(st, evid)
-        if evid == green_id:
-            logger.info("Plot Green's function traces...")
-            hypo = config.hypoG
-        else:
-            logger.info("Plot traces...")
-            hypo = config.hypo
+        st_evid = select_evid(st, hypo.evid)
         # proces traces for each evid
-        _plot_event_traces(config, st_evid, hypo, ncols=None, block=True)
+        _plot_event_traces(config, st_evid, ncols=None, block=True)
