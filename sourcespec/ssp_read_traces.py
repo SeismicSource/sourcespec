@@ -24,7 +24,6 @@ import warnings
 import shutil
 import tarfile
 import tempfile
-import pickle
 import json
 from datetime import datetime
 from obspy.core import Stream, read, UTCDateTime
@@ -608,16 +607,6 @@ def _parse_qml(qml_file, evid=None):
     return hypo, picks
 
 
-def _parse_hypocenter_from_event(ev):
-    hypo = AttribDict()
-    hypo.latitude = ev.latitude
-    hypo.longitude = ev.longitude
-    hypo.depth = ev.depth
-    hypo.origin_time = ev.utcdate
-    hypo.evid = ev.event_id
-    return hypo
-
-
 def _parse_hypo71_hypocenter(hypo_file):
     with open(hypo_file) as fp:
         line = fp.readline()
@@ -923,82 +912,54 @@ def read_traces(config):
         hypo, picks = _parse_qml(config.options.qml_file, config.options.evid)
 
     # finally, read traces
-    # traces can be defined in a pickle catalog...
-    if config.pickle_catalog:
-        sys.path.append(config.pickle_classpath)
-        with open(config.pickle_catalog, 'rb') as fp:
-            catalog = pickle.load(fp)
-        event = [ev for ev in catalog if ev.event_id == config.options.evid][0]
-        hypo = _parse_hypocenter_from_event(event)
-        st = Stream()
-        for trace in event.traces:
+    logger.info('Reading traces...')
+    # phase 1: build a file list
+    # ph 1.1: create a temporary dir and run '_build_filelist()'
+    #         to move files to it and extract all tar archives
+    tmpdir = tempfile.mkdtemp()
+    filelist = []
+    for trace_path in config.options.trace_path:
+        _build_filelist(trace_path, filelist, tmpdir)
+    # ph 1.2: rerun '_build_filelist()' in tmpdir to add to the
+    #         filelist all the extraceted files
+    listing = os.listdir(tmpdir)
+    for filename in listing:
+        fullpath = os.path.join(tmpdir, filename)
+        _build_filelist(fullpath, filelist, None)
+    # phase 2: build a stream object from the file list
+    orientation_codes = config.vertical_channel_codes +\
+        config.horizontal_channel_codes_1 +\
+        config.horizontal_channel_codes_2
+    st = Stream()
+    for filename in sorted(filelist):
+        try:
+            tmpst = read(filename, fsize=False)
+        except Exception:
+            logger.warning('%s: Unable to read file as a trace: '
+                            'skipping' % filename)
+            continue
+        for trace in tmpst.traces:
+            orientation = trace.stats.channel[-1]
+            if orientation not in orientation_codes:
+                logger.warning('%s: Unknown channel orientation: "%s": '
+                                'skipping trace' % (trace.id, orientation))
+                continue
             if config.options.station is not None:
-                if not trace.station == config.options.station:
+                if not trace.stats.station == config.options.station:
                     continue
+            _correct_traceid(trace, config.traceid_mapping_file)
             try:
-                tmpst = read(trace.trace_file, fsize=False)
-            except Exception as err:
-                logger.error(err)
-                continue
-            for trace in tmpst.traces:
-                st.append(trace)
                 _add_paz_and_coords(trace, metadata, paz_dict, config)
+                _add_instrtype(trace, config)
                 _add_hypocenter(trace, hypo)
-                _add_picks(trace, picks)  # FIXME: actually add picks!
-                # _add_instrtype(trace)
-                trace.stats.instrtype = 'acc'  # FIXME
-    # ...or in standard files supported by obspy.read()
-    else:
-        logger.info('Reading traces...')
-        # phase 1: build a file list
-        # ph 1.1: create a temporary dir and run '_build_filelist()'
-        #         to move files to it and extract all tar archives
-        tmpdir = tempfile.mkdtemp()
-        filelist = []
-        for trace_path in config.options.trace_path:
-            _build_filelist(trace_path, filelist, tmpdir)
-        # ph 1.2: rerun '_build_filelist()' in tmpdir to add to the
-        #         filelist all the extraceted files
-        listing = os.listdir(tmpdir)
-        for filename in listing:
-            fullpath = os.path.join(tmpdir, filename)
-            _build_filelist(fullpath, filelist, None)
-
-        # phase 2: build a stream object from the file list
-        orientation_codes = config.vertical_channel_codes +\
-            config.horizontal_channel_codes_1 +\
-            config.horizontal_channel_codes_2
-        st = Stream()
-        for filename in sorted(filelist):
-            try:
-                tmpst = read(filename, fsize=False)
-            except Exception:
-                logger.warning('%s: Unable to read file as a trace: '
-                               'skipping' % filename)
+                _add_picks(trace, picks)
+            except Exception as err:
+                # only warn if error message is not empty
+                if str(err):
+                    logger.warning(err)
                 continue
-            for trace in tmpst.traces:
-                orientation = trace.stats.channel[-1]
-                if orientation not in orientation_codes:
-                    logger.warning('%s: Unknown channel orientation: "%s": '
-                                   'skipping trace' % (trace.id, orientation))
-                    continue
-                if config.options.station is not None:
-                    if not trace.stats.station == config.options.station:
-                        continue
-                _correct_traceid(trace, config.traceid_mapping_file)
-                try:
-                    _add_paz_and_coords(trace, metadata, paz_dict, config)
-                    _add_instrtype(trace, config)
-                    _add_hypocenter(trace, hypo)
-                    _add_picks(trace, picks)
-                except Exception as err:
-                    # only warn if error message is not empty
-                    if str(err):
-                        logger.warning(err)
-                    continue
-                st.append(trace)
-
-        shutil.rmtree(tmpdir)
+            st.append(trace)
+    shutil.rmtree(tmpdir)
 
     logger.info('Reading traces: done')
     if len(st.traces) == 0:

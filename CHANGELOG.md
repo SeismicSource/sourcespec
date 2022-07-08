@@ -8,6 +8,8 @@ Earthquake source parameters from S-wave displacement spectra
 
 - Config parameters `PLOT_SHOW`, `PLOT_SAVE` and `PLOT_SAVE_FORMAT` are now
   lowercase (`plot_show`, `plot_save` and `plot_save_format`).
+- Removed option to read event information and traces from a pickle file
+  (rarely used)
 - QuakeML output (when using QuakeML input)
 - Fix for negative weights
 - Fix bug when event coordinates are written into sqlite as binary blobs
