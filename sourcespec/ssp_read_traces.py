@@ -359,6 +359,7 @@ def read_traces(config):
     if config.options.greenqml_file is not None:
         hypoG, picksG = parse_qml(
             config.options.greenqml_file, config.options.evid)
+        hypoG.green = True
 
     # finally, read trace files
     logger.info('Reading traces...')

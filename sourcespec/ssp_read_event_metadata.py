@@ -29,12 +29,13 @@ class Hypo():
         self.depth = None
         self.origin_time = None
         self.evid = None
+        self.green = False
 
     def __str__(self):
         return (
             f'latitude: {self.latitude}, longitude: {self.longitude}, '
             f'depth: {self.depth}, origin_time: {self.origin_time}, '
-            f'evid: {self.evid}'
+            f'evid: {self.evid}, green: {self.green}'
         )
 
 
