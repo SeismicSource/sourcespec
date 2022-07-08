@@ -190,6 +190,7 @@ def _write_sample_config(configspec, progname):
     c.defaults = []
     c.initial_comment = configspec.initial_comment
     c.comments = configspec.comments
+    c.final_comment = configspec.final_comment
     configfile = progname + '.conf'
     write_file = True
     if os.path.exists(configfile):
@@ -224,6 +225,7 @@ def _update_config_file(config_file, configspec):
     config_new.defaults = []
     config_new.comments = configspec.comments
     config_new.initial_comment = config_obj.initial_comment
+    config_new.final_comment = configspec.final_comment
     for k, v in config_obj.items():
         if k not in config_new:
             continue
