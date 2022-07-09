@@ -198,10 +198,14 @@ def _plot_trace(config, trace, ntraces, tmax,
         ax.add_patch(rect)
     except KeyError:
         pass
-    # S-wave window
-    S1 = trace.stats.arrivals['S1'][1] - trace.stats.starttime
-    S2 = trace.stats.arrivals['S2'][1] - trace.stats.starttime
-    rect = patches.Rectangle((S1, 0), width=S2-S1, height=1,
+    # Signal window
+    if config.wave_type[0] == 'S':
+        t1 = trace.stats.arrivals['S1'][1] - trace.stats.starttime
+        t2 = trace.stats.arrivals['S2'][1] - trace.stats.starttime
+    elif config.wave_type[0] == 'P':
+        t1 = trace.stats.arrivals['P1'][1] - trace.stats.starttime
+        t2 = trace.stats.arrivals['P2'][1] - trace.stats.starttime
+    rect = patches.Rectangle((t1, 0), width=t2-t1, height=1,
                              transform=trans, color='yellow',
                              alpha=0.5, zorder=-1)
     ax.add_patch(rect)
