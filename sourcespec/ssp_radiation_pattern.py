@@ -85,15 +85,21 @@ rps_cache = dict()
 
 def get_radiation_pattern_coefficient(stats, config):
     if not config.rps_from_focal_mechanism:
-        return config.rps
+        if config.wave_type[0] == 'S':
+            return config.rps
+        elif config.wave_type[0] == 'P':
+            return config.rpp
     try:
         strike = stats.hypo.strike
         dip = stats.hypo.dip
         rake = stats.hypo.rake
     except Exception:
         logger.warning(
-            'Cannot find focal mechanism. Using "rps" value from config file')
-        return config.rps
+            'Cannot find focal mechanism. Using "rp[p/s]" value from config file')
+        if config.wave_type[0] == 'S':
+            return config.rps
+        elif config.wave_type[0] == 'P':
+            return config.rpp
     traceid = '.'.join(
         (stats.network, stats.station, stats.location, stats.channel))
     wave = config.wave_type
@@ -105,7 +111,7 @@ def get_radiation_pattern_coefficient(stats, config):
     except KeyError:
         pass
     try:
-        takeoff_angle = stats.takeoff_angles['S']
+        takeoff_angle = stats.takeoff_angles[config.wave_type[0]]
     except Exception:
         logger.warning(
             '{}: Cannot find takeoff angle. '
