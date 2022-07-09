@@ -102,6 +102,9 @@ def _compute_h(spec_st, code, wave_type='S'):
         # only use radial and, optionally, vertical component for SV
         if wave_type == 'SV' and channel[-1] == 'T':
             continue
+        # only use vertical component for P
+        if wave_type == 'P' and channel[-1] != 'Z':
+            continue
         if spec_h is None:
             spec_h = spec.copy()
             spec_h.data = np.power(spec_h.data, 2)
@@ -120,8 +123,12 @@ def _check_data_len(config, trace):
     traceId = trace.get_id()
 
     trace_cut = trace.copy()
-    t1 = trace.stats.arrivals['S1'][1]
-    t2 = trace.stats.arrivals['S2'][1]
+    if config.wave_type[0] == 'S':
+        t1 = trace.stats.arrivals['S1'][1]
+        t2 = trace.stats.arrivals['S2'][1]
+    elif config.wave_type[0] == 'P':
+        t1 = trace.stats.arrivals['P1'][1]
+        t2 = trace.stats.arrivals['P2'][1]
     trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     npts = len(trace_cut.data)
     if npts == 0:
@@ -147,8 +154,12 @@ def _cut_signal_noise(config, trace):
         _time_integrate(config, trace_noise)
 
     # trim...
-    t1 = trace.stats.arrivals['S1'][1]
-    t2 = trace.stats.arrivals['S2'][1]
+    if config.wave_type[0] == 'S':
+        t1 = trace.stats.arrivals['S1'][1]
+        t2 = trace.stats.arrivals['S2'][1]
+    elif config.wave_type[0] == 'P':
+        t1 = trace.stats.arrivals['P1'][1]
+        t2 = trace.stats.arrivals['P2'][1]
     trace_signal.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     # Noise time window for weighting function:
     noise_t1 = trace.stats.arrivals['N1'][1]
@@ -194,15 +205,18 @@ def _displacement_to_moment(stats, config):
 
     From Aki&Richards,1980
     """
-    vs_hypo = config.hypo.vs
-    vs_station = get_vel(
+    if config.wave_type[0] == 'S':
+        v_hypo = config.hypo.vs
+    elif config.wave_type[0] == 'P':
+        v_hypo = config.hypo.vp
+    v_station = get_vel(
         stats.coords.longitude, stats.coords.latitude, -stats.coords.elevation,
-        'S', config)
-    vs_hypo *= 1000.
-    vs_station *= 1000.
-    vs3 = vs_hypo**(5./2) * vs_station**(1./2)
-    rps = get_radiation_pattern_coefficient(stats, config)
-    coeff = 4 * math.pi * vs3 * config.rho / (2 * rps)
+        config.wave_type[0], config)
+    v_hypo *= 1000.
+    v_station *= 1000.
+    v3 = v_hypo**(5./2) * v_station**(1./2)
+    rp = get_radiation_pattern_coefficient(stats, config)
+    coeff = 4 * math.pi * v3 * config.rho / (2 * rp)
     return coeff
 
 
