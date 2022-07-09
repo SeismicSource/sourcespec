@@ -82,8 +82,9 @@ table.stations {
 }
 
 #sidebar .sidebar-footer {
+  margin-top: -20px;
   padding-left: 20px;
-  font-size: 0.8em;
+  font-size: 1.6vh;
   color: #94AFAB;
 }
 
