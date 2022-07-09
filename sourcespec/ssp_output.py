@@ -284,6 +284,7 @@ def _write_db(config, sourcepar):
 
     hypo = config.hypo
     evid = hypo.evid
+    runid = config.get('run_id', '')
 
     # Open SQLite database
     conn = sqlite3.connect(database_file, timeout=60)
@@ -292,7 +293,7 @@ def _write_db(config, sourcepar):
     # Init Station table
     c.execute(
         'create table if not exists Stations '
-        '(stid, evid,'
+        '(stid, evid, runid,'
         'Mo, Mo_err_minus, Mo_err_plus,'
         'Mw, Mw_err_minus, Mw_err_plus,'
         'fc, fc_err_minus, fc_err_plus,'
@@ -308,11 +309,11 @@ def _write_db(config, sourcepar):
         nobs += 1
         par = stationpar[statId]
         # Remove existing line, if present
-        t = (statId, evid)
-        c.execute('delete from Stations where stid=? and evid=?;', t)
+        t = (statId, evid, runid)
+        c.execute('delete from Stations where stid=? and evid=? and runid=?;', t)
         # Insert new line
         t = (
-            statId, evid,
+            statId, evid, runid,
             par['Mo'], *par['Mo_err'],
             par['Mw'], *par['Mw_err'],
             par['fc'], *par['fc_err'],
@@ -335,7 +336,7 @@ def _write_db(config, sourcepar):
     # Init Event table
     c.execute(
         'create table if not exists Events '
-        '(evid, orig_time, lon, lat, depth, nobs,'
+        '(evid, runid, orig_time, lon, lat, depth, nobs,'
         'Mo, Mo_err_minus, Mo_err_plus,'
         'Mo_wavg, Mo_wavg_err_minus, Mo_wavg_err_plus,'
         'Mw, Mw_err, Mw_wavg, Mw_wavg_err,'
@@ -361,10 +362,10 @@ def _write_db(config, sourcepar):
     run_completed = '{} {}'.format(config.end_of_run, config.end_of_run_tz)
     ssp_version = get_versions()['version']
     # Remove event from Event table, if present
-    t = (evid, )
-    c.execute('delete from Events where evid=?;', t)
+    t = (evid, runid)
+    c.execute('delete from Events where evid=? and runid=?;', t)
     t = (
-        evid,
+        evid, runid,
         str(hypo.origin_time),
         float(hypo.longitude), float(hypo.latitude), float(hypo.depth),
         nobs,
