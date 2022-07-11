@@ -22,6 +22,7 @@ from datetime import datetime
 from tzlocal import get_localzone
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_qml_output import write_qml
+from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -248,6 +249,7 @@ def _write_parfile(config, sourcepar):
     parfile.write('Er: {:.3e} /- {} /+ {} N.m\n'.format(
         Er_mean, Er_minus_str, Er_plus_str))
 
+    parfile.write('\n*** SourceSpec: {}'.format(get_versions()['version']))
     now = datetime.now()
     tz = get_localzone()
     timezone = tz.tzname(now)

@@ -24,6 +24,7 @@ Earthquake source parameters from S-wave displacement spectra
   - Removed option to read event information and traces from a pickle file
   (rarely used)
   - HTML page for misfit plots (when using grid search or importance sampling)
+  - Write SourceSpec version to parfile
 
 - Improvements:
   - Reduce PNG figures file size, while improving their resolution 😃
