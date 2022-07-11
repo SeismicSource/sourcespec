@@ -88,6 +88,10 @@ table.stations {
   color: #94AFAB;
 }
 
+#sidebar .sidebar-footer a:hover {
+  color: #e14d5b;
+}
+
 #sidebar ul.components {
   padding: 20px 0;
 }
