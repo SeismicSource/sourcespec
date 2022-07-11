@@ -71,6 +71,15 @@ def _multireplace(string, replacements, ignore_case=False):
         lambda match: replacements[normalize_old(match.group(0))], string)
 
 
+def _version_and_run_completed(config):
+    ssp_version = get_versions()['version']
+    run_completed = '{} {}'.format(
+        config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
+        config.end_of_run_tz
+    )
+    return ssp_version, run_completed
+
+
 def _author_and_agency(config):
     author = ''
     if config.author_name is not None:
@@ -169,11 +178,7 @@ def _misfit_page(config):
     misfit_html_out = os.path.join(config.options.outdir, 'misfit.html')
 
     # Version and run completed
-    ssp_version = get_versions()['version']
-    run_completed = '{} {}'.format(
-        config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
-        config.end_of_run_tz
-    )
+    ssp_version, run_completed = _version_and_run_completed(config)
 
     # Author and agency
     author, agency = _author_and_agency(config)
@@ -253,11 +258,7 @@ def html_report(config, sourcepar):
     shutil.copy(style_css, config.options.outdir)
 
     # Version and run completed
-    ssp_version = get_versions()['version']
-    run_completed = '{} {}'.format(
-        config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
-        config.end_of_run_tz
-    )
+    ssp_version, run_completed = _version_and_run_completed(config)
 
     # Author and agency
     author, agency = _author_and_agency(config)
