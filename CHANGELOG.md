@@ -25,6 +25,7 @@ Earthquake source parameters from S-wave displacement spectra
   (rarely used)
   - HTML page for misfit plots (when using grid search or importance sampling)
   - Write SourceSpec version to parfile
+  - Write SourceSpec version and run complete time to SQLite file
 
 - Improvements:
   - Reduce PNG figures file size, while improving their resolution 😃

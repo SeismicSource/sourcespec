@@ -351,12 +351,15 @@ def _write_db(config, sourcepar):
         'bsd_wavg, bsd_wavg_err_minus, bsd_wavg_err_plus,'
         'Er, Er_err_minus, Er_err_plus,'
         'Ml, Ml_err,'
+        'run_completed, sourcespec_version,'
         'author_name, author_email,'
         'agency_full_name, agency_short_name, agency_url);')
     means = sourcepar.means
     means_weight = sourcepar.means_weight
     errors = sourcepar.errors
     errors_weight = sourcepar.errors_weight
+    run_completed = '{} {}'.format(config.end_of_run, config.end_of_run_tz)
+    ssp_version = get_versions()['version']
     # Remove event from Event table, if present
     t = (evid, )
     c.execute('delete from Events where evid=?;', t)
@@ -381,6 +384,7 @@ def _write_db(config, sourcepar):
         means_weight['bsd'], *errors_weight['bsd'],
         means['Er'], *errors['Er'],
         means['Ml'], errors['Ml'],
+        run_completed, ssp_version,
         config.author_name, config.author_email,
         config.agency_full_name, config.agency_short_name,
         config.agency_url
