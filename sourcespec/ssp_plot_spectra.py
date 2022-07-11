@@ -125,13 +125,28 @@ def _make_fig(config, plot_params):
         textstr = config.options.evname
         ax0.text(0., 1.1, textstr, fontsize=14,
                  ha='left', va='top', transform=ax0.transAxes)
-    # Add code information at the figure bottom
+    # Add code and author information at the figure bottom
     textstr = 'SourceSpec v{} '.format(get_versions()['version'])
     if not stack_plots:
-        textstr += '– {} {}\n'.format(
+        textstr += '– {} {} '.format(
             config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
             config.end_of_run_tz)
-    ax0.text(1., -0.1, textstr, fontsize=10,
+    textstr2 = ''
+    if config.author_name is not None:
+        textstr2 += config.author_name
+    elif config.author_email is not None:
+        textstr2 += config.author_email
+    if config.agency_short_name is not None:
+        if textstr2 != '':
+            textstr2 += ' - '
+        textstr2 += config.agency_short_name
+    elif config.agency_full_name is not None:
+        if textstr2 != '':
+            textstr2 += ' - '
+        textstr2 += config.agency_full_name
+    if textstr2 != '':
+        textstr = '{}\n{} '.format(textstr, textstr2)
+    ax0.text(1., -0.1, textstr, fontsize=10, linespacing=1.5,
              ha='right', va='top', transform=ax0.transAxes)
     axes = []
     for n in range(nlines*ncols):

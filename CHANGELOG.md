@@ -14,7 +14,8 @@ Earthquake source parameters from S-wave displacement spectra
   - Config parameters `PLOT_SHOW`, `PLOT_SAVE` and `PLOT_SAVE_FORMAT` are now
     lowercase (`plot_show`, `plot_save` and `plot_save_format`)
   - New, optional, general config parameters for specyfing author and agency
-    information. This information is written to output files, if specified.
+    information. This information is written to output files and figures,
+    if specified.
   - Removed `DEBUG` config parameter
   - Parameters from `GENERAL PARAMETERS` section reorganized into a new
     section called `TRACE AND METADATA PARAMETERS`
@@ -26,6 +27,8 @@ Earthquake source parameters from S-wave displacement spectra
   - HTML page for misfit plots (when using grid search or importance sampling)
   - Write SourceSpec version to parfile
   - Write SourceSpec version and run complete time to SQLite file
+  - Write author and agency info (if specified) to output files, figures and
+    HTML report
 
 - Improvements:
   - Reduce PNG figures file size, while improving their resolution 😃

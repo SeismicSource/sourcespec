@@ -356,12 +356,27 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     elif vname == 'fc':
         cm_label = 'Corner Frequency (Hz)'
     cax.set_ylabel(cm_label)
-    # Add code information at the figure bottom
+    # Add code and author information at the figure bottom
     textstr = 'SourceSpec v{} '.format(get_versions()['version'])
-    textstr += '– {} {}\n'.format(
+    textstr += '– {} {} '.format(
         config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
         config.end_of_run_tz)
-    cax.text(1., -0.1, textstr, fontsize=8,
+    textstr2 = ''
+    if config.author_name is not None:
+        textstr2 += config.author_name
+    elif config.author_email is not None:
+        textstr2 += config.author_email
+    if config.agency_short_name is not None:
+        if textstr2 != '':
+            textstr2 += ' - '
+        textstr2 += config.agency_short_name
+    elif config.agency_full_name is not None:
+        if textstr2 != '':
+            textstr2 += ' - '
+        textstr2 += config.agency_full_name
+    if textstr2 != '':
+        textstr = '{}\n{} '.format(textstr, textstr2)
+    cax.text(1., -0.1, textstr, fontsize=8, linespacing=1.5,
              ha='right', va='top', transform=cax.transAxes)
 
     if config.plot_station_names_on_map:
