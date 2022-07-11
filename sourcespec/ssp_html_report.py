@@ -99,7 +99,8 @@ def _author_and_agency(config):
     elif config.agency_url is not None:
         agency = config.agency_url
     if config.agency_url is not None:
-        agency = '<a href="{}">{}</a>'.format(config.agency_url, agency)
+        agency = '<a href="{}" target="_blank">{}</a>'.format(
+            config.agency_url, agency)
     if author != '':
         author = '<br/><br/>' + author
     if author == '' and agency != '':
