@@ -186,24 +186,31 @@ def _savefig(config, plottype, figures):
     pad_inches = matplotlib.rcParams['savefig.pad_inches']
     bbox = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
     bbox = bbox.padded(pad_inches)
-    if fmt == 'pdf_multipage':
-        figfile = figfile_base + 'pdf'
-        with PdfPages(figfile) as pdf:
-            for fig in figures:
-                pdf.savefig(fig, bbox_inches=bbox)
-                if not config.plot_show:
-                    plt.close(fig)
-        logger.info(message + ' plots saved to: ' + figfile)
-        return
-    for n, fig in enumerate(figures):
-        if len(figures) == 1:
-            figfile = figfile_base + fmt
+    nfigures = len(figures)
+    if nfigures == 1 or fmt == 'pdf_multipage':
+        if fmt == 'pdf_multipage':
+            figfile = figfile_base + 'pdf'
+            pdf = PdfPages(figfile)
         else:
-            figfile = figfile_base + '{:02d}.{}'.format(n, fmt)
-        savefig(fig, figfile, fmt, bbox_inches=bbox)
-        logger.info(message + ' plots saved to: ' + figfile)
+            figfile = figfile_base + fmt
+        figfiles = [figfile, ]
+    else:
+        figfiles = [
+            figfile_base + '{:02d}.{}'.format(n, fmt)
+            for n in range(nfigures)
+        ]
+    for n in range(nfigures):
+        if fmt == 'pdf_multipage':
+            pdf.savefig(figures[n], bbox_inches=bbox)
+        else:
+            savefig(figures[n], figfiles[n], fmt, bbox_inches=bbox)
         if not config.plot_show:
-            plt.close(fig)
+            plt.close(figures[n])
+    for figfile in figfiles:
+        logger.info(message + ' plots saved to: ' + figfile)
+    config.figures['spectra_' + plottype] += figfiles
+    if fmt == 'pdf_multipage':
+        pdf.close()
 
 
 def _add_labels(plot_params):

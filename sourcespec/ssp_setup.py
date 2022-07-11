@@ -23,6 +23,7 @@ import logging
 import signal
 import uuid
 from datetime import datetime
+from collections import defaultdict
 from sourcespec.configobj import ConfigObj
 from sourcespec.configobj.validate import Validator
 from sourcespec.config import Config
@@ -443,6 +444,8 @@ def configure(options, progname):
             sys.exit(1)
 
     _init_plotting(config.plot_show)
+    # Create a dict to store figure paths
+    config.figures = defaultdict(list)
     return config
 
 

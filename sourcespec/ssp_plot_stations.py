@@ -385,6 +385,7 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
             logger.info('Station-magnitude map saved to: ' + figfile)
         elif vname == 'fc':
             logger.info('Station-corner_freq map saved to: ' + figfile)
+        config.figures['station_maps'].append(figfile)
 
 
 def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):

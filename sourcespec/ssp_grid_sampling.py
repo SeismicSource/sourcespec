@@ -302,6 +302,7 @@ class GridSampling():
             logger.info(
                 '{}: conditional misfit plot saved to: {}'.format(
                     label, figfile))
+            config.figures['misfit_1d'].append(figfile)
 
     def plot_misfit_2d(self, config, plot_par_idx, label):
         """Plot a 2D conditional misfit map."""
@@ -421,9 +422,9 @@ class GridSampling():
             os.makedirs(outdir)
         evid = config.hypo.evid
         figfile_base = os.path.join(outdir, evid)
-        suffix = '{}-{}'.format(*params_name)
+        params_string = '{}-{}'.format(*params_name)
         figfile_base += '.misfit_{}_{}.'.format(
-            suffix, label.replace(' ', '_'))
+            params_string, label.replace(' ', '_'))
         fmt = config.plot_save_format
         if fmt == 'pdf_multipage':
             fmt = 'pdf'
@@ -437,3 +438,4 @@ class GridSampling():
             logger.info(
                 '{}: conditional misfit map saved to: {}'.format(
                     label, figfile))
+            config.figures['misfit_' + params_string].append(figfile)

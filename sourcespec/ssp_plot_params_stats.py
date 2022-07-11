@@ -94,4 +94,5 @@ def box_plots(config, sourcepar):
         plt.show()
     if config.plot_save:
         savefig(fig, figfile, fmt, bbox_inches='tight')
+        config.figures['boxplots'].append(figfile)
         logger.info('Parameters box plot saved to: ' + figfile)

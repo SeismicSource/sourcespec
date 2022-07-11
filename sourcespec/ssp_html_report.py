@@ -14,7 +14,6 @@ import logging
 import shutil
 import re
 import numpy as np
-from glob import glob
 from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.split('.')[-1])
 
@@ -189,35 +188,19 @@ def _misfit_page(config):
     evid = hypo.evid
 
     # 1d conditional misfit plots
-    misfit_plot_files = glob(
-        os.path.join(
-            config.options.outdir, 'misfit',
-            '{}.cond_misfit_*.png'.format(evid)
-        ))
+    misfit_plot_files = config.figures['misfit_1d']
     one_d_misfit_table_rows = _misfit_table_rows(misfit_plot_files)
 
     # 2d conditional misfit plots: fc-Mw
-    misfit_plot_files = glob(
-        os.path.join(
-            config.options.outdir, 'misfit',
-            '{}.misfit_fc-Mw_*.png'.format(evid)
-        ))
+    misfit_plot_files = config.figures['misfit_fc-Mw']
     two_d_misfit_table_rows_fc_mw = _misfit_table_rows(misfit_plot_files)
 
     # 2d conditional misfit plots: fc-tstar
-    misfit_plot_files = glob(
-        os.path.join(
-            config.options.outdir, 'misfit',
-            '{}.misfit_fc-t_star_*.png'.format(evid)
-        ))
+    misfit_plot_files = config.figures['misfit_fc-t_star']
     two_d_misfit_table_rows_fc_tstar = _misfit_table_rows(misfit_plot_files)
 
     # 2d conditional misfit plots: tstar-Mw
-    misfit_plot_files = glob(
-        os.path.join(
-            config.options.outdir, 'misfit',
-            '{}.misfit_t_star-Mw_*.png'.format(evid)
-        ))
+    misfit_plot_files = config.figures['misfit_t_star-Mw']
     two_d_misfit_table_rows_tstar_mw = _misfit_table_rows(misfit_plot_files)
 
     # Main HTML page
@@ -277,10 +260,7 @@ def html_report(config, sourcepar):
 
     # Trace plot files
     traces_plot = open(traces_plot_html).read()
-    traces_plot_files = glob(
-        os.path.join(config.options.outdir, '*.traces.png'))
-    traces_plot_files += glob(
-        os.path.join(config.options.outdir, '*.traces.??.png'))
+    traces_plot_files = config.figures['traces']
     traces_plots = ''
     traces_plot_id = ''
     for traces_plot_file in sorted(traces_plot_files):
@@ -292,10 +272,7 @@ def html_report(config, sourcepar):
 
     # Spectral plot files
     spectra_plot = open(spectra_plot_html).read()
-    spectra_plot_files = glob(
-        os.path.join(config.options.outdir, '*.ssp.png'))
-    spectra_plot_files += glob(
-        os.path.join(config.options.outdir, '*.ssp.??.png'))
+    spectra_plot_files = config.figures['spectra_regular']
     spectra_plots = ''
     spectra_plot_id = ''
     for spectra_plot_file in sorted(spectra_plot_files):
