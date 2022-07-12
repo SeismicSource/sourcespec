@@ -36,6 +36,11 @@ table.stations th {
   z-index: 2;
 }
 
+table.stations th:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .navbar {
   padding: 15px 10px;
   background: #fff;

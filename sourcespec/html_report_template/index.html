@@ -253,21 +253,45 @@
         <div class="line" id="station_source_parameters"></div>
         <h2>Station Source Parameters</h2>
         <h6>Note: outliers are greyed out</h6>
-        <table class="table stations">
+        <table class="table stations" id="station_table">
           <thead>
             <tr>
-              <th scope="col">Station</th>
-              <th scope="col">Type</th>
-              <th scope="col">Mw</th>
-              <th scope="col">Corner Frequency (Hz)</th>
-              <th scope="col">t_star (s)</th>
-              <th scope="col">Qo</th>
-              <th scope="col">Seismic Moment (N.m)</th>
-              <th scope="col">Brune stress drop (MPa)</th>
-              <th scope="col">Source radius (m)</th>
-              <th scope="col">Hypocentral Distance (km)</th>
-              <th scope="col">Azimuth (°)</th>
-              <th scope="col">Radiated Energy (N.m)</th>
+              <th onclick="sortTable(0)" scope="col">
+                <nobr><i class="fas fa-sort"></i>&nbsp;Station</nobr>
+              </th>
+              <th onclick="sortTable(1)" scope="col">
+                <nobr><i class="fas fa-sort"></i>&nbsp;Type</nobr>
+              </th>
+              <th onclick="sortTable(2, numeric=true)" scope="col">
+                <nobr><i class="fas fa-sort"></i>&nbsp;Mw</nobr>
+              </th>
+              <th onclick="sortTable(3, numeric=true)" scope="col">
+                <nobr><i class="fas fa-sort"></i>&nbsp;Corner</nobr> Frequency (Hz)
+              </th>
+              <th onclick="sortTable(4, numeric=true)" scope="col">
+                <nobr><i class="fas fa-sort"></i>&nbsp;t_star</nobr> (s)
+              </th>
+              <th onclick="sortTable(5, numeric=true)" scope="col">
+                <nobr><i class="fas fa-sort"></i>&nbsp;Qo</nobr>
+              </th>
+              <th onclick="sortTable(6, numeric=true)" scope="col">
+                <nobr><i class="fas fa-sort"></i>&nbsp;Seismic</nobr> Moment (N.m)
+              </th>
+              <th onclick="sortTable(7, numeric=true)" scope="col">
+                <nobr><i class="fas fa-sort"></i>&nbsp;Brune</nobr> stress drop (MPa)
+              </th>
+              <th onclick="sortTable(8, numeric=true)" scope="col">
+                <nobr><i class="fas fa-sort"></i>&nbsp;Source</nobr> radius (m)
+              </th>
+              <th onclick="sortTable(9, numeric=true)" scope="col">
+                <nobr><i class="fas fa-sort"></i>&nbsp;Hypocentral</nobr> Distance (km)
+              </th>
+              <th onclick="sortTable(10, numeric=true)" scope="col">
+                <nobr><i class="fas fa-sort"></i>&nbsp;Azimuth</nobr> (°)
+              </th>
+              <th onclick="sortTable(11, numeric=true)" scope="col">
+                <nobr><i class="fas fa-sort"></i>&nbsp;Radiated</nobr> Energy (N.m)
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -355,5 +379,70 @@
         selector: '.item'
       });
     </script>
+    <script>
+      function sortTable(n, numeric=false) {
+        var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+        table = document.getElementById("station_table");
+        switching = true;
+        // Set the sorting direction to ascending:
+        dir = "asc";
+        /* Make a loop that will continue until
+        no switching has been done: */
+        while (switching) {
+          // Start by saying: no switching is done:
+          switching = false;
+          rows = table.rows;
+          /* Loop through all table rows (except the
+          first, which contains table headers): */
+          for (i = 1; i < (rows.length - 1); i++) {
+            // Start by saying there should be no switching:
+            shouldSwitch = false;
+            /* Get the two elements you want to compare,
+            one from current row and one from the next: */
+            x = rows[i].getElementsByTagName("TD")[n];
+            y = rows[i + 1].getElementsByTagName("TD")[n];
+            xvalue = x.innerHTML.toLowerCase();
+            yvalue = y.innerHTML.toLowerCase();
+            if (numeric) {
+              // split with respect to "<br>", then strip all remainig tags
+              xvalue = xvalue.split("<br>")[0].replace(/<\/?[^>]+(>|$)/g, "");
+              yvalue = yvalue.split("<br>")[0].replace(/<\/?[^>]+(>|$)/g, "");
+              xvalue = Number(xvalue);
+              yvalue = Number(yvalue);
+            }
+            /* Check if the two rows should switch place,
+            based on the direction, asc or desc: */
+            if (dir == "asc") {
+              if (xvalue > yvalue) {
+                // If so, mark as a switch and break the loop:
+                shouldSwitch = true;
+                break;
+              }
+            } else if (dir == "desc") {
+              if (xvalue < yvalue) {
+                // If so, mark as a switch and break the loop:
+                shouldSwitch = true;
+                break;
+              }
+            }
+          }
+          if (shouldSwitch) {
+            /* If a switch has been marked, make the switch
+            and mark that a switch has been done: */
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            // Each time a switch is done, increase this count by 1:
+            switchcount ++;
+          } else {
+            /* If no switching has been done AND the direction is "asc",
+            set the direction to "desc" and run the while loop again. */
+            if (switchcount == 0 && dir == "asc") {
+              dir = "desc";
+              switching = true;
+            }
+          }
+        }
+      }
+      </script>
   </body>
 </html>

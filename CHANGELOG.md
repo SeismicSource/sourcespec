@@ -32,6 +32,7 @@ Earthquake source parameters from S-wave displacement spectra
 
 - Improvements:
   - Reduce PNG figures file size, while improving their resolution 😃
+  - Station table in HTML report is now sortable (and its header remains fixed)!
 
 - Bugfixes:
   - Fix not working `weighting` options: `frequency` and `no_weight`

@@ -120,20 +120,18 @@ def _format_exponent(value, reference):
 def _value_and_err_text(par, key, fmt):
     """Format value and error text."""
     value = par[key]
-    value_text = fmt.format(value)
-    # replace dash by non breaking dash
-    value_text = value_text.replace('-', '&#8722;')
+    value_text = '<nobr>{}</nobr>'.format(fmt.format(value))
     outlier = par.get(key + '_outlier', False)
     if outlier:
         value_text = '<span style="color:#979A9A">' + value_text + '</span>'
     try:
         err = par[key + '_err']
         if err[0] == err[1]:
-            err_text = '&#177;'+fmt.format(err[0])  # use HTML code for ±
+            # use HTML code for ±, for compatibility with Edge
+            err_text = '<nobr>&#177;{}</nobr>'.format(fmt.format(err[0]))
         else:
-            err_text = '-'+fmt.format(err[0])+'<br/>+'+fmt.format(err[1])
-        # replace dash by non breaking dash
-        err_text = err_text.replace('-', '&#8722;')
+            err_text = '<nobr>-{}</nobr><br/><nobr>+{}</nobr>'.format(
+                fmt.format(err[0]), fmt.format(err[1]))
         if outlier:
             err_text = '<span style="color:#979A9A">' + err_text + '</span>'
     except KeyError:
