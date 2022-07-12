@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patheffects as mpe
 import logging
 
-from pyrsistent import v
 from sourcespec._version import get_versions
 from sourcespec.savefig import savefig
 matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
