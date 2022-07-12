@@ -16,7 +16,6 @@ Spectral inversion routines for sourcespec.
     (http://www.cecill.info/licences.en.html)
 """
 import logging
-import math
 import numpy as np
 from collections import OrderedDict
 from scipy.optimize import curve_fit, minimize, basinhopping
@@ -126,7 +125,41 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
     return params_opt, params_err, misfit
 
 
-def _spec_inversion(config, spec, noise_weight):
+def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_log, statId):
+    """Find the frequency range to compute Mw_0 and, possibly, t_star_0."""
+    if config.weighting == 'noise':
+        # we start where signal-to-noise becomes strong
+        idx0 = np.where(weight > 0.5)[0][0]
+        # we stop at the first max of signal-to-noise (proxy for fc)
+        idx_max = argrelmax(weight)[0]
+        # just keep the indexes for maxima > 0.5
+        idx_max = [idx for idx in idx_max if weight[idx] > 0.5]
+        if not idx_max:
+            # if idx_max is empty, then the source and/or noise spectrum
+            # is most certainly "strange". In this case, we simply give up.
+            msg = '{}: unable to find a frequency range to compute Mw_0. '
+            msg += 'This is possibly due to an uncommon spectrum '
+            msg += '(e.g., a resonance).'
+            msg = msg.format(statId)
+            raise RuntimeError(msg)
+        idx1 = idx_max[0]
+        if idx1 == idx0:
+            try:
+                idx1 = idx_max[1]
+            except IndexError:
+                # if there are no other maxima, just take 5 points
+                idx1 = idx0+5
+    elif config.weighting == 'frequency':
+        idx0 = 0
+        # the closest index to f_weight:
+        idx1 = np.where(freq_log <= config.f_weight)[0][-1]
+    else:
+        idx0 = 0
+        idx1 = int(len(weight)/2)
+    return idx0, idx1
+
+
+def _spec_inversion(config, spec, spec_weight):
     """Invert one spectrum."""
     # azimuth computation
     coords = spec.stats.coords
@@ -141,46 +174,19 @@ def _spec_inversion(config, spec, noise_weight):
     freq_log = spec.freq_log
     ydata = spec.data_log_mag
     statId = '{} {}'.format(spec.id, spec.stats.instrtype)
+    weight = spec_weight.data_log
 
-    noise_weight = noise_weight.data_log
-    if config.weighting == 'noise':
-        weight = noise_weight
-        # 'curve_fit' interprets 'yerr' as standard deviation vector
-        # and calculates weights as 1/yerr^2 .
-        # Therefore we build yerr as:
-        yerr = 1./np.sqrt(weight)
-    elif config.weighting == 'frequency':
-        # frequency weighting:
-        #   config.weight for f<=f_weight
-        #   1      for f> f_weight
-        yerr = np.ones(len(ydata))
-        yerr[freq_log <= config.f_weight] = 1./math.sqrt(config.weight)
-        weight = 1./np.power(yerr, 2)
-    elif config.weighting is None:
-        weight = yerr = np.ones(len(ydata))
+    # 'curve_fit' interprets 'yerr' as standard deviation array
+    # and calculates weights as 1/yerr^2 .
+    # Therefore we build yerr as:
+    yerr = 1./np.sqrt(weight)
 
-    # Find the frequency range to compute Mw_0 and, possibly, t_star_0:
-    # we start where signal-to-noise becomes strong
-    idx0 = np.where(noise_weight > 0.5)[0][0]
-    # we stop at the first max of signal-to-noise (proxy for fc)
-    idx_max = argrelmax(noise_weight)[0]
-    # just keep the indexes for maxima > 0.5
-    idx_max = [idx for idx in idx_max if noise_weight[idx] > 0.5]
-    if not idx_max:
-        # if idx_max is empty, then the source and/or noise spectrum
-        # is most certainly "strange". In this case, we simply give up.
-        msg = '{}: unable to find a frequency range to compute Mw_0. '
-        msg += 'This is possibly due to an uncommon spectrum '
-        msg += '(e.g., a resonance).'
-        msg = msg.format(statId)
-        raise RuntimeError(msg)
-    idx1 = idx_max[0]
-    if idx1 == idx0:
-        try:
-            idx1 = idx_max[1]
-        except IndexError:
-            # if there are no other maxima, just take 5 points
-            idx1 = idx0+5
+    # Find frequency range (indexes) to compute Mw_0 and t_star_0
+    # When using noise weighting, idx1 is the first maximum in
+    # signal-to-noise ratio
+    idx0, idx1 = _freq_ranges_for_Mw0_and_tstar0(
+        config, weight, freq_log, statId)
+
     # first maximum is a proxy for fc, we use it for fc_0:
     fc_0 = freq_log[idx1]
 
@@ -370,7 +376,7 @@ def spectral_inversion(config, spec_st, weight_st):
     weighting_messages = {
         'noise': 'Using noise weighting for inversion.',
         'frequency': 'Using frequency weighting for inversion.',
-        None: 'Using no weighting for inversion.'
+        'no_weight': 'Using no weighting for inversion.'
     }
     logger.info(weighting_messages[config.weighting])
     algorithm_messages = {
@@ -390,9 +396,9 @@ def spectral_inversion(config, spec_st, weight_st):
             continue
         if spec.stats.ignore:
             continue
-        noise_weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
+        spec_weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
         try:
-            par, par_err = _spec_inversion(config, spec, noise_weight)
+            par, par_err = _spec_inversion(config, spec, spec_weight)
         except (RuntimeError, ValueError) as msg:
             logger.warning(msg)
             continue

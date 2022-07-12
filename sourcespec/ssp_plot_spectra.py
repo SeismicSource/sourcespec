@@ -17,6 +17,7 @@ Spectral plotting routine.
 import os
 import math
 import logging
+import warnings
 from collections import defaultdict
 from obspy import Stream
 from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
@@ -163,7 +164,10 @@ def _make_fig(config, plot_params):
                     nlines, ncols, plotn,
                     sharex=axes[0][0], sharey=axes[0][0])
         ax.set_xlim(plot_params.freq_minmax)
-        ax.set_ylim(plot_params.moment_minmax)
+        with warnings.catch_warnings():
+            # ignore warnings when ymin == ymax (ex., no weighting)
+            warnings.simplefilter('ignore')
+            ax.set_ylim(plot_params.moment_minmax)
         ax.grid(
             True, which='both', linestyle='solid', color='#DDDDDD', zorder=0)
         ax.set_axisbelow(True)

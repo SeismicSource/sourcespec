@@ -270,7 +270,27 @@ def _build_spectrum(config, trace):
     return spec
 
 
-def _build_weight(config, spec, specnoise):
+def _build_uniform_weight(config, spec):
+    weight = spec.copy()
+    weight.data = np.ones_like(weight.data)
+    weight.data_log = np.ones_like(weight.data_log)
+    return weight
+
+
+def _build_weight_from_frequency(config, spec):
+    weight = spec.copy()
+    freq = weight.get_freq()
+    weight.data = np.ones_like(weight.data)
+    weight.data[freq <= config.f_weight] = config.weight
+    weight.data /= np.max(weight.data)
+    freq_log = weight.freq_log
+    weight.data_log = np.ones_like(weight.data_log)
+    weight.data_log[freq_log <= config.f_weight] = config.weight
+    weight.data_log /= np.max(weight.data_log)
+    return weight
+
+
+def _build_weight_from_noise(config, spec, specnoise):
     weight = spec.copy()
     if specnoise is not None:
         weight.data /= specnoise.data
@@ -311,7 +331,12 @@ def _build_weight_st(config, spec_st, specnoise_st):
             specnoise_h = _select_spectra(specnoise_st, specid + 'H')[0]
         except Exception:
             continue
-        weight = _build_weight(config, spec_h, specnoise_h)
+        if config.weighting == 'noise':
+            weight = _build_weight_from_noise(config, spec_h, specnoise_h)
+        elif config.weighting == 'frequency':
+            weight = _build_weight_from_frequency(config, spec_h)
+        elif config.weighting == 'no_weight':
+            weight = _build_uniform_weight(config, spec_h)
         weight_st.append(weight)
     return weight_st
 
@@ -347,7 +372,7 @@ def _build_H(spec_st, specnoise_st=None, wave_type='S'):
 
 
 def _check_spectral_sn_ratio(config, spec, specnoise):
-    weight = _build_weight(config, spec, specnoise)
+    weight = _build_weight_from_noise(config, spec, specnoise)
     if config.spectral_sn_freq_range is not None:
         sn_fmin, sn_fmax = config.spectral_sn_freq_range
         freqs = weight.get_freq()
@@ -423,9 +448,6 @@ def build_spectra(config, st):
     weight_st = _build_weight_st(config, spec_st, specnoise_st)
 
     logger.info('Building spectra: done')
-    if config.weighting == 'noise':
-        for specnoise in specnoise_st:
-            specnoise.data_mag = moment_to_mag(specnoise.data)
-        return spec_st, specnoise_st, weight_st
-    else:
-        return spec_st
+    for specnoise in specnoise_st:
+        specnoise.data_mag = moment_to_mag(specnoise.data)
+    return spec_st, specnoise_st, weight_st
