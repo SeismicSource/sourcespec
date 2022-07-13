@@ -253,6 +253,7 @@ def _build_spectrum(config, trace):
     spec.stats.hypo_dist = stats.hypo_dist
     spec.stats.epi_dist = stats.epi_dist
     spec.stats.ignore = stats.ignore
+    spec.stats.travel_times = stats.travel_times
     # Integrate in frequency domain, if no time-domain
     # integration has been performed
     if not config.time_domain_int:

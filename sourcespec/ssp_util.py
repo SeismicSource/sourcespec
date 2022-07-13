@@ -125,11 +125,11 @@ def bsd(Mo_in_N_m, ra_in_m):
     return 7./16 * Mo_in_N_m / ra_in_m**3 * 1e-6
 
 
-def quality_factor(hyp_dist_in_km, vs_in_km_per_s, t_star_in_s):
-    """Compute quality factor from t_star, distance and vs."""
+def quality_factor(travel_time_in_s, t_star_in_s):
+    """Compute quality factor from travel time and t_star."""
     if t_star_in_s == 0:
         return np.inf
-    return hyp_dist_in_km/(t_star_in_s*vs_in_km_per_s)
+    return travel_time_in_s/t_star_in_s
 # -----------------------------------------------------------------------------
 
 

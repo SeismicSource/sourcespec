@@ -36,6 +36,8 @@ Earthquake source parameters from S-wave displacement spectra
     HTML report
 
 - Improvements:
+  - Use travel time (from NonLinLoc grid, "iasp91" model or `vs_tt`) to compute
+    quality factor from t* (and viceversa)
   - Reduce PNG figures file size, while improving their resolution 😃
   - Station table in HTML report is now sortable (and its header remains fixed)!
 

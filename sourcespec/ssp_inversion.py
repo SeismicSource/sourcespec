@@ -273,9 +273,8 @@ def _spec_inversion(config, spec, spec_weight):
     par['lat'] = spec.stats.coords.latitude
 
     # additional parameters, computed from fc, Mw and t_star
-    vs = config.hypo.vs
-    # See if there is a travel-time vs defined
-    vs_tt = config.vs_tt or vs
+    vs = config.vs_source
+    travel_time = spec.stats.travel_times['S']
     # seismic moment
     par['Mo'] = mag_to_moment(par['Mw'])
     # source radius in meters
@@ -283,7 +282,7 @@ def _spec_inversion(config, spec, spec_weight):
     # Brune stress drop in MPa
     par['bsd'] = bsd(par['Mo'], par['ra'])
     # quality factor
-    par['Qo'] = quality_factor(par['hyp_dist'], vs_tt, par['t_star'])
+    par['Qo'] = quality_factor(travel_time, par['t_star'])
 
     # Check post-inversion bounds for bsd
     pi_bsd_min, pi_bsd_max = config.pi_bsd_min_max or (-np.inf, np.inf)
@@ -293,11 +292,8 @@ def _spec_inversion(config, spec, spec_weight):
         msg = msg.format(statId, par['bsd'], pi_bsd_min, pi_bsd_max)
         raise ValueError(msg)
 
-    par_err = OrderedDict(zip(params_name, params_err))
     # additional parameter errors, computed from fc, Mw and t_star
-    vs = config.hypo.vs
-    # See if there is a travel-time vs defined
-    vs_tt = config.vs_tt or vs
+    par_err = OrderedDict(zip(params_name, params_err))
     # seismic moment
     Mw_min = par['Mw'] - par_err['Mw'][0]
     Mw_max = par['Mw'] + par_err['Mw'][1]
@@ -321,8 +317,8 @@ def _spec_inversion(config, spec, spec_weight):
     if t_star_min <= 0:
         t_star_min = 0.001
     t_star_max = par['t_star'] + par_err['t_star'][1]
-    Qo_min = quality_factor(par['hyp_dist'], vs_tt, t_star_max)
-    Qo_max = quality_factor(par['hyp_dist'], vs_tt, t_star_min)
+    Qo_min = quality_factor(travel_time, t_star_max)
+    Qo_max = quality_factor(travel_time, t_star_min)
     par_err['Qo'] = (par['Qo']-Qo_min, Qo_max-par['Qo'])
 
     return par, par_err
