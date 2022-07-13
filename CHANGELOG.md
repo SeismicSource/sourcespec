@@ -11,6 +11,9 @@ Earthquake source parameters from S-wave displacement spectra
   Note: you will need to upgrade your old config files, manually or using
   `source_spec -U CONFIG_FILE_NAME`
 
+  - Config options `vp` and `vs` have been renamed to `vp_source`
+    and `vs_source`
+  - New, optional, config options `vp_stations` and `vs_stations`
   - Config parameters `PLOT_SHOW`, `PLOT_SAVE` and `PLOT_SAVE_FORMAT` are now
     lowercase (`plot_show`, `plot_save` and `plot_save_format`)
   - New, optional, general config parameters for specyfing author and agency
@@ -21,6 +24,8 @@ Earthquake source parameters from S-wave displacement spectra
     section called `TRACE AND METADATA PARAMETERS`
 
 - Features:
+  - It is now possible to provide different vp and vs velocities, close to the
+    source and close to the stations (see the new config options above)
   - QuakeML output (when using QuakeML input)
   - Removed option to read event information and traces from a pickle file
     (rarely used)

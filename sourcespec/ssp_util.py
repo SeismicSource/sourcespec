@@ -49,16 +49,35 @@ def select_trace(stream, traceid, instrtype):
             if tr.stats.instrtype == instrtype][0]
 
 
-def get_vel(lon, lat, depth, wave, config):
-    """
-    Get velocity at a given point from NonLinLoc grid.
+def _get_vel_from_config(wave, where, config):
+    if wave not in ['P', 'S']:
+        msg = 'Invalid wave type: {}'.format(wave)
+        raise ValueError(msg)
+    if where not in ['source', 'stations']:
+        msg = 'Invalid location type: {}'.format(where)
+        raise ValueError(msg)
+    if wave == 'P' and where == 'source':
+        vel = config.vp_source
+    if wave == 'P' and where == 'stations':
+        vel = config.vp_stations
+        if vel is None:
+            vel = config.vp_source
+    if wave == 'S' and where == 'source':
+        vel = config.vs_source
+    if wave == 'S' and where == 'stations':
+        vel = config.vs_stations
+        if vel is None:
+            vel = config.vs_source
+    return vel
 
-    Fall back to config.vp or config.vs if no grid is defined.
-    """
-    if wave == 'P':
-        vel = config.vp
-    elif wave == 'S':
-        vel = config.vs
+
+def get_vel(lon, lat, depth_in_km, wave, config):
+    """Get velocity at a given point from NonLinLoc grid or config."""
+    # If depth is large, we assume that we are close to the source
+    if depth_in_km >= 2:
+        vel = _get_vel_from_config(wave, 'source', config)
+    else:
+        vel = _get_vel_from_config(wave, 'stations', config)
     if config.NLL_model_dir is None:
         return vel
     # Lazy-import here, since nllgrid is not an installation requirement
@@ -70,9 +89,8 @@ def get_vel(lon, lat, depth, wave, config):
     except IndexError:
         return vel
     grd = NLLGrid(grdfile)
-    x, y = grd.project(lon, lat)
     if grd.type == 'SLOW_LEN':
-        slow_len = grd.get_value(lon, lat, depth)
+        slow_len = grd.get_value(lon, lat, depth_in_km)
         vel = grd.dx / slow_len
     return vel
 # -----------------------------------------------------------------------------

@@ -244,6 +244,8 @@ def _update_config_file(config_file, configspec):
         'PLOT_SHOW': 'plot_show',
         'PLOT_SAVE': 'plot_save',
         'PLOT_SAVE_FORMAT': 'plot_save_format',
+        'vp': 'vp_source',
+        'vs': 'vs_source',
     }
     for old_opt, new_opt in migrate_options.items():
         if old_opt in config_obj:
@@ -315,6 +317,14 @@ def _check_deprecated_config_options(config_obj):
         deprecation_msgs.append(
             '> "PLOT_SAVE_FORMAT" config parameter has been renamed to '
             '"plot_save_format".\n'
+        )
+    if 'vp' in config_obj:
+        deprecation_msgs.append(
+            '> "vp" config parameter has been renamed to "vp_source".\n'
+        )
+    if 'vs' in config_obj:
+        deprecation_msgs.append(
+            '> "vs" config parameter has been renamed to "vs_source".\n'
         )
     if deprecation_msgs:
         sys.stderr.write(
