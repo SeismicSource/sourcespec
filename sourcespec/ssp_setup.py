@@ -480,7 +480,7 @@ def move_outdir(config):
     except Exception:
         return
     src = config.options.outdir
-    run_id = config.get('run_id', '')
+    run_id = config.options.run_id
     path = os.path.normpath(config.options.outdir).split(os.sep)
     dst = os.path.join(*path[:-1], str(evid) + '_' + run_id)
     # Create destination
