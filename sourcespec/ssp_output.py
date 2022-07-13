@@ -284,7 +284,7 @@ def _write_db(config, sourcepar):
 
     hypo = config.hypo
     evid = hypo.evid
-    runid = config.get('run_id', '')
+    runid = config.options.run_id
 
     # Open SQLite database
     conn = sqlite3.connect(database_file, timeout=60)
