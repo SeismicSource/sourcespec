@@ -80,7 +80,7 @@ def _wave_arrival_nll(trace, phase, NLL_time_dir, focmec):
     return travel_time, takeoff_angle
 
 
-def _wave_arrival_vel(trace, phase, vel):
+def _wave_arrival_vel(trace, vel):
     """Travel time and takeoff angle using a constant velocity (in km/s)."""
     if vel is None:
         raise RuntimeError
@@ -118,7 +118,35 @@ def _wave_arrival_taup(trace, phase):
     return travel_time, takeoff_angle
 
 
+def _wave_arrival(trace, phase, config):
+    """Get travel time and takeoff angle."""
+    NLL_time_dir = config.NLL_time_dir
+    focmec = config.rps_from_focal_mechanism
+    vel = {'P': config.vp_tt, 'S': config.vs_tt}
+    try:
+        travel_time, takeoff_angle =\
+            _wave_arrival_nll(trace, phase, NLL_time_dir, focmec)
+        method = 'NonLinLoc grid'
+        return travel_time, takeoff_angle, method
+    except RuntimeError:
+        pass
+    try:
+        travel_time, takeoff_angle =\
+            _wave_arrival_vel(trace, vel[phase])
+        method = 'constant V{}: {:.1f} km/s'.format(phase.lower(), vel[phase])
+        return travel_time, takeoff_angle, method
+    except RuntimeError:
+        pass
+    try:
+        travel_time, takeoff_angle = _wave_arrival_taup(trace, phase)
+        method = 'global velocity model (iasp91)'
+        return travel_time, takeoff_angle, method
+    except RuntimeError:
+        raise
+
+
 def _validate_pick(pick, theo_pick_time, tolerance, trace_id):
+    """Check if a pick is valid, i.e., close enough to theoretical one."""
     if theo_pick_time is None:
         return True
     delta_t = pick.time - theo_pick_time
@@ -131,6 +159,23 @@ def _validate_pick(pick, theo_pick_time, tolerance, trace_id):
     return True
 
 
+def _get_theo_pick_time(trace, travel_time):
+    try:
+        theo_pick_time = trace.stats.hypo.origin_time + travel_time
+    except TypeError:
+        theo_pick_time = None
+    return theo_pick_time
+
+
+def _find_picks(trace, phase, theo_pick_time, tolerance):
+    """Search for valid picks in trace stats. Return pick time if found."""
+    for pick in (p for p in trace.stats.picks if p.phase == phase):
+        if _validate_pick(pick, theo_pick_time, tolerance, trace.id):
+            trace.stats.arrivals[phase] = (phase, pick.time)
+            return pick.time
+    return None
+
+
 def add_arrivals_to_trace(trace, config):
     """
     Add P and S arrival times and takeoff angles to trace.
@@ -139,62 +184,44 @@ def add_arrivals_to_trace(trace, config):
     or if the pick is too different from the theoretical arrival.
     """
     tolerance = config.p_arrival_tolerance
-    NLL_time_dir = config.NLL_time_dir
-    vel = {'P': config.vp_tt, 'S': config.vs_tt}
-    focmec = config.rps_from_focal_mechanism
     for phase in 'P', 'S':
         key = '{}_{}'.format(trace.id, phase)
+        # First, see if there are cached values
         try:
-            trace.stats.arrivals[phase] = add_arrivals_to_trace.pick_cache[key]
+            trace.stats.arrivals[phase] =\
+                add_arrivals_to_trace.pick_cache[key]
             trace.stats.takeoff_angles[phase] =\
                 add_arrivals_to_trace.angle_cache[key]
             continue
         except KeyError:
             pass
+        # If no cache is available, compute travel_time and takeoff_angle
         try:
-            travel_time, takeoff_angle = _wave_arrival_nll(
-                trace, phase, NLL_time_dir, focmec)
-            method = 'NonLinLoc grid'
+            travel_time, takeoff_angle, method =\
+                _wave_arrival(trace, phase, config)
+            theo_pick_time = _get_theo_pick_time(trace, travel_time)
+            pick_time = _find_picks(trace, phase, theo_pick_time, tolerance)
         except RuntimeError:
-            try:
-                travel_time, takeoff_angle = _wave_arrival_vel(
-                    trace, phase, vel[phase])
-                method = 'constant V{}: {:.1f} km/s'.format(
-                    phase.lower(), vel[phase])
-            except RuntimeError:
-                try:
-                    travel_time, takeoff_angle = _wave_arrival_taup(
-                        trace, phase)
-                    method = 'global velocity model (iasp91)'
-                except RuntimeError:
-                    return
-        if trace.stats.hypo.origin_time is None:
-            theo_pick_time = None
-        else:
-            theo_pick_time = trace.stats.hypo.origin_time + travel_time
-        found_pick = False
-        for pick in (p for p in trace.stats.picks if p.phase == phase):
-            if _validate_pick(pick, theo_pick_time, tolerance, trace.id):
-                logger.info('{}: found {} pick'.format(trace.id, phase))
-                trace.stats.arrivals[phase] = (phase, pick.time)
-                found_pick = True
-                break
-        if not found_pick and theo_pick_time is not None:
+            continue
+        if pick_time is not None:
+            logger.info('{}: found {} pick'.format(trace.id, phase))
+            pick_phase = phase
+        elif theo_pick_time is not None:
             logger.info('{}: using theoretical {} pick from {}'.format(
                 trace.id, phase, method))
-            trace.stats.arrivals[phase] = (phase + 'theo', theo_pick_time)
+            pick_time = theo_pick_time
+            pick_phase = phase + 'theo'
         else:
-            # Cannot get phase arrival: we stop here
             continue
-        add_arrivals_to_trace.pick_cache[key] = trace.stats.arrivals[phase]
-        trace.stats.takeoff_angles[phase] = takeoff_angle
-        if focmec:
+        if config.rps_from_focal_mechanism:
             logger.info(
                 '{}: {} takeoff angle: {:.1f} computed from {}'.format(
                     trace.id, phase, takeoff_angle, method
                 ))
+        add_arrivals_to_trace.pick_cache[key] =\
+            trace.stats.arrivals[phase] = (pick_phase, pick_time)
         add_arrivals_to_trace.angle_cache[key] =\
-            trace.stats.takeoff_angles[phase]
+            trace.stats.takeoff_angles[phase] = takeoff_angle
 
 
 add_arrivals_to_trace.pick_cache = dict()
