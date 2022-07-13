@@ -190,6 +190,8 @@ def add_arrivals_to_trace(trace, config):
         try:
             trace.stats.arrivals[phase] =\
                 add_arrivals_to_trace.pick_cache[key]
+            trace.stats.travel_times[phase] =\
+                add_arrivals_to_trace.travel_time_cache[key]
             trace.stats.takeoff_angles[phase] =\
                 add_arrivals_to_trace.angle_cache[key]
             continue
@@ -220,9 +222,12 @@ def add_arrivals_to_trace(trace, config):
                 ))
         add_arrivals_to_trace.pick_cache[key] =\
             trace.stats.arrivals[phase] = (pick_phase, pick_time)
+        add_arrivals_to_trace.travel_time_cache[key] =\
+            trace.stats.travel_times[phase] = travel_time
         add_arrivals_to_trace.angle_cache[key] =\
             trace.stats.takeoff_angles[phase] = takeoff_angle
 
 
 add_arrivals_to_trace.pick_cache = dict()
+add_arrivals_to_trace.travel_time_cache = dict()
 add_arrivals_to_trace.angle_cache = dict()

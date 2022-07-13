@@ -414,9 +414,10 @@ def _add_picks(trace, picks):
             if pick.station == station:
                 trace_picks.append(pick)
     trace.stats.picks = trace_picks
-    # Create empty dicts for arrivals and takeoff angles.
+    # Create empty dicts for arrivals, travel_times and takeoff angles.
     # They will be used later.
     trace.stats.arrivals = dict()
+    trace.stats.travel_times = dict()
     trace.stats.takeoff_angles = dict()
 
 
