@@ -93,7 +93,8 @@ class Bounds(object):
             return minmax
 
     def _Qo_to_t_star(self):
-        travel_time = self.spec.stats.travel_times['S']
+        phase = self.config.wave_type[0]
+        travel_time = self.spec.stats.travel_times[phase]
         t_star_bounds = travel_time/self.config.Qo_min_max
         return sorted(t_star_bounds)
 
