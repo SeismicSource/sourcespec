@@ -428,10 +428,11 @@ def _plot_event_traces(config, st, ncols=None, block=True):
 
 
 def plot_traces(config, st):
+    """Plot traces for the input event and the Green's function."""
     for hypo in config.hypo, config.hypoG:
         if hypo is None:
             continue
         # select traces for each evid
         st_evid = select_evid(st, hypo.evid)
-        # proces traces for each evid
+        # plot traces for each evid
         _plot_event_traces(config, st_evid, ncols=None, block=True)
