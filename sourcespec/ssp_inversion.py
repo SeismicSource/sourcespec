@@ -274,7 +274,7 @@ def _spec_inversion(config, spec, spec_weight):
 
     # additional parameters, computed from fc, Mw and t_star
     vs = config.vs_source
-    travel_time = spec.stats.travel_times['S']
+    travel_time = spec.stats.travel_times[config.wave_type[0]]
     # seismic moment
     par['Mo'] = mag_to_moment(par['Mw'])
     # source radius in meters
