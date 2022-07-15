@@ -205,13 +205,16 @@ def _displacement_to_moment(stats, config):
 
     From Aki&Richards,1980
     """
-    if config.wave_type[0] == 'S':
+    phase = config.wave_type[0]
+    if phase == 'S':
         v_hypo = config.hypo.vs
-    elif config.wave_type[0] == 'P':
+    elif phase == 'P':
         v_hypo = config.hypo.vp
     v_station = get_vel(
         stats.coords.longitude, stats.coords.latitude, -stats.coords.elevation,
-        config.wave_type[0], config)
+        phase, config)
+    logger.info('V%c_hypo: %.2f km/s, V%c_station: %.2f km/s'
+                % (phase, v_hypo, phase, v_station))
     v_hypo *= 1000.
     v_station *= 1000.
     v3 = v_hypo**(5./2) * v_station**(1./2)
