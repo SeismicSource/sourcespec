@@ -21,7 +21,8 @@ import warnings
 import contextlib
 from collections import defaultdict
 from obspy import Stream
-from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
+from sourcespec.ssp_util import (
+    select_evid, spec_minmax, moment_to_mag, mag_to_moment)
 from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
 import matplotlib
@@ -94,7 +95,7 @@ class PlotParams():
         self.moment_minmax = moment_minmax
 
 
-def _make_fig(config, plot_params):
+def _make_fig(config, hypo, plot_params):
     nlines = plot_params.nlines
     ncols = plot_params.ncols
     stack_plots = plot_params.stack_plots
@@ -105,13 +106,14 @@ def _make_fig(config, plot_params):
     ax0 = fig.add_subplot(111, label='ax0')
     ax0.set_axis_off()
     # Add event information as a title
-    hypo = config.hypo
     textstr = (
         f'evid: {hypo.evid} lon: {hypo.longitude:.3f} '
         f'lat: {hypo.latitude:.3f} depth: {hypo.depth:.1f} km'
     )
     with contextlib.suppress(AttributeError):
         textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
+    if hypo.green:
+        textstr += " Green's function"
     ax0.text(
         0., 1.06, textstr, fontsize=12,
         ha='left', va='top', transform=ax0.transAxes)
@@ -187,8 +189,8 @@ def _make_fig(config, plot_params):
     plot_params.plotn = 0
 
 
-def _savefig(config, plottype, figures):
-    evid = config.hypo.evid
+def _savefig(config, hypo, plottype, figures):
+    evid = hypo.evid
     if plottype == 'regular':
         suffix = '.ssp.'
         message = 'Spectral'
@@ -218,7 +220,10 @@ def _savefig(config, plottype, figures):
         if not config.plot_show:
             plt.close(figures[n])
     for figfile in figfiles:
-        logger.info(f'{message} plots saved to: {figfile}')
+        if hypo.green:
+            logger.info(f"Green's function{message}plots saved to: {figfile}")
+        else:
+            logger.info(f'{message} plots saved to: {figfile}')
     config.figures[f'spectra_{plottype}'] += figfiles
     if fmt == 'pdf_multipage':
         pdf.close()
@@ -602,7 +607,9 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
         # Add labels and legend before making a new figure
         _add_labels(plot_params)
         _add_legend(config, plot_params, spec_st, specnoise_st)
-        _make_fig(config, plot_params)
+        # All traces in Stream have the same hypo
+        hypo = spec_st[0].stats.hypo
+        _make_fig(config, hypo, plot_params)
         plotn = 1
     plot_params.plotn = plotn
     special_orientations = ['S', 's', 't', 'H', 'h']
@@ -643,8 +650,8 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
         _plot_spec(config, plot_params, spec, spec_noise)
 
 
-def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
-                 stack_plots=False, plot_type='regular'):
+def _plot_event_spectra(config, spec_st, specnoise_st=None, ncols=None,
+                        stack_plots=False, plot_type='regular'):
     """
     Plot spectra for signal and noise.
 
@@ -665,7 +672,9 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
     plot_params.stack_plots = stack_plots
     plot_params.ncols = ncols
     plot_params.set_plot_params(config, spec_st, specnoise_st)
-    _make_fig(config, plot_params)
+    # All traces in Stream have the same hypo
+    hypo = spec_st[0].stats.hypo
+    _make_fig(config, hypo, plot_params)
 
     # Plot!
     if config.plot_spectra_ignored:
@@ -691,4 +700,24 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
     if config.plot_show:
         plt.show()
     if config.plot_save:
-        _savefig(config, plot_type, plot_params.figures)
+        _savefig(config, hypo, plot_type, plot_params.figures)
+
+
+def plot_spectra(config, spec_st, specnoise_st=None, plot_type='regular'):
+    """Plot spectra for the input event and the Green's function."""
+    for hypo in config.hypo, config.hypoG:
+        if hypo is None:
+            continue
+        # select spectra for each evid
+        spec_evid = select_evid(spec_st, hypo.evid)
+        # select noise spectra for each evid (if not None)
+        if plot_type == 'regular':
+            if specnoise_st is not None:
+                specnoise_evid = select_evid(specnoise_st, hypo.evid)
+            # plot spectra for each evid
+            _plot_event_spectra(config, spec_evid, specnoise_evid, ncols=None,
+                                stack_plots=False, plot_type='regular')
+        elif plot_type == 'weight':
+            weight_st = spec_st
+            weight_evid = select_evid(weight_st, hypo.evid)
+            _plot_event_spectra(config, weight_evid, plot_type='weight')
