@@ -482,7 +482,9 @@ def move_outdir(config):
     src = config.options.outdir
     run_id = config.options.run_id
     path = os.path.normpath(config.options.outdir).split(os.sep)
-    dst = os.path.join(*path[:-1], str(evid) + '_' + run_id)
+    dst = os.path.join(*path[:-1], str(evid))
+    if run_id:
+        dst += '_' + run_id
     # Create destination
     if not os.path.exists(dst):
         os.makedirs(dst)
