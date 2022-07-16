@@ -256,9 +256,12 @@ def _write_parfile(config, sourcepar):
     parfile.write('\n*** Run completed on: {} {}'.format(now, timezone))
     config.end_of_run = now
     config.end_of_run_tz = timezone
+    if config.options.run_id:
+        parfile.write('\n*** Run ID: {}'.format(config.options.run_id))
     _write_author_and_agency_to_parfile(config, parfile)
 
     parfile.close()
+
     logger.info('Output written to file: ' + parfilename)
 
 
