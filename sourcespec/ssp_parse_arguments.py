@@ -142,6 +142,12 @@ def _update_parser(parser, progname):
             help='save output to OUTDIR (default: sspec_out)',
             metavar='OUTDIR'
         )
+        parser.add_argument(
+            '-r', '--run_id', dest='run_id',
+            action='store', default='',
+            help='string identifying current run (default: "")',
+            metavar='RUN_ID'
+        )
     elif progname == 'source_model':
         parser.add_argument(
             '-f', '--fmin', dest='fmin', action='store',

@@ -474,14 +474,17 @@ def save_config(config):
 
 
 def move_outdir(config):
-    """Move outdir to a new dir named from evid."""
+    """Move outdir to a new dir named from evid (and optional run_id)."""
     try:
         evid = config.hypo.evid
     except Exception:
         return
     src = config.options.outdir
+    run_id = config.options.run_id
     path = os.path.normpath(config.options.outdir).split(os.sep)
-    dst = os.path.join(*path[:-1], evid)
+    dst = os.path.join(*path[:-1], str(evid))
+    if run_id:
+        dst += '_' + run_id
     # Create destination
     if not os.path.exists(dst):
         os.makedirs(dst)
