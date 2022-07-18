@@ -37,24 +37,26 @@ propagation term (geometric and anelastic attenuation of body waves):
           \times
           \frac{1}{1+\left(\frac{f}{f_c}\right)^2}
           \times
-          \exp \left( \frac{-\pi r f}{Q_O V_S} \right)
+          e^{- \pi f t^*}
 
-where
-:math:`r` is the hypocentral distance;
-:math:`R_{\Theta\Phi}` is the radiation pattern coefficient for S-waves;
-:math:`\rho_h` and :math:`\rho_r` are the medium densities at the hypocenter
-and at the receiver, respectively;
-:math:`\beta_h` and :math:`\beta_r` are the S-wave velocities at the hypocenter
-and at the receiver, respectively;
-:math:`M_O` is the seismic moment;
-:math:`f` is the frequency;
-:math:`f_c` is the corner frequency;
-:math:`V_S` is the average S-wave velocity along the wave propagation path;
-:math:`Q_O` is the quality factor.
+where:
+
+- :math:`r` is the hypocentral distance (:math:`\frac{1}{r}` is geometric
+  attenuation);
+- :math:`R_{\Theta\Phi}` is the radiation pattern coefficient for S-waves
+  (average or computed from focal mechanism, if available);
+- :math:`\rho_h` and :math:`\rho_r` are the medium densities at the hypocenter
+  and at the receiver, respectively;
+- :math:`\beta_h` and :math:`\beta_r` are the S-wave velocities at the hypocenter
+  and at the receiver, respectively;
+- :math:`M_O` is the seismic moment;
+- :math:`f` is the frequency;
+- :math:`f_c` is the corner frequency;
+- :math:`t^*` is an attenuation parameter which includes anelastic path
+  attenuation (quality factor) and station-specific effects.
 
 
-
-In ``source_spec``, the observed spectra :math:`S(f)` are converted in
+In ``source_spec``, the observed spectra :math:`S(f)` are converted into
 moment magnitude :math:`M_w`.
 
 The first step is to multiply the spectrum for the hypocentral distance
@@ -70,7 +72,7 @@ and convert them to seismic moment units:
           M_O \times
           \frac{1}{1+\left(\frac{f}{f_c}\right)^2}
           \times
-          \exp \left( \frac{-\pi r f}{Q_O V_S} \right)
+          e^{- \pi f t^*}
 
 
 Then the spectrum is converted in unities of magnitude
@@ -92,15 +94,14 @@ The data vector is compared to the teoretical model:
                       M_O \times
                       \frac{1}{1+\left(\frac{f}{f_c}\right)^2}
                       \times
-                      \exp \left( \frac{-\pi r f}{Q_O V_S} \right)
+                      e^{- \pi f t^*}
                       \right) - 9.1 \right] =
 
             =
             \frac{2}{3} (\log_{10} M_0 - 9.1) +
             \frac{2}{3} \left[ \log_{10} \left(
                       \frac{1}{1+\left(\frac{f}{f_c}\right)^2} \right) +
-                      \log_{10} \left(
-                      \exp \left( \frac{-\pi r f}{Q_O V_S} \right) \right)
+                      \log_{10} \left( e^{- \pi f t^*} \right)
                       \right]
 
 
@@ -115,7 +116,22 @@ Finally coming to the following model used for the inversion:
                       \pi \, f t^* \log_{10} e
                       \right]
 
-Where :math:`M_w \equiv \frac{2}{3} (\log_{10} M_0 - 9.1)`
-and :math:`t^* \equiv \frac{r}{Q_O V_S}`.
+where :math:`M_w \equiv \frac{2}{3} (\log_{10} M_0 - 9.1)`.
 
 The parameters to determine are :math:`M_w`, :math:`f_c` and :math:`t^*`.
+
+The retrieved attenuation parameter :math:`t^*` is then converted to the S-wave
+quality factor :math:`Q_0` using the following expression:
+
+.. math::
+
+   Q_0 = \frac{tt_S(r)}{t^*}
+
+where :math:`tt_S(r)` is the S-wave travel time from source to station.
+
+Station-specific effects can be determined by running ``source_spec`` on several
+events and computing the average of station residuals between observed and
+inverted spectra. These averages are obtained through the command
+``source_residuals``; the resulting residuals file can be used for a second run
+of ``source_spec`` (see the ``residuals_filepath`` option in
+:ref:`configuration_file:Configuration File`).

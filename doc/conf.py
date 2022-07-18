@@ -58,9 +58,16 @@ sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 # Add any Sphinx extension module names here, as strings.
 # They can be extensions coming with Sphinx (named 'sphinx.ext.*') or your
 # custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo',
-              'sphinx.ext.coverage', 'sphinx.ext.mathjax',
-              'sphinx.ext.viewcode']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.autosectionlabel',
+]
+autosectionlabel_prefix_document = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -282,7 +289,7 @@ texinfo_documents = [
 # -- Custom functions for SourceSpec ------------------------------------------
 def update_configfile(app):
     with open('configuration_file.rst', 'w') as fp:
-        fp.write('''.. Configuration File:
+        fp.write('''.. _Configuration File:
 
 ##################
 Configuration File
