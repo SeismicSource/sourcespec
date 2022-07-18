@@ -14,6 +14,8 @@ Earthquake source parameters from S-wave displacement spectra
   - Config options `vp` and `vs` have been renamed to `vp_source`
     and `vs_source` (see issue [#5])
   - New, optional, config options `vp_stations` and `vs_stations`
+  - Config options `pre_p_time` and `pre_s_time` have been renamed to
+    `noise_pre_time` and `signal_pre_time`, respectively (see pull request [#9])
   - Config parameters `PLOT_SHOW`, `PLOT_SAVE` and `PLOT_SAVE_FORMAT` are now
     lowercase (`plot_show`, `plot_save` and `plot_save_format`)
   - New, optional, general config parameters for specyfing author and agency
@@ -310,3 +312,4 @@ Initial Python port.
 [#3]: https://github.com/SeismicSource/sourcespec/issues/3
 [#5]: https://github.com/SeismicSource/sourcespec/issues/5
 [#6]: https://github.com/SeismicSource/sourcespec/issues/6
+[#9]: https://github.com/SeismicSource/sourcespec/issues/9

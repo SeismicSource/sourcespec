@@ -70,7 +70,7 @@ def _check_signal_level(config, trace):
 
 
 def _check_clipping(config, trace):
-    t1 = (trace.stats.arrivals['P'][1] - config.pre_p_time)
+    t1 = (trace.stats.arrivals['P'][1] - config.noise_pre_time)
     t2 = (trace.stats.arrivals['S'][1] + config.win_length)
     tr = trace.copy().trim(t1, t2).detrend('demean')
     npts = len(tr.data)
@@ -258,17 +258,17 @@ def _add_hypo_dist_and_arrivals(config, st):
             msg = msg.format(trace.id)
             raise RuntimeError(msg)
         # Signal window for spectral analysis (S phase)
-        t1 = s_arrival_time - config.pre_s_time
+        t1 = s_arrival_time - config.signal_pre_time
         t2 = t1 + config.win_length
         trace.stats.arrivals['S1'] = ('S1', t1)
         trace.stats.arrivals['S2'] = ('S2', t2)
         # Signal window for spectral analysis (P phase)
-        t1 = p_arrival_time - config.pre_s_time
+        t1 = p_arrival_time - config.signal_pre_time
         t2 = t1 + min(config.win_length, s_arrival_time-p_arrival_time)
         trace.stats.arrivals['P1'] = ('P1', t1)
         trace.stats.arrivals['P2'] = ('P2', t2)
         # Noise window for spectral analysis
-        t1 = p_arrival_time - config.pre_p_time
+        t1 = p_arrival_time - config.noise_pre_time
         t2 = t1 + config.win_length
         trace.stats.arrivals['N1'] = ('N1', t1)
         trace.stats.arrivals['N2'] = ('N2', t2)

@@ -246,6 +246,8 @@ def _update_config_file(config_file, configspec):
         'PLOT_SAVE_FORMAT': 'plot_save_format',
         'vp': 'vp_source',
         'vs': 'vs_source',
+        'pre_p_time': 'noise_pre_time',
+        'pre_s_time': 'signal_pre_time',
     }
     for old_opt, new_opt in migrate_options.items():
         if old_opt in config_obj:
@@ -325,6 +327,16 @@ def _check_deprecated_config_options(config_obj):
     if 'vs' in config_obj:
         deprecation_msgs.append(
             '> "vs" config parameter has been renamed to "vs_source".\n'
+        )
+    if 'pre_p_time' in config_obj:
+        deprecation_msgs.append(
+            '> "pre_p_time" config parameter has been renamed to '
+            '"noise_pre_time".\n'
+        )
+    if 'pre_s_time' in config_obj:
+        deprecation_msgs.append(
+            '> "pre_s_time" config parameter has been renamed to '
+            '"signal_pre_time".\n'
         )
     if deprecation_msgs:
         sys.stderr.write(

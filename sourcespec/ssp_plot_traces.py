@@ -240,7 +240,7 @@ def _add_labels(axes, plotn, ncols):
 
 def _trim_traces(config, st):
     for trace in st:
-        t1 = (trace.stats.arrivals['P'][1] - config.pre_p_time)
+        t1 = (trace.stats.arrivals['P'][1] - config.noise_pre_time)
         t2 = (trace.stats.arrivals['S'][1] + 3 * config.win_length)
         trace.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
 
