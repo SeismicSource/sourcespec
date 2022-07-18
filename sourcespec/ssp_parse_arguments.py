@@ -38,11 +38,11 @@ def _get_description(progname):
     if progname == 'source_spec':
         nargs = '+'
         description = 'Estimation of seismic source parameters from '
-        description += 'inversion of S-wave spectra.'
+        description += 'inversion of P- or S-wave displacement spectra.'
         epilog = ''
     elif progname == 'source_model':
         nargs = '*'
-        description = 'Direct modeling of S-wave spectra.'
+        description = 'Direct modeling of P- or S-wave displacement spectra.'
         epilog = 'Several values of moment magnitude, seismic moment, t-star\n'
         epilog += 'and alpha can be specified using a comma-separated list,'
         epilog += 'eg.:\n'

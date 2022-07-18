@@ -1,6 +1,6 @@
 # SourceSpec
 
-Earthquake source parameters from S-wave displacement spectra
+Earthquake source parameters from P- or S-wave displacement spectra
 
 (c) 2011-2022 Claudio Satriano <satriano@ipgp.fr>
 

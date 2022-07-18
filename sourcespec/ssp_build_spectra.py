@@ -121,7 +121,6 @@ def _compute_h(spec_st, code, wave_type='S'):
 
 def _check_data_len(config, trace):
     traceId = trace.get_id()
-
     trace_cut = trace.copy()
     if config.wave_type[0] == 'S':
         t1 = trace.stats.arrivals['S1'][1]
@@ -137,7 +136,7 @@ def _check_data_len(config, trace):
         raise RuntimeError(msg)
     nzeros = len(np.where(trace_cut.data == 0)[0])
     if nzeros > npts/4:
-        msg = '{}: S-wave window is zero for more than 25%: skipping trace'
+        msg = '{}: Signal window is zero for more than 25%: skipping trace'
         msg = msg.format(traceId)
         raise RuntimeError(msg)
 
@@ -416,7 +415,7 @@ def build_spectra(config, st):
     """
     Build spectra and the spec_st object.
 
-    Computes S-wave (displacement) spectra from
+    Computes P- or S-wave (displacement) spectra from
     accelerometers and velocimeters, uncorrected for attenuation,
     corrected for instrumental constants, normalized by
     hypocentral distance.

@@ -2,7 +2,7 @@
 
 # SourceSpec
 
-Earthquake source parameters from S-wave displacement spectra
+Earthquake source parameters from P- or S-wave displacement spectra
 
 [![PyPI-badge]][PyPI-link]
 [![license-badge]][license-link]
@@ -97,8 +97,9 @@ repository.
 
 If you used SourceSpec for a scientific paper, please cite it as:
 
-> Satriano, C. (2022). SourceSpec – Earthquake source parameters from S-wave
-> displacement spectra (X.Y). https://doi.org/10.5281/ZENODO.3688587
+> Satriano, C. (2022). SourceSpec – Earthquake source parameters from
+> P- or S-wave displacement spectra (X.Y).
+> https://doi.org/10.5281/ZENODO.3688587
 
 Please replace `X.Y` with the SourceSpec version number you used.
 

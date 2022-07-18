@@ -98,22 +98,22 @@ def _check_sn_ratio(config, trace):
     t1 = trace_noise.stats.arrivals['N1'][1]
     t2 = trace_noise.stats.arrivals['N2'][1]
     trace_noise.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
-    # S window for s/n ratio
-    trace_cutS = trace.copy()
+    # signal window for s/n ratio
+    trace_signal = trace.copy()
     # remove the mean...
-    trace_cutS.detrend(type='constant')
+    trace_signal.detrend(type='constant')
     # ...and the linear trend...
-    trace_cutS.detrend(type='linear')
+    trace_signal.detrend(type='linear')
     if config.wave_type[0] == 'S':
-        t1 = trace_cutS.stats.arrivals['S1'][1]
-        t2 = trace_cutS.stats.arrivals['S2'][1]
+        t1 = trace_signal.stats.arrivals['S1'][1]
+        t2 = trace_signal.stats.arrivals['S2'][1]
     elif config.wave_type[0] == 'P':
-        t1 = trace_cutS.stats.arrivals['P1'][1]
-        t2 = trace_cutS.stats.arrivals['P2'][1]
-    trace_cutS.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+        t1 = trace_signal.stats.arrivals['P1'][1]
+        t2 = trace_signal.stats.arrivals['P2'][1]
+    trace_signal.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     rmsnoise2 = np.power(trace_noise.data, 2).sum()
     rmsnoise = np.sqrt(rmsnoise2)
-    rmsS2 = np.power(trace_cutS.data, 2).sum()
+    rmsS2 = np.power(trace_signal.data, 2).sum()
     rmsS = np.sqrt(rmsS2)
     if rmsnoise == 0:
         msg = '{} {}: empty noise window: skipping trace'
@@ -186,7 +186,7 @@ def _merge_stream(config, st):
             msg += 'skipping trace'
             msg = msg.format(traceid, overlap_max)
             raise RuntimeError(msg)
-    # Then, compute the same statisics for the S-wave window.
+    # Then, compute the same statisics for the signal window.
     st_cut = st.copy()
     if config.wave_type[0] == 'S':
         t1 = st[0].stats.arrivals['S1'][1]
@@ -212,7 +212,7 @@ def _merge_stream(config, st):
         raise RuntimeError(msg)
     overlap_duration = -1 * sum(g[6] for g in overlaps)
     if overlap_duration > 0:
-        msg = '{}: S-wave window has {:.3f} seconds of overlaps.'
+        msg = '{}: Signal window has {:.3f} seconds of overlaps.'
         msg = msg.format(traceid, overlap_duration)
         logger.info(msg)
     # Finally, demean and remove gaps and overlaps.
