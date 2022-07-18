@@ -637,9 +637,11 @@ def ssp_exit(retval=0, abort=False):
     ssp_exit_called = True
     if abort:
         print('\nAborting.')
-        logger.debug('source_spec ABORTED')
+        if logger is not None:
+            logger.debug('source_spec ABORTED')
     else:
-        logger.debug('source_spec END')
+        if logger is not None:
+            logger.debug('source_spec END')
     logging.shutdown()
     sys.exit(retval)
 
