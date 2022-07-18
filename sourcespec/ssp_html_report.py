@@ -248,6 +248,7 @@ def html_report(config, sourcepar):
     # Output files and maps
     hypo = config.hypo
     evid = hypo.evid
+    run_id = config.options.run_id
     config_file = '{}.ssp.conf'.format(evid)
     out_file = '{}.ssp.out'.format(evid)
     log_file = '{}.ssp.log'.format(evid)
@@ -364,6 +365,7 @@ def html_report(config, sourcepar):
         '{AUTHOR}': author,
         '{AGENCY}': agency,
         '{EVENTID}': evid,
+        '{RUNID}': run_id,
         '{EVENT_LONGITUDE}': '{:8.3f}'.format(hypo.longitude),
         '{EVENT_LATITUDE}': '{:7.3f}'.format(hypo.latitude),
         '{EVENT_DEPTH}': '{:5.1f}'.format(hypo.depth),
@@ -424,6 +426,18 @@ def html_report(config, sourcepar):
         '{BOX_PLOTS}': box_plots,
         '{STATION_TABLE_ROWS}': station_table_rows,
     }
+
+    # Only show Run ID if it is not empty
+    if run_id:
+        run_id_comment_begin = ''
+        run_id_comment_end = ''
+    else:
+        run_id_comment_begin = '<!--'
+        run_id_comment_end = '-->'
+    replacements.update({
+        '{RUNID_COMMENT_BEGIN}': run_id_comment_begin,
+        '{RUNID_COMMENT_END}': run_id_comment_end
+    })
 
     # Misfit plots (when using grid search)
     if os.path.exists(os.path.join(config.options.outdir, 'misfit')):
