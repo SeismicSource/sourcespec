@@ -80,11 +80,14 @@ def _rad_patt_SH(phi, dip, rake, takeoff):
 
 
 # Cache radiation patterns
-rps_cache = dict()
+rp_cache = dict()
+# Cache messages to avoid duplication
+rp_msg_cache = []
 
 
 def get_radiation_pattern_coefficient(stats, config):
-    if not config.rps_from_focal_mechanism:
+    global rp_msg_cache
+    if not config.rp_from_focal_mechanism:
         if config.wave_type[0] == 'S':
             return config.rps
         elif config.wave_type[0] == 'P':
@@ -94,37 +97,50 @@ def get_radiation_pattern_coefficient(stats, config):
         dip = stats.hypo.dip
         rake = stats.hypo.rake
     except Exception:
-        logger.warning(
-            'Cannot find focal mechanism. Using "rp[p/s]" value from config file')
+        msg = 'Cannot find focal mechanism. Using "{}" value from config file'
         if config.wave_type[0] == 'S':
-            return config.rps
+            msg = msg.format('rps')
+            rp = config.rps
         elif config.wave_type[0] == 'P':
-            return config.rpp
+            msg = msg.format('rpp')
+            rp = config.rpp
+        if msg not in rp_msg_cache:
+            logger.warning(msg)
+            rp_msg_cache.append(msg)
+        return rp
     traceid = '.'.join(
         (stats.network, stats.station, stats.location, stats.channel))
     wave = config.wave_type
     key = '{}_{}'.format(traceid, wave)
-    global rps_cache
+    global rp_cache
     try:
-        rps = rps_cache[key]
-        return rps
+        rp = rp_cache[key]
+        return rp
     except KeyError:
         pass
     try:
         takeoff_angle = stats.takeoff_angles[config.wave_type[0]]
     except Exception:
-        logger.warning(
-            '{}: Cannot find takeoff angle. '
-            'Using "rps" value from config file'.format(traceid))
-        return config.rps
-    rps = radiation_pattern(
+        msg = '{}: Cannot find takeoff angle. '
+        msg += 'Using "{}" value from config file'
+        if config.wave_type[0] == 'S':
+            msg = msg.format(traceid, 'rps')
+            rp = config.rps
+        elif config.wave_type[0] == 'P':
+            msg = msg.format(traceid, 'rpp')
+            rp = config.rpp
+        if msg not in rp_msg_cache:
+            logger.warning(msg)
+            rp_msg_cache.append(msg)
+        return rp
+    rp = radiation_pattern(
         strike, dip, rake, takeoff_angle, stats.azimuth, wave)
     # we are interested only in amplitude
-    # (SV and SH radiation patterns have a sign)
-    rps = abs(rps)
+    # (P, SV and SH radiation patterns have a sign)
+    rp = abs(rp)
     logger.info(
         '{}: {} radiation pattern from focal mechanism: {:.2f}'.format(
-            traceid, wave, rps
+            traceid, wave, rp
         ))
-    rps_cache[key] = rps
-    return rps
+    rp_cache[key] = rp
+    return rp

@@ -16,6 +16,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
   - New, optional, config options `vp_stations` and `vs_stations`
   - Config options `pre_p_time` and `pre_s_time` have been renamed to
     `noise_pre_time` and `signal_pre_time`, respectively (see pull request [#9])
+  - Config parameter `rps_from_focal_mechanism` renamed to
+    `rp_from_focal_mechanism` (see pull request [#9])
   - Config parameters `PLOT_SHOW`, `PLOT_SAVE` and `PLOT_SAVE_FORMAT` are now
     lowercase (`plot_show`, `plot_save` and `plot_save_format`)
   - New, optional, general config parameters for specyfing author and agency
