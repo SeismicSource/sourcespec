@@ -12,7 +12,7 @@ Earthquake source parameters from S-wave displacement spectra
   `source_spec -U CONFIG_FILE_NAME`
 
   - Config options `vp` and `vs` have been renamed to `vp_source`
-    and `vs_source`
+    and `vs_source` (see issue [#5])
   - New, optional, config options `vp_stations` and `vs_stations`
   - Config parameters `PLOT_SHOW`, `PLOT_SAVE` and `PLOT_SAVE_FORMAT` are now
     lowercase (`plot_show`, `plot_save` and `plot_save_format`)
@@ -25,7 +25,8 @@ Earthquake source parameters from S-wave displacement spectra
 
 - Features:
   - It is now possible to provide different vp and vs velocities, close to the
-    source and close to the stations (see the new config options above)
+    source and close to the stations (see the new config options above and
+    issue [#5])
   - QuakeML output (when using QuakeML input)
   - Removed option to read event information and traces from a pickle file
     (rarely used)
@@ -35,7 +36,7 @@ Earthquake source parameters from S-wave displacement spectra
   - Write author and agency info (if specified) to output files, figures and
     HTML report
   - Command line option `--run-id` to provide a string identifying the
-    current run (see pull request [#6][])
+    current run (see pull request [#6])
 
 - Improvements:
   - Use travel time (from NonLinLoc grid, "iasp91" model or `vs_tt`) to compute
@@ -92,7 +93,7 @@ Note that v1.5 is no more compatible with Python 2!
     parameter, named `clip_max_percent`)
     - Check for trace clipping only in the processing window
     - Use histogram of samples to detect clipping
-  - Fix for wrong component used for 'SV' spectra (see issue [#3][])
+  - Fix for wrong component used for 'SV' spectra (see issue [#3])
 - Inversion:
   - New config option: `Mw_0_variability`. Allowed variability around `Mw_0`
     during the main inversion. Previously hardcoded to 0.1
@@ -306,6 +307,6 @@ Extended and generalized for the CRL application.
 
 Initial Python port.
 
-
 [#3]: https://github.com/SeismicSource/sourcespec/issues/3
+[#5]: https://github.com/SeismicSource/sourcespec/issues/5
 [#6]: https://github.com/SeismicSource/sourcespec/issues/6
