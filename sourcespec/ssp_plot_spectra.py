@@ -703,21 +703,23 @@ def _plot_event_spectra(config, spec_st, specnoise_st=None, ncols=None,
         _savefig(config, hypo, plot_type, plot_params.figures)
 
 
-def plot_spectra(config, spec_st, specnoise_st=None, plot_type='regular'):
-    """Plot spectra for the input event and the Green's function."""
-    for hypo in config.hypo, config.hypoG:
-        if hypo is None:
-            continue
+def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
+                 stack_plots=False, plot_type='regular'):
+    """
+    Plot spectra for the input event and the Green's function and spectral
+    ratio (if available).
+    """
+    evids = [config.hypo.evid]
+    if config.hypoG is not None:
+        evids += [config.hypoG.evid, config.hypo.evid + '_R']
+    for evid in evids:
         # select spectra for each evid
-        spec_evid = select_evid(spec_st, hypo.evid)
+        spec_evid = select_evid(spec_st, evid)
         # select noise spectra for each evid (if not None)
-        if plot_type == 'regular':
-            if specnoise_st is not None:
-                specnoise_evid = select_evid(specnoise_st, hypo.evid)
-            # plot spectra for each evid
-            _plot_event_spectra(config, spec_evid, specnoise_evid, ncols=None,
-                                stack_plots=False, plot_type='regular')
-        elif plot_type == 'weight':
-            weight_st = spec_st
-            weight_evid = select_evid(weight_st, hypo.evid)
-            _plot_event_spectra(config, weight_evid, plot_type='weight')
+        if specnoise_st is not None:
+            specnoise_evid = select_evid(specnoise_st, evid)
+        else:
+            specnoise_evid = None
+        # plot spectra for each evid
+        _plot_event_spectra(
+            config, spec_evid, specnoise_evid, ncols, stack_plots, plot_type)
