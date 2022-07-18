@@ -868,8 +868,8 @@ def _parse_hypo71_picks(config):
 
 
 def _hypo_vel(hypo, config):
-    vs = get_vel(hypo.longitude, hypo.latitude, hypo.depth, 'S', config)
-    hypo.vs = vs
+    hypo.vp = get_vel(hypo.longitude, hypo.latitude, hypo.depth, 'P', config)
+    hypo.vs = get_vel(hypo.longitude, hypo.latitude, hypo.depth, 'S', config)
 
 
 def _build_filelist(path, filelist, tmpdir):
