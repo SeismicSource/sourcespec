@@ -34,6 +34,8 @@ Earthquake source parameters from S-wave displacement spectra
   - Write SourceSpec version and run complete time to SQLite file
   - Write author and agency info (if specified) to output files, figures and
     HTML report
+  - Command line option `--run-id` to provide a string identifying the
+    current run (see pull request [#6][])
 
 - Improvements:
   - Use travel time (from NonLinLoc grid, "iasp91" model or `vs_tt`) to compute
@@ -90,7 +92,7 @@ Note that v1.5 is no more compatible with Python 2!
     parameter, named `clip_max_percent`)
     - Check for trace clipping only in the processing window
     - Use histogram of samples to detect clipping
-  - Fix for wrong component used for 'SV' spectra (#3)
+  - Fix for wrong component used for 'SV' spectra (see issue [#3][])
 - Inversion:
   - New config option: `Mw_0_variability`. Allowed variability around `Mw_0`
     during the main inversion. Previously hardcoded to 0.1
@@ -303,3 +305,7 @@ Extended and generalized for the CRL application.
 ## v0.1 - 2012-01-17
 
 Initial Python port.
+
+
+[#3]: https://github.com/SeismicSource/sourcespec/issues/3
+[#6]: https://github.com/SeismicSource/sourcespec/issues/6
