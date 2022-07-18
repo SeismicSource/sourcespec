@@ -9,17 +9,17 @@ SourceSpec documentation
 SourceSpec is a collection of command line programs (written in Python) to
 determine earthquake source parameters (seismic moment :math:`M_0`, corner
 frequency :math:`f_c`) and the inelastic attenuation term (:math:`t^*`), from
-the modeling of waveform spectra.
+the modeling of waveform displacement spectra.
 
 Other parameters (source radius :math:`r_0`, stress drop :math:`\Delta \sigma`)
-are computed from the inverted ones. The quality factor :math:`Q` is determined
-from :math:`t^*`.
+are computed from the inverted ones. The quality factor :math:`Q_0` is
+determined from :math:`t^*`.
 
 As a bonus, local magnitude :math:`M_l` is computed as well.
 
 SourceSpec is composed of the following programs:
 
-* ``source_spec``: inverts the S-wave displacement spectra from station
+* ``source_spec``: inverts the P- or S-wave displacement spectra from station
   recordings of a single event.
 * ``ssp_residuals``: computes station residuals from ``source_spec`` output.
 * ``source_model``: direct spectral modelling.
