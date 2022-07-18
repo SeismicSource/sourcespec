@@ -28,6 +28,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
     section called `TRACE AND METADATA PARAMETERS`
 
 - Features:
+  - Support for P-wave spectral inversion (see pull request [#9])
   - It is now possible to provide different vp and vs velocities, close to the
     source and close to the stations (see the new config options above and
     issue [#5])

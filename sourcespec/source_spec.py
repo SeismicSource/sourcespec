@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: CECILL-2.1
 """
-Earthquake source parameters from inversion of S-wave spectra.
+Earthquake source parameters from inversion of P- or S-wave spectra.
 
 :copyright:
     2012 Claudio Satriano <satriano@ipgp.fr>
