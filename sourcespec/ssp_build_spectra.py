@@ -198,6 +198,10 @@ def _check_noise_level(trace_signal, trace_noise):
         raise RuntimeError(msg)
 
 
+# store log messages to avoid duplicates
+velocity_log_messages = []
+
+
 def _displacement_to_moment(stats, config):
     """
     Return the coefficient for converting displacement to seismic moment.
@@ -212,8 +216,14 @@ def _displacement_to_moment(stats, config):
     v_station = get_vel(
         stats.coords.longitude, stats.coords.latitude, -stats.coords.elevation,
         phase, config)
-    logger.info('V%c_hypo: %.2f km/s, V%c_station: %.2f km/s'
-                % (phase, v_hypo, phase, v_station))
+    specid = '.'.join((
+        stats.network, stats.station, stats.location, stats.channel))
+    msg = '{}: V{}_hypo: {:.2f} km/s, V{}_station: {:.2f} km/s'.format(
+            specid, phase.lower(), v_hypo, phase.lower(), v_station)
+    global velocity_log_messages
+    if msg not in velocity_log_messages:
+        logger.info(msg)
+        velocity_log_messages.append(msg)
     v_hypo *= 1000.
     v_station *= 1000.
     v3 = v_hypo**(5./2) * v_station**(1./2)
