@@ -1,6 +1,6 @@
 # SourceSpec
 
-Earthquake source parameters from S-wave displacement spectra
+Earthquake source parameters from P- or S-wave displacement spectra
 
 (c) 2011-2022 Claudio Satriano <satriano@ipgp.fr>
 
@@ -14,6 +14,10 @@ Earthquake source parameters from S-wave displacement spectra
   - Config options `vp` and `vs` have been renamed to `vp_source`
     and `vs_source` (see issue [#5])
   - New, optional, config options `vp_stations` and `vs_stations`
+  - Config options `pre_p_time` and `pre_s_time` have been renamed to
+    `noise_pre_time` and `signal_pre_time`, respectively (see pull request [#9])
+  - Config parameter `rps_from_focal_mechanism` renamed to
+    `rp_from_focal_mechanism` (see pull request [#9])
   - Config parameters `PLOT_SHOW`, `PLOT_SAVE` and `PLOT_SAVE_FORMAT` are now
     lowercase (`plot_show`, `plot_save` and `plot_save_format`)
   - New, optional, general config parameters for specyfing author and agency
@@ -24,6 +28,7 @@ Earthquake source parameters from S-wave displacement spectra
     section called `TRACE AND METADATA PARAMETERS`
 
 - Features:
+  - Support for P-wave spectral inversion (see pull request [#9])
   - It is now possible to provide different vp and vs velocities, close to the
     source and close to the stations (see the new config options above and
     issue [#5])
@@ -310,3 +315,4 @@ Initial Python port.
 [#3]: https://github.com/SeismicSource/sourcespec/issues/3
 [#5]: https://github.com/SeismicSource/sourcespec/issues/5
 [#6]: https://github.com/SeismicSource/sourcespec/issues/6
+[#9]: https://github.com/SeismicSource/sourcespec/issues/9

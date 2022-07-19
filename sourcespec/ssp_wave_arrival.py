@@ -121,7 +121,7 @@ def _wave_arrival_taup(trace, phase):
 def _wave_arrival(trace, phase, config):
     """Get travel time and takeoff angle."""
     NLL_time_dir = config.NLL_time_dir
-    focmec = config.rps_from_focal_mechanism
+    focmec = config.rp_from_focal_mechanism
     vel = {'P': config.vp_tt, 'S': config.vs_tt}
     try:
         travel_time, takeoff_angle =\
@@ -215,7 +215,7 @@ def add_arrivals_to_trace(trace, config):
             pick_phase = phase + 'theo'
         else:
             continue
-        if config.rps_from_focal_mechanism:
+        if config.rp_from_focal_mechanism:
             logger.info(
                 '{}: {} takeoff angle: {:.1f} computed from {}'.format(
                     trace.id, phase, takeoff_angle, method

@@ -4,6 +4,6 @@ authors:
 - family-names: "Satriano"
   given-names: "Claudio"
   orcid: "https://orcid.org/0000-0002-3039-2530"
-title: "SourceSpec – Earthquake source parameters from S-wave displacement spectra"
+title: "SourceSpec – Earthquake source parameters from P- or S-wave displacement spectra"
 doi: 10.5281/ZENODO.3688587
 url: "https://sourcespec.seismicsource.org"

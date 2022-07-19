@@ -70,7 +70,7 @@ def _check_signal_level(config, trace):
 
 
 def _check_clipping(config, trace):
-    t1 = (trace.stats.arrivals['P'][1] - config.pre_p_time)
+    t1 = (trace.stats.arrivals['P'][1] - config.noise_pre_time)
     t2 = (trace.stats.arrivals['S'][1] + config.win_length)
     tr = trace.copy().trim(t1, t2).detrend('demean')
     npts = len(tr.data)
@@ -98,18 +98,22 @@ def _check_sn_ratio(config, trace):
     t1 = trace_noise.stats.arrivals['N1'][1]
     t2 = trace_noise.stats.arrivals['N2'][1]
     trace_noise.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
-    # S window for s/n ratio
-    trace_cutS = trace.copy()
+    # signal window for s/n ratio
+    trace_signal = trace.copy()
     # remove the mean...
-    trace_cutS.detrend(type='constant')
+    trace_signal.detrend(type='constant')
     # ...and the linear trend...
-    trace_cutS.detrend(type='linear')
-    t1 = trace_cutS.stats.arrivals['S1'][1]
-    t2 = trace_cutS.stats.arrivals['S2'][1]
-    trace_cutS.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+    trace_signal.detrend(type='linear')
+    if config.wave_type[0] == 'S':
+        t1 = trace_signal.stats.arrivals['S1'][1]
+        t2 = trace_signal.stats.arrivals['S2'][1]
+    elif config.wave_type[0] == 'P':
+        t1 = trace_signal.stats.arrivals['P1'][1]
+        t2 = trace_signal.stats.arrivals['P2'][1]
+    trace_signal.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     rmsnoise2 = np.power(trace_noise.data, 2).sum()
     rmsnoise = np.sqrt(rmsnoise2)
-    rmsS2 = np.power(trace_cutS.data, 2).sum()
+    rmsS2 = np.power(trace_signal.data, 2).sum()
     rmsS = np.sqrt(rmsS2)
     if rmsnoise == 0:
         msg = '{} {}: empty noise window: skipping trace'
@@ -182,13 +186,17 @@ def _merge_stream(config, st):
             msg += 'skipping trace'
             msg = msg.format(traceid, overlap_max)
             raise RuntimeError(msg)
-    # Then, compute the same statisics for the S-wave window.
+    # Then, compute the same statisics for the signal window.
     st_cut = st.copy()
-    t1 = st[0].stats.arrivals['S1'][1]
-    t2 = st[0].stats.arrivals['S2'][1]
+    if config.wave_type[0] == 'S':
+        t1 = st[0].stats.arrivals['S1'][1]
+        t2 = st[0].stats.arrivals['S2'][1]
+    elif config.wave_type[0] == 'P':
+        t1 = st[0].stats.arrivals['P1'][1]
+        t2 = st[0].stats.arrivals['P2'][1]
     st_cut.trim(starttime=t1, endtime=t2)
     if not st_cut:
-        msg = '{}: No signal for the selected S-wave cut interval: '
+        msg = '{}: No signal for the selected %c-wave cut interval: ' % config.wave_type[0]
         msg += 'skipping trace >\n'
         msg += '> Cut interval: {} - {}'
         msg = msg.format(traceid, t1, t2)
@@ -204,7 +212,7 @@ def _merge_stream(config, st):
         raise RuntimeError(msg)
     overlap_duration = -1 * sum(g[6] for g in overlaps)
     if overlap_duration > 0:
-        msg = '{}: S-wave window has {:.3f} seconds of overlaps.'
+        msg = '{}: Signal window has {:.3f} seconds of overlaps.'
         msg = msg.format(traceid, overlap_duration)
         logger.info(msg)
     # Finally, demean and remove gaps and overlaps.
@@ -249,13 +257,18 @@ def _add_hypo_dist_and_arrivals(config, st):
             msg = '{}: Unable to get S arrival time: skipping trace'
             msg = msg.format(trace.id)
             raise RuntimeError(msg)
-        # Signal window for spectral analysis
-        t1 = s_arrival_time - config.pre_s_time
+        # Signal window for spectral analysis (S phase)
+        t1 = s_arrival_time - config.signal_pre_time
         t2 = t1 + config.win_length
         trace.stats.arrivals['S1'] = ('S1', t1)
         trace.stats.arrivals['S2'] = ('S2', t2)
+        # Signal window for spectral analysis (P phase)
+        t1 = p_arrival_time - config.signal_pre_time
+        t2 = t1 + min(config.win_length, s_arrival_time-p_arrival_time)
+        trace.stats.arrivals['P1'] = ('P1', t1)
+        trace.stats.arrivals['P2'] = ('P2', t2)
         # Noise window for spectral analysis
-        t1 = p_arrival_time - config.pre_p_time
+        t1 = p_arrival_time - config.noise_pre_time
         t2 = t1 + config.win_length
         trace.stats.arrivals['N1'] = ('N1', t1)
         trace.stats.arrivals['N2'] = ('N2', t2)

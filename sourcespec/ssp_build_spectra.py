@@ -102,6 +102,9 @@ def _compute_h(spec_st, code, wave_type='S'):
         # only use radial and, optionally, vertical component for SV
         if wave_type == 'SV' and channel[-1] == 'T':
             continue
+        # only use vertical component for P
+        if wave_type == 'P' and channel[-1] != 'Z':
+            continue
         if spec_h is None:
             spec_h = spec.copy()
             spec_h.data = np.power(spec_h.data, 2)
@@ -118,10 +121,13 @@ def _compute_h(spec_st, code, wave_type='S'):
 
 def _check_data_len(config, trace):
     traceId = trace.get_id()
-
     trace_cut = trace.copy()
-    t1 = trace.stats.arrivals['S1'][1]
-    t2 = trace.stats.arrivals['S2'][1]
+    if config.wave_type[0] == 'S':
+        t1 = trace.stats.arrivals['S1'][1]
+        t2 = trace.stats.arrivals['S2'][1]
+    elif config.wave_type[0] == 'P':
+        t1 = trace.stats.arrivals['P1'][1]
+        t2 = trace.stats.arrivals['P2'][1]
     trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     npts = len(trace_cut.data)
     if npts == 0:
@@ -130,7 +136,7 @@ def _check_data_len(config, trace):
         raise RuntimeError(msg)
     nzeros = len(np.where(trace_cut.data == 0)[0])
     if nzeros > npts/4:
-        msg = '{}: S-wave window is zero for more than 25%: skipping trace'
+        msg = '{}: Signal window is zero for more than 25%: skipping trace'
         msg = msg.format(traceId)
         raise RuntimeError(msg)
 
@@ -147,8 +153,12 @@ def _cut_signal_noise(config, trace):
         _time_integrate(config, trace_noise)
 
     # trim...
-    t1 = trace.stats.arrivals['S1'][1]
-    t2 = trace.stats.arrivals['S2'][1]
+    if config.wave_type[0] == 'S':
+        t1 = trace.stats.arrivals['S1'][1]
+        t2 = trace.stats.arrivals['S2'][1]
+    elif config.wave_type[0] == 'P':
+        t1 = trace.stats.arrivals['P1'][1]
+        t2 = trace.stats.arrivals['P2'][1]
     trace_signal.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     # Noise time window for weighting function:
     noise_t1 = trace.stats.arrivals['N1'][1]
@@ -188,21 +198,37 @@ def _check_noise_level(trace_signal, trace_noise):
         raise RuntimeError(msg)
 
 
+# store log messages to avoid duplicates
+velocity_log_messages = []
+
+
 def _displacement_to_moment(stats, config):
     """
     Return the coefficient for converting displacement to seismic moment.
 
     From Aki&Richards,1980
     """
-    vs_hypo = config.hypo.vs
-    vs_station = get_vel(
+    phase = config.wave_type[0]
+    if phase == 'S':
+        v_hypo = config.hypo.vs
+    elif phase == 'P':
+        v_hypo = config.hypo.vp
+    v_station = get_vel(
         stats.coords.longitude, stats.coords.latitude, -stats.coords.elevation,
-        'S', config)
-    vs_hypo *= 1000.
-    vs_station *= 1000.
-    vs3 = vs_hypo**(5./2) * vs_station**(1./2)
-    rps = get_radiation_pattern_coefficient(stats, config)
-    coeff = 4 * math.pi * vs3 * config.rho / (2 * rps)
+        phase, config)
+    specid = '.'.join((
+        stats.network, stats.station, stats.location, stats.channel))
+    msg = '{}: V{}_hypo: {:.2f} km/s, V{}_station: {:.2f} km/s'.format(
+            specid, phase.lower(), v_hypo, phase.lower(), v_station)
+    global velocity_log_messages
+    if msg not in velocity_log_messages:
+        logger.info(msg)
+        velocity_log_messages.append(msg)
+    v_hypo *= 1000.
+    v_station *= 1000.
+    v3 = v_hypo**(5./2) * v_station**(1./2)
+    rp = get_radiation_pattern_coefficient(stats, config)
+    coeff = 4 * math.pi * v3 * config.rho / (2 * rp)
     return coeff
 
 
@@ -399,7 +425,7 @@ def build_spectra(config, st):
     """
     Build spectra and the spec_st object.
 
-    Computes S-wave (displacement) spectra from
+    Computes P- or S-wave (displacement) spectra from
     accelerometers and velocimeters, uncorrected for attenuation,
     corrected for instrumental constants, normalized by
     hypocentral distance.

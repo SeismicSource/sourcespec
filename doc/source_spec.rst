@@ -4,7 +4,7 @@
 SourceSpec
 ###########
 
-Earthquake source parameters from inversion of S-wave spectra.
+Earthquake source parameters from inversion of P- or S-wave spectra.
 
 :copyright:
     2011-2022 Claudio Satriano <satriano@ipgp.fr>
@@ -15,7 +15,7 @@ Earthquake source parameters from inversion of S-wave spectra.
 Overview
 ========
 
-``source_spec`` inverts the S-wave displacement spectra from
+``source_spec`` inverts the P- or S-wave displacement spectra from
 station recordings of a single event.
 
 Spectral model
@@ -31,7 +31,7 @@ propagation term (geometric and anelastic attenuation of body waves):
           \frac{1}{r}
           \times
           \frac{2 R_{\Theta\Phi}}
-               {4 \pi \rho_h^{1/2} \rho_r^{1/2} \beta_h^{5/2} \beta_r^{1/2}}
+               {4 \pi \rho_h^{1/2} \rho_r^{1/2} c_h^{5/2} c_r^{1/2}}
           \times
           M_O
           \times
@@ -43,11 +43,11 @@ where:
 
 - :math:`r` is the hypocentral distance (:math:`\frac{1}{r}` is geometric
   attenuation);
-- :math:`R_{\Theta\Phi}` is the radiation pattern coefficient for S-waves
+- :math:`R_{\Theta\Phi}` is the radiation pattern coefficient for P- or S-waves
   (average or computed from focal mechanism, if available);
 - :math:`\rho_h` and :math:`\rho_r` are the medium densities at the hypocenter
   and at the receiver, respectively;
-- :math:`\beta_h` and :math:`\beta_r` are the S-wave velocities at the hypocenter
+- :math:`c_h` and :math:`c_r` are the P- or S-wave velocities at the hypocenter
   and at the receiver, respectively;
 - :math:`M_O` is the seismic moment;
 - :math:`f` is the frequency;
@@ -66,7 +66,7 @@ and convert them to seismic moment units:
 
    M(f) \equiv
    r \times
-   \frac{4 \pi \rho_h^{1/2} \rho_r^{1/2} \beta_h^{5/2} \beta_r^{1/2}}
+   \frac{4 \pi \rho_h^{1/2} \rho_r^{1/2} c_h^{5/2} c_r^{1/2}}
         {2 R_{\Theta\Phi}}
    \times S(f) =
           M_O \times
@@ -120,14 +120,15 @@ where :math:`M_w \equiv \frac{2}{3} (\log_{10} M_0 - 9.1)`.
 
 The parameters to determine are :math:`M_w`, :math:`f_c` and :math:`t^*`.
 
-The retrieved attenuation parameter :math:`t^*` is then converted to the S-wave
-quality factor :math:`Q_0` using the following expression:
+The retrieved attenuation parameter :math:`t^*` is then converted to the P- or
+S-wave quality factor :math:`Q_0^{[P|S]}` using the following expression:
 
 .. math::
 
-   Q_0 = \frac{tt_S(r)}{t^*}
+   Q_0^{[P|S]} = \frac{tt_{[P|S]}(r)}{t^*}
 
-where :math:`tt_S(r)` is the S-wave travel time from source to station.
+where :math:`tt_{[P|S]}(r)` is the P- or S-wave travel time from source to
+station.
 
 Station-specific effects can be determined by running ``source_spec`` on several
 events and computing the average of station residuals between observed and
