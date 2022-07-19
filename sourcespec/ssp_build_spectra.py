@@ -617,6 +617,7 @@ def _build_signal_and_noise_spectral_streams(config, signal_st, noise_st):
         spec.data_log_mag = moment_to_mag(spec.data_log)
     for specnoise in specnoise_st:
         specnoise.data_mag = moment_to_mag(specnoise.data)
+        specnoise.data_log_mag = moment_to_mag(specnoise.data_log)
     # apply station correction if a residual file is specified in config
     spec_st = station_correction(spec_st, config)
     return spec_st, specnoise_st
