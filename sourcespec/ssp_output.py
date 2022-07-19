@@ -313,7 +313,12 @@ def _write_db(config, sourcepar):
         par = stationpar[statId]
         # Remove existing line, if present
         t = (statId, evid, runid)
-        c.execute('delete from Stations where stid=? and evid=? and runid=?;', t)
+        try:
+            c.execute(
+                'delete from Stations where stid=? and evid=? and runid=?;', t)
+        except Exception as msg:
+            _log_db_write_error(msg, database_file)
+            ssp_exit(1)
         # Insert new line
         t = (
             statId, evid, runid,
@@ -366,7 +371,11 @@ def _write_db(config, sourcepar):
     ssp_version = get_versions()['version']
     # Remove event from Event table, if present
     t = (evid, runid)
-    c.execute('delete from Events where evid=? and runid=?;', t)
+    try:
+        c.execute('delete from Events where evid=? and runid=?;', t)
+    except Exception as msg:
+        _log_db_write_error(msg, database_file)
+        ssp_exit(1)
     t = (
         evid, runid,
         str(hypo.origin_time),
