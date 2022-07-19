@@ -196,10 +196,10 @@ def _merge_stream(config, st):
         t2 = st[0].stats.arrivals['P2'][1]
     st_cut.trim(starttime=t1, endtime=t2)
     if not st_cut:
-        msg = '{}: No signal for the selected %c-wave cut interval: ' % config.wave_type[0]
+        msg = '{}: No signal for the selected {}-wave cut interval: '
         msg += 'skipping trace >\n'
         msg += '> Cut interval: {} - {}'
-        msg = msg.format(traceid, t1, t2)
+        msg = msg.format(traceid, config.wave_type[0], t1, t2)
         raise RuntimeError(msg)
     gaps_olaps = st_cut.get_gaps()
     gaps = [g for g in gaps_olaps if g[6] >= 0]
