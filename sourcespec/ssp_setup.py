@@ -363,6 +363,60 @@ def _init_plotting(plot_show):
         plt.switch_backend('Agg')
 
 
+def _check_mandatory_config_params(config_obj):
+    mandatory_params = [
+        'p_arrival_tolerance',
+        's_arrival_tolerance',
+        'noise_pre_time',
+        'signal_pre_time',
+        'win_length',
+        'taper_halfwidth',
+        'spectral_smooth_width_decades',
+        'bp_freqmin_acc',
+        'bp_freqmax_acc',
+        'bp_freqmin_shortp',
+        'bp_freqmax_shortp',
+        'bp_freqmin_broadb',
+        'bp_freqmax_broadb',
+        'freq1_acc',
+        'freq2_acc',
+        'freq1_shortp',
+        'freq2_shortp',
+        'freq1_broadb',
+        'freq2_broadb',
+        'rmsmin',
+        'sn_min',
+        'clip_max_percent',
+        'spectral_sn_min',
+        'vp_source',
+        'vs_source',
+        'rho',
+        'rpp',
+        'rps',
+        'f_weight',
+        'weight',
+        't_star_0',
+        't_star_0_variability',
+        'Mw_0_variability',
+        'a', 'b', 'c',
+        'ml_bp_freqmin',
+        'ml_bp_freqmax',
+        'nIQR',
+        'plot_spectra_maxrows',
+        'plot_traces_maxrows',
+        'plot_station_text_size'
+    ]
+    messages = list()
+    for par in mandatory_params:
+        if config_obj[par] is None:
+            msg = '"{}" is mandatory and cannot be None'.format(par)
+            messages.append(msg)
+    if messages:
+        msg = '\n'.join(messages)
+        sys.stderr.write(msg + '\n')
+        ssp_exit(1)
+
+
 def configure(options, progname):
     """
     Parse command line arguments and read config file.
@@ -400,6 +454,7 @@ def configure(options, progname):
         sys.exit(1)
 
     _check_deprecated_config_options(config_obj)
+    _check_mandatory_config_params(config_obj)
 
     # Create a 'no_evid_' subdir into outdir.
     # The random hex string will make it sure that this name is unique
