@@ -653,6 +653,38 @@ def _build_event_spectra(config, st):
     return spec_st, specnoise_st, weight_st
 
 
+def _spectral_ratio(config, st):
+    "Spectral ratios between the input event and the Green's function"
+    if config.hypoG is None:
+        return
+    # select Green's function spectra based on evid
+    st_green = select_evid(st, config.hypoG.evid)
+    if not st_green:
+        return
+    # select event spectra based on evid
+    st_master = select_evid(st, config.hypo.evid)
+    # select root sum of squares spectrum (corrected) by channel ids
+    spec_ids = [sp.id for sp in st_master if sp.id[-1] == 'H']
+    for spec_id in sorted(spec_ids):
+        try:
+            spec_green = st_green.select(id=spec_id)[0]
+        except IndexError:
+            continue
+        spec_master = st_master.select(id=spec_id)[0]
+        spec_ratio = spec_master.copy()
+        # spectral ratios between event and Green's function
+        spec_ratio.data /= spec_green.data
+        spec_ratio.data_log /= spec_green.data_log
+        # spectral ratios of amplitudes in magnitude units
+        spec_ratio.data_mag -= spec_green.data_mag
+        spec_ratio.data_log_mag -= spec_green.data_log_mag
+        # defining a new evid for spectral ratios ('main event evid_R')
+        spec_ratio.stats.hypo.evid = f'{spec_ratio.stats.hypo.evid}_R'
+        # defining a new channel code for spectral ratios ('R')
+        spec_ratio.stats.channel = f'{spec_ratio.stats.channel[:2]}R'
+        st.append(spec_ratio)
+
+
 def build_spectra(config, st):
     """Build spectra for the input event and the Green's function."""
     out_spec = Stream()
@@ -680,4 +712,7 @@ def build_spectra(config, st):
             logger.info("Building Green's function spectra: done")
         else:
             logger.info('Building spectra: done')
+    _spectral_ratio(config, out_spec)
+    _spectral_ratio(config, out_specnoise)
+    _spectral_ratio(config, out_weight)
     return out_spec, out_specnoise, out_weight
