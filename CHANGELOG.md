@@ -45,7 +45,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 - Improvements:
   - Use travel time (from NonLinLoc grid, "iasp91" model or `vs_tt`) to compute
-    quality factor from t* (and viceversa)
+    quality factor from t* (and viceversa) (see issue [#5])
   - Reduce PNG figures file size, while improving their resolution 😃
   - Station table in HTML report is now sortable (and its header remains fixed)!
 
@@ -86,6 +86,7 @@ Note that v1.5 is no more compatible with Python 2!
 - Processing:
   - New parameter for setting the width of the spectral smoothing window
     in terms of frequency decades: `spectral_smooth_width_decades`
+    (see issue [#2])
   - Compute spectral weights after spectral correction (when a station
     residuals file is specified via `residuals_filepath`)
   - Removed configuration parameter `trace_format`
@@ -312,6 +313,7 @@ Extended and generalized for the CRL application.
 
 Initial Python port.
 
+[#2]: https://github.com/SeismicSource/sourcespec/issues/2
 [#3]: https://github.com/SeismicSource/sourcespec/issues/3
 [#5]: https://github.com/SeismicSource/sourcespec/issues/5
 [#6]: https://github.com/SeismicSource/sourcespec/issues/6
