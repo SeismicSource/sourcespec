@@ -125,10 +125,11 @@ def _make_fig(config, hypo, plot_params):
     # Add code and author information at the figure bottom
     textstr = f'SourceSpec v{get_versions()["version"]} '
     if not stack_plots:
-        textstr += (
-            f'- {config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")} '
-            f'{config.end_of_run_tz} '
-        )
+        with contextlib.suppress(AttributeError):
+            textstr += (
+                f'- {config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")} '
+                f'{config.end_of_run_tz} '
+            )
     textstr2 = ''
     if config.author_name is not None:
         textstr2 += config.author_name
@@ -711,7 +712,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
     """
     evids = [config.hypo.evid]
     if config.hypoG is not None:
-        evids += [config.hypoG.evid, config.hypo.evid + '_R']
+        evids += [config.hypoG.evid, f'{config.hypo.evid}_R']
     for evid in evids:
         # select spectra for each evid
         spec_evid = select_evid(spec_st, evid)
