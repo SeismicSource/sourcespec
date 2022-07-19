@@ -309,8 +309,6 @@ Here is the default config file, generated through ``source_spec -S``::
         for line in open(configspec):
             if '=' in line and line[0] != '#':
                 key, val = line.split(' = ')
-                if key == 'unused':
-                    continue
                 val = val.split('default=')[1]
                 val = val.replace(')', '').replace("'", '')
                 line = key + ' = ' + val
