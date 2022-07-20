@@ -57,7 +57,7 @@ def main():
 
     # Radiated energy
     from sourcespec.ssp_radiated_energy import radiated_energy
-    radiated_energy(config, spec_st, sourcepar)
+    radiated_energy(config, spec_st, specnoise_st, sourcepar)
 
     # Local magnitude
     if config.compute_local_magnitude:

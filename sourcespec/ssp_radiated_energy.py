@@ -64,12 +64,13 @@ def _finite_bandwidth_correction(spec, fc, fmax):
     return R
 
 
-def radiated_energy(config, spec_st, sourcepar):
+def radiated_energy(config, spec_st, specnoise_st, sourcepar):
     """Compute radiated energy, using eq. (3) in Lancieri et al. (2012)."""
     # Select specids with channel code: '??H'
     spec_ids = [spec.id for spec in spec_st if spec.id[-1] == 'H']
     for spec_id in spec_ids:
         spec = spec_st.select(id=spec_id)[0]
+        specnoise = specnoise_st.select(id=spec_id)[0]
 
         statId = '{} {}'.format(spec_id, spec.stats.instrtype)
         try:
@@ -86,9 +87,12 @@ def radiated_energy(config, spec_st, sourcepar):
         elif config.wave_type in ['S', 'SV', 'SH']:
             vel = config.hypo.vs * 1000.
 
-        integral = _spectral_integral(spec, t_star, fmax)
+        # Compute signal and noise integrals and subtract noise from signal,
+        # under the hypothesis that energy is additive and noise is stationary
+        signal_integral = _spectral_integral(spec, t_star, fmax)
+        noise_integral = _spectral_integral(specnoise, t_star, fmax)
         coeff = _radiated_energy_coefficient(rho, vel)
-        Er = coeff * integral
+        Er = coeff * (signal_integral - noise_integral)
 
         R = _finite_bandwidth_correction(spec, fc, fmax)
         Er /= R

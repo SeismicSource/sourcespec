@@ -51,6 +51,9 @@ Earthquake source parameters from P- or S-wave displacement spectra
   - Reduce PNG figures file size, while improving their resolution 😃
   - Station table in HTML report is now sortable (and its header remains fixed)!
   - Warn if noise window ends after P or S arrival
+  - Subtract the integral of noise spectrum from the integral of signal spectrum
+    when computing radiated energy, under the hypothesis that energy is additive
+    and noise is stationary
 
 - Bugfixes:
   - Fix not working `weighting` options: `frequency` and `no_weight`
