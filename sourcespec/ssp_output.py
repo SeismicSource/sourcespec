@@ -91,9 +91,9 @@ def _write_parfile(config, sourcepar):
         Mw='{:6.3f} ',
         fc='{:6.3f} ',
         bsd='{:.3e} ',
-        ra='{:7.3f} ',
+        ra='{:8.3f} ',
         t_star='{:6.3f} ',
-        Qo='{:5.1f} ',
+        Qo='{:7.1f} ',
         Ml='{:6.3f} '
     )
     formats_none = dict(
@@ -104,15 +104,15 @@ def _write_parfile(config, sourcepar):
         Mw='{:>6} ',
         fc='{:>6} ',
         bsd='{:>9} ',
-        ra='{:>7} ',
+        ra='{:>8} ',
         t_star='{:>6} ',
-        Qo='{:>5} ',
+        Qo='{:>7} ',
         Ml='{:>6} '
     )
     stationpar = sourcepar.station_parameters
     for statId in sorted(stationpar.keys()):
         par = stationpar[statId]
-        parfile.write('{:>14} {:>6}\t'.format(*statId.split()))
+        parfile.write('{:>15} {:>6}\t'.format(*statId.split()))
         for key in parkeys:
             val = par[key]
             outl = par.get(key + '_outlier', False)
@@ -126,7 +126,7 @@ def _write_parfile(config, sourcepar):
             else:
                 parfile.write(formats_none[key].format('nan'))
         parfile.write('\n')
-        parfile.write('{:>21}\t'.format('--- errmin'))
+        parfile.write('{:>22}\t'.format('--- errmin'))
         for key in parkeys:
             outl = par.get(key + '_outlier', False)
             if outl:
@@ -140,7 +140,7 @@ def _write_parfile(config, sourcepar):
             except KeyError:
                 parfile.write(formats_none[key].format('nan'))
         parfile.write('\n')
-        parfile.write('{:>21}\t'.format('--- errmax'))
+        parfile.write('{:>22}\t'.format('--- errmax'))
         for key in parkeys:
             outl = par.get(key + '_outlier', False)
             if outl:
