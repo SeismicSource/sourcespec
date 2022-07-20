@@ -270,6 +270,12 @@ def _add_hypo_dist_and_arrivals(config, st):
         # Noise window for spectral analysis
         t1 = p_arrival_time - config.noise_pre_time
         t2 = t1 + config.win_length
+        if t2 >= s_arrival_time:
+            logger.warning(
+                '{}: noise window ends after S-wave arrival'.format(trace.id))
+        elif t2 >= p_arrival_time:
+            logger.warning(
+                '{}: noise window ends after P-wave arrival'.format(trace.id))
         trace.stats.arrivals['N1'] = ('N1', t1)
         trace.stats.arrivals['N2'] = ('N2', t2)
 

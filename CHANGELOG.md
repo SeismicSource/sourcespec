@@ -50,6 +50,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
     (see issue [#10])
   - Reduce PNG figures file size, while improving their resolution 😃
   - Station table in HTML report is now sortable (and its header remains fixed)!
+  - Warn if noise window ends after P or S arrival
 
 - Bugfixes:
   - Fix not working `weighting` options: `frequency` and `no_weight`
