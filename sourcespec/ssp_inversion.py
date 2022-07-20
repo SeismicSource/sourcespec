@@ -26,7 +26,6 @@ from sourcespec.ssp_spectral_model import (
     spectral_model, objective_func, callback)
 from sourcespec.ssp_util import (
     mag_to_moment, source_radius, bsd, quality_factor, select_trace, smooth)
-from sourcespec.ssp_radiated_energy import radiated_energy
 from sourcespec.ssp_data_types import (
     InitialValues, Bounds, StationSourceParameters, SourceParameters)
 from sourcespec.ssp_grid_sampling import GridSampling
@@ -402,8 +401,6 @@ def spectral_inversion(config, spec_st, weight_st):
         statId = '{} {}'.format(spec.id, spec.stats.instrtype)
         par = StationSourceParameters(statId, par, par_err)
         sourcepar.station_parameters[statId] = par
-
-    radiated_energy(config, spec_st, sourcepar)
 
     logger.info('Inverting spectra: done')
     return sourcepar
