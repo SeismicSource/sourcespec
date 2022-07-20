@@ -325,4 +325,9 @@ a.article:hover {
     display: block;
     page-break-before: always;
   }
+  .table_wrapper{
+    height: auto;
+    overflow: visible;
+    white-space: normal;
+  }
 }
