@@ -36,9 +36,36 @@ table.stations th {
   z-index: 2;
 }
 
+table.stations th.station_id {
+  background-color: white;
+  border-right: 2px dotted #dee2e6;
+  position: -webkit-sticky;
+  position: sticky;
+  left: 0;
+  z-index: 4;
+}
+
 table.stations th:hover {
   text-decoration: underline;
   cursor: pointer;
+}
+
+table.stations td.station_id {
+  background-color: white;
+  border-right: 2px dotted #dee2e6;
+  position: -webkit-sticky;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+}
+
+.table_wrapper{
+  height:500px;
+  overflow: scroll;
+  white-space: nowrap;
+}
+.table_wrapper div{
+  display: inline-block;
 }
 
 .navbar {
