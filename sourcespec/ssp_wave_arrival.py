@@ -167,6 +167,14 @@ def _get_theo_pick_time(trace, travel_time):
     return theo_pick_time
 
 
+def _travel_time_from_pick(trace, pick_time):
+    try:
+        travel_time = pick_time - trace.stats.hypo.origin_time
+    except TypeError:
+        travel_time = None
+    return travel_time
+
+
 def _find_picks(trace, phase, theo_pick_time, tolerance):
     """Search for valid picks in trace stats. Return pick time if found."""
     for pick in (p for p in trace.stats.picks if p.phase == phase):
@@ -207,6 +215,8 @@ def add_arrivals_to_trace(trace, config):
             continue
         if pick_time is not None:
             logger.info('{}: found {} pick'.format(trace.id, phase))
+            travel_time = \
+                _travel_time_from_pick(trace, pick_time) or travel_time
             pick_phase = phase
         elif theo_pick_time is not None:
             logger.info('{}: using theoretical {} pick from {}'.format(

@@ -44,8 +44,10 @@ Earthquake source parameters from P- or S-wave displacement spectra
     current run (see pull request [#6])
 
 - Improvements:
-  - Use travel time (from NonLinLoc grid, "iasp91" model or `vs_tt`) to compute
-    quality factor from t* (and viceversa) (see issue [#5])
+  - Use travel time to compute quality factor from t* (and viceversa)
+    (see issue [#5])
+  - Compute travel time from pick and origin time, when possible
+    (see issue [#10])
   - Reduce PNG figures file size, while improving their resolution 😃
   - Station table in HTML report is now sortable (and its header remains fixed)!
 
@@ -318,3 +320,4 @@ Initial Python port.
 [#5]: https://github.com/SeismicSource/sourcespec/issues/5
 [#6]: https://github.com/SeismicSource/sourcespec/issues/6
 [#9]: https://github.com/SeismicSource/sourcespec/issues/9
+[#10]: https://github.com/SeismicSource/sourcespec/issues/10
