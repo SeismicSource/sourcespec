@@ -15,7 +15,9 @@ Compute radiated energy from spectral integration.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
+import logging
 import numpy as np
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
 def _spectral_integral(spec, t_star, fmax):
@@ -73,6 +75,11 @@ def _finite_bandwidth_correction(spec, fc, fmax):
 
 def radiated_energy(config, spec_st, specnoise_st, sourcepar):
     """Compute radiated energy, using eq. (3) in Lancieri et al. (2012)."""
+    logger.info('Computing radiated energy...')
+    if config.wave_type == 'P':
+        logger.warning(
+            'Warning: computing radiated energy from P waves might lead to '
+            'an underestimation')
     # Select specids with channel code: '??H'
     spec_ids = [spec.id for spec in spec_st if spec.id[-1] == 'H']
     for spec_id in spec_ids:
@@ -106,3 +113,4 @@ def radiated_energy(config, spec_st, specnoise_st, sourcepar):
 
         # Store in the parameter dictionary
         par['Er'] = Er
+    logger.info('Computing radiated energy: done')
