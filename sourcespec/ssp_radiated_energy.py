@@ -20,6 +20,9 @@ import numpy as np
 
 def _spectral_integral(spec, t_star, fmax):
     """Compute spectral integral in eq. (3) from Lancieri et al. (2012)."""
+    # Note: eq. (3) from Lancieri et al. (2012) is the same as
+    # eq. (1) in Boatwright et al. (2002), but expressed in frequency,
+    # instead of angular frequency (2pi factor).
     deltaf = spec.stats.delta
     freq = spec.get_freq()
     # Data is in moment units. Let's put it back to displacement units,
@@ -37,7 +40,11 @@ def _spectral_integral(spec, t_star, fmax):
 
 def _radiated_energy_coefficient(rho, vel):
     """Compute coefficient in eq. (3) from Lancieri et al. (2012)."""
-    # From Lancieri et al. (2012), eq. (3), the correction term is:
+    # Note: eq. (3) from Lancieri et al. (2012) is the same as
+    # eq. (1) in Boatwright et al. (2002), but expressed in frequency,
+    # instead of angular frequency (2pi factor).
+    # In the original eq. (3) from Lancieri et al. (2012), eq. (3),
+    # the correction term is:
     #       8 * pi * r**2 * C**2 * rho * vs
     # We do not multiply by r**2, since data is already distance-corrected.
     # From Boatwright et al. (2002), eq. (2), C = <Fs>/(Fs * S),
