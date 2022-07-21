@@ -198,6 +198,47 @@ def _check_noise_level(trace_signal, trace_noise):
         raise RuntimeError(msg)
 
 
+def _geom_spread_r_power_n(hypo_dist_in_km, exponent):
+    """rⁿ geometrical spreading coefficient."""
+    dist = hypo_dist_in_km * 1e3
+    coeff = dist**exponent
+    return coeff
+
+
+def _geom_spread_boatwright(hypo_dist_in_km, cutoff_dist_in_km, freqs):
+    """"
+    Geometrical spreading coefficient from Boatwright et al. (2002), eq. 8.
+
+    Except that we take the square root of eq. 8, since we correct amplitude
+    and not energy.
+    """
+    dist = hypo_dist_in_km * 1e3
+    cutoff_dist = cutoff_dist_in_km * 1e3
+    if dist <= cutoff_dist:
+        coeff = dist
+    else:
+        exponent = np.ones_like(freqs)
+        low_freq = freqs <= 0.2
+        mid_freq = np.logical_and(freqs > 0.2, freqs <= 0.25)
+        high_freq = freqs >= 0.25
+        exponent[low_freq] = 0.5
+        exponent[mid_freq] = 0.5 + 2*np.log(5*freqs[mid_freq])
+        exponent[high_freq] = 0.7
+        coeff = cutoff_dist * (dist/cutoff_dist)**exponent
+    return coeff
+
+
+def _geometrical_spreading_coefficient(config, spec):
+    hypo_dist_in_km = spec.stats.hypo_dist
+    if config.geom_spread_model == 'r_power_n':
+        exponent = config.geom_spread_n_exponent
+        return _geom_spread_r_power_n(hypo_dist_in_km, exponent)
+    elif config.geom_spread_model == 'boatwright':
+        cutoff_dist_in_km = config.geom_spread_cutoff_distance
+        return _geom_spread_boatwright(
+            hypo_dist_in_km, cutoff_dist_in_km, spec.get_freq())
+
+
 # store log messages to avoid duplicates
 velocity_log_messages = []
 
@@ -268,11 +309,8 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
 
 
 def _build_spectrum(config, trace):
-    stats = trace.stats
-    # normalization for the hypocentral distance
-    trace.data *= trace.stats.hypo_dist * 1000
-    # calculate fft
     spec = spectrum.do_spectrum(trace)
+    stats = trace.stats
     spec.stats.instrtype = stats.instrtype
     spec.stats.coords = stats.coords
     spec.stats.hypo = stats.hypo
@@ -286,6 +324,9 @@ def _build_spectrum(config, trace):
         _frequency_integrate(config, spec)
     # cut the spectrum
     spec = _cut_spectrum(config, spec)
+    # correct geometrical spreading
+    geom_spread = _geometrical_spreading_coefficient(config, spec)
+    spec.data *= geom_spread
     # convert to seismic moment
     coeff = _displacement_to_moment(stats, config)
     spec.data *= coeff
@@ -426,9 +467,8 @@ def build_spectra(config, st):
     Build spectra and the spec_st object.
 
     Computes P- or S-wave (displacement) spectra from
-    accelerometers and velocimeters, uncorrected for attenuation,
-    corrected for instrumental constants, normalized by
-    hypocentral distance.
+    accelerometers and velocimeters, uncorrected for anelastic attenuation,
+    corrected for instrumental constants, normalized by geometrical spreading.
     """
     logger.info('Building spectra...')
     spec_st = Stream()

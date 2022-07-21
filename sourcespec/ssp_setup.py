@@ -393,6 +393,8 @@ def _check_mandatory_config_params(config_obj):
         'rho',
         'rpp',
         'rps',
+        'geom_spread_n_exponent',
+        'geom_spread_cutoff_distance',
         'f_weight',
         'weight',
         't_star_0',

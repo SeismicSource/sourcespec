@@ -18,6 +18,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
     `noise_pre_time` and `signal_pre_time`, respectively (see pull request [#9])
   - Config parameter `rps_from_focal_mechanism` renamed to
     `rp_from_focal_mechanism` (see pull request [#9])
+  - New config parameter: `geom_spread_model` (see issue [#8])
   - Config parameters `PLOT_SHOW`, `PLOT_SAVE` and `PLOT_SAVE_FORMAT` are now
     lowercase (`plot_show`, `plot_save` and `plot_save_format`)
   - New, optional, general config parameters for specyfing author and agency
@@ -34,6 +35,11 @@ Earthquake source parameters from P- or S-wave displacement spectra
   - It is now possible to provide different vp and vs velocities, close to the
     source and close to the stations (see the new config options above and
     issue [#5])
+  - Possibility to choose a geometrical spreading model between
+    (see issue [#8]):
+    - rⁿ (default: n=1 – body waves)
+    - Boatwright et al. (2002): "r" below a cutoff distance, frequency-dependent
+      above the cutoff distance
   - QuakeML output (when using QuakeML input)
   - Removed option to read event information and traces from a pickle file
     (rarely used)
@@ -325,5 +331,6 @@ Initial Python port.
 [#3]: https://github.com/SeismicSource/sourcespec/issues/3
 [#5]: https://github.com/SeismicSource/sourcespec/issues/5
 [#6]: https://github.com/SeismicSource/sourcespec/issues/6
+[#8]: https://github.com/SeismicSource/sourcespec/issues/8
 [#9]: https://github.com/SeismicSource/sourcespec/issues/9
 [#10]: https://github.com/SeismicSource/sourcespec/issues/10
