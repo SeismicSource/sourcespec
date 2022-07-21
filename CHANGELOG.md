@@ -26,6 +26,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
   - Removed `DEBUG` config parameter
   - Parameters from `GENERAL PARAMETERS` section reorganized into a new
     section called `TRACE AND METADATA PARAMETERS`
+  - Some parameters from `INVERSION PARAMETERS` moved into a new section
+    called `SPECTRAL MODEL PARAMETERS`
 
 - Features:
   - Support for P-wave spectral inversion (see pull request [#9])
