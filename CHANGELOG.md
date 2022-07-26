@@ -50,10 +50,10 @@ You will need to upgrade your old config files manually or using
 
 ### Config file
 
-- Config options `vp` and `vs` have been renamed to `vp_source`
+- Config parameters `vp` and `vs` have been renamed to `vp_source`
   and `vs_source` (see issue [#5])
-- New, optional, config options `vp_stations` and `vs_stations`
-- Config options `pre_p_time` and `pre_s_time` have been renamed to
+- New, optional, config parameter `vp_stations` and `vs_stations`
+- Config parameter `pre_p_time` and `pre_s_time` have been renamed to
   `noise_pre_time` and `signal_pre_time`, respectively (see pull request [#9])
 - Config parameter `rps_from_focal_mechanism` renamed to
   `rp_from_focal_mechanism` (see pull request [#9])
@@ -62,7 +62,9 @@ You will need to upgrade your old config files manually or using
   lowercase (`plot_show`, `plot_save` and `plot_save_format`)
 - New, optional, general config parameters for specyfing author and agency
   information. This information is written to output files and figures,
-  if specified.
+  if specified
+- New config parameter, `event_url`, to link the event page from the HTML
+  report
 - Removed `DEBUG` config parameter
 - Parameters from `GENERAL PARAMETERS` section reorganized into a new
   section called `TRACE AND METADATA PARAMETERS`

@@ -14,6 +14,7 @@ import logging
 import shutil
 import re
 import numpy as np
+from urllib.parse import urlparse
 from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.split('.')[-1])
 
@@ -425,6 +426,28 @@ def html_report(config, sourcepar):
         '{BOX_PLOTS}': box_plots,
         '{STATION_TABLE_ROWS}': station_table_rows,
     }
+
+    # Link to event page, if defined
+    event_url = config.event_url
+    if event_url is not None:
+        event_url = event_url.replace('$EVENTID', evid)
+        parsed_url = urlparse(event_url)
+        if not parsed_url.scheme:
+            logger.warning(
+                '{} is not a valid URL and will not be used'.format(event_url))
+            event_url = None
+    if event_url is not None:
+        event_url_comment_begin = ''
+        event_url_comment_end = ''
+    else:
+        event_url = ''
+        event_url_comment_begin = '<!--'
+        event_url_comment_end = '-->'
+    replacements.update({
+        '{EVENT_URL}': event_url,
+        '{EVENT_URL_COMMENT_BEGIN}': event_url_comment_begin,
+        '{EVENT_URL_COMMENT_END}': event_url_comment_end
+    })
 
     # Only show Run ID if it is not empty
     if run_id:

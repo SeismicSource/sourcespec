@@ -126,7 +126,16 @@
           <tbody>
             <tr>
               <th scope="row">Event ID:</th>
-              <td>{EVENTID}</td>
+              <td>
+{EVENT_URL_COMMENT_BEGIN}
+                <a href="{EVENT_URL}" title="Go to event page" target="_new">
+{EVENT_URL_COMMENT_END}
+                  {EVENTID}
+{EVENT_URL_COMMENT_BEGIN}
+                  &nbsp;<i class="fas fa-external-link-alt"></i>
+                </a>
+{EVENT_URL_COMMENT_END}
+              </td>
             </tr>
 {RUNID_COMMENT_BEGIN}
             <tr>

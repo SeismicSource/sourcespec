@@ -21,6 +21,10 @@ a:focus {
   transition: all 0.3s;
 }
 
+table a:hover {
+  text-decoration: underline;
+}
+
 table.stations {
   font-size: 0.8em;
   text-align: right;
