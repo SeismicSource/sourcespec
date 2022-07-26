@@ -95,6 +95,30 @@ table.stations td.station_id {
 }
 
 /* ---------------------------------------------------
+    IMAGE STYLES
+----------------------------------------------------- */
+
+.logo {
+  max-width: 100%;
+}
+
+.station_map {
+  max-width: 80%;
+}
+
+.trace_plot {
+  max-width: 100%;
+}
+
+.spectral_plot {
+  max-width: 100%;
+}
+
+.box_plot {
+  max-width: 80%;
+}
+
+/* ---------------------------------------------------
     SIDEBAR STYLE
 ----------------------------------------------------- */
 
@@ -333,5 +357,11 @@ a.article:hover {
     height: auto;
     overflow: visible;
     white-space: normal;
+  }
+  .station_map {
+    max-width: 70%;
+  }
+  .box_plot {
+    max-width: 60%;
   }
 }
