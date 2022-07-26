@@ -14,34 +14,9 @@ sys.path.insert(0, os.path.join(os.path.abspath('..'), 'sourcespec'))
 from sourcespec._version import get_versions #NOQA
 __version__ = get_versions()['version']
 
-# Mock modules which are not installed by Read the Docs
-# (Source: http://docs.readthedocs.org/en/latest/faq.html)
-MOCK_MODULES = [
-    'matplotlib',
-    'matplotlib.pyplot',
-    'matplotlib.backends.backend_pdf',
-    'matplotlib.transforms',
-    'matplotlib.patches',
-    'matplotlib.patheffects',
-    'matplotlib.ticker',
-    'numpy',
-    'scipy',
-    'scipy.integrate', 'scipy.interpolate', 'scipy.optimize',
-    'scipy.stats', 'scipy.stats.mstats', 'scipy.signal',
-    'scipy.signal._peak_finding_utils',
-    'obspy',
-    'obspy.core', 'obspy.core.util', 'obspy.core.inventory',
-    'obspy.core.event',
-    'obspy.io', 'obspy.io.sac',
-    'obspy.io.xseed', 'obspy.io.xseed.utils',
-    'obspy.signal', 'obspy.signal.invsim',
-    'obspy.signal.konnoohmachismoothing', 'obspy.signal.filter',
-    'obspy.signal.util', 'obspy.signal.trigger',
-    'obspy.geodetics', 'obspy.taup',
-    'PIL', 'tzlocal'
-    ]
+from docs.mock_modules import MOCK_MODULES #NOQA
+# Mock modules which are not essential for the Sphinx environment
 sys.modules.update((mod_name, MagicMock()) for mod_name in MOCK_MODULES)
-
 
 # -- General configuration ----------------------------------------------------
 

@@ -18,6 +18,7 @@ Earthquake source parameters from inversion of P- or S-wave spectra.
 
 
 def main():
+    """Main routine for source_spec."""
     # Lazy-import modules for speed
     from sourcespec.ssp_parse_arguments import parse_args
     options = parse_args(progname='source_spec')

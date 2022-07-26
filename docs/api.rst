@@ -5,8 +5,22 @@ SourceSpec API
 SourceSpec has a modular structure. Each module corresponds to a specific
 function or class of functions.
 
-SourceSpec modules are presented below, following the logical order on which
+Main modules
+************
+
+SourceSpec main modules are presented below, following the logical order on which
 they're used within ``source_spec.py``.
+
+source_spec.py
+--------------
+.. automodule:: source_spec
+   :members:
+
+
+ssp_parse_arguments
+-------------------
+.. automodule:: ssp_parse_arguments
+   :members:
 
 ssp_setup
 ---------
@@ -29,13 +43,8 @@ ssp_build_spectra
    :members:
 
 ssp_plot_traces
------------------
+---------------
 .. automodule:: ssp_plot_traces
-   :members:
-
-ssp_local_magnitude
--------------------
-.. automodule:: ssp_local_magnitude
    :members:
 
 ssp_inversion
@@ -43,19 +52,19 @@ ssp_inversion
 .. automodule:: ssp_inversion
    :members:
 
-ssp_spectral_model
-------------------
-.. automodule:: ssp_spectral_model
+ssp_radiated_energy
+-------------------
+.. automodule:: ssp_radiated_energy
    :members:
 
-ssp_residuals
--------------
-.. automodule:: ssp_residuals
+ssp_local_magnitude
+-------------------
+.. automodule:: ssp_local_magnitude
    :members:
 
-ssp_correction
---------------
-.. automodule:: ssp_correction
+ssp_averages
+------------
+.. automodule:: ssp_averages
    :members:
 
 ssp_output
@@ -63,9 +72,65 @@ ssp_output
 .. automodule:: ssp_output
    :members:
 
+ssp_residuals
+-------------
+.. automodule:: ssp_residuals
+   :members:
+
 ssp_plot_spectra
 ----------------
 .. automodule:: ssp_plot_spectra
+   :members:
+
+ssp_plot_params_stats
+---------------------
+.. automodule:: ssp_plot_params_stats
+   :members:
+
+ssp_plot_stations
+-----------------
+.. automodule:: ssp_plot_stations
+   :members:
+
+ssp_html_report
+----------------
+.. automodule:: ssp_html_report
+   :members:
+
+
+Other modules
+*************
+
+These modules, in alphabetical order, are used by the main modules.
+
+ssp_correction
+--------------
+.. automodule:: ssp_correction
+   :members:
+
+ssp_data_types
+--------------
+.. automodule:: ssp_data_types
+   :members:
+
+ssp_grid_sampling
+-----------------
+.. automodule:: ssp_grid_sampling
+   :members:
+
+ssp_spectral_model
+------------------
+.. automodule:: ssp_spectral_model
+   :members:
+
+ssp_qml_output
+--------------
+.. automodule:: ssp_qml_output
+   :members:
+
+ssp_radiation_pattern
+---------------------
+.. automodule:: ssp_radiation_pattern
    :members:
 
 ssp_util
@@ -73,9 +138,9 @@ ssp_util
 .. automodule:: ssp_util
    :members:
 
-spectrum
---------
-.. automodule:: spectrum
+ssp_wave_arrival
+----------------
+.. automodule:: ssp_wave_arrival
    :members:
 
 config
@@ -83,12 +148,17 @@ config
 .. automodule:: config
    :members:
 
-.. configobj
-.. ---------
-.. .. automodule:: configobj
+kdtree
+------
+.. automodule:: kdtree
    :members:
 
-.. validate
-.. --------
-.. .. automodule:: validate
-..    :members:
+savefig
+-------
+.. automodule:: savefig
+   :members:
+
+spectrum
+--------
+.. automodule:: spectrum
+   :members:

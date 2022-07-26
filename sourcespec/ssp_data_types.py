@@ -206,15 +206,17 @@ class SourceParameters():
         """
         Find outliers using the IQR method.
 
-            Q1-n*IQR   Q1   median  Q3    Q3+n*IQR
-                        |-----:-----|
-        o      |--------|     :     |--------|    o  o
-                        |-----:-----|
-        outlier         <----------->            outliers
-                            IQR
+        .. code-block::
 
-        If n is None, then the above check is skipped.
-        Nan and inf values are also marked as outliers.
+                Q1-n*IQR   Q1   median  Q3    Q3+n*IQR
+                            |-----:-----|
+            o      |--------|     :     |--------|    o  o
+                            |-----:-----|
+            outlier         <----------->            outliers
+                                 IQR
+
+        If ``n`` is ``None``, then the above check is skipped.
+        ``Nan`` and ``inf`` values are also marked as outliers.
         """
         values = self.value_array(key)
         naninf = np.logical_or(np.isnan(values), np.isinf(values))
