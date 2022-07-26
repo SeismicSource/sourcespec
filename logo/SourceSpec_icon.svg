@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="35.2512pt" height="35.2416pt" viewBox="0 0 35.2512 35.2416" version="1.1">
-<g id="surface1">
-<path style="fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter;stroke:rgb(89.498901%,23.03009%,35.812378%);stroke-opacity:1;stroke-miterlimit:10;" d="M -0.00123125 -0.0018625 L -0.00123125 13.8497 " transform="matrix(1,0,0,-1,19.9192,26.7872)"/>
-<path style="fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter;stroke:rgb(89.498901%,23.03009%,35.812378%);stroke-opacity:1;stroke-miterlimit:10;" d="M 0.00021875 -0.0018625 L 0.00021875 18.334075 " transform="matrix(1,0,0,-1,5.824,26.7872)"/>
-<path style="fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter;stroke:rgb(89.498901%,23.03009%,35.812378%);stroke-opacity:1;stroke-miterlimit:10;" d="M -0.00170625 -0.0018625 L -0.00170625 18.334075 " transform="matrix(1,0,0,-1,10.6228,26.7872)"/>
-<path style="fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter;stroke:rgb(89.498901%,23.03009%,35.812378%);stroke-opacity:1;stroke-miterlimit:10;" d="M 0.00175625 -0.0018625 L 0.00175625 16.677825 " transform="matrix(1,0,0,-1,15.2209,26.7872)"/>
-<path style="fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter;stroke:rgb(89.498901%,23.03009%,35.812378%);stroke-opacity:1;stroke-miterlimit:10;" d="M -0.0007125 -0.0018625 L -0.0007125 11.365325 " transform="matrix(1,0,0,-1,24.6179,26.7872)"/>
-<path style="fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:miter;stroke:rgb(89.498901%,23.03009%,35.812378%);stroke-opacity:1;stroke-miterlimit:10;" d="M -0.00029375 -0.0018625 L -0.00029375 8.341887 " transform="matrix(1,0,0,-1,29.3167,26.7872)"/>
+<g fill="none" stroke="#E43B5C" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2">
+<path transform="matrix(1 0 0 -1 19.919 26.787)" d="m-0.0012312-0.0018625v13.852"/>
+<path transform="matrix(1 0 0 -1 5.824 26.787)" d="m2.1875e-4 -0.0018625v18.336"/>
+<path transform="matrix(1 0 0 -1 10.623 26.787)" d="m-0.0017062-0.0018625v18.336"/>
+<path transform="matrix(1 0 0 -1 15.221 26.787)" d="m0.0017562-0.0018625v16.68"/>
+<path transform="matrix(1 0 0 -1 24.618 26.787)" d="m-7.125e-4 -0.0018625v11.367"/>
+<path transform="matrix(1 0 0 -1 29.317 26.787)" d="m-2.9375e-4 -0.0018625v8.3437"/>
 </g>
 </svg>
