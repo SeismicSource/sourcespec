@@ -61,6 +61,7 @@ class SSPTag(AttribDict):
 
 def write_qml(config, sourcepar):
     if not config.options.qml_file:
+        config.qml_file_out = None
         return
     qml_file = config.options.qml_file
     cat = read_events(qml_file)
@@ -200,3 +201,4 @@ def write_qml(config, sourcepar):
     qml_file_out = os.path.join(config.options.outdir, evid + '.xml')
     ev.write(qml_file_out, format='QUAKEML')
     logging.info('QuakeML file written to: ' + qml_file_out)
+    config.qml_file_out = qml_file_out

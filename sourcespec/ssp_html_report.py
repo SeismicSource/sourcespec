@@ -252,7 +252,6 @@ def html_report(config, sourcepar):
     config_file = '{}.ssp.conf'.format(evid)
     out_file = '{}.ssp.out'.format(evid)
     log_file = '{}.ssp.log'.format(evid)
-    quakeml_file = '{}.xml'.format(evid)
     map_mag = '{}.map_mag.png'.format(evid)
     map_fc = '{}.map_fc.png'.format(evid)
     box_plots = '{}.boxplot.png'.format(evid)
@@ -440,7 +439,7 @@ def html_report(config, sourcepar):
     })
 
     # Misfit plots (when using grid search)
-    if os.path.exists(os.path.join(config.options.outdir, 'misfit')):
+    if 'misfit_1d' in config.figures:
         misfit_plot_comment_begin = ''
         misfit_plot_comment_end = ''
         _misfit_page(config)
@@ -453,7 +452,8 @@ def html_report(config, sourcepar):
     })
 
     # QuakeML file (if produced)
-    if os.path.exists(os.path.join(config.options.outdir, quakeml_file)):
+    if config.qml_file_out is not None:
+        quakeml_file = os.path.basename(config.qml_file_out)
         quakeml_file_link = open(quakeml_file_link_html).read()
         quakeml_file_link = quakeml_file_link\
             .replace('{QUAKEML_FILE}', quakeml_file)\
