@@ -79,7 +79,14 @@ def main():
     from sourcespec.ssp_parse_arguments import parse_args
     options = parse_args(progname='source_model')
     from sourcespec.ssp_setup import configure, ssp_exit
-    config = configure(options, progname='source_model')
+    if options.plot:
+        plot_show = True
+    else:
+        plot_show = False
+    conf_overrides = dict(
+        plot_show=plot_show, plot_save=False, html_report=False)
+    config = configure(
+        options, progname='source_model', config_overrides=conf_overrides)
     from sourcespec.ssp_read_traces import read_traces
     from sourcespec.ssp_process_traces import process_traces
     from sourcespec.ssp_build_spectra import build_spectra
@@ -107,12 +114,6 @@ def main():
     else:
         spec_st = Stream()
         make_synth(config, spec_st)
-
-    if config.options.plot:
-        config.plot_show = True
-    else:
-        config.plot_show = False
-    config.plot_save = False
 
     from sourcespec.ssp_plot_spectra import plot_spectra
     from sourcespec.ssp_plot_traces import plot_traces

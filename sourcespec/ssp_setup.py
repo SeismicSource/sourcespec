@@ -419,11 +419,15 @@ def _check_mandatory_config_params(config_obj):
         ssp_exit(1)
 
 
-def configure(options, progname):
+def configure(options, progname, config_overrides=None):
     """
     Parse command line arguments and read config file.
 
-    Returns a ``Config`` object.
+    :param object options: An object containing command line options
+    :param str progname: The name of the program
+    :param dict config_overrides: A dictionary with parameters that override or
+        extend those defined in the config file
+    :return: A ``Config`` object with both command line and config options.
     """
     _check_obspy_version()
     _check_library_versions()
@@ -437,6 +441,14 @@ def configure(options, progname):
         sys.exit(0)
 
     config_obj = _read_config(options.config_file, configspec)
+
+    # Apply overrides
+    if config_overrides is not None:
+        try:
+            for key, value in config_overrides.items():
+                config_obj[key] = value
+        except AttributeError:
+            raise ValueError('"config_override" must be a dict-like.')
 
     # Set to None all the 'None' strings
     for key, value in config_obj.dict().items():
