@@ -93,13 +93,13 @@ def main():
     from obspy.core import Stream
 
     # We don't use weighting in source_model
-    config.weighting = None
+    config.weighting = 'no_weight'
     if len(config.options.trace_path) > 0:
         st = read_traces(config)
         # Deconvolve, filter, cut traces:
         proc_st = process_traces(config, st)
         # Build spectra (amplitude in magnitude units)
-        spec_st = build_spectra(config, proc_st)
+        spec_st, specnoise_st, weight_st = build_spectra(config, proc_st)
         if len(spec_st) == 0:
             ssp_exit()
         # We keep just horizontal component:
