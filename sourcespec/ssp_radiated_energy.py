@@ -107,6 +107,13 @@ def radiated_energy(config, spec_st, specnoise_st, sourcepar):
         noise_integral = _spectral_integral(specnoise, t_star, fmax)
         coeff = _radiated_energy_coefficient(rho, vel)
         Er = coeff * (signal_integral - noise_integral)
+        if Er < 0:
+            msg = '{}: noise energy is larger than signal energy: '.format(
+                statId)
+            msg += 'skipping spectrum.'
+            logger.warning(msg)
+            par['Er'] = np.nan
+            continue
 
         R = _finite_bandwidth_correction(spec, fc, fmax)
         Er /= R
