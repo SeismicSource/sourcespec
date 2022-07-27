@@ -433,6 +433,12 @@
               // split with respect to "<br>", then strip all remainig tags
               xvalue = xvalue.split("<br>")[0].replace(/<\/?[^>]+(>|$)/g, "");
               yvalue = yvalue.split("<br>")[0].replace(/<\/?[^>]+(>|$)/g, "");
+              if (xvalue == "nan") {
+                xvalue = -1e99;
+              }
+              if (yvalue == "nan") {
+                yvalue = -1e99;
+              }
               xvalue = Number(xvalue);
               yvalue = Number(yvalue);
             }
