@@ -57,7 +57,11 @@ def _make_fig(config, nlines, ncols):
         figsize = (16, 9)
     else:
         figsize = (16, 18)
-    fig = plt.figure(figsize=figsize, dpi=300)
+    if config.plot_show:
+        dpi = 100
+    else:
+        dpi = 300
+    fig = plt.figure(figsize=figsize, dpi=dpi)
     # Create an invisible axis and use it for title and footer
     ax0 = fig.add_subplot(111, label='ax0')
     ax0.set_axis_off()
