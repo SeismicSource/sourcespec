@@ -126,6 +126,45 @@ Alternative instrument sensitivity can be provided in the SAC header or as a
 constant in the configuration file. In both cases, use the configuration
 parameter `sensitivity`.
 
+### Output files
+
+The SourceSpec main code, `source_spec` will produce the following output files
+(`EVID` is replaced by the actual event ID):
+
+- `EVID.ssp.out`: text file containing the estimated earthquake source
+  parameters (per station and average)
+- `EVID.ssp.log`: log file in text format (including the command line arguments,
+  for [reproducibility])
+- `EVID.ssp.conf`: the input config file (for [reproducibility])
+- `EVID-residuals.pickle`: station residuals in
+  [Python pickle format][pickle_file_format]
+- `EVID.xml`: updated StationXML file with the results of the SourceSpec
+  inversion (only if an input StationXML file is provided)
+
+The following plots will be created, in png or pdf format:
+
+- `EVID.traces.png[.pdf]`: trace plots
+- `EVID.ssp.png[.pdf]`: spectral plots
+- `EVID.sspweight.png[.pdf]`: spectral weight plots
+- `EVID.boxplot.png[.pdf]`: [box plots][box_plot] for the earthquake source
+  parameters retrieved at each station
+- Misfit plots, when using "grid search" or "importance sampling" for the
+  spectral inversion
+
+As an option, station maps can be created (requires [Cartopy]):
+
+- `EVID.map_mag.png[.pdf]`: station map with symbols colored by estimated
+  moment magnitude
+- `EVID.map_fc.png[.pdf]`: station map with symbols colored by estimated
+  corner frequency
+
+As an option, the retrieved source parameters (per station and average) can be
+appended to a [SQLite] database, whose path is defined in the configuration
+file.
+
+Finally, always as an option, `source_spec` can generate a report in HTML
+format.
+
 ## Theoretical background
 
 The code computes spectra of the two horizontal components (and optionally of
@@ -150,6 +189,9 @@ To get help:
     source_residuals -h
 
 ## Installation
+
+SourceSpec requires at least Python 3.6. All the required dependencies will be
+downloaded and installed during the setup process.
 
 ### Using pip and PyPI (preferred method)
 
@@ -230,4 +272,8 @@ Please replace `X.Y` with the SourceSpec version number you used.
 [Dataless_SEED_file_format]: https://ds.iris.edu/ds/nodes/dmc/data/formats/dataless-seed/
 [SEED_resp_file_format]: https://ds.iris.edu/ds/nodes/dmc/data/formats/resp/
 [SAC_PAZ_file_format]: https://www.jakewalter.net/sacresponse.html
-
+[pickle_file_format]: https://docs.python.org/3/library/pickle.html
+[box_plot]: https://en.wikipedia.org/wiki/Box_plot
+[Cartopy]: https://scitools.org.uk/cartopy/docs/latest
+[reproducibility]: https://en.wikipedia.org/wiki/Reproducibility
+[SQLite]: https://www.sqlite.org
