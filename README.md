@@ -40,6 +40,16 @@ The SourceSpec package is made of three command line tools:
 
 ## Getting started
 
+### For the impatient
+
+If you have seismic recordings in [miniSEED] format (e.g., `traces.mseed`),
+metadata in [StationXML] format (e.g., `station.xml`) and event information in
+[QuakeML] format (e.g., `event.xml`), then:
+
+1. Generate a config file via `source_spec -S`;
+2. Edit the config file variable `station_metadata` to point to `station.xml` file;
+3. Run `source_spec -t traces.mseed -q event.xml`.
+
 ### Command line arguments
 
 After successfully installed SourceSpec (see [Installation](#installation)
@@ -77,12 +87,13 @@ up the different parameters.
 
 ### Trace formats
 
-SourceSpec can read all the [trace formats supported by ObsPy][obspy_trace_formats].
+SourceSpec can read all the
+[trace formats supported by ObsPy][obspy_trace_formats].
 
 Two very common choices are:
 
-- [miniSEED][miniSEED_file_format]
-- [SAC][SAC_file_format]
+- [miniSEED]
+- [SAC]
 
 The SAC format can carry additional information in its header, like event
 location and origin time, phase picks, instrument sensitivity.
@@ -92,11 +103,10 @@ location and origin time, phase picks, instrument sensitivity.
 SourceSpec can read event information (event ID, location, origin time) in the
 following formats:
 
-- [QuakeML][QuakeML_file_format]: SourceSpec will also read phase picks and
+- [QuakeML]: SourceSpec will also read phase picks and
   focal mechanism, if available
-- [HYPO71][HYPO71]
-- [HYPOINVERSE-2000][HYPOINVERSE-2000]: SourceSpec will also read phase picks,
-  if available
+- [HYPO71]
+- [HYPOINVERSE-2000]: SourceSpec will also read phase picks, if available
 
 Event information can also be stored in the SAC file headers (header fields:
 `EVLA`, `EVLO`, `EVDP`, `O`, `KEVNM`).
@@ -105,9 +115,9 @@ Event information can also be stored in the SAC file headers (header fields:
 
 Phase picks for P and S waves can be read from one of the following formats:
 
-- [QuakeML][QuakeML_file_format]
-- [HYPO71][HYPO71]
-- [HYPOINVERSE-2000][HYPOINVERSE-2000]
+- [QuakeML]
+- [HYPO71]
+- [HYPOINVERSE-2000]
 
 Phase picks can also be stored in the SAC file headers (header fields: `A` and
 `T0`).
@@ -117,10 +127,10 @@ Phase picks can also be stored in the SAC file headers (header fields: `A` and
 Station metadata (coordinates, instrumental response) can be provided in one of
 the following formats:
 
-- [StationXML][StationXML_file_format]
-- [Dataless SEED][Dataless_SEED_file_format]
-- [SEED RESP][SEED_RESP_file_format]
-- [SAC polezero (PAZ)][SAC_PAZ_file_format]
+- [StationXML]
+- [Dataless SEED]
+- [SEED RESP]
+- [SAC polezero (PAZ)]
 
 Note that SEED RESP and PAZ formats do not contain station coordinates, which
 should therefore be in the trace header (traces in SAC format).
@@ -143,7 +153,7 @@ The SourceSpec main code, `source_spec` will produce the following output files
   for [reproducibility])
 - `EVID.ssp.conf`: the input config file (for [reproducibility])
 - `EVID-residuals.pickle`: station residuals in
-  [Python pickle format][pickle_file_format]
+  [Python pickle format][pickle]
 - `EVID.xml`: updated StationXML file with the results of the SourceSpec
   inversion (only if an input StationXML file is provided)
 
@@ -277,16 +287,16 @@ Events", pp. 364–383, [doi: 10.1007/978-1-4419-7695-6_22]. Available on
 [documentation]: https://sourcespec.readthedocs.io
 
 [obspy_trace_formats]: https://docs.obspy.org/packages/autogen/obspy.core.stream.read.html
-[miniSEED_file_format]: http://ds.iris.edu/ds/nodes/dmc/data/formats/miniseed/
-[SAC_file_format]: https://ds.iris.edu/ds/support/faq/17/sac-file-format/
-[QuakeML_file_format]: https://quake.ethz.ch/quakeml/
+[miniSEED]: http://ds.iris.edu/ds/nodes/dmc/data/formats/miniseed/
+[SAC]: https://ds.iris.edu/ds/support/faq/17/sac-file-format/
+[QuakeML]: https://quake.ethz.ch/quakeml/
 [HYPO71]: https://pubs.er.usgs.gov/publication/ofr72224
 [HYPOINVERSE-2000]: https://pubs.er.usgs.gov/publication/ofr02171
-[StationXML_file_format]: http://docs.fdsn.org/projects/stationxml/en/latest/
-[Dataless_SEED_file_format]: https://ds.iris.edu/ds/nodes/dmc/data/formats/dataless-seed/
-[SEED_resp_file_format]: https://ds.iris.edu/ds/nodes/dmc/data/formats/resp/
-[SAC_PAZ_file_format]: https://www.jakewalter.net/sacresponse.html
-[pickle_file_format]: https://docs.python.org/3/library/pickle.html
+[StationXML]: http://docs.fdsn.org/projects/stationxml/en/latest/
+[Dataless SEED]: https://ds.iris.edu/ds/nodes/dmc/data/formats/dataless-seed/
+[SEED resp]: https://ds.iris.edu/ds/nodes/dmc/data/formats/resp/
+[SAC polezero (PAZ)]: https://www.jakewalter.net/sacresponse.html
+[pickle]: https://docs.python.org/3/library/pickle.html
 [box_plot]: https://en.wikipedia.org/wiki/Box_plot
 [Cartopy]: https://scitools.org.uk/cartopy/docs/latest
 [reproducibility]: https://en.wikipedia.org/wiki/Reproducibility
