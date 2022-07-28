@@ -6,9 +6,11 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 ## unreleased
 
-Note: this release introduces several modifications to the config file.
+This release introduces several modifications to the config file.
 You will need to upgrade your old config files manually or using
-`source_spec -U CONFIG_FILE_NAME`
+`source_spec -U CONFIG_FILE_NAME`.
+
+This release requires at least Python 3.6.
 
 ### Input/output
 

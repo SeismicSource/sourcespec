@@ -3,6 +3,17 @@
 """setup.py: setuptools control."""
 from setuptools import setup
 import versioneer
+import sys
+
+MIN_PYTHON_VERSION = (3, 6)
+MIN_PYTHON_VERSION_STR = '{}.{}'.format(*MIN_PYTHON_VERSION)
+PYTHON_VERSION_STR = '{}.{}.{}'.format(*sys.version_info[0:3])
+if sys.version_info < MIN_PYTHON_VERSION:
+    msg = 'SourceSpec requires Python version >= {}'.format(
+        MIN_PYTHON_VERSION_STR)
+    msg += ' you are using Python version {}'.format(PYTHON_VERSION_STR)
+    print(msg, file=sys.stderr)
+    sys.exit(1)
 
 revision = versioneer.get_versions()['full-revisionid']
 cdn_baseurl = 'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec@{}'\
@@ -52,12 +63,14 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Physics'],
+    python_requires='>={}'.format(MIN_PYTHON_VERSION_STR),
     install_requires=[
         'numpy>=1.10',
         'scipy>=0.17',
