@@ -122,7 +122,7 @@ should therefore be in the trace header (traces in SAC format).
 The station metadata file name is provided in the configuration file through the
 parameters `station_metadata` or `paz`.
 
-Alternative instrument sensitivity can be provided in the SAC header or as a
+Alternatively, instrument sensitivity can be provided in the SAC header or as a
 constant in the configuration file. In both cases, use the configuration
 parameter `sensitivity`.
 
