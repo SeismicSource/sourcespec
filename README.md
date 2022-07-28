@@ -13,12 +13,18 @@ Earthquake source parameters from P- or S-wave displacement spectra
 ## Description
 
 SourceSpec is a collection of command line tools to compute earthquake source
-parameteres from the inversion of P-wave and S-wave displacement spectra
+parameteres (seismic moment, corner frequency, radiated energy, source size,
+stress drop) from the inversion of P-wave and S-wave displacement spectra
 recorded at one or more seismic stations.
+SourceSpec also computes attenuation parameters (t-star, quality factor) and,
+as a bonus, local magnitude.
 
-See the [Theoretical background](#theoretical-background) below to get more
-information on how the code works. Even more information is available on the
-[official documentation][documentation].
+See [Madariaga (2010)][Madariaga2010] for a primer on earthquake source
+parameters and scaling laws.
+
+Go to section [Theoretical background](#theoretical-background) below to get
+more information on how the code works. More details are available on the
+official SourceSpec [documentation].
 
 SourceSpec is written in Python and requires a working Python environment to
 run (see [Installation](#installation) below). However, since SourceSpec is
@@ -251,10 +257,17 @@ If you used SourceSpec for a scientific paper, please cite it as:
 
 > Satriano, C. (2022). SourceSpec – Earthquake source parameters from
 > P- or S-wave displacement spectra (X.Y).
-> https://doi.org/10.5281/ZENODO.3688587
+> [doi: 10.5281/ZENODO.3688587]
 
 Please replace `X.Y` with the SourceSpec version number you used.
 
+## References
+
+Madariaga, R. (2010). Earthquake Scaling Laws. In "Extreme Environmental
+Events", pp. 364–383, [doi: 10.1007/978-1-4419-7695-6_22]. Available on
+[ResearchGate][Madariaga2010].
+
+<!-- Document links -->
 [PyPI-badge]: http://img.shields.io/pypi/v/sourcespec.svg
 [PyPI-link]: https://pypi.python.org/pypi/sourcespec
 [license-badge]: https://img.shields.io/badge/license-CeCILL--2.1-green.svg
@@ -262,6 +275,7 @@ Please replace `X.Y` with the SourceSpec version number you used.
 [DOI-badge]: https://zenodo.org/badge/DOI/10.5281/zenodo.3688587.svg
 [DOI-link]: https://doi.org/10.5281/zenodo.3688587
 [documentation]: https://sourcespec.readthedocs.io
+
 [obspy_trace_formats]: https://docs.obspy.org/packages/autogen/obspy.core.stream.read.html
 [miniSEED_file_format]: http://ds.iris.edu/ds/nodes/dmc/data/formats/miniseed/
 [SAC_file_format]: https://ds.iris.edu/ds/support/faq/17/sac-file-format/
@@ -277,3 +291,7 @@ Please replace `X.Y` with the SourceSpec version number you used.
 [Cartopy]: https://scitools.org.uk/cartopy/docs/latest
 [reproducibility]: https://en.wikipedia.org/wiki/Reproducibility
 [SQLite]: https://www.sqlite.org
+
+[doi: 10.5281/ZENODO.3688587]: https://doi.org/10.5281/ZENODO.3688587
+[doi: 10.1007/978-1-4419-7695-6_22]: https://doi.org/10.1007/978-1-4419-7695-6_22
+[Madariaga2010]: https://www.researchgate.net/publication/226065848_Earthquake_Scaling_Laws
