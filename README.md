@@ -34,7 +34,7 @@ The SourceSpec package is made of three command line tools:
 
 - `source_spec`: Compute earthquake source parameters from the inversion
   of P- or S-wave spectra.
-- `source_model`: Direct modelling f P- or S-wave spectra, based on
+- `source_model`: Direct modelling of P- or S-wave spectra, based on
   user-defined earthquake source parameters.
 - `source_residuals`: Compute station residuals from `source_spec` output.
 
