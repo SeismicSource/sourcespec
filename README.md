@@ -6,6 +6,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 [![PyPI-badge]][PyPI-link]
 [![license-badge]][license-link]
+[![docs-badge]][docs-link]
 [![DOI-badge]][DOI-link]
 
 (c) 2011-2022 Claudio Satriano <satriano@ipgp.fr>
@@ -283,6 +284,8 @@ Events", pp. 364–383, [doi: 10.1007/978-1-4419-7695-6_22]. Available on
 [PyPI-link]: https://pypi.python.org/pypi/sourcespec
 [license-badge]: https://img.shields.io/badge/license-CeCILL--2.1-green.svg
 [license-link]: http://www.cecill.info/licences.en.html
+[docs-badge]: https://readthedocs.org/projects/sourcespec/badge/?version=latest
+[docs-link]: https://sourcespec.readthedocs.io/en/latest/?badge=latest
 [DOI-badge]: https://zenodo.org/badge/DOI/10.5281/zenodo.3688587.svg
 [DOI-link]: https://doi.org/10.5281/zenodo.3688587
 [documentation]: https://sourcespec.readthedocs.io
