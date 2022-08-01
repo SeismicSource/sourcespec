@@ -299,3 +299,4 @@ Here is the default config file, generated through ``source_spec -S``::
 
 def setup(app):
     app.connect('builder-inited', update_configfile)
+    app.add_js_file('version-alert.js')
