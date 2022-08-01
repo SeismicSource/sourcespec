@@ -20,8 +20,14 @@ cdn_baseurl = 'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec@{}'\
     .format(revision)
 with open('README.md', 'rb') as f:
     long_descr = f.read().decode('utf-8').replace(
-        'logo/SourceSpec_logo.svg',
-        '{}/logo/SourceSpec_logo.svg'.format(cdn_baseurl)
+        'imgs/SourceSpec_logo.svg',
+        '{}/imgs/SourceSpec_logo.svg'.format(cdn_baseurl)
+    ).replace(
+        'imgs/example_trace.svg',
+        '{}/imgs/example_trace.svg'.format(cdn_baseurl)
+    ).replace(
+        'imgs/example_spectrum.svg',
+        '{}/imgs/example_spectrum.svg'.format(cdn_baseurl)
     ).replace(
         '(CHANGELOG.md)',
         '({}/CHANGELOG.md)'.format(cdn_baseurl)

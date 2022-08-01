@@ -1,4 +1,4 @@
-<img src="logo/SourceSpec_logo.svg" width="600">
+<img src="imgs/SourceSpec_logo.svg" width="600">
 
 # SourceSpec
 
@@ -14,7 +14,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 ## Description
 
 SourceSpec is a collection of command line tools to compute earthquake source
-parameteres (seismic moment, corner frequency, radiated energy, source size,
+parameters (seismic moment, corner frequency, radiated energy, source size,
 stress drop) from the inversion of P-wave and S-wave displacement spectra
 recorded at one or more seismic stations.
 SourceSpec also computes attenuation parameters (t-star, quality factor) and,
@@ -81,7 +81,7 @@ You can generate a sample configuration file through:
 
     source_spec -S
 
-Take your time to go through the genereated configuration file (named
+Take your time to go through the generated configuration file (named
 `source_spec.conf`): the comments within the file will guide you on how to set
 up the different parameters.
 
@@ -185,26 +185,31 @@ format.
 
 ## Theoretical background
 
-The code computes spectra of the two horizontal components (and optionally of
-the vertical component, as well), and then modulus as:
+For each station, the code computes P- or S-wave displacement spectra for each
+component (e.g., Z, N, E), then combines the component spectra through the root
+sum of squares:
 
-    sqrt(c1(w)^2+c2(w)^2)
+    S(f) = sqrt[ Sz(f)² + Sn(f)² + Se(f)² ]
 
-It then inverts spectra for a 3-parameter model (Mw, Fc, t﹡ = T/Qs) using
-initial values for Mw, fc and t﹡:
+where *f* is frequency and *Sx(f)* is the P- or S-wave spectrum for component
+*x*.
 
-    log S(w)= log(coeff*Mo) + log((1/(1+(w/wc)^2)) + log(exp(-w*t_star/2))
+It then inverts spectra for a 3-parameter model (*Mw*, *Fc*, *t﹡*):
+
+    log S(f) = log(coeff·Mo) + log[1/(1+(f/Fc)²] + log[exp(-π·f·t﹡)]
 
 It plots observed and inverted spectra on a single log-log graph (Mo vs
 log-frequency).
-Computes average and standard deviation of Mw, Mo, fc, t*, source radius and
-Brune stress drop.
 
-To get help:
+Computes average and standard deviation of *Mw, Mo, Fc, t﹡, source radius*
+and *Brune stress drop*.
 
-    source_spec -h
-    source_model -h
-    source_residuals -h
+![Example Trace](imgs/example_trace.svg)
+**Example trace, showing the noise and S-wave windows**
+
+![Example Spectrum](imgs/example_spectrum.svg)
+**Example displacement spectrum for noise and S-wave, including inversion
+results**
 
 ## Installation
 
