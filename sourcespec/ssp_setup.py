@@ -249,9 +249,10 @@ def _update_config_file(config_file, configspec):
         'pre_p_time': 'noise_pre_time',
         'pre_s_time': 'signal_pre_time',
         'rps_from_focal_mechanism': 'rp_from_focal_mechanism',
+        'paz': 'station_metadata',
     }
     for old_opt, new_opt in migrate_options.items():
-        if old_opt in config_obj:
+        if old_opt in config_obj and config_obj[old_opt] != 'None':
             config_new[new_opt] = config_obj[old_opt]
     shutil.copyfile(config_file, config_file_old)
     with open(config_file, 'wb') as fp:
@@ -343,6 +344,11 @@ def _check_deprecated_config_options(config_obj):
         deprecation_msgs.append(
             '> "rps_from_focal_mechanism" config parameter has been renamed to '
             '"rp_from_focal_mechanism".\n'
+        )
+    if 'paz' in config_obj:
+        deprecation_msgs.append(
+            '> "paz" config parameter has been removed and merged with '
+            '"station_metadata".\n'
         )
     if deprecation_msgs:
         sys.stderr.write(

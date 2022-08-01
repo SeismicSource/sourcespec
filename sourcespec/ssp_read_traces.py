@@ -26,14 +26,12 @@ import tarfile
 import tempfile
 import json
 from datetime import datetime
-from obspy.core import Stream, read, UTCDateTime
+from obspy import read
+from obspy.core import Stream, UTCDateTime
 from obspy.core.util import AttribDict
-from obspy.io.xseed import Parser
-from obspy.io.xseed.utils import SEEDParserException
 from obspy import read_inventory
-from obspy.core.inventory import Inventory
 from obspy.io.sac import attach_paz
-from obspy.core import Trace
+from obspy.core.inventory import Inventory, Network, Station, Channel, Response
 from obspy import read_events
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import get_vel
@@ -124,7 +122,23 @@ def _compute_sensitivity(trace, config):
     return sensitivity
 
 
-def _add_paz_and_coords(trace, metadata, paz_dict, config):
+def _validate_coords(coords):
+    """
+    Return ``None`` if lon==lat==0 and depth==elevation==123456.
+
+    Those values are given when reading an ``Inventory`` object from a
+    RESP or PAZ file.
+    """
+    lon = coords.longitude
+    lat = coords.latitude
+    depth = coords.local_depth
+    elevation = coords.elevation
+    if lon == lat == 0 and depth == elevation == 123456:
+        return None
+    return coords
+
+
+def _add_paz_and_coords(trace, inventory, config):
     traceid = trace.get_id()
     # If we already know that traceid is skipped, raise a silent exception
     if traceid in _add_paz_and_coords.skipped:
@@ -132,32 +146,24 @@ def _add_paz_and_coords(trace, metadata, paz_dict, config):
     trace.stats.paz = None
     trace.stats.coords = None
     time = trace.stats.starttime
-    # We first check whether metadata is a dataless dictionary
-    if isinstance(metadata, dict):
-        for sp in metadata.values():
-            # Check first if our traceid is in the dataless file
-            if traceid not in str(sp):
-                continue
-            try:
-                paz = AttribDict(sp.get_paz(traceid, time))
-                coords = AttribDict(sp.get_coordinates(traceid, time))
-            except SEEDParserException as err:
-                logger.error('%s time: %s' % (err, str(time)))
-                pass
-    elif isinstance(metadata, Inventory):
+    if isinstance(inventory, Inventory):
         try:
             with warnings.catch_warnings(record=True) as warns:
                 # get_sacpz() can issue warnings on more than one PAZ found,
                 # so let's catch those warnings and log them properly
-                sacpz = metadata.get_response(traceid, time).get_sacpz()
+                # warnings.filterwarnings('ignore', message='Found more than')
+                # warnings.filterwarnings('ignore', message='More than')
+                sacpz = inventory.get_response(traceid, time).get_sacpz()
                 for w in warns:
-                    message = str(w.message)
-                    logger.warning('%s: %s' % (traceid, message))
+                    msg = str(w.message)
+                    logger.warning(
+                        '{}: {} Time: {}'.format(traceid, msg, time))
             attach_paz(trace, io.StringIO(sacpz))
             paz = trace.stats.paz
-            coords = AttribDict(metadata.get_coordinates(traceid, time))
-        except Exception as err:
-            logger.error('%s traceid: %s time: %s' % (err, traceid, str(time)))
+            coords = AttribDict(inventory.get_coordinates(traceid, time))
+            coords = _validate_coords(coords)
+        except Exception as msg:
+            logger.warning('{}: {} Time: {}'.format(traceid, msg, time))
             pass
     try:
         trace.stats.paz = paz
@@ -166,27 +172,8 @@ def _add_paz_and_coords(trace, metadata, paz_dict, config):
         trace.stats.coords = coords
     except Exception:
         pass
-    # If we couldn't find any PAZ in the dataless dictionary
-    # or in the Inventory, we try to attach paz from a paz dictionary
-    if trace.stats.paz is None and paz_dict is not None:
-        # Look for traceid or for a generic paz
-        net, sta, loc, chan = trace.id.split('.')
-        ids = [
-            trace.id,
-            '.'.join(('__', '__', '__', '__')),
-            '.'.join((net, '__', '__', '__')),
-            '.'.join((net, sta, '__', '__')),
-            '.'.join((net, sta, loc, '__')),
-            'default'
-        ]
-        for id in ids:
-            try:
-                paz = paz_dict[id]
-                trace.stats.paz = paz
-            except KeyError:
-                pass
     # If a "sensitivity" config option is provided, override the paz computed
-    # from metadata or paz_dict
+    # from the "Inventory" object (if any)
     if config.sensitivity is not None:
         # instrument constants
         paz = AttribDict()
@@ -218,7 +205,8 @@ def _add_paz_and_coords(trace, metadata, paz_dict, config):
     if trace.stats.coords is None:
         _add_paz_and_coords.skipped.append(traceid)
         raise Exception(
-            '%s: could not find coords for trace: skipping trace' % traceid)
+            '{}: could not find coords for trace: skipping trace'.format(
+                traceid))
     if trace.stats.coords.latitude == trace.stats.coords.longitude == 0:
         logger.warning(
             '{}: trace has latitude and longitude equal to zero!'.format(
@@ -447,92 +435,106 @@ def _complete_picks(st):
 
 # FILE PARSING ----------------------------------------------------------------
 def _read_metadata(path):
+    """
+    Read metadata into an ObsPy ``Inventory`` object.
+    """
     if path is None:
         return None
     logger.info('Reading station metadata...')
-    metadata = None
-
-    # Try to read the file as StationXML
+    inventory = Inventory()
     if os.path.isdir(path):
-        _path = os.path.join(path, '*')
+        filelist = [os.path.join(path, file) for file in os.listdir(path)]
     else:
-        _path = path
-    try:
-        metadata = read_inventory(_path)
-    except Exception:
-        pass
-    except IOError as err:
-        logger.error(err)
-        ssp_exit()
-
-    if metadata is None:
-        metadata = dict()
-        if os.path.isdir(path):
-            listing = os.listdir(path)
-            for filename in listing:
-                fullpath = os.path.join(path, filename)
-                try:
-                    metadata[filename] = Parser(fullpath)
-                except Exception:
-                    continue
-            # TODO: manage the case in which "path" is a file name
+        filelist = [path, ]
+    for file in sorted(filelist):
+        if os.path.isdir(file):
+            # we do not enter into subdirs of "path"
+            continue
+        logger.info('Reading station metadata from file: {}'.format(file))
+        try:
+            inventory += read_inventory(file)
+        except Exception:
+            msg1 = 'Unable to parse file "{}" as Inventory'.format(file)
+            try:
+                inventory += _read_paz_file(file)
+            except Exception as msg2:
+                logger.warning(msg1)
+                logger.warning(msg2)
+                continue
+    if not inventory:
+        inventory = None
     logger.info('Reading station metadata: done')
-    return metadata
+    return inventory
 
 
-def _read_paz(path):
+def _parse_paz_file(file):
+    lines = iter(open(file, 'r'))
+    zeros = []
+    poles = []
+    constant = None
+    linenumber = 0
+    try:
+        for line in lines:
+            linenumber += 1
+            word = line.split()
+            if word[0] == 'ZEROS':
+                nzeros = int(word[1])
+                for _ in range(nzeros):
+                    linenumber += 1
+                    _zero = complex(*map(float, next(lines).split()))
+                    zeros.append(_zero)
+            if word[0] == 'POLES':
+                npoles = int(word[1])
+                for _ in range(npoles):
+                    linenumber += 1
+                    _pole = complex(*map(float, next(lines).split()))
+                    poles.append(_pole)
+            if word[0] == 'CONSTANT':
+                constant = float(word[1])
+    except Exception:
+        msg = 'Unable to parse file "{}" as PAZ. '.format(file)
+        msg += 'Parse error at line {}'.format(linenumber)
+        raise TypeError(msg)
+    if constant is None:
+        msg = 'Unable to parse file "{}" as PAZ. '.format(file)
+        msg += 'Cannot find a "CONSTANT" value'
+        raise TypeError(msg)
+    return zeros, poles, constant
+
+
+def _read_paz_file(file):
     """
-    Read a directory with paz files or a single file.
+    Read a paz file into an ``Inventory``object.
 
     Limitations:
-    (1) directory must contain *only* paz files
-    (2) paz file can optionally have ".pz" or ".paz" suffixes
-    (3) paz file name (without prefix and suffix) *has* to have
+    (1) paz file must have ".pz" or ".paz" suffix (or no suffix)
+    (2) paz file name (without prefix and suffix) *has* to have
         the trace_id (NET.STA.LOC.CHAN) of the corresponding trace
         in the last part of his name
         (e.g., 20110208_1600.NOW.IV.CRAC.00.EHZ.paz)
     """
-    if path is None:
-        return None
-
-    logger.info('Reading PAZ...')
-    paz = dict()
-    if os.path.isdir(path):
-        listing = os.listdir(path)
-        # check if files have a common prefix: we will strip it later
-        prefix = os.path.commonprefix(listing)
-        for filename in listing:
-            fullpath = os.path.join(path, filename)
-            try:
-                # This is a horrible hack!
-                # Since attach_paz needs a trace,
-                # we create a trace and then, later,
-                # we just retrieve the paz object
-                # from the trace ;)
-                tr = Trace()
-                attach_paz(tr, fullpath)
-                bname = os.path.basename(filename)
-                # strip .pz suffix, if there
-                bname = re.sub('.pz$', '', bname)
-                # strip .paz suffix, if there
-                bname = re.sub('.paz$', '', bname)
-                # and strip any common prefix
-                bname = re.sub('^' + prefix, '', bname)
-                # we assume that the last four fields of bname
-                # (separated by '.') are the trace_id
-                trace_id = '.'.join(bname.split('.')[-4:])
-                paz[trace_id] = tr.stats.paz.copy()
-            except IOError:
-                continue
-    elif os.path.isfile(path):
-        # If a filename is provided, store it as
-        # 'default' paz.
-        filename = path
-        tr = Trace()
-        attach_paz(tr, filename)
-        paz['default'] = tr.stats.paz.copy()
-    logger.info('Reading PAZ: done')
-    return paz
+    bname = os.path.basename(file)
+    # strip .pz suffix, if there
+    bname = re.sub('.pz$', '', bname)
+    # strip .paz suffix, if there
+    bname = re.sub('.paz$', '', bname)
+    # we assume that the last four fields of bname
+    # (separated by '.') are the trace_id
+    trace_id = '.'.join(bname.split('.')[-4:])
+    zeros, poles, constant = _parse_paz_file(file)
+    resp = Response().from_paz(
+        zeros, poles, stage_gain=1, input_units='M/S', output_units='COUNTS')
+    resp.instrument_sensitivity.value = constant
+    net, sta, loc, chan = trace_id.split('.')
+    channel = Channel(
+        code=chan, location_code=loc, response=resp,
+        latitude=0, longitude=0, elevation=123456, depth=123456)
+    station = Station(
+        code=sta, channels=[channel, ],
+        latitude=0, longitude=0, elevation=123456)
+    network = Network(code=net, stations=[station, ])
+    inv = Inventory(networks=[network, ])
+    return inv
 
 
 def _parse_qml(qml_file, evid=None):
@@ -896,10 +898,8 @@ def _build_filelist(path, filelist, tmpdir):
 # Public interface:
 def read_traces(config):
     """Read traces, store waveforms and metadata."""
-    # read metadata
-    metadata = _read_metadata(config.station_metadata)
-    # read PAZ (normally this is an alternative to dataless)
-    paz_dict = _read_paz(config.paz)
+    # read metadata into an ObsPy ``Inventory`` object
+    inventory = _read_metadata(config.station_metadata)
 
     hypo = picks = None
     # parse hypocenter file
@@ -937,20 +937,20 @@ def read_traces(config):
             tmpst = read(filename, fsize=False)
         except Exception:
             logger.warning('%s: Unable to read file as a trace: '
-                            'skipping' % filename)
+                           'skipping' % filename)
             continue
         for trace in tmpst.traces:
             orientation = trace.stats.channel[-1]
             if orientation not in orientation_codes:
                 logger.warning('%s: Unknown channel orientation: "%s": '
-                                'skipping trace' % (trace.id, orientation))
+                               'skipping trace' % (trace.id, orientation))
                 continue
             if config.options.station is not None:
                 if not trace.stats.station == config.options.station:
                     continue
             _correct_traceid(trace, config.traceid_mapping_file)
             try:
-                _add_paz_and_coords(trace, metadata, paz_dict, config)
+                _add_paz_and_coords(trace, inventory, config)
                 _add_instrtype(trace, config)
                 _add_hypocenter(trace, hypo)
                 _add_picks(trace, picks)

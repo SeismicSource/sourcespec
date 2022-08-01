@@ -136,8 +136,8 @@ the following formats:
 Note that SEED RESP and PAZ formats do not contain station coordinates, which
 should therefore be in the trace header (traces in SAC format).
 
-The station metadata file name is provided in the configuration file through the
-parameters `station_metadata` or `paz`.
+The station metadata file name or file directory is provided in the
+configuration file through the parameter `station_metadata`.
 
 Alternatively, instrument sensitivity can be provided in the SAC header or as a
 constant in the configuration file. In both cases, use the configuration

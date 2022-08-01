@@ -52,6 +52,7 @@ This release requires at least Python 3.6.
 
 ### Config file
 
+- Config parameter `paz` has been removed and merged into `station_metadata`
 - Config parameters `vp` and `vs` have been renamed to `vp_source`
   and `vs_source` (see issue [#5])
 - New, optional, config parameter `vp_stations` and `vs_stations`
