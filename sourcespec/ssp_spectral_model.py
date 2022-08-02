@@ -29,7 +29,7 @@ def spectral_model(freq, Mw, fc, t_star, alpha=1.):
                         1+\left(\frac{f}{f_c}\right)^2 \right) -
                         \pi \, f t^* \log_{10} e \right]
 
-    see :ref:`source_spec <source_spec>`
+    see :ref:`Theoretical Background <theoretical_background>`
     for a detailed derivation of this model.
     """
     # log S(w)= log(coeff*Mo) + log((1/(1+(w/wc)^2)) + \

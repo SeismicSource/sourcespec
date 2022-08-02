@@ -6,23 +6,35 @@
 SourceSpec documentation
 ========================
 
-SourceSpec is a collection of command line programs (written in Python) to
-determine earthquake source parameters (seismic moment :math:`M_0`, corner
-frequency :math:`f_c`) and the inelastic attenuation term (:math:`t^*`), from
-the modeling of waveform displacement spectra.
+:Release: |release|
+:Date:    |today|
 
-Other parameters (source radius :math:`r_0`, stress drop :math:`\Delta \sigma`)
-are computed from the inverted ones. The quality factor :math:`Q_0` is
-determined from :math:`t^*`.
+SourceSpec is a collection of command line tools to compute earthquake
+source parameters (seismic moment, corner frequency, radiated energy,
+source size, stress drop) from the inversion of P-wave and S-wave
+displacement spectra recorded at one or more seismic stations.
+SourceSpec also computes attenuation parameters (t-star, quality factor)
+and, as a bonus, local magnitude.
 
-As a bonus, local magnitude :math:`M_l` is computed as well.
+See :cite:t:`Madariaga2011` for a primer on earthquake source parameters and
+scaling laws.
 
-SourceSpec is composed of the following programs:
+Go to section :ref:`theoretical_background:Theoretical Background`
+to get more information on how the code works.
 
-* ``source_spec``: inverts the P- or S-wave displacement spectra from station
-  recordings of a single event.
-* ``ssp_residuals``: computes station residuals from ``source_spec`` output.
-* ``source_model``: direct spectral modelling.
+SourceSpec is written in Python and requires a working Python
+environment to run (see :ref:`installation:Installation`).
+However, since SourceSpec is based on command line, you don’t have to
+know how to code in Python to use it.
+
+The SourceSpec package is made of three command line tools:
+
+-  ``source_spec``: Compute earthquake source parameters from the
+   inversion of P- or S-wave spectra.
+-  ``source_model``: Direct modelling of P- or S-wave spectra, based on
+   user-defined earthquake source parameters.
+-  ``source_residuals``: Compute station residuals from ``source_spec``
+   output.
 
 
 Contents:
@@ -30,9 +42,15 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   source_spec
+   theoretical_background
+   getting_started
    configuration_file
+   supported_file_formats
+   installation
+   sample_runs
+   citing
    api
+   bibliography
 
 
 Indices and tables

@@ -1,16 +1,8 @@
-.. _source_spec:
+.. _theoretical_background:
 
-###########
-SourceSpec
-###########
-
-Earthquake source parameters from inversion of P- or S-wave spectra.
-
-:copyright:
-    2011-2022 Claudio Satriano <satriano@ipgp.fr>
-:license:
-    CeCILL Free Software License Agreement, Version 2.1
-    (http://www.cecill.info/index.en.html)
+######################
+Theoretical Background
+######################
 
 Overview
 ========
@@ -22,7 +14,7 @@ Spectral model
 ==============
 
 The Fourier spectrum of the S-wave displacement in far field can be
-modelled as the product of a source term (Brune model) and a
+modelled as the product of a source term :cite:p:`Brune1970` and a
 propagation term (geometric and anelastic attenuation of body waves):
 
 .. math::
@@ -66,14 +58,14 @@ one of the following ways:
   :math:`n=0.5` is the theoretical value for a surface wave in a homogeneous
   half-space.
 
-- Follwing Boatwright et al. (2002), eq. 8:
+- Follwing :cite:t:`Boatwright2002`, eq. 8:
 
   - body wave spreading (:math:`\mathcal{G}(r) = r`) for hypocentral distances
     below a cutoff distance :math:`r_0`;
   - frequency dependent spreading for hypocentral distances above the
     cutoff distance :math:`r_0`.
 
-More precisely, the expression derived from Boatwright et al. (2002) is:
+More precisely, the expression derived from :cite:t:`Boatwright2002` is:
 
 .. math::
 

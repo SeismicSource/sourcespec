@@ -36,8 +36,12 @@ extensions = [
     'sphinx.ext.autosectionlabel',
     'sphinx-favicon',
     'sphinx_rtd_theme',
+    'sphinxcontrib.bibtex',
 ]
 autosectionlabel_prefix_document = True
+bibtex_bibfiles = ['refs.bib']
+bibtex_reference_style = 'author_year'
+bibtex_default_style = 'unsrt'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
