@@ -48,7 +48,8 @@ metadata in [StationXML] format (e.g., `station.xml`) and event information in
 [QuakeML] format (e.g., `event.xml`), then:
 
 1. Generate a config file via `source_spec -S`;
-2. Edit the config file variable `station_metadata` to point to `station.xml` file;
+2. Edit the config file variable `station_metadata` to point to `station.xml`
+   file;
 3. Run `source_spec -t traces.mseed -q event.xml`.
 
 ### Command line arguments
@@ -194,18 +195,41 @@ sum of squares:
 where *f* is frequency and *Sx(f)* is the P- or S-wave spectrum for component
 *x*.
 
-It then inverts spectra for a 3-parameter model (*Mw*, *Fc*, *t﹡*):
+It then inverts spectra for a 3-parameter [Brune (1970)][Brune1970] source
+model:
 
     log S(f) = log(coeff·Mo) + log[1/(1+(f/Fc)²] + log[exp(-π·f·t﹡)]
 
-It plots observed and inverted spectra on a single log-log graph (Mo vs
-log-frequency).
+where the three parameter to determine are:
 
-Computes average and standard deviation of *Mw, Mo, Fc, t﹡, source radius*
-and *Brune stress drop*.
+- the seismic moment *Mo*;
+- the corner frequency *Fc*;
+- the attenuation parameter *t﹡*.
 
-![Example Trace](imgs/example_trace.svg)
-**Example trace, showing the noise and S-wave windows**
+The inversion is performed in moment magnitude units. Different inversion
+algorithms can be used:
+
+- TNC: truncated Newton algorithm (with bounds)
+- LM: Levenberg-Marquardt algorithm
+  (warning: Trust Region Reflective algorithm will be used instead if
+   bounds are provided)
+- BH: basin-hopping algorithm
+- GS: grid search
+- IS: importance sampling of misfit grid, using k-d tree
+
+Starting from the inverted parameters *Mo*, *Fc*, *t﹡* and following the
+equations in [Madariaga (2010)][Madariaga2010], other quantities are computed
+for each station:
+
+- the Brune stress drop;
+- the source radius.
+
+Finally, the radiated energy can be mesured on the spectra, following the approach described in [Lancieri et al. (2012)][Lancieri2012].
+
+Event averages are computed from single station estimates. Outliers are rejected based on the [interquartile range] rule.
+
+![Example Trace](imgs/example_trace.svg) **Example three-component trace plot
+(in velocity, showing the noise and S-wave windows**
 
 ![Example Spectrum](imgs/example_spectrum.svg)
 **Example displacement spectrum for noise and S-wave, including inversion
@@ -280,9 +304,15 @@ Please replace `X.Y` with the SourceSpec version number you used.
 
 ## References
 
-Madariaga, R. (2010). Earthquake Scaling Laws. In "Extreme Environmental
-Events", pp. 364–383, [doi: 10.1007/978-1-4419-7695-6_22]. Available on
-[ResearchGate][Madariaga2010].
+- Brune, J. N. (1970). Tectonic stress and the spectra of seismic shear waves
+  from earthquakes, J. Geophys. Res., 75 (26), 4997– 5009,
+  [doi: 10.1029/JB075i026p04997]
+- Lancieri, M., Madariaga, R., Bonilla, F. (2012). Spectral scaling of the
+  aftershocks of the Tocopilla 2007 earthquake in northern Chile, Geophys. J.
+  Int., 189 (1), 469–480, [doi: 10.1111/j.1365-246X.2011.05327.x]
+- Madariaga, R. (2010). Earthquake Scaling Laws. In "Extreme Environmental
+  Events", pp. 364–383, [doi: 10.1007/978-1-4419-7695-6_22]. Available on
+  [ResearchGate][Madariaga2010].
 
 <!-- Document links -->
 [PyPI-badge]: http://img.shields.io/pypi/v/sourcespec.svg
@@ -311,6 +341,12 @@ Events", pp. 364–383, [doi: 10.1007/978-1-4419-7695-6_22]. Available on
 [reproducibility]: https://en.wikipedia.org/wiki/Reproducibility
 [SQLite]: https://www.sqlite.org
 
+[interquartile range]: https://en.wikipedia.org/wiki/Interquartile_range
+
 [doi: 10.5281/ZENODO.3688587]: https://doi.org/10.5281/ZENODO.3688587
 [doi: 10.1007/978-1-4419-7695-6_22]: https://doi.org/10.1007/978-1-4419-7695-6_22
+[doi: 10.1029/JB075i026p04997]: https://doi.org/10.1029/JB075i026p04997
+[doi: 10.1111/j.1365-246X.2011.05327.x]: https://doi.org/10.1111/j.1365-246X.2011.05327.x
+[Brune1970]: https://doi.org/10.1029/JB075i026p04997
+[Lancieri2012]: https://doi.org/10.1111/j.1365-246X.2011.05327.x
 [Madariaga2010]: https://www.researchgate.net/publication/226065848_Earthquake_Scaling_Laws
