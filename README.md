@@ -186,9 +186,9 @@ format.
 
 ## Theoretical background
 
-For each station, the code computes P- or S-wave displacement spectra for each
-component (e.g., Z, N, E), then combines the component spectra through the root
-sum of squares:
+For each station, the code computes P- or S-wave displacement amplitude spectra
+for each component (e.g., Z, N, E), then combines the component spectra through
+the root sum of squares:
 
 $$
     S(f) = \sqrt{S^2_z(f) + S^2_n(f) + S^2_e(f)}
@@ -201,7 +201,7 @@ It then inverts spectra for a 3-parameter [Brune (1970)][Brune1970] source
 model:
 
 $$
-    S(f) = C \cdot M_0 + \frac{1}{1+(f/f_c)^2} + e^{-\pi f t^*}
+    S(f) = C \cdot \frac{M_0}{1+(f/f_c)^2} \cdot e^{-\pi f t^*}
 $$
 
 where the three parameters to determine are:
