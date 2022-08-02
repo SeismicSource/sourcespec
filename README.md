@@ -190,23 +190,30 @@ For each station, the code computes P- or S-wave displacement spectra for each
 component (e.g., Z, N, E), then combines the component spectra through the root
 sum of squares:
 
-    S(f) = sqrt[ Sz(f)² + Sn(f)² + Se(f)² ]
+$$
+    S(f) = \sqrt{S^2_z(f) + S^2_n(f) + S^2_e(f)}
+$$
 
-where *f* is frequency and *Sx(f)* is the P- or S-wave spectrum for component
-*x*.
+where $f$ is frequency and $S_x(f)$ is the P- or S-wave spectrum for component
+$x$.
 
 It then inverts spectra for a 3-parameter [Brune (1970)][Brune1970] source
 model:
 
-    S(f) = coeff·Mo + 1/[1+(f/Fc)²] + exp(-π·f·t﹡)
+$$
+    S(f) = C \cdot M_0 + \frac{1}{1+(f/f_c)^2} + e^{-\pi f t^*}
+$$
 
 where the three parameters to determine are:
 
-- the seismic moment *Mo*
-- the corner frequency *Fc*
-- the attenuation parameter *t﹡*
+- the seismic moment $M_0$
+- the corner frequency $f_c$
+- the attenuation parameter $t^*$
 
-The inversion is performed in moment magnitude *Mw* units (logarithmic
+and $C$ is a coefficient containing geometrical spreading, radiation pattern,
+seismic wave speed and medium density.
+
+The inversion is performed in moment magnitude $M_w$ units (logarithmic
 amplitude). Different inversion algorithms can be used:
 
 - TNC: [truncated Newton algorithm] (with bounds)
@@ -217,20 +224,21 @@ amplitude). Different inversion algorithms can be used:
 - GS: [grid search]
 - IS: [importance sampling] of misfit grid, using [k-d tree]
 
-Starting from the inverted parameters *Mo* (*Mw*), *Fc*, *t﹡* and following
+Starting from the inverted parameters $M_0$ ( $M_w$ ), $fc$, $t^*$ and following
 the equations in [Madariaga (2011)][Madariaga2011], other quantities are
 computed for each station:
 
 - the Brune stress drop
 - the source radius
-- the quality factor *Qo* of P- or S-waves
+- the quality factor $Q_0$ of P- or S-waves
 
-Finally, the radiated energy *Er* can be mesured from the displacement spectra,
+Finally, the radiated energy $E_r$ can be mesured from the displacement spectra,
 following the approach described in [Lancieri et al. (2012)][Lancieri2012].
 
-As a bonus, local magnitude *Ml* can be computed as well.
+As a bonus, local magnitude $M_l$ can be computed as well.
 
-Event averages are computed from single station estimates. Outliers are rejected based on the [interquartile range] rule.
+Event averages are computed from single station estimates. Outliers are
+rejected based on the [interquartile range] rule.
 
 See the official [documentation] for more details.
 
