@@ -202,27 +202,28 @@ model:
 
 where the three parameter to determine are:
 
-- the seismic moment *Mo*;
-- the corner frequency *Fc*;
-- the attenuation parameter *t﹡*.
+- the seismic moment *Mo*
+- the corner frequency *Fc*
+- the attenuation parameter *t﹡*
 
 The inversion is performed in moment magnitude units. Different inversion
 algorithms can be used:
 
-- TNC: truncated Newton algorithm (with bounds)
-- LM: Levenberg-Marquardt algorithm
-  (warning: Trust Region Reflective algorithm will be used instead if
+- TNC: [truncated Newton algorithm] (with bounds)
+- LM: [Levenberg-Marquardt algorithm]
+  (warning: [Trust Region Reflective algorithm] will be used instead if
    bounds are provided)
-- BH: basin-hopping algorithm
-- GS: grid search
-- IS: importance sampling of misfit grid, using k-d tree
+- BH: [basin-hopping algorithm]
+- GS: [grid search]
+- IS: [importance sampling] of misfit grid, using [k-d tree]
 
 Starting from the inverted parameters *Mo*, *Fc*, *t﹡* and following the
 equations in [Madariaga (2010)][Madariaga2010], other quantities are computed
 for each station:
 
-- the Brune stress drop;
-- the source radius.
+- the Brune stress drop
+- the source radius
+- the quality factor *Qo* of P- or S-waves
 
 Finally, the radiated energy can be mesured on the spectra, following the approach described in [Lancieri et al. (2012)][Lancieri2012].
 
@@ -314,7 +315,7 @@ Please replace `X.Y` with the SourceSpec version number you used.
   Events", pp. 364–383, [doi: 10.1007/978-1-4419-7695-6_22]. Available on
   [ResearchGate][Madariaga2010].
 
-<!-- Document links -->
+<!-- Badges and project links -->
 [PyPI-badge]: http://img.shields.io/pypi/v/sourcespec.svg
 [PyPI-link]: https://pypi.python.org/pypi/sourcespec
 [license-badge]: https://img.shields.io/badge/license-CeCILL--2.1-green.svg
@@ -325,6 +326,7 @@ Please replace `X.Y` with the SourceSpec version number you used.
 [DOI-link]: https://doi.org/10.5281/zenodo.3688587
 [documentation]: https://sourcespec.readthedocs.io
 
+<!-- File formats -->
 [obspy_trace_formats]: https://docs.obspy.org/packages/autogen/obspy.core.stream.read.html
 [miniSEED]: http://ds.iris.edu/ds/nodes/dmc/data/formats/miniseed/
 [SAC]: https://ds.iris.edu/ds/support/faq/17/sac-file-format/
@@ -336,13 +338,22 @@ Please replace `X.Y` with the SourceSpec version number you used.
 [SEED resp]: https://ds.iris.edu/ds/nodes/dmc/data/formats/resp/
 [SAC polezero (PAZ)]: https://www.jakewalter.net/sacresponse.html
 [pickle]: https://docs.python.org/3/library/pickle.html
-[box_plot]: https://en.wikipedia.org/wiki/Box_plot
 [Cartopy]: https://scitools.org.uk/cartopy/docs/latest
-[reproducibility]: https://en.wikipedia.org/wiki/Reproducibility
 [SQLite]: https://www.sqlite.org
 
+<!-- Methods -->
+[reproducibility]: https://en.wikipedia.org/wiki/Reproducibility
+[box_plot]: https://en.wikipedia.org/wiki/Box_plot
+[truncated Newton algorithm]: https://en.wikipedia.org/wiki/Truncated_Newton_method
+[Levenberg-Marquardt algorithm]: https://en.wikipedia.org/wiki/Levenberg–Marquardt_algorithm
+[Trust Region Reflective algorithm]: https://en.wikipedia.org/wiki/Trust_region
 [interquartile range]: https://en.wikipedia.org/wiki/Interquartile_range
+[basin-hopping algorithm]: https://en.wikipedia.org/wiki/Basin-hopping
+[grid search]: https://en.wikipedia.org/wiki/Hyperparameter_optimization#Grid_search
+[importance sampling]: http://alomax.free.fr/nlloc/octtree/OctTree.html
+[k-d tree]: https://en.wikipedia.org/wiki/K-d_tree
 
+<!-- Refereneces -->
 [doi: 10.5281/ZENODO.3688587]: https://doi.org/10.5281/ZENODO.3688587
 [doi: 10.1007/978-1-4419-7695-6_22]: https://doi.org/10.1007/978-1-4419-7695-6_22
 [doi: 10.1029/JB075i026p04997]: https://doi.org/10.1029/JB075i026p04997
