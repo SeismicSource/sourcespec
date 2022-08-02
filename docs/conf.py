@@ -35,6 +35,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autosectionlabel',
     'sphinx-favicon',
+    'sphinx_rtd_theme',
 ]
 autosectionlabel_prefix_document = True
 
