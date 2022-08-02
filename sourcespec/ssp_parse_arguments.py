@@ -39,7 +39,8 @@ def _get_description(progname):
         nargs = '+'
         description = 'Estimation of seismic source parameters from '
         description += 'inversion of P- or S-wave displacement spectra.'
-        epilog = ''
+        epilog = 'Check the online documentation at ' +\
+            'https://sourcespec.rtfd.io for more details.'
     elif progname == 'source_model':
         nargs = '*'
         description = 'Direct modeling of P- or S-wave displacement spectra.'
