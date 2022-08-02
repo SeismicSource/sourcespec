@@ -20,7 +20,7 @@ recorded at one or more seismic stations.
 SourceSpec also computes attenuation parameters (t-star, quality factor) and,
 as a bonus, local magnitude.
 
-See [Madariaga (2010)][Madariaga2010] for a primer on earthquake source
+See [Madariaga (2011)][Madariaga2011] for a primer on earthquake source
 parameters and scaling laws.
 
 Go to section [Theoretical background](#theoretical-background) below to get
@@ -218,7 +218,7 @@ amplitude). Different inversion algorithms can be used:
 - IS: [importance sampling] of misfit grid, using [k-d tree]
 
 Starting from the inverted parameters *Mo* (*Mw*), *Fc*, *t﹡* and following
-the equations in [Madariaga (2010)][Madariaga2010], other quantities are
+the equations in [Madariaga (2011)][Madariaga2011], other quantities are
 computed for each station:
 
 - the Brune stress drop
@@ -316,9 +316,9 @@ Please replace `X.Y` with the SourceSpec version number you used.
 - Lancieri, M., Madariaga, R., Bonilla, F. (2012). Spectral scaling of the
   aftershocks of the Tocopilla 2007 earthquake in northern Chile, Geophys. J.
   Int., 189 (1), 469–480, [doi: 10.1111/j.1365-246X.2011.05327.x]
-- Madariaga, R. (2010). Earthquake Scaling Laws. In "Extreme Environmental
+- Madariaga, R. (2011). Earthquake Scaling Laws. In "Extreme Environmental
   Events", pp. 364–383, [doi: 10.1007/978-1-4419-7695-6_22]. Available on
-  [ResearchGate][Madariaga2010].
+  [ResearchGate][Madariaga2011].
 
 <!-- Badges and project links -->
 [PyPI-badge]: http://img.shields.io/pypi/v/sourcespec.svg
@@ -365,4 +365,4 @@ Please replace `X.Y` with the SourceSpec version number you used.
 [doi: 10.1111/j.1365-246X.2011.05327.x]: https://doi.org/10.1111/j.1365-246X.2011.05327.x
 [Brune1970]: https://doi.org/10.1029/JB075i026p04997
 [Lancieri2012]: https://doi.org/10.1111/j.1365-246X.2011.05327.x
-[Madariaga2010]: https://www.researchgate.net/publication/226065848_Earthquake_Scaling_Laws
+[Madariaga2011]: https://www.researchgate.net/publication/226065848_Earthquake_Scaling_Laws
