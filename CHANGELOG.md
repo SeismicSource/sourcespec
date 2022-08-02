@@ -4,13 +4,17 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 (c) 2011-2022 Claudio Satriano <satriano@ipgp.fr>
 
-## unreleased
+## v1.6 - 2022-08-02
 
 This release introduces several modifications to the config file.
 You will need to upgrade your old config files manually or using
 `source_spec -U CONFIG_FILE_NAME`.
 
 This release requires at least Python 3.6.
+
+A lot of effort has been devoted to improve the documentation.
+Please check it out on
+[https://sourcespec.readthedocs.io/](https://sourcespec.readthedocs.io/)
 
 ### Input/output
 
