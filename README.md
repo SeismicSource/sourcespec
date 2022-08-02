@@ -230,7 +230,7 @@ Finally, the radiated energy can be mesured on the spectra, following the approa
 Event averages are computed from single station estimates. Outliers are rejected based on the [interquartile range] rule.
 
 ![Example Trace](imgs/example_trace.svg) **Example three-component trace plot
-(in velocity, showing the noise and S-wave windows**
+(in velocity), showing noise and S-wave windows**
 
 ![Example Spectrum](imgs/example_spectrum.svg)
 **Example displacement spectrum for noise and S-wave, including inversion
