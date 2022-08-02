@@ -198,16 +198,16 @@ where *f* is frequency and *Sx(f)* is the P- or S-wave spectrum for component
 It then inverts spectra for a 3-parameter [Brune (1970)][Brune1970] source
 model:
 
-    log S(f) = log(coeff·Mo) + log[1/(1+(f/Fc)²] + log[exp(-π·f·t﹡)]
+    S(f) = coeff·Mo + 1/[1+(f/Fc)²] + exp(-π·f·t﹡)
 
-where the three parameter to determine are:
+where the three parameters to determine are:
 
 - the seismic moment *Mo*
 - the corner frequency *Fc*
 - the attenuation parameter *t﹡*
 
-The inversion is performed in moment magnitude units. Different inversion
-algorithms can be used:
+The inversion is performed in moment magnitude *Mw* units (logarithmic
+amplitude). Different inversion algorithms can be used:
 
 - TNC: [truncated Newton algorithm] (with bounds)
 - LM: [Levenberg-Marquardt algorithm]
@@ -217,15 +217,18 @@ algorithms can be used:
 - GS: [grid search]
 - IS: [importance sampling] of misfit grid, using [k-d tree]
 
-Starting from the inverted parameters *Mo*, *Fc*, *t﹡* and following the
-equations in [Madariaga (2010)][Madariaga2010], other quantities are computed
-for each station:
+Starting from the inverted parameters *Mo* (*Mw*), *Fc*, *t﹡* and following
+the equations in [Madariaga (2010)][Madariaga2010], other quantities are
+computed for each station:
 
 - the Brune stress drop
 - the source radius
 - the quality factor *Qo* of P- or S-waves
 
-Finally, the radiated energy can be mesured on the spectra, following the approach described in [Lancieri et al. (2012)][Lancieri2012].
+Finally, the radiated energy *Er* can be mesured from the displacement spectra,
+following the approach described in [Lancieri et al. (2012)][Lancieri2012].
+
+As a bonus, local magnitude *Ml* can be computed as well.
 
 Event averages are computed from single station estimates. Outliers are rejected based on the [interquartile range] rule.
 
