@@ -232,6 +232,8 @@ As a bonus, local magnitude *Ml* can be computed as well.
 
 Event averages are computed from single station estimates. Outliers are rejected based on the [interquartile range] rule.
 
+See the official [documentation] for more details.
+
 ![Example Trace](imgs/example_trace.svg) **Example three-component trace plot
 (in velocity), showing noise and S-wave windows**
 
