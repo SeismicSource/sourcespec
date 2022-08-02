@@ -71,6 +71,14 @@ def _multireplace(string, replacements, ignore_case=False):
         lambda match: replacements[normalize_old(match.group(0))], string)
 
 
+def _logo_file_url():
+    revision = get_versions()['full-revisionid']
+    cdn_baseurl = 'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec@{}'\
+        .format(revision)
+    logo_file = cdn_baseurl + '/imgs/SourceSpec_logo.svg'
+    return logo_file
+
+
 def _version_and_run_completed(config):
     ssp_version = get_versions()['version']
     run_completed = '{} {}'.format(
@@ -176,6 +184,9 @@ def _misfit_page(config):
     misfit_html = os.path.join(template_dir, 'misfit.html')
     misfit_html_out = os.path.join(config.options.outdir, 'misfit.html')
 
+    # Logo file
+    logo_file = _logo_file_url()
+
     # Version and run completed
     ssp_version, run_completed = _version_and_run_completed(config)
 
@@ -204,6 +215,7 @@ def _misfit_page(config):
 
     # Main HTML page
     replacements = {
+        '{LOGO_FILE}': logo_file,
         '{VERSION}': ssp_version,
         '{RUN_COMPLETED}': run_completed,
         '{AUTHOR}': author,
@@ -239,6 +251,9 @@ def html_report(config, sourcepar):
 
     # Copy CSS to output dir
     shutil.copy(style_css, config.options.outdir)
+
+    # Logo file
+    logo_file = _logo_file_url()
 
     # Version and run completed
     ssp_version, run_completed = _version_and_run_completed(config)
@@ -360,6 +375,7 @@ def html_report(config, sourcepar):
     Er_mean = means['Er']
     Er_minus, Er_plus = errors['Er']
     replacements = {
+        '{LOGO_FILE}': logo_file,
         '{VERSION}': ssp_version,
         '{RUN_COMPLETED}': run_completed,
         '{AUTHOR}': author,
