@@ -198,7 +198,7 @@ def _plot_trace(config, trace, ntraces, tmax,
         N2 = trace.stats.arrivals['N2'][1] - trace.stats.starttime
         rect = patches.Rectangle((N1, 0), width=N2-N1, height=1,
                                  transform=trans, color='#eeeeee',
-                                 alpha=0.5, zorder=-1)
+                                 zorder=-1)
         ax.add_patch(rect)
     except KeyError:
         pass
