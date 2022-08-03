@@ -51,7 +51,7 @@ setup(
         },
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description='Earthquake source parameters from S-wave '
+    description='Earthquake source parameters from P- or S-wave '
                 'displacement spectra',
     long_description=long_descr,
     long_description_content_type='text/markdown',
