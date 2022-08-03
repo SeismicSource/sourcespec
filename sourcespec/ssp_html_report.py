@@ -72,9 +72,7 @@ def _multireplace(string, replacements, ignore_case=False):
 
 
 def _logo_file_url():
-    revision = get_versions()['full-revisionid']
-    cdn_baseurl = 'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec@{}'\
-        .format(revision)
+    cdn_baseurl = 'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec@1.6'
     logo_file = cdn_baseurl + '/imgs/SourceSpec_logo.svg'
     return logo_file
 
