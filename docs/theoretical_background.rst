@@ -15,7 +15,7 @@ for each component (e.g., Z, N, E), within a predefined time window.
 
 The same thing is done for a noise time window: noise spectrum is used to
 compute spectral signal-to-noise ratio (and possibily reject low SNR spectra)
-and, optionnaly, to weight the spectral inversion.
+and, optionally, to weight the spectral inversion.
 
 .. figure:: imgs/example_trace.svg
   :alt: Example trace plot
@@ -117,7 +117,7 @@ with
     0.7  &  f \ge 0.25 Hz\\
   \end{cases}
 
-Note that here we use the square root of eq. 8 in Boatwright et al. (2002),
+Note that here we use the square root of eq. 8 in :cite:t:`Boatwright2002`,
 since we correct the spectral amplitude and not the energy.
 
 
