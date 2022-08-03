@@ -57,6 +57,7 @@ setup(
     long_description_content_type='text/markdown',
     author='Claudio Satriano',
     author_email='satriano@ipgp.fr',
+    url=project_urls['Homepage'],
     project_urls=project_urls,
     license='CeCILL Free Software License Agreement, Version 2.1',
     platforms='OS Independent',
