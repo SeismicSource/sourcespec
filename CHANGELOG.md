@@ -4,6 +4,11 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 (c) 2011-2022 Claudio Satriano <satriano@ipgp.fr>
 
+## Unreleased
+
+- Fix for noise window not showing up in PNG trace plots in some cases
+- HTML report: better scrollbars for station table across all the browsers
+
 ## v1.6 - 2022-08-02
 
 This release introduces several modifications to the config file.
