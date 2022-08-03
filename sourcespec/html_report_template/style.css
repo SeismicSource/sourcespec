@@ -65,11 +65,7 @@ table.stations td.station_id {
 
 .table_wrapper{
   height:500px;
-  overflow: scroll;
   white-space: nowrap;
-}
-.table_wrapper div{
-  display: inline-block;
 }
 
 .navbar {
