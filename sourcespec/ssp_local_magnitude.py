@@ -21,6 +21,7 @@ from obspy.signal.filter import envelope
 from obspy.signal.invsim import WOODANDERSON
 from obspy.signal.util import smooth
 from obspy.signal.trigger import trigger_onset
+from sourcespec.ssp_data_types import SpectralParameter
 from sourcespec.ssp_util import cosine_taper
 from sourcespec.ssp_util import remove_instr_response
 logger = logging.getLogger(__name__.split('.')[-1])
@@ -39,9 +40,9 @@ def _get_cut_times(config, tr):
     nyquist = 1./(2. * tr.stats.delta)
     if freqmax >= nyquist:
         freqmax = nyquist * 0.999
-        msg = '%s: maximum frequency for bandpass filtering ' % tr.id
+        msg = '{}: maximum frequency for bandpass filtering '.format(tr.id)
         msg += 'in local magnitude computation is larger than or equal '
-        msg += 'to Nyquist. Setting it to %s Hz' % freqmax
+        msg += 'to Nyquist. Setting it to {} Hz'.format(freqmax)
         logger.warning(msg)
     cosine_taper(tr_env.data, width=config.taper_halfwidth)
     tr_env.filter(type='bandpass', freqmin=freqmin, freqmax=freqmax)
@@ -52,7 +53,8 @@ def _get_cut_times(config, tr):
     try:
         p_arrival_time = tr.stats.arrivals['P'][1]
     except Exception:
-        logger.warning('%s: Trace has no P arrival: skipping trace' % tr.id)
+        logger.warning('{}: Trace has no P arrival: skipping trace'.format(
+            tr.id))
         raise RuntimeError
     t1 = p_arrival_time - config.win_length
     t2 = p_arrival_time + config.win_length
@@ -67,8 +69,8 @@ def _get_cut_times(config, tr):
     ampmax = tr_signal.data.mean()
     if ampmax <= ampmin:
         logger.warning(
-            '%s: Trace has too high noise before P arrival: '
-            'skipping trace' % tr.id)
+            '{}: Trace has too high noise before P arrival: '
+            'skipping trace'.format(tr.id))
         raise RuntimeError
 
     trigger = trigger_onset(tr_env.data, ampmax, ampmin,
@@ -88,13 +90,13 @@ def _process_trace(config, tr, t0, t1):
     tr_process.trim(starttime=t0, endtime=t1, pad=True, fill_value=0)
     npts = len(tr_process.data)
     if npts == 0:
-        logger.warning('%s: No data for the selected cut interval: '
-                       'skipping trace' % tr.id)
+        logger.warning('{}: No data for the selected cut interval: '
+                       'skipping trace'.format(tr.id))
         raise RuntimeError
     nzeros = len(np.where(tr_process.data == 0)[0])
     if nzeros > npts/4:
-        logger.warning('%s: Too many gaps for the selected cut '
-                       'interval: skipping trace' % tr.id)
+        logger.warning('{}: Too many gaps for the selected cut '
+                       'interval: skipping trace'.format(tr.id))
         raise RuntimeError
 
     # If the check is ok, recover the full trace
@@ -138,23 +140,32 @@ def _compute_local_magnitude(config, amp, h_dist):
     return ml
 
 
-def local_magnitude(config, st, proc_st, sourcepar):
+def local_magnitude(config, st, proc_st, sspec_output):
     """Compute local magnitude from max absolute W-A amplitude."""
     logger.info('Computing local magnitude...')
     # We only use traces selected for proc_st
     trace_ids = set(tr.id for tr in proc_st)
-    stationpar = sourcepar.station_parameters
+    station_parameters = sspec_output.station_parameters
     for tr_id in sorted(trace_ids):
         tr = st.select(id=tr_id)[0]
 
         # only analyze traces for which we have the other
         # source parameters defined
-        key = '%sH %s' % (tr_id[:-1], tr.stats.instrtype)
+        key = tr_id[:-1] + 'H'
         try:
-            par = stationpar[key]
+            station_pars = station_parameters[key]
         except KeyError:
             continue
 
+        # Make sure that the param_Ml object is always defined, even when Ml
+        # is not computed (i.e., "continue" below)
+        try:
+            param_Ml = station_pars.Ml
+        except KeyError:
+            param_Ml = SpectralParameter(id='Ml', value=np.nan)
+            station_pars.Ml = param_Ml
+
+        # only compute Ml for horizontal components
         comp = tr.stats.channel
         if comp[-1] in ['Z', 'H']:
             continue
@@ -166,25 +177,17 @@ def local_magnitude(config, st, proc_st, sourcepar):
             continue
 
         # Local magnitude
-        # amp must be in millimiters for local magnitude computation
+        # amp must be in millimeters for local magnitude computation
         amp = np.abs(tr_process.max())*1000.
         h_dist = tr_process.stats.hypo_dist
         ml = _compute_local_magnitude(config, amp, h_dist)
-        statId = '%s %s' % (tr_id, tr.stats.instrtype)
-        logger.info('%s: Ml %.1f' % (statId,  ml))
+        statId = '{} {}'.format(tr_id, tr.stats.instrtype)
+        logger.info('{}: Ml {:.1f}'.format(statId,  ml))
+        # compute average with the other component, if available
         try:
-            old_ml = par['Ml']
-            ml = 0.5 * (ml + old_ml)
+            old_ml = param_Ml.value
+            if not np.isnan(old_ml):
+                ml = 0.5 * (ml + old_ml)
         except KeyError:
             pass
-        par['Ml'] = ml
-
-    # average local magnitude
-    # build ml_values: use np.nan for missing values
-    ml_values = np.array([x.get('Ml', np.nan) for x in stationpar.values()])
-    ml_values = ml_values[~np.isnan(ml_values)]
-    if len(ml_values) == 0:
-        logger.warning('No Ml values could be computed')
-    else:
-        Ml = np.mean(ml_values)
-        logger.info('Network local magnitude: {:.2f}'.format(Ml))
+        param_Ml.value = ml

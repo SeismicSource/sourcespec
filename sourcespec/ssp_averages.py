@@ -13,6 +13,8 @@ import logging
 import numpy as np
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import mag_to_moment
+from sourcespec.ssp_data_types import (
+    SummarySpectralParameter, SummaryStatistics)
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -77,94 +79,177 @@ def _M0_avg_and_std(Mw_mean, Mw_error):
     return Mo_mean, (Mo_mean - Mo_min, Mo_max - Mo_mean)
 
 
-def compute_averages(config, sourcepar):
+def compute_averages(config, sspec_output):
     """Compute average source parameters, find outliers"""
-    if len(sourcepar.station_parameters) == 0:
+    if len(sspec_output.station_parameters) == 0:
         logger.info('No source parameter calculated')
         ssp_exit()
-
-    means = dict()
-    errors = dict()
-    means_weight = dict()
-    errors_weight = dict()
 
     nIQR = config.nIQR
 
     # Mw
-    sourcepar.find_outliers('Mw', n=nIQR)
-    Mw_values = sourcepar.value_array('Mw', filter_outliers=True)
-    Mw_err = sourcepar.error_array('Mw', filter_outliers=True)
-    means['Mw'], errors['Mw'] = _avg_and_std(Mw_values)
-    means_weight['Mw'], errors_weight['Mw'] = _avg_and_std(Mw_values, Mw_err)
+    summary_Mw = SummarySpectralParameter(id='Mw', name='moment magnitude')
+    sspec_output.find_outliers('Mw', n=nIQR)
+    Mw_values = sspec_output.value_array('Mw', filter_outliers=True)
+    Mw_err = sspec_output.error_array('Mw', filter_outliers=True)
+    nobs = len(Mw_values)
+    value, error = _avg_and_std(Mw_values)
+    summary_Mw.mean = SummaryStatistics(
+        type='mean', value=value, uncertainty=error,
+        confidence_level=68.2, nobs=nobs)
+    value, error = _avg_and_std(Mw_values, Mw_err)
+    summary_Mw.weighted_mean = SummaryStatistics(
+        type='weighted_mean', value=value, uncertainty=error,
+        confidence_level=68.2, nobs=nobs)
+    sspec_output.summary_spectral_parameters.Mw = summary_Mw
 
     # Mo (N.m)
-    means['Mo'], errors['Mo'] = _M0_avg_and_std(means['Mw'], errors['Mw'])
-    means_weight['Mo'], errors_weight['Mo'] = \
-        _M0_avg_and_std(means_weight['Mw'], errors_weight['Mw'])
+    summary_Mo = SummarySpectralParameter(
+        id='Mo', name='seismic moment', units='N.m')
+    value, error = _M0_avg_and_std(
+        summary_Mw.mean.value, summary_Mw.mean.uncertainty)
+    summary_Mo.mean = SummaryStatistics(
+        type='mean', value=value,
+        lower_uncertainty=error[0], upper_uncertainty=error[1],
+        confidence_level=68.2, nobs=nobs)
+    value, error = _M0_avg_and_std(
+        summary_Mw.weighted_mean.value, summary_Mw.weighted_mean.uncertainty)
+    summary_Mo.weighted_mean = SummaryStatistics(
+        type='weighted_mean', value=value,
+        lower_uncertainty=error[0], upper_uncertainty=error[1],
+        confidence_level=68.2, nobs=nobs)
+    sspec_output.summary_spectral_parameters.Mo = summary_Mo
 
     # fc (Hz)
-    sourcepar.find_outliers('fc', n=nIQR)
-    fc_values = sourcepar.value_array('fc', filter_outliers=True)
-    fc_err = sourcepar.error_array('fc', filter_outliers=True)
-    means['fc'], errors['fc'] = _avg_and_std(fc_values, logarithmic=True)
-    means_weight['fc'], errors_weight['fc'] =\
-        _avg_and_std(fc_values, fc_err, logarithmic=True)
+    summary_fc = SummarySpectralParameter(
+        id='fc', name='corner frequency', units='Hz')
+    sspec_output.find_outliers('fc', n=nIQR)
+    fc_values = sspec_output.value_array('fc', filter_outliers=True)
+    fc_err = sspec_output.error_array('fc', filter_outliers=True)
+    nobs = len(fc_values)
+    value, error = _avg_and_std(fc_values, logarithmic=True)
+    summary_fc.mean = SummaryStatistics(
+        type='mean', value=value,
+        lower_uncertainty=error[0], upper_uncertainty=error[1],
+        confidence_level=68.2, nobs=nobs,
+        message='logarithmic mean')
+    value, error = _avg_and_std(fc_values, fc_err, logarithmic=True)
+    summary_fc.weighted_mean = SummaryStatistics(
+        type='weighted_mean', value=value,
+        lower_uncertainty=error[0], upper_uncertainty=error[1],
+        confidence_level=68.2, nobs=nobs,
+        message='logarithmic mean')
+    sspec_output.summary_spectral_parameters.fc = summary_fc
 
     # t_star (s)
-    sourcepar.find_outliers('t_star', n=nIQR)
-    t_star_values = sourcepar.value_array('t_star', filter_outliers=True)
-    t_star_err = sourcepar.error_array('t_star', filter_outliers=True)
-    means['t_star'], errors['t_star'] = _avg_and_std(t_star_values)
-    means_weight['t_star'], errors_weight['t_star'] =\
-        _avg_and_std(t_star_values, t_star_err)
+    summary_t_star = SummarySpectralParameter(
+        id='t_star', name='t*', units='s')
+    sspec_output.find_outliers('t_star', n=nIQR)
+    t_star_values = sspec_output.value_array('t_star', filter_outliers=True)
+    t_star_err = sspec_output.error_array('t_star', filter_outliers=True)
+    nobs = len(t_star_values)
+    value, error = _avg_and_std(t_star_values)
+    summary_t_star.mean = SummaryStatistics(
+        type='mean', value=value, uncertainty=error,
+        confidence_level=68.2, nobs=nobs)
+    value, error = _avg_and_std(t_star_values, t_star_err)
+    summary_t_star.weighted_mean = SummaryStatistics(
+        type='weighted_mean', value=value, uncertainty=error,
+        confidence_level=68.2, nobs=nobs)
+    sspec_output.summary_spectral_parameters.t_star = summary_t_star
 
-    # ra, radius (meters)
-    sourcepar.find_outliers('ra', n=nIQR)
-    ra_values = sourcepar.value_array('ra', filter_outliers=True)
-    ra_err = sourcepar.error_array('ra', filter_outliers=True)
-    means['ra'], errors['ra'] = _avg_and_std(ra_values, logarithmic=True)
-    means_weight['ra'], errors_weight['ra'] =\
-        _avg_and_std(ra_values, ra_err, logarithmic=True)
+    # radius (meters)
+    summary_radius = SummarySpectralParameter(
+        id='radius', name='source radius', units='m')
+    sspec_output.find_outliers('radius', n=nIQR)
+    radius_values = sspec_output.value_array('radius', filter_outliers=True)
+    radius_err = sspec_output.error_array('radius', filter_outliers=True)
+    nobs = len(radius_values)
+    value, error = _avg_and_std(radius_values, logarithmic=True)
+    summary_radius.mean = SummaryStatistics(
+        type='mean', value=value,
+        lower_uncertainty=error[0], upper_uncertainty=error[1],
+        confidence_level=68.2, nobs=nobs,
+        message='logarithmic mean')
+    value, error = _avg_and_std(radius_values, radius_err, logarithmic=True)
+    summary_radius.weighted_mean = SummaryStatistics(
+        type='weighted_mean', value=value,
+        lower_uncertainty=error[0], upper_uncertainty=error[1],
+        confidence_level=68.2, nobs=nobs,
+        message='logarithmic mean')
+    sspec_output.summary_spectral_parameters.radius = summary_radius
 
     # bsd, Brune stress drop (MPa)
-    sourcepar.find_outliers('bsd', n=nIQR)
-    bsd_values = sourcepar.value_array('bsd', filter_outliers=True)
-    bsd_err = sourcepar.error_array('bsd', filter_outliers=True)
-    means['bsd'], errors['bsd'] = _avg_and_std(bsd_values, logarithmic=True)
-    means_weight['bsd'], errors_weight['bsd'] =\
-        _avg_and_std(bsd_values, bsd_err, logarithmic=True)
+    summary_bsd = SummarySpectralParameter(
+        id='bsd', name='Brune stress drop', units='MPa')
+    sspec_output.find_outliers('bsd', n=nIQR)
+    bsd_values = sspec_output.value_array('bsd', filter_outliers=True)
+    bsd_err = sspec_output.error_array('bsd', filter_outliers=True)
+    nobs = len(bsd_values)
+    value, error = _avg_and_std(bsd_values, logarithmic=True)
+    summary_bsd.mean = SummaryStatistics(
+        type='mean', value=value,
+        lower_uncertainty=error[0], upper_uncertainty=error[1],
+        confidence_level=68.2, nobs=nobs,
+        message='logarithmic mean')
+    value, error = _avg_and_std(bsd_values, bsd_err, logarithmic=True)
+    summary_bsd.weighted_mean = SummaryStatistics(
+        type='weighted_mean', value=value,
+        lower_uncertainty=error[0], upper_uncertainty=error[1],
+        confidence_level=68.2, nobs=nobs,
+        message='logarithmic mean')
+    sspec_output.summary_spectral_parameters.bsd = summary_bsd
 
     # Quality factor
-    sourcepar.find_outliers('Qo', n=nIQR)
-    Qo_values = sourcepar.value_array('Qo', filter_outliers=True)
-    Qo_err = sourcepar.error_array('Qo', filter_outliers=True)
+    summary_Qo = SummarySpectralParameter(id='Qo', name='quality factor')
+    sspec_output.find_outliers('Qo', n=nIQR)
+    Qo_values = sspec_output.value_array('Qo', filter_outliers=True)
+    Qo_err = sspec_output.error_array('Qo', filter_outliers=True)
+    nobs = len(Qo_values)
     Qo_values[np.isinf(Qo_values)] = np.nan
-    means['Qo'], errors['Qo'] = _avg_and_std(Qo_values)
+    value, error = _avg_and_std(Qo_values)
+    summary_Qo.mean = SummaryStatistics(
+        type='mean', value=value, uncertainty=error,
+        confidence_level=68.2, nobs=nobs)
     cond_err = np.logical_or(np.isinf(Qo_err[:, 0]), np.isinf(Qo_err[:, 1]))
     Qo_values[cond_err] = np.nan
     Qo_err[cond_err] = np.nan
-    means_weight['Qo'], errors_weight['Qo'] = _avg_and_std(Qo_values, Qo_err)
-
-    # Ml
-    sourcepar.find_outliers('Ml', n=nIQR)
-    Ml_values = sourcepar.value_array('Ml', filter_outliers=True)
-    means['Ml'], errors['Ml'] = _avg_and_std(Ml_values)
+    value, error = _avg_and_std(Qo_values, Qo_err)
+    summary_Qo.weighted_mean = SummaryStatistics(
+        type='weighted_mean', value=value, uncertainty=error,
+        confidence_level=68.2, nobs=nobs)
+    sspec_output.summary_spectral_parameters.Qo = summary_Qo
 
     # Er (N.m)
-    sourcepar.find_outliers('Er', n=nIQR)
-    Er_values = sourcepar.value_array('Er', filter_outliers=True)
-    means['Er'], errors['Er'] = _avg_and_std(Er_values, logarithmic=True)
+    summary_Er = SummarySpectralParameter(
+        id='Er', name='radiated energy', units='N.m')
+    sspec_output.find_outliers('Er', n=nIQR)
+    Er_values = sspec_output.value_array('Er', filter_outliers=True)
+    nobs = len(Er_values)
+    value, error = _avg_and_std(Er_values, logarithmic=True)
+    summary_Er.mean = SummaryStatistics(
+        type='mean', value=value,
+        lower_uncertainty=error[0], upper_uncertainty=error[1],
+        confidence_level=68.2, nobs=nobs,
+        message='logarithmic mean')
+    sspec_output.summary_spectral_parameters.Er = summary_Er
 
-    sourcepar.means = means
-    sourcepar.errors = errors
-    sourcepar.means_weight = means_weight
-    sourcepar.errors_weight = errors_weight
+    # Ml
+    if config.compute_local_magnitude:
+        summary_Ml = SummarySpectralParameter(id='Ml', name='local magnitude')
+        sspec_output.find_outliers('Ml', n=nIQR)
+        Ml_values = sspec_output.value_array('Ml', filter_outliers=True)
+        nobs = len(Ml_values)
+        value, error = _avg_and_std(Ml_values)
+        summary_Ml.mean = SummaryStatistics(
+            type='mean', value=value, uncertainty=error,
+            confidence_level=68.2, nobs=nobs)
+        sspec_output.summary_spectral_parameters.Ml = summary_Ml
 
     params_name = ('Mw', 'fc', 't_star')
-    sourcepar_mean = dict(
-        zip(params_name, [means['Mw'], means['fc'], means['t_star']]))
+    means = sspec_output.mean_values()
+    sourcepar_mean = {par: means[par] for par in params_name}
     logger.info('params_mean: {}'.format(sourcepar_mean))
-    sourcepar_mean_weight = dict(
-        zip(params_name,
-            [means_weight['Mw'], means_weight['fc'], means_weight['t_star']]))
+    means_weight = sspec_output.weighted_mean_values()
+    sourcepar_mean_weight = {par: means_weight[par] for par in params_name}
     logger.info('params_mean_weighted: {}'.format(sourcepar_mean_weight))

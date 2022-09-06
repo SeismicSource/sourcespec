@@ -25,7 +25,7 @@ mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
 
 
-def box_plots(config, sourcepar):
+def box_plots(config, sspec_output):
     """Show parameter statistics through box plots."""
     # Check config, if we need to plot at all
     if not config.plot_show and not config.plot_save:
@@ -35,7 +35,7 @@ def box_plots(config, sourcepar):
         'Mw': ('Mw', None, '#EE5835'),
         'fc': ('Corner Frequency', 'Hz', '#6FBA6C'),
         't_star': ('t*', 's', '#9EBAE2'),
-        'ra': ('Source Radius', 'm', '#FAAC64'),
+        'radius': ('Source Radius', 'm', '#FAAC64'),
         'bsd': ('Brune Stress Drop', 'MPa', '#D4ADD2'),
         'Qo': ('Quality Factor', None, '#C07131'),
         'Er': ('Radiated Energy', 'N.m', '#00E3E9'),
@@ -56,7 +56,7 @@ def box_plots(config, sourcepar):
     ax0.set_axis_off()
     for ax, (param, (name, unit, color)) in zip(
             axes, param_names_units_colors.items()):
-        values = sourcepar.value_array(param)
+        values = sspec_output.value_array(param)
         # remove nan and inf values
         values = values[~np.isnan(values)]
         values = values[~np.isinf(values)]

@@ -21,14 +21,14 @@ from sourcespec.ssp_util import mag_to_moment
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
-def spectral_residuals(config, spec_st, sourcepar):
+def spectral_residuals(config, spec_st, sspec_output):
     """
     Compute spectral residuals with respect to an average spectral model.
 
     Saves a stream of residuals to disk using pickle.
     """
     # Use weighted means
-    means = sourcepar.means_weight
+    means = sspec_output.weighted_mean_values()
     params_name = ('Mw', 'fc', 't_star')
     sourcepar_mean = dict(
         zip(params_name, [means['Mw'], means['fc'], means['t_star']]))

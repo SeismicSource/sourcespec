@@ -54,43 +54,42 @@ def main():
 
     # Spectral inversion
     from sourcespec.ssp_inversion import spectral_inversion
-    sourcepar = spectral_inversion(config, spec_st, weight_st)
+    sspec_output = spectral_inversion(config, spec_st, weight_st)
 
     # Radiated energy
     from sourcespec.ssp_radiated_energy import radiated_energy
-    radiated_energy(config, spec_st, specnoise_st, sourcepar)
+    radiated_energy(config, spec_st, specnoise_st, sspec_output)
 
     # Local magnitude
     if config.compute_local_magnitude:
         from sourcespec.ssp_local_magnitude import local_magnitude
-        local_magnitude(config, st, proc_st, sourcepar)
+        local_magnitude(config, st, proc_st, sspec_output)
 
     # Compute averages, find outliers
     from sourcespec.ssp_averages import compute_averages
-    compute_averages(config, sourcepar)
+    compute_averages(config, sspec_output)
 
     # Save output
     from sourcespec.ssp_output import write_output
-    write_output(config, sourcepar)
+    write_output(config, sspec_output)
 
     # Save residuals
     from sourcespec.ssp_residuals import spectral_residuals
-    spectral_residuals(config, spec_st, sourcepar)
+    spectral_residuals(config, spec_st, sspec_output)
 
     # Plotting
     from sourcespec.ssp_plot_spectra import plot_spectra
     plot_spectra(config, spec_st, specnoise_st, plot_type='regular')
     plot_spectra(config, weight_st, plot_type='weight')
     from sourcespec.ssp_plot_params_stats import box_plots
-    box_plots(config, sourcepar)
+    box_plots(config, sspec_output)
     if config.plot_station_map:
-        # We import here, cause we check for Cartopy at runtime
         from sourcespec.ssp_plot_stations import plot_stations
-        plot_stations(config, sourcepar)
+        plot_stations(config, sspec_output)
 
     if config.html_report:
         from sourcespec.ssp_html_report import html_report
-        html_report(config, sourcepar)
+        html_report(config, sspec_output)
 
     ssp_exit()
 

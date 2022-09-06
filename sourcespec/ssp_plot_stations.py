@@ -420,25 +420,28 @@ def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
     return lonlat_dist
 
 
-def plot_stations(config, sourcepar):
+def plot_stations(config, sspec_output):
     """Plot station map, color coded by magnitude or fc."""
     # Check config, if we need to plot at all
     if not config.plot_show and not config.plot_save:
         return
-    stationpar = sourcepar.station_parameters
+    stationpar = sspec_output.station_parameters
     st_ids = sorted(stationpar.keys())
     lonlat_dist = np.array([
-        (stationpar[k]['lon'], stationpar[k]['lat'], stationpar[k]['epi_dist'])
+        (stationpar[k]['longitude'], stationpar[k]['latitude'],
+         stationpar[k]['epi_dist_in_km'])
         for k in st_ids])
     maxdist = np.max(lonlat_dist[:, 2])
     # empirical rule to define overlapping station spread
     spread = maxdist/4e3
     _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=spread)
-    mag = np.array([stationpar[k]['Mw'] for k in st_ids])
-    magmean = sourcepar.means_weight['Mw']
-    magerr = sourcepar.errors_weight['Mw']
+    means_weight = sspec_output.weighted_mean_values()
+    errors_weight = sspec_output.weighted_mean_uncertainties()
+    mag = np.array([stationpar[k]['Mw'].value for k in st_ids])
+    magmean = means_weight['Mw']
+    magerr = errors_weight['Mw']
     _plot_stations(config, lonlat_dist, st_ids, mag, magmean, magerr, 'mag')
-    fc = np.array([stationpar[k]['fc'] for k in st_ids])
-    fcmean = sourcepar.means_weight['fc']
-    fcerr = sourcepar.errors_weight['fc']
+    fc = np.array([stationpar[k]['fc'].value for k in st_ids])
+    fcmean = means_weight['fc']
+    fcerr = errors_weight['fc']
     _plot_stations(config, lonlat_dist, st_ids, fc, fcmean, fcerr, 'fc')

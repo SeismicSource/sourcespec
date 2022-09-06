@@ -59,7 +59,7 @@ class SSPTag(AttribDict):
         self.value = value
 
 
-def write_qml(config, sourcepar):
+def write_qml(config, sspec_output):
     if not config.options.qml_file:
         config.qml_file_out = None
         return
@@ -90,9 +90,9 @@ def write_qml(config, sourcepar):
         cr_info.author = config.author_name
     cr_info.creation_time = UTCDateTime()
 
-    means = sourcepar.means_weight
-    errors = sourcepar.errors_weight
-    stationpar = sourcepar.station_parameters
+    means = sspec_output.weighted_mean_values()
+    errors = sspec_output.weighted_mean_uncertainties()
+    stationpar = sspec_output.station_parameters
 
     # Magnitude
     mag = Magnitude()
@@ -144,23 +144,22 @@ def write_qml(config, sourcepar):
     for statId in sorted(stationpar.keys()):
         par = stationpar[statId]
         st_mag = StationMagnitude()
-        seed_id = statId.split()[0]
         _id = config.smi_station_magnitude_template.replace(
             '$SMI_MAGNITUDE_TEMPLATE', config.smi_magnitude_template)
         _id = _id.replace('$ORIGIN_ID', origin_id_strip)
         _id = _id.replace('$SMI_BASE', config.smi_base)
-        _id = _id.replace('$WAVEFORM_ID', seed_id)
+        _id = _id.replace('$WAVEFORM_ID', statId)
         st_mag.resource_id = ResourceIdentifier(id=_id)
         st_mag.origin_id = origin_id
-        st_mag.mag = par['Mw']
+        st_mag.mag = par.Mw.value
         st_mag.station_magnitude_type = 'Mw'
         st_mag.method_id = mag.method_id
         st_mag.creation_info = cr_info
-        st_mag.waveform_id = WaveformStreamID(seed_string=seed_id)
+        st_mag.waveform_id = WaveformStreamID(seed_string=statId)
         st_mag.extra = SSPExtra()
-        st_mag.extra.moment = SSPTag(par['Mo'])
-        st_mag.extra.corner_frequency = SSPTag(par['fc'])
-        st_mag.extra.t_star = SSPTag(par['t_star'])
+        st_mag.extra.moment = SSPTag(par.Mo.value)
+        st_mag.extra.corner_frequency = SSPTag(par.fc.value)
+        st_mag.extra.t_star = SSPTag(par.t_star.value)
         ev.station_magnitudes.append(st_mag)
         st_mag_contrib = StationMagnitudeContribution()
         st_mag_contrib.station_magnitude_id = st_mag.resource_id
@@ -181,11 +180,11 @@ def write_qml(config, sourcepar):
     ev.extra.t_star.value.uncertainty = SSPTag(errors['t_star'])
     ev.extra.t_star.value.confidence_level = SSPTag(68.2)
     ev.extra.source_radius = SSPContainerTag()
-    ev.extra.source_radius.value.value = SSPTag(means['ra'])
+    ev.extra.source_radius.value.value = SSPTag(means['radius'])
     ev.extra.source_radius.value.lower_uncertainty =\
-        SSPTag(errors['ra'][0])
+        SSPTag(errors['radius'][0])
     ev.extra.source_radius.value.upper_uncertainty =\
-        SSPTag(errors['ra'][1])
+        SSPTag(errors['radius'][1])
     ev.extra.source_radius.value.confidence_level = SSPTag(68.2)
     ev.extra.stress_drop = SSPContainerTag()
     ev.extra.stress_drop.value.value = SSPTag(means['bsd'])

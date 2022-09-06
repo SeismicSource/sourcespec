@@ -17,6 +17,7 @@ Compute radiated energy from spectral integration.
 """
 import logging
 import numpy as np
+from sourcespec.ssp_data_types import SpectralParameter
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -73,7 +74,7 @@ def _finite_bandwidth_correction(spec, fc, fmax):
     return R
 
 
-def radiated_energy(config, spec_st, specnoise_st, sourcepar):
+def radiated_energy(config, spec_st, specnoise_st, sspec_output):
     """Compute radiated energy, using eq. (3) in Lancieri et al. (2012)."""
     logger.info('Computing radiated energy...')
     if config.wave_type == 'P':
@@ -86,9 +87,9 @@ def radiated_energy(config, spec_st, specnoise_st, sourcepar):
         spec = spec_st.select(id=spec_id)[0]
         specnoise = specnoise_st.select(id=spec_id)[0]
 
-        statId = '{} {}'.format(spec_id, spec.stats.instrtype)
         try:
-            par = sourcepar.station_parameters[statId]
+            station_pars = sspec_output.station_parameters[spec_id]
+            par = station_pars._params
         except KeyError:
             continue
 
@@ -101,6 +102,14 @@ def radiated_energy(config, spec_st, specnoise_st, sourcepar):
         elif config.wave_type in ['S', 'SV', 'SH']:
             vel = config.hypo.vs * 1000.
 
+        # Make sure that the param_Er object is always defined, even when Er
+        # is not computed (i.e., "continue" below)
+        try:
+            param_Er = station_pars.Er
+        except KeyError:
+            param_Er = SpectralParameter(id='Er', value=np.nan)
+            station_pars.Er = param_Er
+
         # Compute signal and noise integrals and subtract noise from signal,
         # under the hypothesis that energy is additive and noise is stationary
         signal_integral = _spectral_integral(spec, t_star, fmax)
@@ -108,16 +117,15 @@ def radiated_energy(config, spec_st, specnoise_st, sourcepar):
         coeff = _radiated_energy_coefficient(rho, vel)
         Er = coeff * (signal_integral - noise_integral)
         if Er < 0:
-            msg = '{}: noise energy is larger than signal energy: '.format(
-                statId)
+            msg = '{} {}: noise energy is larger than signal energy: '.format(
+                spec_id, spec.stats.instrtype)
             msg += 'skipping spectrum.'
             logger.warning(msg)
-            par['Er'] = np.nan
             continue
 
         R = _finite_bandwidth_correction(spec, fc, fmax)
         Er /= R
 
-        # Store in the parameter dictionary
-        par['Er'] = Er
+        # Store into the StationParameter() object
+        param_Er.value = Er
     logger.info('Computing radiated energy: done')

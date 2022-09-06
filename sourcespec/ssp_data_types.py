@@ -11,6 +11,7 @@ Classes for spectral inversion routines.
 """
 import logging
 import numpy as np
+from collections import OrderedDict
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -153,15 +154,12 @@ class Bounds(object):
         return bnds
 
 
-class StationSourceParameters(dict):
-    """Source parameters for one station."""
+# Classes for SourceSpec output
 
-    def __init__(self, statId, params, errors):
-        self['statId'] = statId
-        for key, val in dict(params).items():
-            self[key] = val
-        for key, val in dict(errors).items():
-            self[key + '_err'] = val
+class OrderedAttribDict(OrderedDict):
+    """
+    An ordered dictionary whose values can be accessed as classattributes.
+    """
 
     def __getattr__(self, attr):
         return self[attr]
@@ -170,19 +168,144 @@ class StationSourceParameters(dict):
         self[attr] = value
 
 
-class SourceParameters():
-    """Source parameters for all stations."""
+class SpectralParameter(OrderedAttribDict):
+    """A spectral parameter measured at one station."""
+
+    def __init__(self, id, name=None, units=None, value=None, uncertainty=None,
+                 lower_uncertainty=None, upper_uncertainty=None,
+                 confidence_level=None):
+        self._id = id
+        self.name = name
+        self.units = units
+        self.value = value
+        self.uncertainty = uncertainty
+        if (lower_uncertainty is not None and
+                lower_uncertainty == upper_uncertainty):
+            self.uncertainty = lower_uncertainty
+            self.lower_uncertainty = self.upper_uncertainty = None
+        else:
+            self.lower_uncertainty = lower_uncertainty
+            self.upper_uncertainty = upper_uncertainty
+        self.confidence_level = confidence_level
+        self.outlier = False
+
+    def value_uncertainty(self):
+        """Return value and uncertainty as 3-element tuple."""
+        if self.lower_uncertainty is not None:
+            uncertainty = (self.lower_uncertainty, self.upper_uncertainty)
+        else:
+            uncertainty = (self.uncertainty, self.uncertainty)
+        return (self.value, *uncertainty)
+
+
+class StationParameters(OrderedAttribDict):
+    """
+    The parameters describing a given station (e.g., its id and location) and
+    the spectral parameters measured at that station.
+
+    Spectral parameters are provided as attributes, using SpectralParameter()
+    objects.
+    """
+
+    def __init__(self, id, instrument_type=None, latitude=None, longitude=None,
+                 hypo_dist_in_km=None, epi_dist_in_km=None, azimuth=None):
+        self._id = id
+        self.instrument_type = instrument_type
+        self.latitude = latitude
+        self.longitude = longitude
+        self.hypo_dist_in_km = hypo_dist_in_km
+        self.epi_dist_in_km = epi_dist_in_km
+        self.azimuth = azimuth
+        self._params = dict()
+        self._params_err = dict()
+        self._is_outlier = dict()
+
+    def __setattr__(self, attr, value):
+        if isinstance(value, SpectralParameter):
+            parname = attr
+            par = value
+            self._params[parname] = par.value
+            if par.uncertainty is not None:
+                self._params_err[parname] = (par.uncertainty, par.uncertainty)
+            else:
+                self._params_err[parname] = (
+                    par.lower_uncertainty, par.upper_uncertainty
+                )
+            self._is_outlier[parname] = par.outlier
+        self[attr] = value
+
+    def rebuild_dictionaries(self):
+        for key, value in self.items():
+            if not isinstance(value, SpectralParameter):
+                continue
+            parname = key
+            par = value
+            self._params[parname] = par.value
+            if par.uncertainty is not None:
+                self._params_err[parname] = (par.uncertainty, par.uncertainty)
+            else:
+                self._params_err[parname] = (
+                    par.lower_uncertainty, par.upper_uncertainty
+                )
+            self._is_outlier[parname] = par.outlier
+
+
+class SummaryStatistics(OrderedAttribDict):
+    """
+    A summary statistics (e.g., mean, median), along with its uncertainity.
+    """
+
+    def __init__(self, type, value=None, uncertainty=None,
+                 lower_uncertainty=None, upper_uncertainty=None,
+                 confidence_level=None, nobs=None, message=None):
+        # type of statistics: e.g., mean, median
+        self._type = type
+        self.value = value
+        self.uncertainty = uncertainty
+        if (lower_uncertainty is not None and
+                lower_uncertainty == upper_uncertainty):
+            self.uncertainty = lower_uncertainty
+            self.lower_uncertainty = self.upper_uncertainty = None
+        else:
+            self.lower_uncertainty = lower_uncertainty
+            self.upper_uncertainty = upper_uncertainty
+        self.confidence_level = confidence_level
+        self.nobs = nobs
+        self.message = message
+
+    def compact_uncertainty(self):
+        """Return uncertainty in a compact form."""
+        if self.lower_uncertainty is not None:
+            return (self.lower_uncertainty, self.upper_uncertainty)
+        else:
+            return self.uncertainty
+
+
+class SummarySpectralParameter(OrderedAttribDict):
+    """
+    A summary spectral parameter comrpising one ore more summary statistics.
+    """
+
+    def __init__(self, id, name=None, units=None):
+        self._id = id
+        self.name = name
+        self.units = units
+
+
+class SourceSpecOutput(OrderedAttribDict):
+    """The output of SourceSpec."""
 
     def __init__(self):
-        self.station_parameters = dict()
-        self.means = dict()
-        self.errors = dict()
-        self.means_weight = dict()
-        self.errors_weight = dict()
+        self.run_info = OrderedAttribDict()
+        self.event_info = OrderedAttribDict()
+        self.summary_spectral_parameters = OrderedAttribDict()
+        self.station_parameters = OrderedAttribDict()
 
     def value_array(self, key, filter_outliers=False):
-        vals = np.array(
-            [x.get(key, np.nan) for x in self.station_parameters.values()])
+        vals = np.array([
+            x._params.get(key, np.nan)
+            for x in self.station_parameters.values()
+        ])
         if filter_outliers:
             outliers = self.outlier_array(key)
             vals = vals[~outliers]
@@ -190,7 +313,7 @@ class SourceParameters():
 
     def error_array(self, key, filter_outliers=False):
         errs = np.array([
-            x.get(key + '_err', np.nan)
+            x._params_err.get(key, np.nan)
             for x in self.station_parameters.values()
         ])
         if filter_outliers:
@@ -199,8 +322,12 @@ class SourceParameters():
         return errs
 
     def outlier_array(self, key):
-        key += '_outlier'
-        return np.array([x.get(key) for x in self.station_parameters.values()])
+        outliers = np.array([
+            # if we cannot find the given key, we assume outlier=True
+            x._is_outlier.get(key, True)
+            for x in self.station_parameters.values()
+        ])
+        return outliers
 
     def find_outliers(self, key, n):
         """
@@ -219,6 +346,7 @@ class SourceParameters():
         ``Nan`` and ``inf`` values are also marked as outliers.
         """
         values = self.value_array(key)
+        station_ids = np.array([id for id in self.station_parameters.keys()])
         naninf = np.logical_or(np.isnan(values), np.isinf(values))
         _values = values[~naninf]
         if n is not None and len(_values) > 0:
@@ -228,6 +356,39 @@ class SourceParameters():
             outliers = np.logical_or(outliers, naninf)
         else:
             outliers = naninf
-        key += '_outlier'
-        for par, outl in zip(self.station_parameters.values(), outliers):
-            par[key] = outl
+        for stat_id, outl in zip(station_ids, outliers):
+            stat_par = self.station_parameters[stat_id]
+            stat_par[key].outlier = outl
+            stat_par.rebuild_dictionaries()
+
+    def mean_values(self):
+        return {
+            parname: par.mean.value
+            for parname, par in self.summary_spectral_parameters.items()
+            if isinstance(par, SummarySpectralParameter)
+            and 'mean' in par
+        }
+
+    def mean_uncertainties(self):
+        return {
+            parname: par.mean.compact_uncertainty()
+            for parname, par in self.summary_spectral_parameters.items()
+            if isinstance(par, SummarySpectralParameter)
+            and 'mean' in par
+        }
+
+    def weighted_mean_values(self):
+        return {
+            parname: par.weighted_mean.value
+            for parname, par in self.summary_spectral_parameters.items()
+            if isinstance(par, SummarySpectralParameter)
+            and 'weighted_mean' in par
+        }
+
+    def weighted_mean_uncertainties(self):
+        return {
+            parname: par.weighted_mean.compact_uncertainty()
+            for parname, par in self.summary_spectral_parameters.items()
+            if isinstance(par, SummarySpectralParameter)
+            and 'weighted_mean' in par
+        }

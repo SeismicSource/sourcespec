@@ -16,6 +16,7 @@ import re
 import numpy as np
 from urllib.parse import urlparse
 from sourcespec._version import get_versions
+from sourcespec.ssp_data_types import SpectralParameter
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -126,23 +127,29 @@ def _format_exponent(value, reference):
 
 def _value_and_err_text(par, key, fmt):
     """Format value and error text."""
-    value = par[key]
+    _par = par[key]
+    if isinstance(_par, SpectralParameter):
+        value = _par.value
+        outlier = _par.outlier
+    else:
+        value = _par
+        outlier = False
     value_text = '<nobr>{}</nobr>'.format(fmt.format(value))
-    outlier = par.get(key + '_outlier', False)
+    err_text = None
+    if isinstance(_par, SpectralParameter):
+        if _par.uncertainty is not None:
+            # use HTML code for ±, for compatibility with Edge
+            err_text = '<nobr>&#177;{}</nobr>'.format(
+                fmt.format(_par.uncertainty))
+        elif _par.lower_uncertainty is not None:
+            err_text = '<nobr>-{}</nobr><br/><nobr>+{}</nobr>'.format(
+                fmt.format(_par.lower_uncertainty),
+                fmt.format(_par.upper_uncertainty)
+            )
     if outlier:
         value_text = '<span style="color:#979A9A">' + value_text + '</span>'
-    try:
-        err = par[key + '_err']
-        if err[0] == err[1]:
-            # use HTML code for ±, for compatibility with Edge
-            err_text = '<nobr>&#177;{}</nobr>'.format(fmt.format(err[0]))
-        else:
-            err_text = '<nobr>-{}</nobr><br/><nobr>+{}</nobr>'.format(
-                fmt.format(err[0]), fmt.format(err[1]))
-        if outlier:
+        if err_text is not None:
             err_text = '<span style="color:#979A9A">' + err_text + '</span>'
-    except KeyError:
-        err_text = None
     return value_text, err_text
 
 
@@ -230,7 +237,7 @@ def _misfit_page(config):
         fp.write(misfit)
 
 
-def html_report(config, sourcepar):
+def html_report(config, sspec_output):
     """Generate an HTML report."""
     # Read template files
     template_dir = os.path.join(
@@ -297,12 +304,10 @@ def html_report(config, sourcepar):
     # Station table
     station_table_row = open(station_table_row_html).read()
     station_table_rows = ''
-    stationpar = sourcepar.station_parameters
+    stationpar = sspec_output.station_parameters
     for statId in sorted(stationpar.keys()):
-        if statId in ['means', 'errors', 'means_weight', 'errors_weight']:
-            continue
         par = stationpar[statId]
-        id, type = statId.split()
+        instrument_type = par.instrument_type
         Mw_text, Mw_err_text = _value_and_err_text(par, 'Mw', '{:.3f}')
         fc_text, fc_err_text = _value_and_err_text(par, 'fc', '{:.3f}')
         t_star_text, t_star_err_text =\
@@ -310,13 +315,14 @@ def html_report(config, sourcepar):
         Qo_text, Qo_err_text = _value_and_err_text(par, 'Qo', '{:.1f}')
         Mo_text, Mo_err_text = _value_and_err_text(par, 'Mo', '{:.3e}')
         bsd_text, bsd_err_text = _value_and_err_text(par, 'bsd', '{:.3e}')
-        ra_text, ra_err_text = _value_and_err_text(par, 'ra', '{:.3f}')
-        hyp_dist_text, _ = _value_and_err_text(par, 'hyp_dist', '{:.3f}')
-        az_text, _ = _value_and_err_text(par, 'az', '{:.3f}')
+        ra_text, ra_err_text = _value_and_err_text(par, 'radius', '{:.3f}')
+        hyp_dist_text, _ =\
+            _value_and_err_text(par, 'hypo_dist_in_km', '{:.3f}')
+        az_text, _ = _value_and_err_text(par, 'azimuth', '{:.3f}')
         Er_text, _ = _value_and_err_text(par, 'Er', '{:.3e}')
         replacements = {
-            '{STATION_ID}': id,
-            '{STATION_TYPE}': type,
+            '{STATION_ID}': statId,
+            '{STATION_TYPE}': instrument_type,
             '{STATION_MW}': Mw_text,
             '{STATION_MW_ERR}': Mw_err_text,
             '{STATION_FC}': fc_text,
@@ -338,10 +344,10 @@ def html_report(config, sourcepar):
         station_table_rows += _multireplace(station_table_row, replacements)
 
     # Main HTML page
-    means = sourcepar.means
-    errors = sourcepar.errors
-    means_weight = sourcepar.means_weight
-    errors_weight = sourcepar.errors_weight
+    means = sspec_output.mean_values()
+    errors = sspec_output.mean_uncertainties()
+    means_weight = sspec_output.weighted_mean_values()
+    errors_weight = sspec_output.weighted_mean_uncertainties()
     Mw_mean = means['Mw']
     Mw_error = errors['Mw']
     Mw_mean_weight = means_weight['Mw']
@@ -362,10 +368,10 @@ def html_report(config, sourcepar):
     Qo_error = errors['Qo']
     Qo_mean_weight = means_weight['Qo']
     Qo_error_weight = errors_weight['Qo']
-    ra_mean = means['ra']
-    ra_minus, ra_plus = errors['ra']
-    ra_mean_weight = means_weight['ra']
-    ra_minus_weight, ra_plus_weight = errors_weight['ra']
+    ra_mean = means['radius']
+    ra_minus, ra_plus = errors['radius']
+    ra_mean_weight = means_weight['radius']
+    ra_minus_weight, ra_plus_weight = errors_weight['radius']
     bsd_mean = means['bsd']
     bsd_minus, bsd_plus = errors['bsd']
     bsd_mean_weight = means_weight['bsd']

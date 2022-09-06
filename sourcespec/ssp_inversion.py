@@ -17,7 +17,6 @@ Spectral inversion routines for sourcespec.
 """
 import logging
 import numpy as np
-from collections import OrderedDict
 from scipy.optimize import curve_fit, minimize, basinhopping
 from scipy.signal import argrelmax
 from obspy import Stream
@@ -27,7 +26,8 @@ from sourcespec.ssp_spectral_model import (
 from sourcespec.ssp_util import (
     mag_to_moment, source_radius, bsd, quality_factor, select_trace, smooth)
 from sourcespec.ssp_data_types import (
-    InitialValues, Bounds, StationSourceParameters, SourceParameters)
+    InitialValues, Bounds, SpectralParameter, StationParameters,
+    SourceSpecOutput)
 from sourcespec.ssp_grid_sampling import GridSampling
 logger = logging.getLogger(__name__.split('.')[-1])
 
@@ -159,7 +159,7 @@ def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_log, statId):
 
 
 def _spec_inversion(config, spec, spec_weight):
-    """Invert one spectrum."""
+    """Invert one spectrum, return a Station() object."""
     # azimuth computation
     coords = spec.stats.coords
     hypo = spec.stats.hypo
@@ -223,22 +223,23 @@ def _spec_inversion(config, spec, spec_weight):
         msg += '{}: unable to fit spectral model'.format(statId)
         raise RuntimeError(msg)
 
-    params_name = ('Mw', 'fc', 't_star')
-    par = OrderedDict(zip(params_name, params_opt))
-    par_str = '; '.join(['{}: {:.4f}'.format(key, par[key]) for key in par])
-    logger.info('{}: optimal values: {}'.format(statId, par_str))
+    Mw, fc, t_star = params_opt
+    Mw_err, fc_err, t_star_err = params_err
+    inverted_par_str = 'Mw: {:.4f}; fc: {:.4f}; t_star: {:.4f}'.format(
+        Mw, fc, t_star)
+    logger.info('{}: optimal values: {}'.format(statId, inverted_par_str))
     logger.info('{}: misfit: {:.3f}'.format(statId, misfit))
 
-    if np.isclose(par['fc'], bounds.fc_min, rtol=0.1):
+    if np.isclose(fc, bounds.fc_min, rtol=0.1):
         msg = '{}: optimal fc within 10% of fc_min: {:.3f} ~= {:.3f}: '
         msg += 'ignoring inversion results'
-        msg = msg.format(statId, par['fc'], bounds.fc_min)
+        msg = msg.format(statId, fc, bounds.fc_min)
         raise ValueError(msg)
 
-    if np.isclose(par['fc'], bounds.fc_max, rtol=1e-4):
+    if np.isclose(fc, bounds.fc_max, rtol=1e-4):
         msg = '{}: optimal fc within 10% of fc_max: {:.3f} ~= {:.3f}: '
         msg += 'ignoring inversion results'
-        msg = msg.format(statId, par['fc'], bounds.fc_max)
+        msg = msg.format(statId, fc, bounds.fc_max)
         raise ValueError(msg)
 
     misfit_max = config.pi_misfit_max or np.inf
@@ -249,7 +250,6 @@ def _spec_inversion(config, spec, spec_weight):
         raise ValueError(msg)
 
     # Check post-inversion bounds for t_star and fc
-    t_star = par['t_star']
     pi_t_star_min, pi_t_star_max =\
         config.pi_t_star_min_max or (-np.inf, np.inf)
     if not (pi_t_star_min <= t_star <= pi_t_star_max):
@@ -257,7 +257,6 @@ def _spec_inversion(config, spec, spec_weight):
         msg += 'ignoring inversion results'
         msg = msg.format(statId, t_star, pi_t_star_min, pi_t_star_max)
         raise ValueError(msg)
-    fc = par['fc']
     pi_fc_min, pi_fc_max = config.pi_fc_min_max or (-np.inf, np.inf)
     if not (pi_fc_min <= fc <= pi_fc_max):
         msg = '{}: fc: {:.3f} not in allowed range [{:.3f}, {:.3f}]: '
@@ -265,66 +264,94 @@ def _spec_inversion(config, spec, spec_weight):
         msg = msg.format(statId, fc, pi_fc_min, pi_fc_max)
         raise ValueError(msg)
 
-    par['hyp_dist'] = spec.stats.hypo_dist
-    par['epi_dist'] = spec.stats.epi_dist
-    par['az'] = az
-    par['lon'] = spec.stats.coords.longitude
-    par['lat'] = spec.stats.coords.latitude
+    station_pars = StationParameters(
+        id=spec.id, instrument_type=spec.stats.instrtype,
+        latitude=stla, longitude=stlo,
+        hypo_dist_in_km=spec.stats.hypo_dist,
+        epi_dist_in_km=spec.stats.epi_dist,
+        azimuth=az)
+    station_pars.Mw = SpectralParameter(
+        id='Mw', value=Mw,
+        lower_uncertainty=Mw_err[0], upper_uncertainty=Mw_err[1],
+        confidence_level=68.2)
+    station_pars.fc = SpectralParameter(
+        id='fc', value=fc,
+        lower_uncertainty=fc_err[0], upper_uncertainty=fc_err[1],
+        confidence_level=68.2)
+    station_pars.t_star = SpectralParameter(
+        id='t_star', value=t_star,
+        lower_uncertainty=t_star_err[0], upper_uncertainty=t_star_err[1],
+        confidence_level=68.2)
 
     # additional parameters, computed from fc, Mw and t_star
     vs = config.vs_source
     travel_time = spec.stats.travel_times[config.wave_type[0]]
     # seismic moment
-    par['Mo'] = mag_to_moment(par['Mw'])
+    station_pars.Mo = SpectralParameter(id='Mw', value=mag_to_moment(Mw))
     # source radius in meters
-    par['ra'] = source_radius(par['fc'], vs*1e3)
+    station_pars.radius = SpectralParameter(
+        id='radius', value=source_radius(fc, vs*1e3))
     # Brune stress drop in MPa
-    par['bsd'] = bsd(par['Mo'], par['ra'])
+    station_pars.bsd = SpectralParameter(
+        id='bsd', value=bsd(station_pars.Mo.value, station_pars.radius.value))
     # quality factor
-    par['Qo'] = quality_factor(travel_time, par['t_star'])
+    station_pars.Qo = SpectralParameter(
+        id='Qo', value=quality_factor(travel_time, t_star))
 
     # Check post-inversion bounds for bsd
     pi_bsd_min, pi_bsd_max = config.pi_bsd_min_max or (-np.inf, np.inf)
-    if not (pi_bsd_min <= par['bsd'] <= pi_bsd_max):
+    if not (pi_bsd_min <= station_pars.bsd.value <= pi_bsd_max):
         msg = '{}: bsd: {:.3e} not in allowed range [{:.3e}, {:.3e}]: '
         msg += 'ignoring inversion results'
-        msg = msg.format(statId, par['bsd'], pi_bsd_min, pi_bsd_max)
+        msg = msg.format(
+            statId, station_pars.bsd.value, pi_bsd_min, pi_bsd_max)
         raise ValueError(msg)
 
     # additional parameter errors, computed from fc, Mw and t_star
-    par_err = OrderedDict(zip(params_name, params_err))
     # seismic moment
-    Mw_min = par['Mw'] - par_err['Mw'][0]
-    Mw_max = par['Mw'] + par_err['Mw'][1]
+    Mw_min = Mw - Mw_err[0]
+    Mw_max = Mw + Mw_err[1]
     Mo_min = mag_to_moment(Mw_min)
     Mo_max = mag_to_moment(Mw_max)
-    par_err['Mo'] = (par['Mo'] - Mo_min, Mo_max - par['Mo'])
+    station_pars.Mo.lower_uncertainty = station_pars.Mo.value - Mo_min
+    station_pars.Mo.upper_uncertainty = Mo_max - station_pars.Mo.value
+    station_pars.Mo.confidence_level = 68.2
     # source radius in meters
-    fc_min = par['fc'] - par_err['fc'][0]
+    fc_min = fc - fc_err[0]
     if fc_min <= 0:
         fc_min = freq_log[0]
-    fc_max = par['fc'] + par_err['fc'][1]
-    ra_min = source_radius(fc_max, vs*1e3)
-    ra_max = source_radius(fc_min, vs*1e3)
-    par_err['ra'] = (par['ra']-ra_min, ra_max-par['ra'])
+    fc_max = fc + fc_err[1]
+    radius_min = source_radius(fc_max, vs*1e3)
+    radius_max = source_radius(fc_min, vs*1e3)
+    station_pars.radius.lower_uncertainty =\
+        station_pars.radius.value - radius_min
+    station_pars.radius.upper_uncertainty =\
+        radius_max - station_pars.radius.value
+    station_pars.radius.confidence_level = 68.2
     # Brune stress drop in MPa
-    bsd_min = bsd(Mo_min, ra_max)
-    bsd_max = bsd(Mo_max, ra_min)
-    par_err['bsd'] = (par['bsd']-bsd_min, bsd_max-par['bsd'])
+    bsd_min = bsd(Mo_min, radius_max)
+    bsd_max = bsd(Mo_max, radius_min)
+    station_pars.bsd.lower_uncertainty = station_pars.bsd.value - bsd_min
+    station_pars.bsd.upper_uncertainty = bsd_max - station_pars.bsd.value
+    station_pars.bsd.confidence_level = 68.2
     # quality factor
-    t_star_min = par['t_star'] - par_err['t_star'][0]
+    t_star_min = t_star - t_star_err[0]
     if t_star_min <= 0:
         t_star_min = 0.001
-    t_star_max = par['t_star'] + par_err['t_star'][1]
+    t_star_max = t_star + t_star_err[1]
     Qo_min = quality_factor(travel_time, t_star_max)
     Qo_max = quality_factor(travel_time, t_star_min)
-    par_err['Qo'] = (par['Qo']-Qo_min, Qo_max-par['Qo'])
+    station_pars.Qo.lower_uncertainty = station_pars.Qo.value - Qo_min
+    station_pars.Qo.upper_uncertainty = Qo_max - station_pars.Qo.value
+    station_pars.Qo.confidence_level = 68.2
 
-    return par, par_err
+    return station_pars
 
 
-def _synth_spec(config, spec, par, par_err):
+def _synth_spec(config, spec, station_pars):
     """Return a stream with one or more synthetic spectra."""
+    par = station_pars._params
+    par_err = station_pars._params_err
     spec_st = Stream()
     params_opt = [par[key] for key in ('Mw', 'fc', 't_star')]
 
@@ -383,9 +410,10 @@ def spectral_inversion(config, spec_st, weight_st):
     }
     logger.info(algorithm_messages[config.inv_algorithm])
 
-    sourcepar = SourceParameters()
     stations = set(x.stats.station for x in spec_st)
     spectra = [sp for sta in stations for sp in spec_st.select(station=sta)]
+
+    sspec_output = SourceSpecOutput()
     for spec in sorted(spectra, key=lambda sp: sp.id):
         if spec.stats.channel[-1] != 'H':
             continue
@@ -393,14 +421,12 @@ def spectral_inversion(config, spec_st, weight_st):
             continue
         spec_weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
         try:
-            par, par_err = _spec_inversion(config, spec, spec_weight)
+            station_pars = _spec_inversion(config, spec, spec_weight)
         except (RuntimeError, ValueError) as msg:
             logger.warning(msg)
             continue
-        spec_st += _synth_spec(config, spec, par, par_err)
-        statId = '{} {}'.format(spec.id, spec.stats.instrtype)
-        par = StationSourceParameters(statId, par, par_err)
-        sourcepar.station_parameters[statId] = par
+        spec_st += _synth_spec(config, spec, station_pars)
+        sspec_output.station_parameters[station_pars._id] = station_pars
 
     logger.info('Inverting spectra: done')
-    return sourcepar
+    return sspec_output

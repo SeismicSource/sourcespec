@@ -61,8 +61,13 @@ def _write_author_and_agency_to_parfile(config, parfile):
         parfile.write(agency_str)
 
 
-def _write_parfile(config, sourcepar):
-    """Write station source parameters to file."""
+def _write_parfile(config, sspec_output):
+    """
+    Write station source parameters to file.
+
+    Note: this format is deprecated and will not evolve anymore
+    (e.g., including new parameters or new way of computing statistics).
+    """
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
     evid = config.hypo.evid
@@ -109,56 +114,87 @@ def _write_parfile(config, sourcepar):
         Qo='{:>7} ',
         Ml='{:>6} '
     )
-    stationpar = sourcepar.station_parameters
+    stationpar = sspec_output.station_parameters
     for statId in sorted(stationpar.keys()):
         par = stationpar[statId]
-        parfile.write('{:>15} {:>6}\t'.format(*statId.split()))
+        parfile.write('{:>15} {:>6}\t'.format(statId, par.instrument_type))
         for key in parkeys:
-            val = par[key]
-            outl = par.get(key + '_outlier', False)
+            if key == 'ra':
+                _pkey = 'radius'
+            else:
+                _pkey = key
+            if key == 'hyp_dist':
+                val = par['hypo_dist_in_km']
+                outl = False
+            elif key == 'az':
+                val = par['azimuth']
+                outl = False
+            else:
+                val = par[_pkey].value
+                outl = par[_pkey].outlier
             if outl:
                 space = ' *'
             else:
                 space = '  '
             parfile.write('{}{} '.format(space, key))
-            if val is not None:
+            if val is not None and ~np.isnan(val):
                 parfile.write(formats[key].format(val))
             else:
                 parfile.write(formats_none[key].format('nan'))
         parfile.write('\n')
         parfile.write('{:>22}\t'.format('--- errmin'))
         for key in parkeys:
-            outl = par.get(key + '_outlier', False)
+            if key == 'ra':
+                _pkey = 'radius'
+            else:
+                _pkey = key
+            if key in ['hyp_dist', 'az']:
+                outl = False
+                err = None
+            else:
+                outl = par[_pkey].outlier
+                err = par[_pkey].lower_uncertainty
+                if err is None:
+                    err = par[_pkey].uncertainty
             if outl:
                 space = ' *'
             else:
                 space = '  '
             parfile.write('{}{} '.format(space, key))
-            try:
-                err = par[key + '_err'][0]
+            if err is not None:
                 parfile.write(formats[key].format(err))
-            except KeyError:
+            else:
                 parfile.write(formats_none[key].format('nan'))
         parfile.write('\n')
         parfile.write('{:>22}\t'.format('--- errmax'))
         for key in parkeys:
-            outl = par.get(key + '_outlier', False)
+            if key == 'ra':
+                _pkey = 'radius'
+            else:
+                _pkey = key
+            if key in ['hyp_dist', 'az']:
+                outl = False
+                err = None
+            else:
+                outl = par[_pkey].outlier
+                err = par[_pkey].upper_uncertainty
+                if err is None:
+                    err = par[_pkey].uncertainty
             if outl:
                 space = ' *'
             else:
                 space = '  '
             parfile.write('{}{} '.format(space, key))
-            try:
-                err = par[key + '_err'][1]
+            if err is not None:
                 parfile.write(formats[key].format(err))
-            except KeyError:
+            else:
                 parfile.write(formats_none[key].format('nan'))
         parfile.write('\n')
 
-    means = sourcepar.means
-    errors = sourcepar.errors
-    means_weight = sourcepar.means_weight
-    errors_weight = sourcepar.errors_weight
+    means = sspec_output.mean_values()
+    errors = sspec_output.mean_uncertainties()
+    means_weight = sspec_output.weighted_mean_values()
+    errors_weight = sspec_output.weighted_mean_uncertainties()
 
     parfile.write('\n*** Average source parameters ***\n')
     parfile.write('*** Note: averages computed after removing outliers ****\n')
@@ -212,12 +248,12 @@ def _write_parfile(config, sourcepar):
     parfile.write('Qo (weighted): {:.1f} +/- {:.1f}\n'.format(
         Qo_mean_weight, Qo_error_weight))
 
-    ra_mean = means['ra']
-    ra_minus, ra_plus = errors['ra']
+    ra_mean = means['radius']
+    ra_minus, ra_plus = errors['radius']
     parfile.write('Source radius: {:.3f} /- {:.3f} /+ {:.3f} m\n'.format(
         ra_mean, ra_minus, ra_plus))
-    ra_mean_weight = means_weight['ra']
-    ra_minus_weight, ra_plus_weight = errors_weight['ra']
+    ra_mean_weight = means_weight['radius']
+    ra_minus_weight, ra_plus_weight = errors_weight['radius']
     parfile.write(
         'Source radius (weighted): {:.3f} /- {:.3f} /+ {:.3f} m\n'.format(
             ra_mean_weight, ra_minus_weight, ra_plus_weight))
@@ -236,9 +272,9 @@ def _write_parfile(config, sourcepar):
         'Brune stress drop (weighted): {:.3e} /- {} /+ {} MPa\n'.format(
             bsd_mean_weight, bsd_minus_str, bsd_plus_str))
 
-    if means['Ml'] is not None:
-        Ml_mean = means['Ml']
-        Ml_error = errors['Ml']
+    Ml_mean = means.get('Ml', None)
+    Ml_error = errors.get('Ml', None)
+    if Ml_mean is not None:
         parfile.write('Ml: {:.3f} +/- {:.3f} \n'.format(Ml_mean, Ml_error))
 
     Er_mean = means['Er']
@@ -277,7 +313,7 @@ def _log_db_write_error(db_err, db_file):
     ssp_exit(1)
 
 
-def _write_db(config, sourcepar):
+def _write_db(config, sspec_output):
     try:
         database_file = config.database_file
     except KeyError:
@@ -307,7 +343,7 @@ def _write_db(config, sourcepar):
         'dist, azimuth, Er);')
     # Write station source parameters to database
     nobs = 0
-    stationpar = sourcepar.station_parameters
+    stationpar = sspec_output.station_parameters
     for statId in sorted(stationpar.keys()):
         nobs += 1
         par = stationpar[statId]
@@ -322,14 +358,16 @@ def _write_db(config, sourcepar):
         # Insert new line
         t = (
             statId, evid, runid,
-            par['Mo'], *par['Mo_err'],
-            par['Mw'], *par['Mw_err'],
-            par['fc'], *par['fc_err'],
-            par['t_star'], *par['t_star_err'],
-            par['Qo'], *par['Qo_err'],
-            par['bsd'], *par['bsd_err'],
-            par['ra'], *par['ra_err'],
-            par['hyp_dist'], par['az'], par['Er']
+            *par.Mo.value_uncertainty(),
+            *par.Mw.value_uncertainty(),
+            *par.fc.value_uncertainty(),
+            *par.t_star.value_uncertainty(),
+            *par.Qo.value_uncertainty(),
+            *par.bsd.value_uncertainty(),
+            *par.radius.value_uncertainty(),
+            par.hypo_dist_in_km,
+            par.azimuth,
+            par.Er.value
         )
         # Create a string like ?,?,?,?
         values = ','.join('?'*len(t))
@@ -363,10 +401,10 @@ def _write_db(config, sourcepar):
         'run_completed, sourcespec_version,'
         'author_name, author_email,'
         'agency_full_name, agency_short_name, agency_url);')
-    means = sourcepar.means
-    means_weight = sourcepar.means_weight
-    errors = sourcepar.errors
-    errors_weight = sourcepar.errors_weight
+    means = sspec_output.mean_values()
+    errors = sspec_output.mean_uncertainties()
+    means_weight = sspec_output.weighted_mean_values()
+    errors_weight = sspec_output.weighted_mean_uncertainties()
     run_completed = '{} {}'.format(config.end_of_run, config.end_of_run_tz)
     ssp_version = get_versions()['version']
     # Remove event from Event table, if present
@@ -391,12 +429,12 @@ def _write_db(config, sourcepar):
         means_weight['t_star'], errors_weight['t_star'],
         means['Qo'], errors['Qo'],
         means_weight['Qo'], errors_weight['Qo'],
-        means['ra'], *errors['ra'],
-        means_weight['ra'], *errors_weight['ra'],
+        means['radius'], *errors['radius'],
+        means_weight['radius'], *errors_weight['radius'],
         means['bsd'], *errors['bsd'],
         means_weight['bsd'], *errors_weight['bsd'],
         means['Er'], *errors['Er'],
-        means['Ml'], errors['Ml'],
+        means.get('Ml', None), errors.get('Ml', None),
         run_completed, ssp_version,
         config.author_name, config.author_email,
         config.agency_full_name, config.agency_short_name,
@@ -416,7 +454,7 @@ def _write_db(config, sourcepar):
     logger.info('Output written to database: ' + database_file)
 
 
-def _write_hypo(config, sourcepar):
+def _write_hypo(config, sspec_output):
     if not config.options.hypo_file:
         return
     with open(config.options.hypo_file, 'r') as fp:
@@ -427,7 +465,7 @@ def _write_hypo(config, sourcepar):
             line = fp.readline()
         line = list(line)
 
-    means = sourcepar.means
+    means = sspec_output.mean_values()
     mw_str = '{:03.2f}'.format(means['Mw'])
     if means['Ml'] is not None and ~np.isnan(means['Ml']):
         ml_str = '{:03.2f}'.format(means['Ml'])
@@ -450,13 +488,13 @@ def _write_hypo(config, sourcepar):
     logger.info('Hypo file written to: ' + hypo_file_out)
 
 
-def write_output(config, sourcepar):
+def write_output(config, sspec_output):
     """Write results to a plain text file and/or to a SQLite database file."""
     # Write to parfile
-    _write_parfile(config, sourcepar)
+    _write_parfile(config, sspec_output)
     # Write to database, if requested
-    _write_db(config, sourcepar)
+    _write_db(config, sspec_output)
     # Write to hypo file, if requested
-    _write_hypo(config, sourcepar)
+    _write_hypo(config, sspec_output)
     # Write to quakeml file, if requested
-    write_qml(config, sourcepar)
+    write_qml(config, sspec_output)
