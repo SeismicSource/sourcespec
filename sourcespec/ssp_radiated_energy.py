@@ -107,7 +107,8 @@ def radiated_energy(config, spec_st, specnoise_st, sspec_output):
         try:
             param_Er = station_pars.Er
         except KeyError:
-            param_Er = SpectralParameter(id='Er', value=np.nan)
+            param_Er = SpectralParameter(
+                id='Er', value=np.nan, format='{:.3e}')
             station_pars.Er = param_Er
 
         # Compute signal and noise integrals and subtract noise from signal,

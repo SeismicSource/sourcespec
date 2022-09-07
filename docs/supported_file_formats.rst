@@ -74,8 +74,10 @@ Output files
 The SourceSpec main code, ``source_spec`` will produce the following
 output files (``EVID`` is replaced by the actual event ID):
 
--  ``EVID.ssp.out``: text file containing the estimated earthquake
-   source parameters (per station and average)
+-  ``EVID.ssp.yaml``: `YAML <https://yaml.org>`__ file containing the estimated
+   spectral parameters (summary values and per station values)
+-  ``EVID.ssp.out`` (*deprecated*): text file containing the estimated spectral
+   parameters (summary values and per station values)
 -  ``EVID.ssp.log``: log file in text format (including the command line
    arguments, for
    `reproducibility <https://en.wikipedia.org/wiki/Reproducibility>`__)

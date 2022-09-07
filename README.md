@@ -150,8 +150,10 @@ parameter `sensitivity`.
 The SourceSpec main code, `source_spec` will produce the following output files
 (`EVID` is replaced by the actual event ID):
 
-- `EVID.ssp.out`: text file containing the estimated earthquake source
-  parameters (per station and average)
+- `EVID.ssp.yaml`: [YAML] file containing the estimated spectral parameters
+  (summary values and per station values)
+- `EVID.ssp.out` (*deprecated*): text file containing the estimated spectral
+  parameters (summary values and per station values)
 - `EVID.ssp.log`: log file in text format (including the command line arguments,
   for [reproducibility])
 - `EVID.ssp.conf`: the input config file (for [reproducibility])
@@ -353,6 +355,7 @@ Please replace `X.Y` with the SourceSpec version number you used.
 [pickle]: https://docs.python.org/3/library/pickle.html
 [Cartopy]: https://scitools.org.uk/cartopy/docs/latest
 [SQLite]: https://www.sqlite.org
+[YAML]: https://yaml.org
 
 <!-- Methods -->
 [reproducibility]: https://en.wikipedia.org/wiki/Reproducibility

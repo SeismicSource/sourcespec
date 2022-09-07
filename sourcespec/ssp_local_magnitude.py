@@ -162,7 +162,8 @@ def local_magnitude(config, st, proc_st, sspec_output):
         try:
             param_Ml = station_pars.Ml
         except KeyError:
-            param_Ml = SpectralParameter(id='Ml', value=np.nan)
+            param_Ml = SpectralParameter(
+                id='Ml', value=np.nan, format='{:.2f}')
             station_pars.Ml = param_Ml
 
         # only compute Ml for horizontal components

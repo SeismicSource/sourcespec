@@ -88,7 +88,8 @@ def compute_averages(config, sspec_output):
     nIQR = config.nIQR
 
     # Mw
-    summary_Mw = SummarySpectralParameter(id='Mw', name='moment magnitude')
+    summary_Mw = SummarySpectralParameter(
+        id='Mw', name='moment magnitude', format='{:.2f}')
     sspec_output.find_outliers('Mw', n=nIQR)
     Mw_values = sspec_output.value_array('Mw', filter_outliers=True)
     Mw_err = sspec_output.error_array('Mw', filter_outliers=True)
@@ -105,7 +106,7 @@ def compute_averages(config, sspec_output):
 
     # Mo (N.m)
     summary_Mo = SummarySpectralParameter(
-        id='Mo', name='seismic moment', units='N.m')
+        id='Mo', name='seismic moment', units='N.m', format='{:.3e}')
     value, error = _M0_avg_and_std(
         summary_Mw.mean.value, summary_Mw.mean.uncertainty)
     summary_Mo.mean = SummaryStatistics(
@@ -122,7 +123,7 @@ def compute_averages(config, sspec_output):
 
     # fc (Hz)
     summary_fc = SummarySpectralParameter(
-        id='fc', name='corner frequency', units='Hz')
+        id='fc', name='corner frequency', units='Hz', format='{:.3f}')
     sspec_output.find_outliers('fc', n=nIQR)
     fc_values = sspec_output.value_array('fc', filter_outliers=True)
     fc_err = sspec_output.error_array('fc', filter_outliers=True)
@@ -143,7 +144,7 @@ def compute_averages(config, sspec_output):
 
     # t_star (s)
     summary_t_star = SummarySpectralParameter(
-        id='t_star', name='t*', units='s')
+        id='t_star', name='t*', units='s', format='{:.3f}')
     sspec_output.find_outliers('t_star', n=nIQR)
     t_star_values = sspec_output.value_array('t_star', filter_outliers=True)
     t_star_err = sspec_output.error_array('t_star', filter_outliers=True)
@@ -160,7 +161,7 @@ def compute_averages(config, sspec_output):
 
     # radius (meters)
     summary_radius = SummarySpectralParameter(
-        id='radius', name='source radius', units='m')
+        id='radius', name='source radius', units='m', format='{:.3f}')
     sspec_output.find_outliers('radius', n=nIQR)
     radius_values = sspec_output.value_array('radius', filter_outliers=True)
     radius_err = sspec_output.error_array('radius', filter_outliers=True)
@@ -181,7 +182,7 @@ def compute_averages(config, sspec_output):
 
     # bsd, Brune stress drop (MPa)
     summary_bsd = SummarySpectralParameter(
-        id='bsd', name='Brune stress drop', units='MPa')
+        id='bsd', name='Brune stress drop', units='MPa', format='{:.3e}')
     sspec_output.find_outliers('bsd', n=nIQR)
     bsd_values = sspec_output.value_array('bsd', filter_outliers=True)
     bsd_err = sspec_output.error_array('bsd', filter_outliers=True)
@@ -201,7 +202,8 @@ def compute_averages(config, sspec_output):
     sspec_output.summary_spectral_parameters.bsd = summary_bsd
 
     # Quality factor
-    summary_Qo = SummarySpectralParameter(id='Qo', name='quality factor')
+    summary_Qo = SummarySpectralParameter(
+        id='Qo', name='quality factor', format='{:.1f}')
     sspec_output.find_outliers('Qo', n=nIQR)
     Qo_values = sspec_output.value_array('Qo', filter_outliers=True)
     Qo_err = sspec_output.error_array('Qo', filter_outliers=True)
@@ -222,7 +224,7 @@ def compute_averages(config, sspec_output):
 
     # Er (N.m)
     summary_Er = SummarySpectralParameter(
-        id='Er', name='radiated energy', units='N.m')
+        id='Er', name='radiated energy', units='N.m', format='{:.3e}')
     sspec_output.find_outliers('Er', n=nIQR)
     Er_values = sspec_output.value_array('Er', filter_outliers=True)
     nobs = len(Er_values)
@@ -236,7 +238,8 @@ def compute_averages(config, sspec_output):
 
     # Ml
     if config.compute_local_magnitude:
-        summary_Ml = SummarySpectralParameter(id='Ml', name='local magnitude')
+        summary_Ml = SummarySpectralParameter(
+            id='Ml', name='local magnitude', format='{:.2f}')
         sspec_output.find_outliers('Ml', n=nIQR)
         Ml_values = sspec_output.value_array('Ml', filter_outliers=True)
         nobs = len(Ml_values)

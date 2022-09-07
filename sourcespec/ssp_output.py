@@ -14,13 +14,16 @@ Output functions for source_spec.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
+from code import interact
 import os
 import logging
 import sqlite3
 import numpy as np
+from collections.abc import Mapping
 from datetime import datetime
 from tzlocal import get_localzone
 from sourcespec.ssp_setup import ssp_exit
+from sourcespec.ssp_data_types import sspec_out_comments
 from sourcespec.ssp_qml_output import write_qml
 from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.split('.')[-1])
@@ -74,6 +77,13 @@ def _write_parfile(config, sspec_output):
     parfilename = os.path.join(
         config.options.outdir, '{}.ssp.out'.format(evid))
     parfile = open(parfilename, 'w')
+    parfile.write(
+        '*** Note: this file is deprecated and might not contain all the '
+        'output information. ***\n')
+    parfile.write(
+        '*** It will be removed in future versions of SourceSpec. ***\n')
+    parfile.write(
+        '*** Please look at the YAML file in this directory. ***\n')
 
     hypo = config.hypo
     parfile.write(
@@ -275,7 +285,7 @@ def _write_parfile(config, sspec_output):
     Ml_mean = means.get('Ml', None)
     Ml_error = errors.get('Ml', None)
     if Ml_mean is not None:
-        parfile.write('Ml: {:.3f} +/- {:.3f} \n'.format(Ml_mean, Ml_error))
+        parfile.write('Ml: {:.3f} +/- {:.3f}\n'.format(Ml_mean, Ml_error))
 
     Er_mean = means['Er']
     Er_minus, Er_plus = errors['Er']
@@ -286,12 +296,8 @@ def _write_parfile(config, sspec_output):
         Er_mean, Er_minus_str, Er_plus_str))
 
     parfile.write('\n*** SourceSpec: {}'.format(get_versions()['version']))
-    now = datetime.now()
-    tz = get_localzone()
-    timezone = tz.tzname(now)
-    parfile.write('\n*** Run completed on: {} {}'.format(now, timezone))
-    config.end_of_run = now
-    config.end_of_run_tz = timezone
+    parfile.write('\n*** Run completed on: {} {}'.format(
+        config.end_of_run, config.end_of_run_tz))
     if config.options.run_id:
         parfile.write('\n*** Run ID: {}'.format(config.options.run_id))
     _write_author_and_agency_to_parfile(config, parfile)
@@ -299,6 +305,64 @@ def _write_parfile(config, sspec_output):
     parfile.close()
 
     logger.info('Output written to file: ' + parfilename)
+
+
+def _dict2yaml(dict_like, level=0, comments={}):
+    """Serialize a dict-like object into YAML format."""
+    if not isinstance(dict_like, Mapping):
+        return
+    fmt = dict_like.get('_format', None)
+    value_uncertainty_keys = (
+        'value', 'uncertainty', 'lower_uncertainty', 'upper_uncertainty')
+    target_dict = {
+        key: (fmt.format(value)
+              if fmt is not None and key in value_uncertainty_keys
+              else value)
+        for key, value in dict_like.items()
+        if not key.startswith('_') and value is not None
+    }
+    indent = ' '*2*level
+    # use oneliners for dict-like objects containing value and uncertainty keys
+    if set(target_dict.keys()).intersection(set(value_uncertainty_keys)):
+        oneliner = str(target_dict).replace("'", "")
+        lines = indent + oneliner + '\n'
+        return lines
+    lines = ''
+    for key, value in target_dict.items():
+        if key.startswith('_'):
+            continue
+        if value is None:
+            continue
+        if isinstance(value, Mapping):
+            if level == 0:
+                lines += '\n'
+            try:
+                comment = comments[key]
+                for line in comment.split('\n'):
+                    lines += '# {}\n'.format(line)
+            except KeyError:
+                pass
+            lines += '{}{}:\n'.format(indent, key)
+            lines += _dict2yaml(value, level+1)
+        else:
+            lines += '{}{}: {}\n'.format(indent, key, value)
+    return lines
+
+
+def _write_yaml(config, sspec_output):
+    """Write sspec output in a YAML file."""
+    if not os.path.exists(config.options.outdir):
+        os.makedirs(config.options.outdir)
+    evid = config.hypo.evid
+    yamlfilename = os.path.join(
+        config.options.outdir, '{}.ssp.yaml'.format(evid))
+    lines = _dict2yaml(sspec_output, comments=sspec_out_comments)
+    with open(yamlfilename, 'w') as fp:
+        comment = sspec_out_comments['begin']
+        for line in comment.split('\n'):
+            fp.write('# {}\n'.format(line))
+        fp.write(lines)
+    logger.info('Output written to file: ' + yamlfilename)
 
 
 def _log_db_write_error(db_err, db_file):
@@ -489,9 +553,26 @@ def _write_hypo(config, sspec_output):
 
 
 def write_output(config, sspec_output):
-    """Write results to a plain text file and/or to a SQLite database file."""
-    # Write to parfile
+    """Write results into different formats."""
+    # Add run info to output object
+    run_info = sspec_output.run_info
+    run_info.SourceSpec_version = get_versions()['version']
+    config.end_of_run = datetime.now()
+    tz = get_localzone()
+    config.end_of_run_tz = tz.tzname(config.end_of_run)
+    run_info.run_completed = '{} {}'.format(
+        config.end_of_run, config.end_of_run_tz)
+    if config.options.run_id:
+        run_info.run_id: config.options.run_id
+    run_info.author_name = config.author_name
+    run_info.author_email = config.author_email
+    run_info.agency_full_name = config.agency_full_name
+    run_info.agency_short_name = config.agency_short_name
+    run_info.agency_url = config.agency_url
+    # Write to parfile (deprecated)
     _write_parfile(config, sspec_output)
+    # Write to YAML file
+    _write_yaml(config, sspec_output)
     # Write to database, if requested
     _write_db(config, sspec_output)
     # Write to hypo file, if requested

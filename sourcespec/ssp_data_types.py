@@ -173,8 +173,9 @@ class SpectralParameter(OrderedAttribDict):
 
     def __init__(self, id, name=None, units=None, value=None, uncertainty=None,
                  lower_uncertainty=None, upper_uncertainty=None,
-                 confidence_level=None):
+                 confidence_level=None, format=None):
         self._id = id
+        self._format = format
         self.name = name
         self.units = units
         self.value = value
@@ -257,7 +258,8 @@ class SummaryStatistics(OrderedAttribDict):
 
     def __init__(self, type, value=None, uncertainty=None,
                  lower_uncertainty=None, upper_uncertainty=None,
-                 confidence_level=None, nobs=None, message=None):
+                 confidence_level=None, nobs=None, message=None,
+                 format=None):
         # type of statistics: e.g., mean, median
         self._type = type
         self.value = value
@@ -272,6 +274,7 @@ class SummaryStatistics(OrderedAttribDict):
         self.confidence_level = confidence_level
         self.nobs = nobs
         self.message = message
+        self._format = format
 
     def compact_uncertainty(self):
         """Return uncertainty in a compact form."""
@@ -283,13 +286,20 @@ class SummaryStatistics(OrderedAttribDict):
 
 class SummarySpectralParameter(OrderedAttribDict):
     """
-    A summary spectral parameter comrpising one ore more summary statistics.
+    A summary spectral parameter comprising one ore more summary statistics.
     """
 
-    def __init__(self, id, name=None, units=None):
+    def __init__(self, id, name=None, units=None, format=None):
         self._id = id
         self.name = name
         self.units = units
+        # number formatting string
+        self._format = format
+
+    def __setattr__(self, attr, value):
+        if isinstance(value, SummaryStatistics):
+            value._format = self._format
+        self[attr] = value
 
 
 class SourceSpecOutput(OrderedAttribDict):
@@ -392,3 +402,15 @@ class SourceSpecOutput(OrderedAttribDict):
             if isinstance(par, SummarySpectralParameter)
             and 'weighted_mean' in par
         }
+
+
+sspec_out_comments = {
+    'begin': 'SourceSpec output in YAML format',
+    'run_info': 'Information on the SourceSpec run',
+    'event_info': 'Information on the event',
+    'summary_spectral_parameters':
+        'Summary spectral parameters, computed using different statistics',
+    'station_parameters':
+        'Parameters describing each station and spectral measurements\n'
+        'performed at that station'
+}

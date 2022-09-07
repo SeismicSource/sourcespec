@@ -273,30 +273,32 @@ def _spec_inversion(config, spec, spec_weight):
     station_pars.Mw = SpectralParameter(
         id='Mw', value=Mw,
         lower_uncertainty=Mw_err[0], upper_uncertainty=Mw_err[1],
-        confidence_level=68.2)
+        confidence_level=68.2, format='{:.2f}')
     station_pars.fc = SpectralParameter(
         id='fc', value=fc,
         lower_uncertainty=fc_err[0], upper_uncertainty=fc_err[1],
-        confidence_level=68.2)
+        confidence_level=68.2, format='{:.3f}')
     station_pars.t_star = SpectralParameter(
         id='t_star', value=t_star,
         lower_uncertainty=t_star_err[0], upper_uncertainty=t_star_err[1],
-        confidence_level=68.2)
+        confidence_level=68.2, format='{:.3f}')
 
     # additional parameters, computed from fc, Mw and t_star
     vs = config.vs_source
     travel_time = spec.stats.travel_times[config.wave_type[0]]
     # seismic moment
-    station_pars.Mo = SpectralParameter(id='Mw', value=mag_to_moment(Mw))
+    station_pars.Mo = SpectralParameter(
+        id='Mw', value=mag_to_moment(Mw), format='{:.3e}')
     # source radius in meters
     station_pars.radius = SpectralParameter(
-        id='radius', value=source_radius(fc, vs*1e3))
+        id='radius', value=source_radius(fc, vs*1e3), format='{:.3f}')
     # Brune stress drop in MPa
     station_pars.bsd = SpectralParameter(
-        id='bsd', value=bsd(station_pars.Mo.value, station_pars.radius.value))
+        id='bsd', value=bsd(station_pars.Mo.value, station_pars.radius.value),
+        format='{:.3e}')
     # quality factor
     station_pars.Qo = SpectralParameter(
-        id='Qo', value=quality_factor(travel_time, t_star))
+        id='Qo', value=quality_factor(travel_time, t_star), format='{:.1f}')
 
     # Check post-inversion bounds for bsd
     pi_bsd_min, pi_bsd_max = config.pi_bsd_min_max or (-np.inf, np.inf)
@@ -414,6 +416,12 @@ def spectral_inversion(config, spec_st, weight_st):
     spectra = [sp for sta in stations for sp in spec_st.select(station=sta)]
 
     sspec_output = SourceSpecOutput()
+    hypo = config.hypo
+    sspec_output.event_info.event_id = hypo.evid
+    sspec_output.event_info.longitude = hypo.longitude
+    sspec_output.event_info.latitude = hypo.latitude
+    sspec_output.event_info.depth_in_km = hypo.depth
+    sspec_output.event_info.origin_time = hypo.origin_time
     for spec in sorted(spectra, key=lambda sp: sp.id):
         if spec.stats.channel[-1] != 'H':
             continue
