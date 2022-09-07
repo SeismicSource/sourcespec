@@ -343,7 +343,7 @@ def _dict2yaml(dict_like, level=0, comments={}):
             except KeyError:
                 pass
             lines += '{}{}:\n'.format(indent, key)
-            lines += _dict2yaml(value, level+1)
+            lines += _dict2yaml(value, level+1, comments)
         else:
             lines += '{}{}: {}\n'.format(indent, key, value)
     return lines
