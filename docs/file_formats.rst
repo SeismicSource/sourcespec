@@ -1,7 +1,7 @@
-.. _supported_file_formats:
+.. _file_formats:
 
 ######################
-Supported File Formats
+File Formats
 ######################
 
 Trace formats

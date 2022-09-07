@@ -86,7 +86,7 @@ Take your time to go through the generated configuration file (named
 `source_spec.conf`): the comments within the file will guide you on how to set
 up the different parameters.
 
-## Supported file formats
+## File formats
 
 ### Trace formats
 

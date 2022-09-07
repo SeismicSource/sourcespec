@@ -45,7 +45,7 @@ Contents:
    theoretical_background
    getting_started
    configuration_file
-   supported_file_formats
+   file_formats
    installation
    sample_runs
    citing
