@@ -271,7 +271,7 @@ def html_report(config, sspec_output):
     evid = hypo.evid
     run_id = config.options.run_id
     config_file = '{}.ssp.conf'.format(evid)
-    out_file = '{}.ssp.out'.format(evid)
+    yaml_file = '{}.ssp.yaml'.format(evid)
     log_file = '{}.ssp.log'.format(evid)
     map_mag = '{}.map_mag.png'.format(evid)
     map_fc = '{}.map_fc.png'.format(evid)
@@ -435,8 +435,8 @@ def html_report(config, sspec_output):
         '{ER_ERR_PLUS}': '{}'.format(_format_exponent(Er_plus, Er_mean)),
         '{CONF_FILE_BNAME}': config_file,
         '{CONF_FILE}': config_file,
-        '{OUT_FILE_BNAME}': out_file,
-        '{OUT_FILE}': out_file,
+        '{YAML_FILE_BNAME}': yaml_file,
+        '{YAML_FILE}': yaml_file,
         '{LOG_FILE_BNAME}': log_file,
         '{LOG_FILE}': log_file,
         '{MAP_MAG}': map_mag,
