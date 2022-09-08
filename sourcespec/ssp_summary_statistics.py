@@ -12,7 +12,6 @@ Post processing of station source parameters.
 import logging
 import numpy as np
 from sourcespec.ssp_setup import ssp_exit
-from sourcespec.ssp_util import mag_to_moment
 from sourcespec.ssp_data_types import (
     SummarySpectralParameter, SummaryStatistics)
 logger = logging.getLogger(__name__.split('.')[-1])
@@ -71,14 +70,6 @@ def _avg_and_std(values, errors=None, logarithmic=False):
         return average, std
 
 
-def _M0_avg_and_std(Mw_mean, Mw_error):
-    """Compute average and standard deviation for Mo starting from Mw."""
-    Mo_mean = mag_to_moment(Mw_mean)
-    Mo_min = mag_to_moment(Mw_mean - Mw_error)
-    Mo_max = mag_to_moment(Mw_mean + Mw_error)
-    return Mo_mean, (Mo_mean - Mo_min, Mo_max - Mo_mean)
-
-
 def compute_summary_statistics(config, sspec_output):
     """Compute summary statistics from station spectral parameters."""
     if len(sspec_output.station_parameters) == 0:
@@ -107,18 +98,22 @@ def compute_summary_statistics(config, sspec_output):
     # Mo (N.m)
     summary_Mo = SummarySpectralParameter(
         id='Mo', name='seismic moment', units='N.m', format='{:.3e}')
-    value, error = _M0_avg_and_std(
-        summary_Mw.mean.value, summary_Mw.mean.uncertainty)
+    sspec_output.find_outliers('Mo', n=nIQR)
+    Mo_values = sspec_output.value_array('Mo', filter_outliers=True)
+    Mo_err = sspec_output.error_array('Mo', filter_outliers=True)
+    nobs = len(Mo_values)
+    value, error = _avg_and_std(Mo_values, logarithmic=True)
     summary_Mo.mean = SummaryStatistics(
         type='mean', value=value,
         lower_uncertainty=error[0], upper_uncertainty=error[1],
-        confidence_level=68.2, nobs=nobs)
-    value, error = _M0_avg_and_std(
-        summary_Mw.weighted_mean.value, summary_Mw.weighted_mean.uncertainty)
+        confidence_level=68.2, nobs=nobs,
+        message='logarithmic mean')
+    value, error = _avg_and_std(Mo_values, Mo_err, logarithmic=True)
     summary_Mo.weighted_mean = SummaryStatistics(
         type='weighted_mean', value=value,
         lower_uncertainty=error[0], upper_uncertainty=error[1],
-        confidence_level=68.2, nobs=nobs)
+        confidence_level=68.2, nobs=nobs,
+        message='logarithmic mean')
     sspec_output.summary_spectral_parameters.Mo = summary_Mo
 
     # fc (Hz)
