@@ -34,7 +34,7 @@ def box_plots(config, sspec_output):
     param_names_units_colors = {
         'Mw': ('Mw', None, '#EE5835'),
         'fc': ('Corner Frequency', 'Hz', '#6FBA6C'),
-        't_star': ('t*', 's', '#9EBAE2'),
+        't_star': ('t-star', 's', '#9EBAE2'),
         'radius': ('Source Radius', 'm', '#FAAC64'),
         'bsd': ('Brune Stress Drop', 'MPa', '#D4ADD2'),
         'Qo': ('Quality Factor', None, '#C07131'),

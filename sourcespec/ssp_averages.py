@@ -144,7 +144,7 @@ def compute_averages(config, sspec_output):
 
     # t_star (s)
     summary_t_star = SummarySpectralParameter(
-        id='t_star', name='t*', units='s', format='{:.3f}')
+        id='t_star', name='t-star', units='s', format='{:.3f}')
     sspec_output.find_outliers('t_star', n=nIQR)
     t_star_values = sspec_output.value_array('t_star', filter_outliers=True)
     t_star_err = sspec_output.error_array('t_star', filter_outliers=True)
