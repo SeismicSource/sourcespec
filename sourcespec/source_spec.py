@@ -65,9 +65,9 @@ def main():
         from sourcespec.ssp_local_magnitude import local_magnitude
         local_magnitude(config, st, proc_st, sspec_output)
 
-    # Compute averages, find outliers
-    from sourcespec.ssp_averages import compute_averages
-    compute_averages(config, sspec_output)
+    # Compute summary statistics from station spectral parameters
+    from sourcespec.ssp_summary_statistics import compute_summary_statistics
+    compute_summary_statistics(config, sspec_output)
 
     # Save output
     from sourcespec.ssp_output import write_output

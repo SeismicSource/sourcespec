@@ -79,8 +79,8 @@ def _M0_avg_and_std(Mw_mean, Mw_error):
     return Mo_mean, (Mo_mean - Mo_min, Mo_max - Mo_mean)
 
 
-def compute_averages(config, sspec_output):
-    """Compute average source parameters, find outliers"""
+def compute_summary_statistics(config, sspec_output):
+    """Compute summary statistics from station spectral parameters."""
     if len(sspec_output.station_parameters) == 0:
         logger.info('No source parameter calculated')
         ssp_exit()
