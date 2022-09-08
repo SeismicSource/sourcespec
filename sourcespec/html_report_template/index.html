@@ -244,6 +244,12 @@
               <th scope="row">Radiated Energy (N&#183;m)</th>
               <td>{ER}<br>-{ER_ERR_MINUS}<br>+{ER_ERR_PLUS}</td>
             </tr>
+{ML_COMMENT_BEGIN}
+            <tr>
+              <th scope="row">Ml</th>
+              <td>{ML}<br>&#177;{ML_ERR}</td>
+            </tr>
+{ML_COMMENT_END}
           </tbody>
         </table>
 
@@ -294,16 +300,21 @@
                     <br/>radius<br/>(m)
                 </th>
                 <th onclick="sortTable(9, numeric=true)" scope="col">
-                  <nobr><i class="fas fa-sort"></i>&nbsp;Hypocentral</nobr>
-                    <br/>Distance<br/>(km)
-                </th>
-                <th onclick="sortTable(10, numeric=true)" scope="col">
-                  <nobr><i class="fas fa-sort"></i>&nbsp;Azimuth</nobr><br/>(°)
-                </th>
-                <th onclick="sortTable(11, numeric=true)" scope="col">
                   <nobr><i class="fas fa-sort"></i>&nbsp;Radiated</nobr>
                     <br/>Energy<br/>(N&#183;m)
                 </th>
+                <th onclick="sortTable(10, numeric=true)" scope="col">
+                  <nobr><i class="fas fa-sort"></i>&nbsp;Hypocentral</nobr>
+                    <br/>Distance<br/>(km)
+                </th>
+                <th onclick="sortTable(11, numeric=true)" scope="col">
+                  <nobr><i class="fas fa-sort"></i>&nbsp;Azimuth</nobr><br/>(°)
+                </th>
+{ML_COMMENT_BEGIN}
+                <th onclick="sortTable(12, numeric=true)" scope="col">
+                  <nobr><i class="fas fa-sort"></i>&nbsp;Ml</nobr>
+                </th>
+{ML_COMMENT_END}
               </tr>
             </thead>
             <tbody>

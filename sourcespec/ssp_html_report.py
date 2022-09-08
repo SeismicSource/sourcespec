@@ -127,7 +127,10 @@ def _format_exponent(value, reference):
 
 def _value_and_err_text(par, key, fmt):
     """Format value and error text."""
-    _par = par[key]
+    try:
+        _par = par[key]
+    except KeyError:
+        return '', ''
     if isinstance(_par, SpectralParameter):
         value = _par.value
         outlier = _par.outlier
@@ -316,10 +319,11 @@ def html_report(config, sspec_output):
         Mo_text, Mo_err_text = _value_and_err_text(par, 'Mo', '{:.3e}')
         bsd_text, bsd_err_text = _value_and_err_text(par, 'bsd', '{:.3e}')
         ra_text, ra_err_text = _value_and_err_text(par, 'radius', '{:.3f}')
+        Er_text, _ = _value_and_err_text(par, 'Er', '{:.3e}')
+        Ml_text, _ = _value_and_err_text(par, 'Ml', '{:.3f}')
         hyp_dist_text, _ =\
             _value_and_err_text(par, 'hypo_dist_in_km', '{:.3f}')
         az_text, _ = _value_and_err_text(par, 'azimuth', '{:.3f}')
-        Er_text, _ = _value_and_err_text(par, 'Er', '{:.3e}')
         replacements = {
             '{STATION_ID}': statId,
             '{STATION_TYPE}': instrument_type,
@@ -337,10 +341,22 @@ def html_report(config, sspec_output):
             '{STATION_BSD_ERR}': bsd_err_text,
             '{STATION_RA}': ra_text,
             '{STATION_RA_ERR}': ra_err_text,
+            '{STATION_ER}': Er_text,
+            '{STATION_ML}': Ml_text,
             '{STATION_DIST}': hyp_dist_text,
             '{STATION_AZ}': az_text,
-            '{STATION_ER}': Er_text,
         }
+        # Local magnitude, if computed
+        if config.compute_local_magnitude:
+            Ml_comment_begin = ''
+            Ml_comment_end = ''
+        else:
+            Ml_comment_begin = '<!--'
+            Ml_comment_end = '-->'
+        replacements.update({
+            '{ML_COMMENT_BEGIN}': Ml_comment_begin,
+            '{ML_COMMENT_END}': Ml_comment_end
+        })
         station_table_rows += _multireplace(station_table_row, replacements)
 
     # Main HTML page
@@ -446,6 +462,23 @@ def html_report(config, sspec_output):
         '{BOX_PLOTS}': box_plots,
         '{STATION_TABLE_ROWS}': station_table_rows,
     }
+
+    # Local magnitude, if computed
+    if config.compute_local_magnitude:
+        Ml_mean = means['Ml']
+        Ml_error = errors['Ml']
+        Ml_comment_begin = ''
+        Ml_comment_end = ''
+    else:
+        Ml_mean = Ml_error = np.nan
+        Ml_comment_begin = '<!--'
+        Ml_comment_end = '-->'
+    replacements.update({
+        '{ML}': '{:.2f}'.format(Ml_mean),
+        '{ML_ERR}': '{:.2f}'.format(Ml_error),
+        '{ML_COMMENT_BEGIN}': Ml_comment_begin,
+        '{ML_COMMENT_END}': Ml_comment_end
+    })
 
     # Link to event page, if defined
     event_url = config.event_url
