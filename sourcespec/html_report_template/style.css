@@ -25,6 +25,18 @@ table a:hover {
   text-decoration: underline;
 }
 
+table.summary {
+  max-width: 50%;
+}
+
+table.summary td {
+  text-align: right;
+}
+
+table.summary th[scope=col] {
+  text-align: right;
+}
+
 table.stations {
   font-size: 0.8em;
   text-align: right;

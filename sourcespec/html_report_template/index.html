@@ -196,67 +196,53 @@
         <div class="page-break"></div>
         <div class="line" id="summary_spectral_parameters"></div>
         <h2>Summary Spectral Parameters</h2>
-        <table class="table">
+        <table class="table summary">
+          <thead>
+            <tr>
+              <th></th>
+              <th scope="col">Mean</th>
+              <th scope="col">Weighted Mean</th>
+            </tr>
+          </thead>
           <tbody>
             <tr>
               <th scope="row">Mw</th>
-              <td>{MW} +/- {MW_ERR}</td>
+              <td>{MW}<br>&#177;{MW_ERR}</td>
+              <td>{MW_WEIGHT}<br>&#177;{MW_WEIGHT_ERR}</td>
             </tr>
             <tr>
-              <th scope="row">Mw (weighted):</th>
-              <td>{MW_WEIGHT} +/- {MW_WEIGHT_ERR}</td>
+              <th scope="row">Mo (N.m)</th>
+              <td>{M0}<br>-{M0_ERR_MINUS}<br>+{M0_ERR_PLUS}</td>
+              <td>{M0_WEIGHT}<br>-{M0_WEIGHT_ERR_MINUS}<br>+{M0_WEIGHT_ERR_PLUS}</td>
             </tr>
             <tr>
-              <th scope="row">Mo:</th>
-              <td>{M0} /- {M0_ERR_MINUS} /+ {M0_ERR_PLUS} N.m</td>
+              <th scope="row">fc (Hz)</th>
+              <td>{FC}<br>-{FC_ERR_MINUS}<br>+{FC_ERR_PLUS}</td>
+              <td>{FC_WEIGHT}<br>-{FC_WEIGHT_ERR_MINUS}<br>+{FC_WEIGHT_ERR_PLUS}</td>
             </tr>
             <tr>
-              <th scope="row">Mo (weighted):</th>
-              <td>{M0_WEIGHT} /- {M0_WEIGHT_ERR_MINUS} /+ {M0_WEIGHT_ERR_PLUS} N.m</td>
+              <th scope="row">t_star (s)</th>
+              <td>{TSTAR}<br>&#177;{TSTAR_ERR}</td>
+              <td>{TSTAR_WEIGHT}<br>&#177;{TSTAR_WEIGHT_ERR}</td>
             </tr>
             <tr>
-              <th scope="row">fc:</th>
-              <td>{FC} /- {FC_ERR_MINUS} /+ {FC_ERR_PLUS} Hz</td>
+              <th scope="row">Qo</th>
+              <td>{Q0}<br>&#177;{Q0_ERR}</td>
+              <td>{Q0_WEIGHT}<br>&#177;{Q0_WEIGHT_ERR}</td>
             </tr>
             <tr>
-              <th scope="row">fc (weighted):</th>
-              <td>{FC_WEIGHT} /- {FC_WEIGHT_ERR_MINUS} /+ {FC_WEIGHT_ERR_PLUS} Hz</td>
+              <th scope="row">Source Radius (m)</th>
+              <td>{RADIUS}<br>-{RADIUS_ERR_MINUS}<br>+{RADIUS_ERR_PLUS}</td>
+              <td>{RADIUS_WEIGHT}<br>-{RADIUS_WEIGHT_ERR_MINUS}<br>+{RADIUS_WEIGHT_ERR_PLUS}</td>
             </tr>
             <tr>
-              <th scope="row">t_star:</th>
-              <td>{TSTAR} +/- {TSTAR_ERR} s</td>
+              <th scope="row">Brune Stress Drop (MPa)</th>
+              <td>{BSD}<br>-{BSD_ERR_MINUS}<br>+{BSD_ERR_PLUS}</td>
+              <td>{BSD_WEIGHT}<br>-{BSD_WEIGHT_ERR_MINUS}<br>+{BSD_WEIGHT_ERR_PLUS}</td>
             </tr>
             <tr>
-              <th scope="row">t_star (weighted):</th>
-              <td>{TSTAR_WEIGHT} +/- {TSTAR_WEIGHT_ERR} s</td>
-            </tr>
-            <tr>
-              <th scope="row">Qo:</th>
-              <td>{Q0} +/- {Q0_ERR}</td>
-            </tr>
-            <tr>
-              <th scope="row">Qo (weighted):</th>
-              <td>{Q0_WEIGHT} +/- {Q0_WEIGHT_ERR}</td>
-            </tr>
-            <tr>
-              <th scope="row">Source Radius:</th>
-              <td>{RADIUS} /- {RADIUS_ERR_MINUS} /+ {RADIUS_ERR_PLUS} m</td>
-            </tr>
-            <tr>
-              <th scope="row">Source Radius (weighted):</th>
-              <td>{RADIUS_WEIGHT} /- {RADIUS_WEIGHT_ERR_MINUS} /+ {RADIUS_WEIGHT_ERR_PLUS} m</td>
-            </tr>
-            <tr>
-              <th scope="row">Brune Stress Drop:</th>
-              <td>{BSD} /- {BSD_ERR_MINUS} /+ {BSD_ERR_PLUS} MPa</td>
-            </tr>
-            <tr>
-              <th scope="row">Brune Stress Drop (weighted):</th>
-              <td>{BSD_WEIGHT} /- {BSD_WEIGHT_ERR_MINUS} /+ {BSD_WEIGHT_ERR_PLUS} MPa</td>
-            </tr>
-            <tr>
-              <th scope="row">Radiated Energy:</th>
-              <td>{ER} /- {ER_ERR_MINUS} /+ {ER_ERR_PLUS} N.m</td>
+              <th scope="row">Radiated Energy (N.m)</th>
+              <td>{ER}<br>-{ER_ERR_MINUS}<br>+{ER_ERR_PLUS}</td>
             </tr>
           </tbody>
         </table>
