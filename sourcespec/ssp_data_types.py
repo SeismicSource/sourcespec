@@ -244,10 +244,12 @@ class StationParameters(OrderedAttribDict):
             self._params[parname] = par.value
             if par.uncertainty is not None:
                 self._params_err[parname] = (par.uncertainty, par.uncertainty)
-            else:
+            elif par.lower_uncertainty is not None:
                 self._params_err[parname] = (
                     par.lower_uncertainty, par.upper_uncertainty
                 )
+            else:
+                self._params_err[parname] = (np.nan, np.nan)
             self._is_outlier[parname] = par.outlier
 
 
@@ -401,6 +403,22 @@ class SourceSpecOutput(OrderedAttribDict):
             for parname, par in self.summary_spectral_parameters.items()
             if isinstance(par, SummarySpectralParameter)
             and 'weighted_mean' in par
+        }
+
+    def percentiles_values(self):
+        return {
+            parname: par.percentiles.value
+            for parname, par in self.summary_spectral_parameters.items()
+            if isinstance(par, SummarySpectralParameter)
+            and 'percentiles' in par
+        }
+
+    def percentiles_uncertainties(self):
+        return {
+            parname: par.percentiles.compact_uncertainty()
+            for parname, par in self.summary_spectral_parameters.items()
+            if isinstance(par, SummarySpectralParameter)
+            and 'percentiles' in par
         }
 
 

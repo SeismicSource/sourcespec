@@ -226,8 +226,9 @@ displacement spectra, following the approach described in
 
 As a bonus, local magnitude :math:`M_l` can be computed as well.
 
-Event averages are computed from single station estimates. Outliers are
-rejected based on the `interquartile
+Event summaries (mean, weighted mean, percentiles) are computed from single
+station estimates. For mean and weighted mean estimation, outliers are rejected
+based on the `interquartile
 range <https://en.wikipedia.org/wiki/Interquartile_range>`__ rule.
 
 

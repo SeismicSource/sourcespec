@@ -10,11 +10,22 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 - New output file in YAML format. The old `.out` file is still available but
   deprecated.
-- HTML report: better scrollbars for station table across all the browsers
+
+### Post-Inversion
+
+- New event summary statistics: percentiles
+
+### Config file
+
+- Config file section `AVERAGES PARAMETERS` renamed to
+  `SUMMARY STATISTICS PARAMETERS`
+- New config parameters for percentiles calculation: `lower_percentage`,
+  `mid_percentage` and `upper_percentage`
 
 ### Bugfixes
 
 - Fix for noise window not showing up in PNG trace plots in some cases
+- HTML report: better scrollbars for station table across all the browsers
 
 ## v1.6 - 2022-08-02
 

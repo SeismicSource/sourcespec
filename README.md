@@ -179,7 +179,7 @@ As an option, station maps can be created (requires [Cartopy]):
 - `EVID.map_fc.png[.pdf]`: station map with symbols colored by estimated
   corner frequency
 
-As an option, the retrieved source parameters (per station and average) can be
+As an option, the retrieved source parameters (per station and summary) can be
 appended to a [SQLite] database, whose path is defined in the configuration
 file.
 
@@ -239,8 +239,9 @@ following the approach described in [Lancieri et al. (2012)][Lancieri2012].
 
 As a bonus, local magnitude $M_l$ can be computed as well.
 
-Event averages are computed from single station estimates. Outliers are
-rejected based on the [interquartile range] rule.
+Event summaries (mean, weighted mean, percentiles) are computed from single
+station estimates. For mean and weighted mean estimation, outliers are rejected
+based on the [interquartile range] rule.
 
 See the official [documentation] for more details.
 
