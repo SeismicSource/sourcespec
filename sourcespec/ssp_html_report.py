@@ -276,9 +276,13 @@ def html_report(config, sspec_output):
     config_file = '{}.ssp.conf'.format(evid)
     yaml_file = '{}.ssp.yaml'.format(evid)
     log_file = '{}.ssp.log'.format(evid)
-    map_mag = '{}.map_mag.png'.format(evid)
-    map_fc = '{}.map_fc.png'.format(evid)
-    box_plots = '{}.boxplot.png'.format(evid)
+    station_maps = config.figures['station_maps']
+    map_mag = [mapfile for mapfile in station_maps if 'map_mag' in mapfile][0]
+    map_mag = os.path.basename(map_mag)
+    map_fc = [mapfile for mapfile in station_maps if 'map_fc' in mapfile][0]
+    map_fc = os.path.basename(map_fc)
+    box_plots = config.figures['boxplots'][0]
+    box_plots = os.path.basename(box_plots)
 
     # Trace plot files
     traces_plot = open(traces_plot_html).read()

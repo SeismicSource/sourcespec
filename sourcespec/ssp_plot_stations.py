@@ -179,7 +179,12 @@ def _make_basemap(config, maxdist):
     stamen_terrain = CachedTiler(cimgt.Stamen('terrain-background'), tile_dir)
     # Create a GeoAxes
     figsize = (7.5, 7.5)
-    fig = plt.figure(figsize=figsize, dpi=200)
+    # Reduce dpi for vector formats, since the only raster are the maptiles
+    if config.plot_save_format in ['pdf', 'pdf_multipage', 'svg']:
+        dpi = 72
+    else:
+        dpi = 200
+    fig = plt.figure(figsize=figsize, dpi=dpi)
     ax = fig.add_subplot(111, projection=stamen_terrain.crs)
     # Add event information as a title
     textstr = 'evid: {} \nlon: {:.3f} lat: {:.3f} depth: {:.1f} km'

@@ -59,6 +59,9 @@ def _make_fig(config, nlines, ncols):
         figsize = (16, 18)
     if config.plot_show:
         dpi = 100
+    # Reduce dpi for vector formats, since the only raster is the trace
+    elif config.plot_save_format in ['pdf', 'pdf_multipage', 'svg']:
+        dpi = 72
     else:
         dpi = 300
     fig = plt.figure(figsize=figsize, dpi=dpi)

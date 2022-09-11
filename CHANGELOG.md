@@ -10,6 +10,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 - New output file in YAML format. The old `.out` file is still available but
   deprecated.
+- Support for SVG format for plot files (can be used in HTML output as
+  alternative to PNG)
 
 ### Post-Inversion
 

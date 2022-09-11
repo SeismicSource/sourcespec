@@ -162,21 +162,21 @@ The SourceSpec main code, `source_spec` will produce the following output files
 - `EVID.xml`: updated StationXML file with the results of the SourceSpec
   inversion (only if an input StationXML file is provided)
 
-The following plots will be created, in png or pdf format:
+The following plots will be created, in png, pdf or svg format:
 
-- `EVID.traces.png[.pdf]`: trace plots
-- `EVID.ssp.png[.pdf]`: spectral plots
-- `EVID.sspweight.png[.pdf]`: spectral weight plots
-- `EVID.boxplot.png[.pdf]`: [box plots][box_plot] for the earthquake source
+- `EVID.traces.png[.pdf,.svg]`: trace plots
+- `EVID.ssp.png[.pdf,.svg]`: spectral plots
+- `EVID.sspweight.png[.pdf,.svg]`: spectral weight plots
+- `EVID.boxplot.png[.pdf,.svg]`: [box plots][box_plot] for the earthquake source
   parameters retrieved at each station
 - Misfit plots, when using "grid search" or "importance sampling" for the
   spectral inversion
 
 As an option, station maps can be created (requires [Cartopy]):
 
-- `EVID.map_mag.png[.pdf]`: station map with symbols colored by estimated
+- `EVID.map_mag.png[.pdf,.svg]`: station map with symbols colored by estimated
   moment magnitude
-- `EVID.map_fc.png[.pdf]`: station map with symbols colored by estimated
+- `EVID.map_fc.png[.pdf,.svg]`: station map with symbols colored by estimated
   corner frequency
 
 As an option, the retrieved source parameters (per station and summary) can be
