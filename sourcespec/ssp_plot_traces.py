@@ -10,7 +10,7 @@ Trace plotting routine.
     (http://www.cecill.info/licences.en.html)
 """
 import os
-import math
+import numpy as np
 import logging
 from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
@@ -44,7 +44,7 @@ def _nplots(config, st, maxlines, ncols):
     else:
         nplots = len(set(tr.id[:-1] for tr in st if not tr.stats.ignore))
     nplots = len(set(tr.id[:-1] for tr in st))
-    nlines = int(math.ceil(nplots/ncols))
+    nlines = int(np.ceil(nplots/ncols))
     if nlines > maxlines:
         nlines = maxlines
     if nplots < ncols:
@@ -57,13 +57,12 @@ def _make_fig(config, nlines, ncols):
         figsize = (16, 9)
     else:
         figsize = (16, 18)
-    if config.plot_show:
-        dpi = 100
-    # Reduce dpi for vector formats, since the only raster is the trace
-    elif config.plot_save_format in ['pdf', 'pdf_multipage', 'svg']:
-        dpi = 72
-    else:
+    # high dpi needed to rasterize png
+    if config.plot_save_format == 'png':
         dpi = 300
+    # vector formats (pdf, svg) do not have rasters
+    else:
+        dpi = 72
     fig = plt.figure(figsize=figsize, dpi=dpi)
     # Create an invisible axis and use it for title and footer
     ax0 = fig.add_subplot(111, label='ax0')
@@ -160,6 +159,31 @@ def _savefig(config, figures):
         pdf.close()
 
 
+def _plot_min_max(ax, x_vals, y_vals, linewidth, color, alpha, zorder):
+    """Quick and dirty plot using less points. Useful for vector plotting."""
+    ax_width_in_pixels = int(np.ceil(ax.bbox.width))
+    nsamples = len(x_vals)
+    samples_per_pixel = int(np.ceil(nsamples/ax_width_in_pixels))
+    # find the closest multiple of samples_per_pixel (rounded down)
+    nsamples = nsamples - nsamples % samples_per_pixel
+    # resample x_vals
+    x_vals = x_vals[:nsamples:samples_per_pixel]
+    # reshape y_vals so that each row has a number of elements equal to
+    # samples_per_pixel
+    y_vals = y_vals[:nsamples].reshape(-1, samples_per_pixel)
+    # find min and max for each row
+    y_min = y_vals.min(axis=1)
+    y_max = y_vals.max(axis=1)
+    # double the number of elements in x_vals
+    dx = x_vals[1] - x_vals[0]
+    x_vals = np.column_stack((x_vals, x_vals+dx/2)).flatten()
+    # alternate mins and maxs in y_vals
+    y_vals = np.column_stack((y_min, y_max)).flatten()
+    ax.plot(
+        x_vals, y_vals, linewidth=linewidth, color=color, alpha=alpha,
+        zorder=zorder)
+
+
 def _plot_trace(config, trace, ntraces, tmax,
                 ax, ax_text, trans, trans3, path_effects):
     orientation = trace.stats.channel[-1]
@@ -178,8 +202,14 @@ def _plot_trace(config, trace, ntraces, tmax,
         alpha = 0.3
     else:
         alpha = 1.0
-    ax.plot(trace.times(), trace, color=color,
-            alpha=alpha, zorder=20, rasterized=True)
+    if config.plot_save_format == 'png':
+        ax.plot(trace.times(), trace, linewidth=1, color=color,
+                alpha=alpha, zorder=20, rasterized=True)
+    else:
+        # reduce the number of points to plot for vector formats
+        _plot_min_max(
+            ax, trace.times(), trace.data, linewidth=1, color=color,
+            alpha=alpha, zorder=20)
     ax.text(0.05, trace.data.mean(), trace.stats.channel,
             fontsize=8, color=color, transform=trans3, zorder=22,
             path_effects=path_effects)

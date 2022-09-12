@@ -12,6 +12,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
   deprecated.
 - Support for SVG format for plot files (can be used in HTML output as
   alternative to PNG)
+- Improved trace plot quality for vector formats (PDF, SVG)
 
 ### Post-Inversion
 
