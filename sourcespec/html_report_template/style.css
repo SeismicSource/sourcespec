@@ -330,11 +330,11 @@ a.article:hover {
     PRINTING
 ----------------------------------------------------- */
 
-#print {
+.print {
   display: none;
 }
-.page-break {
-  display: none;
+.dontprint {
+  display: block;
 }
 
 @page {
@@ -351,15 +351,19 @@ a.article:hover {
   #content {
     width: 100%;
   }
-  #print {
+  .print {
     display: block;
+  }
+  .dontprint {
+    display: none;
   }
   .line {
     display: none;
   }
-  .page-break {
-    display: block;
-    page-break-before: always;
+  .page
+  {
+    page-break-after: always;
+    page-break-inside: avoid;
   }
   .table_wrapper{
     height: auto;

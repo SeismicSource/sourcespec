@@ -288,25 +288,25 @@ def html_report(config, sspec_output):
     traces_plot = open(traces_plot_html).read()
     traces_plot_files = config.figures['traces']
     traces_plots = ''
-    traces_plot_id = ''
+    traces_plot_class = ''
     for traces_plot_file in sorted(traces_plot_files):
         traces_plot_file = os.path.basename(traces_plot_file)
-        traces_plots += traces_plot.replace(
-            '{TRACES_PLOT_ID}', traces_plot_id).replace(
-            '{TRACES_PLOT_FILE}', traces_plot_file)
-        traces_plot_id = ' id="print"'
+        traces_plots += traces_plot.\
+            replace('{TRACES_PLOT_CLASS}', traces_plot_class).\
+            replace('{TRACES_PLOT_FILE}', traces_plot_file)
+        traces_plot_class = ' class="print"'
 
     # Spectral plot files
     spectra_plot = open(spectra_plot_html).read()
     spectra_plot_files = config.figures['spectra_regular']
     spectra_plots = ''
-    spectra_plot_id = ''
+    spectra_plot_class = ''
     for spectra_plot_file in sorted(spectra_plot_files):
         spectra_plot_file = os.path.basename(spectra_plot_file)
-        spectra_plots += spectra_plot.replace(
-            '{SPECTRA_PLOT_ID}', spectra_plot_id).replace(
-            '{SPECTRA_PLOT_FILE}', spectra_plot_file)
-        spectra_plot_id = ' id="print"'
+        spectra_plots += spectra_plot.\
+            replace('{SPECTRA_PLOT_CLASS}', spectra_plot_class).\
+            replace('{SPECTRA_PLOT_FILE}', spectra_plot_file)
+        spectra_plot_class = ' class="print"'
 
     # Station table
     station_table_row = open(station_table_row_html).read()

@@ -124,6 +124,7 @@
             </button>
         </div>
 
+      <div class="page">
         <h2>Event Summary</h2>
         <table class="table">
           <tbody>
@@ -172,20 +173,23 @@
             </tr>
           </tbody>
         </table>
+      </div> <!-- page -->
 
-        <div class="page-break"></div>
+      <div class="page">
         <div class="line" id="moment_magnitude"></div>
         <h2>Moment Magnitude</h2>
         <div class="item" data-src="{MAP_MAG}">
           <img class="station_map" src="{MAP_MAG}"/>
         </div>
+      </div> <!-- page -->
 
-        <div class="page-break"></div>
+      <div class="page">
         <div class="line" id="corner_frequency"></div>
         <h2>Corner Frequency</h2>
         <div class="item" data-src="{MAP_FC}">
           <img class="station_map" src="{MAP_FC}"/>
         </div>
+      </div> <!-- page -->
 
         <div class="line" id="traces"></div>
         {TRACES_PLOTS}
@@ -193,7 +197,7 @@
         <div class="line" id="spectra"></div>
         {SPECTRA_PLOTS}
 
-        <div class="page-break"></div>
+      <div class="page">
         <div class="line" id="summary_spectral_parameters"></div>
         <h2>Summary Spectral Parameters</h2>
         <table class="table summary">
@@ -252,15 +256,17 @@
 {ML_COMMENT_END}
           </tbody>
         </table>
+      </div> <!-- page -->
 
-        <div class="page-break"></div>
+      <div class="page">
         <div class="line" id="box_plots"></div>
         <h2>Spectral Parameter Box Plots</h2>
         <div class="item" data-src="{BOX_PLOTS}">
           <img class="box_plot" src="{BOX_PLOTS}"/>
         </div>
+      </div> <!-- page -->
 
-        <div class="page-break"></div>
+      <div class="page">
         <div class="line" id="station_parameters"></div>
         <h2>Station Parameters</h2>
         <h6>Note: outliers are greyed out</h6>
@@ -322,16 +328,18 @@
             </tbody>
           </table>
         </div>
+      </div> <!-- page -->
 
 {MISFIT_PLOT_COMMENT_BEGIN}
-        <div class="page-break"></div>
+      <div class="page">
         <div class="line" id="misfit_plots"></div>
         <h2>Misfit plots</h2>
         <i class="fas fa-image"></i>&nbsp;&nbsp;
         <a href="misfit.html">Click here to go to misfit plot page</a>
+      </div>
 {MISFIT_PLOT_COMMENT_END}
 
-        <div class="page-break"></div>
+      <div class="dontprint">
         <div class="line" id="files"></div>
         <h2>Files</h2>
         <table class="table">
@@ -363,6 +371,7 @@
 {QUAKEML_FILE_LINK}
           </tbody>
         </table>
+      </div> <!-- dontprint -->
 
       </div>
     </div>
