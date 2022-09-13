@@ -289,10 +289,18 @@ def html_report(config, sspec_output):
     traces_plot_files = config.figures['traces']
     traces_plots = ''
     traces_plot_class = ''
-    for traces_plot_file in sorted(traces_plot_files):
+    n_traces_plot_files = len(traces_plot_files)
+    for n, traces_plot_file in enumerate(sorted(traces_plot_files)):
+        if n_traces_plot_files > 1:
+            traces_plot_counter =\
+                '<span class="print_inline">&nbsp;({} of {})</span>'.format(
+                    n+1, n_traces_plot_files)
+        else:
+            traces_plot_counter = ''
         traces_plot_file = os.path.basename(traces_plot_file)
         traces_plots += traces_plot.\
             replace('{TRACES_PLOT_CLASS}', traces_plot_class).\
+            replace('{TRACES_PLOT_COUNTER}', traces_plot_counter).\
             replace('{TRACES_PLOT_FILE}', traces_plot_file)
         traces_plot_class = ' class="print"'
 
@@ -301,10 +309,18 @@ def html_report(config, sspec_output):
     spectra_plot_files = config.figures['spectra_regular']
     spectra_plots = ''
     spectra_plot_class = ''
-    for spectra_plot_file in sorted(spectra_plot_files):
+    n_spectra_plot_files = len(spectra_plot_files)
+    for n, spectra_plot_file in enumerate(sorted(spectra_plot_files)):
+        if n_spectra_plot_files > 1:
+            spectra_plot_counter =\
+                '<span class="print_inline">&nbsp;({} of {})</span>'.format(
+                    n+1, n_spectra_plot_files)
+        else:
+            spectra_plot_counter = ''
         spectra_plot_file = os.path.basename(spectra_plot_file)
         spectra_plots += spectra_plot.\
             replace('{SPECTRA_PLOT_CLASS}', spectra_plot_class).\
+            replace('{SPECTRA_PLOT_COUNTER}', spectra_plot_counter).\
             replace('{SPECTRA_PLOT_FILE}', spectra_plot_file)
         spectra_plot_class = ' class="print"'
 

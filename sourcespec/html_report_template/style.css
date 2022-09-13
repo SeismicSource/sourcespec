@@ -336,6 +336,9 @@ a.article:hover {
 .dontprint {
   display: block;
 }
+.print_inline {
+  display: none;
+}
 
 @page {
   size: A4 landscape;
@@ -356,6 +359,9 @@ a.article:hover {
   }
   .dontprint {
     display: none;
+  }
+  .print_inline {
+    display: inline;
   }
   .line {
     display: none;
