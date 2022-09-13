@@ -87,6 +87,7 @@ def box_plots(config, sspec_output):
         else:
             ax.set_xlabel('{} ({})'.format(name, unit))
         ax.tick_params(left=False, labelleft=False)
+        ax.minorticks_on()
 
     # Add event information as a title
     hypo = config.hypo
