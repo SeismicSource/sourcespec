@@ -381,39 +381,39 @@ def html_report(config, sspec_output):
 
     # Main HTML page
     means = sspec_output.mean_values()
-    errors = sspec_output.mean_uncertainties()
-    means_weight = sspec_output.weighted_mean_values()
-    errors_weight = sspec_output.weighted_mean_uncertainties()
+    mean_errors = sspec_output.mean_uncertainties()
+    wmeans = sspec_output.weighted_mean_values()
+    wmean_errors = sspec_output.weighted_mean_uncertainties()
     Mw_mean = means['Mw']
-    Mw_error = errors['Mw']
-    Mw_mean_weight = means_weight['Mw']
-    Mw_error_weight = errors_weight['Mw']
+    Mw_mean_error = mean_errors['Mw']
+    Mw_wmean = wmeans['Mw']
+    Mw_wmean_error = wmean_errors['Mw']
     Mo_mean = means['Mo']
-    Mo_minus, Mo_plus = errors['Mo']
-    Mo_mean_weight = means_weight['Mo']
-    Mo_minus_weight, Mo_plus_weight = errors_weight['Mo']
+    Mo_mean_error_minus, Mo_mean_error_plus = mean_errors['Mo']
+    Mo_wmean = wmeans['Mo']
+    Mo_wmean_error_minus, Mo_wmean_error_plus = wmean_errors['Mo']
     fc_mean = means['fc']
-    fc_minus, fc_plus = errors['fc']
-    fc_mean_weight = means_weight['fc']
-    fc_minus_weight, fc_plus_weight = errors_weight['fc']
+    fc_mean_error_minus, fc_mean_error_plus = mean_errors['fc']
+    fc_wmean = wmeans['fc']
+    fc_wmean_error_minus, fc_wmean_error_plus = wmean_errors['fc']
     t_star_mean = means['t_star']
-    t_star_error = errors['t_star']
-    t_star_mean_weight = means_weight['t_star']
-    t_star_error_weight = errors_weight['t_star']
+    t_star_mean_error = mean_errors['t_star']
+    t_star_wmean = wmeans['t_star']
+    t_star_wmean_error = wmean_errors['t_star']
     Qo_mean = means['Qo']
-    Qo_error = errors['Qo']
-    Qo_mean_weight = means_weight['Qo']
-    Qo_error_weight = errors_weight['Qo']
+    Qo_mean_error = mean_errors['Qo']
+    Qo_wmean = wmeans['Qo']
+    Qo_wmean_error = wmean_errors['Qo']
     ra_mean = means['radius']
-    ra_minus, ra_plus = errors['radius']
-    ra_mean_weight = means_weight['radius']
-    ra_minus_weight, ra_plus_weight = errors_weight['radius']
+    ra_mean_error_minus, ra_mean_error_plus = mean_errors['radius']
+    ra_wmean = wmeans['radius']
+    ra_wmean_error_minus, ra_wmean_error_plus = wmean_errors['radius']
     bsd_mean = means['bsd']
-    bsd_minus, bsd_plus = errors['bsd']
-    bsd_mean_weight = means_weight['bsd']
-    bsd_minus_weight, bsd_plus_weight = errors_weight['bsd']
+    bsd_mean_error_minus, bsd_mean_error_plus = mean_errors['bsd']
+    bsd_wmean = wmeans['bsd']
+    bsd_wmean_error_minus, bsd_wmean_error_plus = wmean_errors['bsd']
     Er_mean = means['Er']
-    Er_minus, Er_plus = errors['Er']
+    Er_mean_error_minus, Er_mean_error_plus = mean_errors['Er']
     replacements = {
         '{LOGO_FILE}': logo_file,
         '{VERSION}': ssp_version,
@@ -426,49 +426,55 @@ def html_report(config, sspec_output):
         '{EVENT_LATITUDE}': '{:7.3f}'.format(hypo.latitude),
         '{EVENT_DEPTH}': '{:5.1f}'.format(hypo.depth),
         '{ORIGIN_TIME}': '{}'.format(hypo.origin_time),
-        '{MW}': '{:.2f}'.format(Mw_mean),
-        '{MW_ERR}': '{:.2f}'.format(Mw_error),
-        '{MW_WEIGHT}': '{:.2f}'.format(Mw_mean_weight),
-        '{MW_WEIGHT_ERR}': '{:.2f}'.format(Mw_error_weight),
-        '{M0}': '{:.3e}'.format(Mo_mean),
-        '{M0_ERR_MINUS}': '{}'.format(_format_exponent(Mo_minus, Mo_mean)),
-        '{M0_ERR_PLUS}': '{}'.format(_format_exponent(Mo_plus, Mo_mean)),
-        '{M0_WEIGHT}': '{:.3e}'.format(Mo_mean_weight),
-        '{M0_WEIGHT_ERR_MINUS}': '{}'.format(
-            _format_exponent(Mo_minus_weight, Mo_mean_weight)),
-        '{M0_WEIGHT_ERR_PLUS}': '{}'.format(
-            _format_exponent(Mo_plus_weight, Mo_mean_weight)),
-        '{FC}': '{:.3f}'.format(fc_mean),
-        '{FC_ERR_MINUS}': '{:.3f}'.format(fc_minus),
-        '{FC_ERR_PLUS}': '{:.3f}'.format(fc_plus),
-        '{FC_WEIGHT}': '{:.3f}'.format(fc_mean_weight),
-        '{FC_WEIGHT_ERR_MINUS}': '{:.3f}'.format(fc_minus_weight),
-        '{FC_WEIGHT_ERR_PLUS}': '{:.3f}'.format(fc_plus_weight),
-        '{TSTAR}': '{:.3f}'.format(t_star_mean),
-        '{TSTAR_ERR}': '{:.3f}'.format(t_star_error),
-        '{TSTAR_WEIGHT}': '{:.3f}'.format(t_star_mean_weight),
-        '{TSTAR_WEIGHT_ERR}': '{:.3f}'.format(t_star_error_weight),
-        '{Q0}': '{:.1f}'.format(Qo_mean),
-        '{Q0_ERR}': '{:.1f}'.format(Qo_error),
-        '{Q0_WEIGHT}': '{:.1f}'.format(Qo_mean_weight),
-        '{Q0_WEIGHT_ERR}': '{:.1f}'.format(Qo_error_weight),
-        '{RADIUS}': '{:.3f}'.format(ra_mean),
-        '{RADIUS_ERR_MINUS}': '{:.3f}'.format(ra_minus),
-        '{RADIUS_ERR_PLUS}': '{:.3f}'.format(ra_plus),
-        '{RADIUS_WEIGHT}': '{:.3f}'.format(ra_mean_weight),
-        '{RADIUS_WEIGHT_ERR_MINUS}': '{:.3f}'.format(ra_minus_weight),
-        '{RADIUS_WEIGHT_ERR_PLUS}': '{:.3f}'.format(ra_plus_weight),
-        '{BSD}': '{:.3e}'.format(bsd_mean),
-        '{BSD_ERR_MINUS}': '{}'.format(_format_exponent(bsd_minus, bsd_mean)),
-        '{BSD_ERR_PLUS}': '{}'.format(_format_exponent(bsd_plus, bsd_mean)),
-        '{BSD_WEIGHT}': '{:.3e}'.format(bsd_mean_weight),
-        '{BSD_WEIGHT_ERR_MINUS}': '{}'.format(
-            _format_exponent(bsd_minus_weight, bsd_mean_weight)),
-        '{BSD_WEIGHT_ERR_PLUS}': '{}'.format(
-            _format_exponent(bsd_plus_weight, bsd_mean_weight)),
-        '{ER}': '{:.3e}'.format(Er_mean),
-        '{ER_ERR_MINUS}': '{}'.format(_format_exponent(Er_minus, Er_mean)),
-        '{ER_ERR_PLUS}': '{}'.format(_format_exponent(Er_plus, Er_mean)),
+        '{MW_MEAN}': '{:.2f}'.format(Mw_mean),
+        '{MW_MEAN_ERR}': '{:.2f}'.format(Mw_mean_error),
+        '{MW_WMEAN}': '{:.2f}'.format(Mw_wmean),
+        '{MW_WMEAN_ERR}': '{:.2f}'.format(Mw_wmean_error),
+        '{M0_MEAN}': '{:.3e}'.format(Mo_mean),
+        '{M0_MEAN_ERR_MINUS}': '{}'.format(
+            _format_exponent(Mo_mean_error_minus, Mo_mean)),
+        '{M0_MEAN_ERR_PLUS}': '{}'.format(
+            _format_exponent(Mo_mean_error_plus, Mo_mean)),
+        '{M0_WMEAN}': '{:.3e}'.format(Mo_wmean),
+        '{M0_WMEAN_ERR_MINUS}': '{}'.format(
+            _format_exponent(Mo_wmean_error_minus, Mo_wmean)),
+        '{M0_WMEAN_ERR_PLUS}': '{}'.format(
+            _format_exponent(Mo_wmean_error_plus, Mo_wmean)),
+        '{FC_MEAN}': '{:.3f}'.format(fc_mean),
+        '{FC_MEAN_ERR_MINUS}': '{:.3f}'.format(fc_mean_error_minus),
+        '{FC_MEAN_ERR_PLUS}': '{:.3f}'.format(fc_mean_error_plus),
+        '{FC_WMEAN}': '{:.3f}'.format(fc_wmean),
+        '{FC_WMEAN_ERR_MINUS}': '{:.3f}'.format(fc_wmean_error_minus),
+        '{FC_WMEAN_ERR_PLUS}': '{:.3f}'.format(fc_wmean_error_plus),
+        '{TSTAR_MEAN}': '{:.3f}'.format(t_star_mean),
+        '{TSTAR_MEAN_ERR}': '{:.3f}'.format(t_star_mean_error),
+        '{TSTAR_WMEAN}': '{:.3f}'.format(t_star_wmean),
+        '{TSTAR_WMEAN_ERR}': '{:.3f}'.format(t_star_wmean_error),
+        '{Q0_MEAN}': '{:.1f}'.format(Qo_mean),
+        '{Q0_MEAN_ERR}': '{:.1f}'.format(Qo_mean_error),
+        '{Q0_WMEAN}': '{:.1f}'.format(Qo_wmean),
+        '{Q0_WMEAN_ERR}': '{:.1f}'.format(Qo_wmean_error),
+        '{RADIUS_MEAN}': '{:.3f}'.format(ra_mean),
+        '{RADIUS_MEAN_ERR_MINUS}': '{:.3f}'.format(ra_mean_error_minus),
+        '{RADIUS_MEAN_ERR_PLUS}': '{:.3f}'.format(ra_mean_error_plus),
+        '{RADIUS_WMEAN}': '{:.3f}'.format(ra_wmean),
+        '{RADIUS_WMEAN_ERR_MINUS}': '{:.3f}'.format(ra_wmean_error_minus),
+        '{RADIUS_WMEAN_ERR_PLUS}': '{:.3f}'.format(ra_wmean_error_plus),
+        '{BSD_MEAN}': '{:.3e}'.format(bsd_mean),
+        '{BSD_MEAN_ERR_MINUS}': '{}'.format(
+            _format_exponent(bsd_mean_error_minus, bsd_mean)),
+        '{BSD_MEAN_ERR_PLUS}': '{}'.format(
+            _format_exponent(bsd_mean_error_plus, bsd_mean)),
+        '{BSD_WMEAN}': '{:.3e}'.format(bsd_wmean),
+        '{BSD_WMEAN_ERR_MINUS}': '{}'.format(
+            _format_exponent(bsd_wmean_error_minus, bsd_wmean)),
+        '{BSD_WMEAN_ERR_PLUS}': '{}'.format(
+            _format_exponent(bsd_wmean_error_plus, bsd_wmean)),
+        '{ER_MEAN}': '{:.3e}'.format(Er_mean),
+        '{ER_MEAN_ERR_MINUS}': '{}'.format(
+            _format_exponent(Er_mean_error_minus, Er_mean)),
+        '{ER_MEAN_ERR_PLUS}': '{}'.format(
+            _format_exponent(Er_mean_error_plus, Er_mean)),
         '{CONF_FILE_BNAME}': config_file,
         '{CONF_FILE}': config_file,
         '{YAML_FILE_BNAME}': yaml_file,
@@ -486,7 +492,7 @@ def html_report(config, sspec_output):
     # Local magnitude, if computed
     if config.compute_local_magnitude:
         Ml_mean = means['Ml']
-        Ml_error = errors['Ml']
+        Ml_error = mean_errors['Ml']
         Ml_comment_begin = ''
         Ml_comment_end = ''
     else:
@@ -494,8 +500,8 @@ def html_report(config, sspec_output):
         Ml_comment_begin = '<!--'
         Ml_comment_end = '-->'
     replacements.update({
-        '{ML}': '{:.2f}'.format(Ml_mean),
-        '{ML_ERR}': '{:.2f}'.format(Ml_error),
+        '{ML_MEAN}': '{:.2f}'.format(Ml_mean),
+        '{ML_MEAN_ERR}': '{:.2f}'.format(Ml_error),
         '{ML_COMMENT_BEGIN}': Ml_comment_begin,
         '{ML_COMMENT_END}': Ml_comment_end
     })
