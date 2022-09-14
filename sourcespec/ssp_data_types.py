@@ -260,7 +260,9 @@ class SummaryStatistics(OrderedAttribDict):
 
     def __init__(self, type, value=None, uncertainty=None,
                  lower_uncertainty=None, upper_uncertainty=None,
-                 confidence_level=None, nobs=None, message=None,
+                 confidence_level=None, lower_percentage=None,
+                 mid_percentage=None, upper_percentage=None,
+                 nobs=None, message=None,
                  format=None):
         # type of statistics: e.g., mean, median
         self._type = type
@@ -274,6 +276,9 @@ class SummaryStatistics(OrderedAttribDict):
             self.lower_uncertainty = lower_uncertainty
             self.upper_uncertainty = upper_uncertainty
         self.confidence_level = confidence_level
+        self.lower_percentage = lower_percentage
+        self.mid_percentage = mid_percentage
+        self.upper_percentage = upper_percentage
         self.nobs = nobs
         self.message = message
         self._format = format

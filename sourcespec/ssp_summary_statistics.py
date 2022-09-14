@@ -121,7 +121,11 @@ def _param_summary_statistics(
         type='percentiles', value=mid_pctl,
         lower_uncertainty=mid_pctl-low_pctl,
         upper_uncertainty=up_pctl-mid_pctl,
-        confidence_level=conf_level, nobs=nobs)
+        confidence_level=conf_level,
+        lower_percentage=config.lower_percentage,
+        mid_percentage=config.mid_percentage,
+        upper_percentage=config.upper_percentage,
+        nobs=nobs)
     return summary
 
 
