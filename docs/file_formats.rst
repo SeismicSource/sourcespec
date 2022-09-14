@@ -85,8 +85,12 @@ output files (``EVID`` is replaced by the actual event ID):
    `reproducibility <https://en.wikipedia.org/wiki/Reproducibility>`__)
 -  ``EVID-residuals.pickle``: station residuals in `Python pickle
    format <https://docs.python.org/3/library/pickle.html>`__
--  ``EVID.xml``: updated QuakeML file with the results of the
-   SourceSpec inversion (only if an input QuakeML file is provided)
+-  ``EVID.ssp.h``: hypocenter file in
+   `HYPO71 <https://pubs.er.usgs.gov/publication/ofr72224>`__ format with the
+   estimated moment magnitude (only if an input HYPO71 file is provided)
+-  ``EVID.xml``: updated `QuakeML <https://quake.ethz.ch/quakeml/>`__ file with
+   the results of the SourceSpec inversion (only if an input QuakeML file is
+   provided)
 
 The following plots will be created, in png, pdf or svg format:
 
