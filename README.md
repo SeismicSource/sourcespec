@@ -159,8 +159,8 @@ The SourceSpec main code, `source_spec` will produce the following output files
 - `EVID.ssp.conf`: the input config file (for [reproducibility])
 - `EVID-residuals.pickle`: station residuals in
   [Python pickle format][pickle]
-- `EVID.xml`: updated StationXML file with the results of the SourceSpec
-  inversion (only if an input StationXML file is provided)
+- `EVID.xml`: updated QuakeML file with the results of the SourceSpec
+  inversion (only if an input QuakeML file is provided)
 
 The following plots will be created, in png, pdf or svg format:
 
@@ -234,8 +234,9 @@ computed for each station:
 - the source radius
 - the quality factor $Q_0$ of P- or S-waves
 
-Finally, the radiated energy $E_r$ can be mesured from the displacement spectra,
-following the approach described in [Lancieri et al. (2012)][Lancieri2012].
+Finally, the radiated energy $E_r$ can be measured from the displacement
+spectra, following the approach described in [Lancieri et al.
+(2012)][Lancieri2012].
 
 As a bonus, local magnitude $M_l$ can be computed as well.
 
@@ -300,7 +301,7 @@ main directory by running:
 
 ## Documentation
 
-The offical SourceSpec documentation can be find at
+The official SourceSpec documentation can be find at
 [sourcespec.readthedocs.io][documentation].
 
 ## Sample runs
@@ -370,7 +371,7 @@ Please replace `X.Y` with the SourceSpec version number you used.
 [importance sampling]: http://alomax.free.fr/nlloc/octtree/OctTree.html
 [k-d tree]: https://en.wikipedia.org/wiki/K-d_tree
 
-<!-- Refereneces -->
+<!-- References -->
 [doi: 10.5281/ZENODO.3688587]: https://doi.org/10.5281/ZENODO.3688587
 [doi: 10.1007/978-1-4419-7695-6_22]: https://doi.org/10.1007/978-1-4419-7695-6_22
 [doi: 10.1029/JB075i026p04997]: https://doi.org/10.1029/JB075i026p04997

@@ -1,8 +1,8 @@
 .. _file_formats:
 
-######################
+############
 File Formats
-######################
+############
 
 Trace formats
 ~~~~~~~~~~~~~
@@ -85,8 +85,8 @@ output files (``EVID`` is replaced by the actual event ID):
    `reproducibility <https://en.wikipedia.org/wiki/Reproducibility>`__)
 -  ``EVID-residuals.pickle``: station residuals in `Python pickle
    format <https://docs.python.org/3/library/pickle.html>`__
--  ``EVID.xml``: updated StationXML file with the results of the
-   SourceSpec inversion (only if an input StationXML file is provided)
+-  ``EVID.xml``: updated QuakeML file with the results of the
+   SourceSpec inversion (only if an input QuakeML file is provided)
 
 The following plots will be created, in png, pdf or svg format:
 

@@ -14,7 +14,7 @@ For each station, the code computes P- or S-wave displacement amplitude spectra
 for each component (e.g., Z, N, E), within a predefined time window.
 
 The same thing is done for a noise time window: noise spectrum is used to
-compute spectral signal-to-noise ratio (and possibily reject low SNR spectra)
+compute spectral signal-to-noise ratio (and possibly reject low SNR spectra)
 and, optionally, to weight the spectral inversion.
 
 .. figure:: imgs/example_trace.svg
@@ -89,7 +89,7 @@ one of the following ways:
   :math:`n=0.5` is the theoretical value for a surface wave in a homogeneous
   half-space.
 
-- Follwing :cite:t:`Boatwright2002`, eq. 8:
+- Following :cite:t:`Boatwright2002`, eq. 8:
 
   - body wave spreading (:math:`\mathcal{G}(r) = r`) for hypocentral distances
     below a cutoff distance :math:`r_0`;
@@ -152,7 +152,7 @@ Then the spectrum is converted in units of magnitude
           \frac{2}{3} \times
           \left( \log_{10} M_x(f) - 9.1 \right)
 
-The data vector is compared to the teoretical model:
+The data vector is compared to the theoretical model:
 
 .. math::
 
@@ -220,7 +220,7 @@ other quantities are computed for each station:
 -  the source radius
 -  the quality factor :math:`Q_0` of P- or S-waves
 
-Finally, the radiated energy :math:`E_r` can be mesured from the
+Finally, the radiated energy :math:`E_r` can be measured from the
 displacement spectra, following the approach described in
 :cite:t:`Lancieri2012`.
 
