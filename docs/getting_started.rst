@@ -24,7 +24,7 @@ Command line arguments
 ~~~~~~~~~~~~~~~~~~~~~~
 
 After successfully installed SourceSpec (see
-`Installation <#installation>`__ below), you can get help on the command
+`Installation <#installation>`__), you can get help on the command
 line arguments used by each code by typing from your terminal:
 
 ::
@@ -35,7 +35,7 @@ line arguments used by each code by typing from your terminal:
 
 ``source_spec`` and ``source_model`` require you to provide the path to
 seismic traces via the ``--trace_path`` command line argument (see
-`Supported file formats <#supported-file-formats>`__ below).
+`File formats <#file-formats>`__).
 
 Information on the seismic event can be stored in the trace header
 (`SAC <https://ds.iris.edu/ds/support/faq/17/sac-file-format/>`__

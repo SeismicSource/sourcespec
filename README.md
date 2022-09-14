@@ -63,8 +63,8 @@ typing from your terminal:
 (or `source_model -h`, or `source_residuals -h`).
 
 `source_spec` and `source_model` require you to provide the path to seismic
-traces via the `--trace_path` command line argument (see [Supported
-file formats](#supported-file-formats) below).
+traces via the `--trace_path` command line argument (see
+[File formats](#file-formats) below).
 
 Information on the seismic event can be stored in the trace header ([SAC]
 format), or provided through a [QuakeML] file (`--qmlfile`) or a [HYPO71] or
