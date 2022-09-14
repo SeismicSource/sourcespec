@@ -159,7 +159,9 @@ The SourceSpec main code, `source_spec` will produce the following output files
 - `EVID.ssp.conf`: the input config file (for [reproducibility])
 - `EVID-residuals.pickle`: station residuals in
   [Python pickle format][pickle]
-- `EVID.xml`: updated QuakeML file with the results of the SourceSpec
+- `EVID.ssp.h`: hypocenter file in [HYPO71] format with the estimated moment
+  magnitude (only if an input HYPO71 file is provided)
+- `EVID.xml`: updated [QuakeML] file with the results of the SourceSpec
   inversion (only if an input QuakeML file is provided)
 
 The following plots will be created, in png, pdf or svg format:
