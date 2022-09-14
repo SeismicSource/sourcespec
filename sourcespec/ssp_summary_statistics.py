@@ -11,6 +11,8 @@ Post processing of station source parameters.
 """
 import logging
 import numpy as np
+from scipy.stats import norm
+from scipy.integrate import quad
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_data_types import (
     SummarySpectralParameter, SummaryStatistics)
@@ -65,9 +67,20 @@ def _avg_and_std(values, errors=None, logarithmic=False):
         log_average = 10.**average
         minus = log_average - 10.**(average-std)
         plus = 10.**(average+std) - log_average
-        return log_average, (minus, plus)
+        return log_average, np.array((minus, plus))
     else:
-        return average, (std, std)
+        return average, np.array((std, std))
+
+
+def _normal_confidence_level(n_sigma):
+    """
+    Compute the confidence level of a normal (Gaussian) distribution
+    between -n_sigma and +n_sigma.
+    """
+    def gauss(x):
+        return norm.pdf(x, 0, 1)
+    confidence, _ = quad(gauss, -n_sigma, n_sigma)
+    return np.round(confidence*100, 2)
 
 
 def _percentiles(
@@ -97,20 +110,23 @@ def _param_summary_statistics(
     nobs = len(values[~np.isnan(values)])
     # mean
     mean_value, mean_error = _avg_and_std(values, logarithmic=logarithmic)
+    mean_error *= config.n_sigma
+    conf_level = _normal_confidence_level(config.n_sigma)
     summary.mean = SummaryStatistics(
         type='mean', value=mean_value,
         lower_uncertainty=mean_error[0],
         upper_uncertainty=mean_error[1],
-        confidence_level=68.2, nobs=nobs)
+        confidence_level=conf_level, nobs=nobs)
     # weighted mean (only if errors are defined)
     if not np.all(np.isnan(errors)):
         wmean_value, wmean_error = _avg_and_std(
             values, errors, logarithmic=logarithmic)
+        wmean_error *= config.n_sigma
         summary.weighted_mean = SummaryStatistics(
             type='weighted_mean', value=wmean_value,
             lower_uncertainty=wmean_error[0],
             upper_uncertainty=wmean_error[1],
-            confidence_level=68.2, nobs=nobs)
+            confidence_level=conf_level, nobs=nobs)
     # percentiles
     low_pctl, mid_pctl, up_pctl = _percentiles(
         values, config.lower_percentage, config.mid_percentage,
