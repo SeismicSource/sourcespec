@@ -62,9 +62,9 @@ ssp_local_magnitude
 .. automodule:: ssp_local_magnitude
    :members:
 
-ssp_averages
-------------
-.. automodule:: ssp_averages
+ssp_summary_statistics
+----------------------
+.. automodule:: ssp_summary_statistics
    :members:
 
 ssp_output
