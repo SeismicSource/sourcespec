@@ -23,9 +23,9 @@ format (e.g., ``station.xml``) and event information in
 Command line arguments
 ~~~~~~~~~~~~~~~~~~~~~~
 
-After successfully installed SourceSpec (see
-`Installation <#installation>`__), you can get help on the command
-line arguments used by each code by typing from your terminal:
+After successfully installed SourceSpec (see :ref:`installation:Installation`),
+you can get help on the command line arguments used by each code by typing from
+your terminal:
 
 ::
 
@@ -35,7 +35,7 @@ line arguments used by each code by typing from your terminal:
 
 ``source_spec`` and ``source_model`` require you to provide the path to
 seismic traces via the ``--trace_path`` command line argument (see
-`File formats <#file-formats>`__).
+:ref:`file_formats:File formats`).
 
 Information on the seismic event can be stored in the trace header
 (`SAC <https://ds.iris.edu/ds/support/faq/17/sac-file-format/>`__
@@ -43,8 +43,8 @@ format), or provided through a
 `QuakeML <https://quake.ethz.ch/quakeml/>`__ file (``--qmlfile``) or a
 `HYPO71 <https://pubs.er.usgs.gov/publication/ofr72224>`__ or
 `HYPOINVERSE-2000 <https://pubs.er.usgs.gov/publication/ofr02171>`__
-file (``--hypocenter``). See :ref:`supported_file_formats:Supported File
-Formats` for more information on the supported file formats.
+file (``--hypocenter``). See :ref:`file_formats:File Formats` for more
+information on the supported file formats.
 
 Configuration file
 ~~~~~~~~~~~~~~~~~~
