@@ -434,6 +434,20 @@ def html_report(config, sspec_output):
     percentiles = sspec_output.percentiles_values()
     percentile_errors = sspec_output.percentiles_uncertainties()
 
+    n_sigma = config.n_sigma
+    n_sigma = int(n_sigma) if n_sigma.is_integer() else n_sigma
+    n_sigma = '{} sigma'.format(n_sigma)
+    mid_pct, lower_pct, upper_pct =\
+        config.mid_percentage, config.lower_percentage, config.upper_percentage
+    mid_pct = int(mid_pct) if mid_pct.is_integer() else mid_pct
+    lower_pct = int(lower_pct) if lower_pct.is_integer() else lower_pct
+    upper_pct = int(upper_pct) if upper_pct.is_integer() else upper_pct
+    percentages = '{}%, [{}%, {}%]'.format(mid_pct, lower_pct, upper_pct)
+    replacements.update({
+        '{N_SIGMA}': n_sigma,
+        '{PERCENTAGES}': percentages
+    })
+
     Mw_mean = means['Mw']
     Mw_mean_error = mean_errors['Mw']
     Mw_wmean = wmeans['Mw']

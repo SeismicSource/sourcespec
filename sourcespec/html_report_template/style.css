@@ -26,7 +26,7 @@ table a:hover {
 }
 
 table.summary {
-  max-width: 70%;
+  max-width: 75%;
 }
 
 table.summary td {
@@ -35,6 +35,10 @@ table.summary td {
 
 table.summary th[scope=col] {
   text-align: right;
+}
+
+.th_subtitle {
+  font-size: 0.8em;
 }
 
 table.stations {
