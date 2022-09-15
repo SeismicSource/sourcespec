@@ -177,12 +177,12 @@ def _make_basemap(config, maxdist):
     latmin = 2*hypo.latitude - latmax
     tile_dir = 'maptiles'
     stamen_terrain = CachedTiler(cimgt.Stamen('terrain-background'), tile_dir)
-    # Create a GeoAxes
-    figsize = (7.5, 7.5)
     # Reduce dpi for vector formats, since the only raster are the maptiles
     if config.plot_save_format in ['pdf', 'pdf_multipage', 'svg']:
+        figsize = (8.5, 8.5)
         dpi = 72
     else:
+        figsize = (7.5, 7.5)
         dpi = 200
     fig = plt.figure(figsize=figsize, dpi=dpi)
     ax = fig.add_subplot(111, projection=stamen_terrain.crs)
