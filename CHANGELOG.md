@@ -16,14 +16,21 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 ### Post-Inversion
 
+- Possibility of choosing the the reference summary statistics that will be
+  used for map plots, QuakeML and HYPO output, as well as for the "Event
+  Summary" section in HTML report and for computing station spectral residuals.
+  Available summary statistics are:
+  - mean
+  - weighted_mean
+  - percentiles (new!)
 - Possibility of defining the number of sigmas for uncertainties on event means
   and weighted means
-- New event summary statistics: percentiles
 
 ### Config file
 
 - Config file section `AVERAGES PARAMETERS` renamed to
   `SUMMARY STATISTICS PARAMETERS`
+- New config parameter: `reference_statistics`
 - New config parameter: `n_sigma`
 - New config parameters for percentiles calculation: `lower_percentage`,
   `mid_percentage` and `upper_percentage`

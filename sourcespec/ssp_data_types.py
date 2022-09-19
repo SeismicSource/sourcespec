@@ -255,7 +255,8 @@ class StationParameters(OrderedAttribDict):
 
 class SummaryStatistics(OrderedAttribDict):
     """
-    A summary statistics (e.g., mean, median), along with its uncertainity.
+    A summary statistics (e.g., mean, weighted_mean, percentile), along with
+    its uncertainity.
     """
 
     def __init__(self, type, value=None, uncertainty=None,
@@ -379,6 +380,7 @@ class SourceSpecOutput(OrderedAttribDict):
             stat_par.rebuild_dictionaries()
 
     def mean_values(self):
+        """Return a dictionary of mean values."""
         return {
             parname: par.mean.value
             for parname, par in self.summary_spectral_parameters.items()
@@ -387,6 +389,7 @@ class SourceSpecOutput(OrderedAttribDict):
         }
 
     def mean_uncertainties(self):
+        """Return a dictionary of mean uncertainties."""
         return {
             parname: par.mean.compact_uncertainty()
             for parname, par in self.summary_spectral_parameters.items()
@@ -395,6 +398,7 @@ class SourceSpecOutput(OrderedAttribDict):
         }
 
     def weighted_mean_values(self):
+        """Return a dictionary of weighted mean values."""
         return {
             parname: par.weighted_mean.value
             for parname, par in self.summary_spectral_parameters.items()
@@ -403,6 +407,7 @@ class SourceSpecOutput(OrderedAttribDict):
         }
 
     def weighted_mean_uncertainties(self):
+        """Return a dictionary of weighted mean uncertainties."""
         return {
             parname: par.weighted_mean.compact_uncertainty()
             for parname, par in self.summary_spectral_parameters.items()
@@ -411,6 +416,7 @@ class SourceSpecOutput(OrderedAttribDict):
         }
 
     def percentiles_values(self):
+        """Return a dictionary of percentile values."""
         return {
             parname: par.percentiles.value
             for parname, par in self.summary_spectral_parameters.items()
@@ -419,11 +425,60 @@ class SourceSpecOutput(OrderedAttribDict):
         }
 
     def percentiles_uncertainties(self):
+        """Return a dictionary of percentile uncertainties."""
         return {
             parname: par.percentiles.compact_uncertainty()
             for parname, par in self.summary_spectral_parameters.items()
             if isinstance(par, SummarySpectralParameter)
             and 'percentiles' in par
+        }
+
+    def reference_values(self):
+        """Return a dictionary of reference values."""
+        try:
+            ref_stat = self.summary_spectral_parameters.reference_statistics
+        except KeyError:
+            raise ValueError('No reference statistics defined')
+        if ref_stat == 'mean':
+            return self.mean_values()
+        elif ref_stat == 'weighted_mean':
+            return self.weighted_mean_values()
+        elif ref_stat == 'percentiles':
+            return self.percentiles_values()
+        else:
+            msg = 'Invalid reference statistics: {}'.format(ref_stat)
+            raise ValueError(msg)
+
+    def reference_uncertainties(self):
+        """Return a dictionary of reference uncertainties."""
+        try:
+            ref_stat = self.summary_spectral_parameters.reference_statistics
+        except KeyError:
+            raise ValueError('No reference statistics defined')
+        if ref_stat == 'mean':
+            return self.mean_uncertainties()
+        elif ref_stat == 'weighted_mean':
+            return self.weighted_mean_uncertainties()
+        elif ref_stat == 'percentiles':
+            return self.percentiles_uncertainties()
+        else:
+            msg = 'Invalid reference statistics: {}'.format(ref_stat)
+            raise ValueError(msg)
+
+    def reference_summary_parameters(self):
+        """
+        Return a dictionary of reference summary parameters,
+        each being a SummaryStatistics() object.
+        """
+        try:
+            ref_stat = self.summary_spectral_parameters.reference_statistics
+        except KeyError:
+            raise ValueError('No reference statistics defined')
+        return {
+            parname: par[ref_stat]
+            for parname, par in self.summary_spectral_parameters.items()
+            if isinstance(par, SummarySpectralParameter)
+            and ref_stat in par
         }
 
 

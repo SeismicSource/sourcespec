@@ -13,6 +13,7 @@ import os
 import logging
 import shutil
 import re
+from typing import Type
 import numpy as np
 from urllib.parse import urlparse
 from sourcespec._version import get_versions
@@ -427,6 +428,43 @@ def html_report(config, sspec_output):
     })
 
     # Summary spectral parameters
+    ref_stat = sspec_output.summary_spectral_parameters.reference_statistics
+    col_mean_highlighted = col_wmean_highlighted = col_perc_highlighted = ''
+    if ref_stat == 'mean':
+        col_mean_highlighted = 'class="highlighted_column"'
+    elif ref_stat == 'weighted_mean':
+        col_wmean_highlighted = 'class="highlighted_column"'
+    elif ref_stat == 'percentiles':
+        col_perc_highlighted = 'class="highlighted_column"'
+    replacements.update({
+        '{COL_MEAN_HIGHLIGHTED}': col_mean_highlighted,
+        '{COL_WMEAN_HIGHLIGHTED}': col_wmean_highlighted,
+        '{COL_PERC_HIGHLIGHTED}': col_perc_highlighted,
+    })
+
+    summary_values = sspec_output.reference_values()
+    summary_uncertainties = sspec_output.reference_uncertainties()
+    Mw_summary = summary_values['Mw']
+    try:
+        Mw_summary_error_minus, Mw_summary_error_plus =\
+            summary_uncertainties['Mw']
+        Mw_summary_str = '{:.2f} [- {:.2f}, + {:.2f}]'.format(
+            Mw_summary, Mw_summary_error_minus, Mw_summary_error_plus)
+    except TypeError:
+        Mw_summary_error = summary_uncertainties['Mw']
+        Mw_summary_str = '{:.2f} ± {:.2f}'.format(Mw_summary, Mw_summary_error)
+    replacements.update({'{MW_SUMMARY}': Mw_summary_str})
+    fc_summary = summary_values['fc']
+    try:
+        fc_summary_error_minus, fc_summary_error_plus =\
+            summary_uncertainties['fc']
+        fc_summary_str = '{:.3f} [- {:.3f}, + {:.3f}]'.format(
+            fc_summary, fc_summary_error_minus, fc_summary_error_plus)
+    except TypeError:
+        fc_summary_error = summary_uncertainties['fc']
+        fc_summary_str = '{:.3f} ± {:.3f}'.format(fc_summary, fc_summary_error)
+    replacements.update({'{FC_SUMMARY}': fc_summary_str})
+
     means = sspec_output.mean_values()
     mean_errors = sspec_output.mean_uncertainties()
     wmeans = sspec_output.weighted_mean_values()

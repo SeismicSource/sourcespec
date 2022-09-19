@@ -151,6 +151,9 @@ def compute_summary_statistics(config, sspec_output):
         logger.info('No source parameter calculated')
         ssp_exit()
 
+    sspec_output.summary_spectral_parameters.reference_statistics =\
+        config.reference_statistics
+
     # Mw
     sspec_output.summary_spectral_parameters.Mw =\
         _param_summary_statistics(
