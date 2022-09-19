@@ -90,11 +90,11 @@ def write_qml(config, sspec_output):
         cr_info.author = config.author_name
     cr_info.creation_time = UTCDateTime()
 
-    means = sspec_output.weighted_mean_values()
-    errors = sspec_output.weighted_mean_uncertainties()
+    summary_parameters = sspec_output.reference_summary_parameters()
     stationpar = sspec_output.station_parameters
 
     # Magnitude
+    Mw_summary = summary_parameters['Mw']
     mag = Magnitude()
     _id = config.smi_magnitude_template.replace('$SMI_BASE', config.smi_base)
     _id = _id.replace('$ORIGIN_ID', origin_id_strip)
@@ -102,10 +102,14 @@ def write_qml(config, sspec_output):
     mag.method_id = ResourceIdentifier(id=method_id)
     mag.origin_id = origin_id
     mag.magnitude_type = 'Mw'
-    mag.mag = means['Mw']
+    mag.mag = Mw_summary.value
     mag_err = QuantityError()
-    mag_err.uncertainty = errors['Mw']
-    mag_err.confidence_level = 68.2
+    if Mw_summary.uncertainty is not None:
+        mag_err.uncertainty = Mw_summary.uncertainty
+    elif Mw_summary.lower_uncertainty is not None:
+        mag_err.lower_uncertainty = Mw_summary.lower_uncertainty
+        mag_err.upper_uncertainty = Mw_summary.upper_uncertainty
+    mag_err.confidence_level = Mw_summary.confidence_level
     mag.mag_errors = mag_err
     mag.station_count = len([_s for _s in stationpar.keys()])
     mag.evaluation_mode = 'automatic'
@@ -113,6 +117,7 @@ def write_qml(config, sspec_output):
 
     # Seismic moment -- It has to be stored in a MomentTensor object
     # which, in turn, is part of a FocalMechanism object
+    Mo_summary = summary_parameters['Mo']
     mt = MomentTensor()
     _id = config.smi_moment_tensor_template.replace(
         '$SMI_BASE', config.smi_base)
@@ -120,11 +125,11 @@ def write_qml(config, sspec_output):
     mt.resource_id = ResourceIdentifier(id=_id)
     mt.derived_origin_id = origin_id
     mt.moment_magnitude_id = mag.resource_id
-    mt.scalar_moment = means['Mo']
+    mt.scalar_moment = Mo_summary.value
     mt_err = QuantityError()
-    mt_err.lower_uncertainty = errors['Mo'][0]
-    mt_err.upper_uncertainty = errors['Mo'][1]
-    mt_err.confidence_level = 68.2
+    mt_err.lower_uncertainty = Mo_summary.lower_uncertainty
+    mt_err.upper_uncertainty = Mo_summary.upper_uncertainty
+    mt_err.confidence_level = Mo_summary.confidence_level
     mt.scalar_moment_errors = mt_err
     mt.method_id = method_id
     mt.creation_info = cr_info
@@ -166,33 +171,48 @@ def write_qml(config, sspec_output):
         mag.station_magnitude_contributions.append(st_mag_contrib)
     ev.magnitudes.append(mag)
 
-    # Write other average parameters as custom tags
+    # Write other summary parameters as custom tags
+    fc_summary = summary_parameters['fc']
     ev.extra = SSPExtra()
     ev.extra.corner_frequency = SSPContainerTag()
-    ev.extra.corner_frequency.value.value = SSPTag(means['fc'])
+    ev.extra.corner_frequency.value.value = SSPTag(fc_summary.value)
     ev.extra.corner_frequency.value.lower_uncertainty =\
-        SSPTag(errors['fc'][0])
+        SSPTag(fc_summary.lower_uncertainty)
     ev.extra.corner_frequency.value.upper_uncertainty =\
-        SSPTag(errors['fc'][1])
-    ev.extra.corner_frequency.value.confidence_level = SSPTag(68.2)
+        SSPTag(fc_summary.upper_uncertainty)
+    ev.extra.corner_frequency.value.confidence_level =\
+        SSPTag(fc_summary.confidence_level)
+    t_star_summary = summary_parameters['t_star']
     ev.extra.t_star = SSPContainerTag()
-    ev.extra.t_star.value.value = SSPTag(means['t_star'])
-    ev.extra.t_star.value.uncertainty = SSPTag(errors['t_star'])
-    ev.extra.t_star.value.confidence_level = SSPTag(68.2)
+    ev.extra.t_star.value.value = SSPTag(t_star_summary.value)
+    if t_star_summary.uncertainty is not None:
+        ev.extra.t_star.value.uncertainty =\
+            SSPTag(t_star_summary.uncertainty)
+    elif t_star_summary.lower_uncertainty is not None:
+        ev.extra.t_star.value.lower_uncertainty =\
+            SSPTag(t_star_summary.lower_uncertainty)
+        ev.extra.t_star.value.upper_uncertainty =\
+            SSPTag(t_star_summary.upper_uncertainty)
+    ev.extra.t_star.value.confidence_level =\
+        SSPTag(t_star_summary.confidence_level)
+    radius_summary = summary_parameters['radius']
     ev.extra.source_radius = SSPContainerTag()
-    ev.extra.source_radius.value.value = SSPTag(means['radius'])
+    ev.extra.source_radius.value.value = SSPTag(radius_summary.value)
     ev.extra.source_radius.value.lower_uncertainty =\
-        SSPTag(errors['radius'][0])
+        SSPTag(radius_summary.lower_uncertainty)
     ev.extra.source_radius.value.upper_uncertainty =\
-        SSPTag(errors['radius'][1])
-    ev.extra.source_radius.value.confidence_level = SSPTag(68.2)
+        SSPTag(radius_summary.upper_uncertainty)
+    ev.extra.source_radius.value.confidence_level =\
+        SSPTag(radius_summary.confidence_level)
+    bsd_summary = summary_parameters['bsd']
     ev.extra.stress_drop = SSPContainerTag()
-    ev.extra.stress_drop.value.value = SSPTag(means['bsd'])
+    ev.extra.stress_drop.value.value = SSPTag(bsd_summary.value)
     ev.extra.stress_drop.value.lower_uncertainty =\
-        SSPTag(errors['bsd'][0])
+        SSPTag(bsd_summary.lower_uncertainty)
     ev.extra.stress_drop.value.upper_uncertainty =\
-        SSPTag(errors['bsd'][1])
-    ev.extra.stress_drop.value.confidence_level = SSPTag(68.2)
+        SSPTag(bsd_summary.upper_uncertainty)
+    ev.extra.stress_drop.value.confidence_level =\
+        SSPTag(bsd_summary.confidence_level)
 
     if config.set_preferred_magnitude:
         ev.preferred_magnitude_id = mag.resource_id.id

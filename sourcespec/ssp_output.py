@@ -529,10 +529,11 @@ def _write_hypo(config, sspec_output):
             line = fp.readline()
         line = list(line)
 
-    means = sspec_output.mean_values()
-    mw_str = '{:03.2f}'.format(means['Mw'])
-    if means['Ml'] is not None and ~np.isnan(means['Ml']):
-        ml_str = '{:03.2f}'.format(means['Ml'])
+    summary_values = sspec_output.reference_values()
+    mw_str = '{:03.2f}'.format(summary_values['Mw'])
+    Ml = summary_values.get('Ml', None)
+    if Ml is not None and ~np.isnan(Ml):
+        ml_str = '{:03.2f}'.format(Ml)
     else:
         ml_str = ' '*4
     for i in range(0, 4):

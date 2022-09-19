@@ -21,6 +21,14 @@ a:focus {
   transition: all 0.3s;
 }
 
+h6 {
+  font-size: 0.8em;
+  max-width: 75%;
+}
+h6 a, a:hover {
+  text-decoration: underline;
+}
+
 table a:hover {
   text-decoration: underline;
 }
@@ -35,6 +43,10 @@ table.summary td {
 
 table.summary th[scope=col] {
   text-align: right;
+}
+
+.highlighted_column {
+  border: 2px dotted #666;
 }
 
 .th_subtitle {

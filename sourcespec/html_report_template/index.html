@@ -165,11 +165,11 @@
             </tr>
             <tr>
               <th scope="row">Moment Magnitude:</th>
-              <td>{MW_WMEAN} ± {MW_WMEAN_ERR}</td>
+              <td>{MW_SUMMARY}</td>
             </tr>
             <tr>
               <th scope="row">Corner Frequency:</th>
-              <td>{FC_WMEAN} [- {FC_WMEAN_ERR_MINUS}, + {FC_WMEAN_ERR_PLUS}] Hz</td>
+              <td>{FC_SUMMARY} Hz</td>
             </tr>
           </tbody>
         </table>
@@ -200,7 +200,18 @@
       <div class="page">
         <div class="line" id="summary_spectral_parameters"></div>
         <h2>Summary Spectral Parameters</h2>
+        <h6>
+          Note: the highlighted column indicates the reference parameters used
+          for <a href="#event_summary">Event Summary</a> and
+          <a href="#moment_magnitude">Map Plots</a>.
+        </h6>
         <table class="table summary">
+          <colgroup>
+            <col>
+            <col {COL_MEAN_HIGHLIGHTED}>
+            <col {COL_WMEAN_HIGHLIGHTED}>
+            <col {COL_PERC_HIGHLIGHTED}>
+          </colgroup>
           <thead>
             <tr>
               <th></th>

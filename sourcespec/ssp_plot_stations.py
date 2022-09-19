@@ -271,8 +271,15 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     else:
         textstr = ''
     if vname == 'mag':
-        verr_minus = verr_plus = verr
-        textstr += 'Mw {:.2f} ± {:.2f}'.format(vmean, verr)
+        try:
+            # asymmetrical error
+            verr_minus, verr_plus = verr
+            textstr += 'Mw {:.2f} [- {:.2f}, + {:.2f}]'.format(
+                vmean, verr_minus, verr_plus)
+        except TypeError:
+            # symmetrical error
+            verr_minus = verr_plus = verr
+            textstr += 'Mw {:.2f} ± {:.2f}'.format(vmean, verr)
     elif vname == 'fc':
         verr_minus, verr_plus = verr
         textstr += 'fc {:.3f} [- {:.3f}, + {:.3f}] Hz'.format(
@@ -440,13 +447,15 @@ def plot_stations(config, sspec_output):
     # empirical rule to define overlapping station spread
     spread = maxdist/4e3
     _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=spread)
-    means_weight = sspec_output.weighted_mean_values()
-    errors_weight = sspec_output.weighted_mean_uncertainties()
+    summary_values = sspec_output.reference_values()
+    summary_uncertainties = sspec_output.reference_uncertainties()
     mag = np.array([stationpar[k]['Mw'].value for k in st_ids])
-    magmean = means_weight['Mw']
-    magerr = errors_weight['Mw']
-    _plot_stations(config, lonlat_dist, st_ids, mag, magmean, magerr, 'mag')
+    summary_mag = summary_values['Mw']
+    summary_mag_err = summary_uncertainties['Mw']
+    _plot_stations(
+        config, lonlat_dist, st_ids, mag, summary_mag, summary_mag_err, 'mag')
     fc = np.array([stationpar[k]['fc'].value for k in st_ids])
-    fcmean = means_weight['fc']
-    fcerr = errors_weight['fc']
-    _plot_stations(config, lonlat_dist, st_ids, fc, fcmean, fcerr, 'fc')
+    summary_fc = summary_values['fc']
+    summary_fc_err = summary_uncertainties['fc']
+    _plot_stations(
+        config, lonlat_dist, st_ids, fc, summary_fc, summary_fc_err, 'fc')

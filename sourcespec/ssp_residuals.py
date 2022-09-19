@@ -27,11 +27,10 @@ def spectral_residuals(config, spec_st, sspec_output):
 
     Saves a stream of residuals to disk using pickle.
     """
-    # Use weighted means
-    means = sspec_output.weighted_mean_values()
+    # get reference summary values
+    summary_values = sspec_output.reference_values()
     params_name = ('Mw', 'fc', 't_star')
-    sourcepar_mean = dict(
-        zip(params_name, [means['Mw'], means['fc'], means['t_star']]))
+    sourcepar_summary = {p: summary_values[p] for p in params_name}
     residuals = Stream()
     for station in set(x.stats.station for x in spec_st.traces):
         spec_st_sel = spec_st.select(station=station)
@@ -40,7 +39,7 @@ def spectral_residuals(config, spec_st, sspec_output):
                 continue
 
             xdata = spec.get_freq()
-            synth_mean_mag = spectral_model(xdata, **sourcepar_mean)
+            synth_mean_mag = spectral_model(xdata, **sourcepar_summary)
 
             res = spec.copy()
             res.data_mag = spec.data_mag - synth_mean_mag
