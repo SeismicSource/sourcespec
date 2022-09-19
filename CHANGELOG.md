@@ -103,7 +103,7 @@ Please check it out on
 - New config parameter: `geom_spread_model` (see issue [#8])
 - Config parameters `PLOT_SHOW`, `PLOT_SAVE` and `PLOT_SAVE_FORMAT` are now
   lowercase (`plot_show`, `plot_save` and `plot_save_format`)
-- New, optional, general config parameters for specyfing author and agency
+- New, optional, general config parameters for specifying author and agency
   information. This information is written to output files and figures,
   if specified
 - New config parameter, `event_url`, to link the event page from the HTML
@@ -160,7 +160,7 @@ Note that v1.5 is no more compatible with Python 2!
   residuals file is specified via `residuals_filepath`)
 - Removed configuration parameter `trace_format`
 - New configuration parameter `sensitivity` to provide a constant sensor
-  sensitivity (flat response curve), which ovverides any response curve
+  sensitivity (flat response curve), which overrides any response curve
   provided in metadata
 - New parameter for manually specifying trace units: `trace_units`
   (defaults to `auto`)
