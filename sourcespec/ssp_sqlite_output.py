@@ -44,18 +44,19 @@ def write_sqlite(config, sspec_output):
     conn = sqlite3.connect(database_file, timeout=60)
     c = conn.cursor()
 
-    # Init Station table
-    c.execute(
-        'create table if not exists Stations '
-        '(stid, evid, runid,'
-        'Mo, Mo_err_minus, Mo_err_plus,'
-        'Mw, Mw_err_minus, Mw_err_plus,'
-        'fc, fc_err_minus, fc_err_plus,'
-        't_star, t_star_err_minus, t_star_err_plus,'
-        'Qo, Qo_err_minus, Qo_err_plus,'
-        'bsd, bsd_err_minus, bsd_err_plus,'
-        'ra, ra_err_minus, ra_err_plus,'
-        'dist, azimuth, Er);')
+    # Create Station table
+    sql_create_stations_table = """CREATE TABLE IF NOT EXISTS Stations (
+        stid, evid, runid,
+        Mo, Mo_err_minus, Mo_err_plus,
+        Mw, Mw_err_minus, Mw_err_plus,
+        fc, fc_err_minus, fc_err_plus,
+        t_star, t_star_err_minus, t_star_err_plus,
+        Qo, Qo_err_minus, Qo_err_plus,
+        bsd, bsd_err_minus, bsd_err_plus,
+        ra, ra_err_minus, ra_err_plus,
+        dist, azimuth, Er
+    );"""
+    c.execute(sql_create_stations_table)
     # Write station source parameters to database
     nobs = 0
     stationpar = sspec_output.station_parameters
@@ -64,9 +65,10 @@ def write_sqlite(config, sspec_output):
         par = stationpar[statId]
         # Remove existing line, if present
         t = (statId, evid, runid)
+        sql_delete_from_sations =\
+            'DELETE FROM Stations WHERE stid=? AND evid=? AND runid=?;'
         try:
-            c.execute(
-                'delete from Stations where stid=? and evid=? and runid=?;', t)
+            c.execute(sql_delete_from_sations, t)
         except Exception as msg:
             _log_db_write_error(msg, database_file)
             ssp_exit(1)
@@ -86,36 +88,39 @@ def write_sqlite(config, sspec_output):
         )
         # Create a string like ?,?,?,?
         values = ','.join('?'*len(t))
+        sql_insert_into_stations =\
+            'INSERT INTO Stations VALUES({});'.format(values)
         try:
-            c.execute('insert into Stations values(' + values + ');', t)
+            c.execute(sql_insert_into_stations, t)
         except Exception as msg:
             _log_db_write_error(msg, database_file)
             ssp_exit(1)
     # Commit changes
     conn.commit()
 
-    # Init Event table
-    c.execute(
-        'create table if not exists Events '
-        '(evid, runid, orig_time, lon, lat, depth, nobs,'
-        'Mo, Mo_err_minus, Mo_err_plus,'
-        'Mo_wavg, Mo_wavg_err_minus, Mo_wavg_err_plus,'
-        'Mw, Mw_err, Mw_wavg, Mw_wavg_err,'
-        'fc, fc_err_minus, fc_err_plus,'
-        'fc_wavg, fc_wavg_err_minus, fc_wavg_err_plus,'
-        't_star, t_star_err,'
-        't_star_wavg, t_star_wavg_err,'
-        'Qo, Qo_err,'
-        'Qo_wavg, Qo_wavg_err,'
-        'ra, ra_err_minus, ra_err_plus,'
-        'ra_wavg, ra_wavg_err_minus, ra_wavg_err_plus,'
-        'bsd, bsd_err_minus, bsd_err_plus,'
-        'bsd_wavg, bsd_wavg_err_minus, bsd_wavg_err_plus,'
-        'Er, Er_err_minus, Er_err_plus,'
-        'Ml, Ml_err,'
-        'run_completed, sourcespec_version,'
-        'author_name, author_email,'
-        'agency_full_name, agency_short_name, agency_url);')
+    # Create Event table
+    sql_create_events_table = """CREATE TABLE IF NOT EXISTS Events (
+        evid, runid, orig_time, lon, lat, depth, nobs,
+        Mo, Mo_err_minus, Mo_err_plus,
+        Mo_wavg, Mo_wavg_err_minus, Mo_wavg_err_plus,
+        Mw, Mw_err, Mw_wavg, Mw_wavg_err,
+        fc, fc_err_minus, fc_err_plus,
+        fc_wavg, fc_wavg_err_minus, fc_wavg_err_plus,
+        t_star, t_star_err,
+        t_star_wavg, t_star_wavg_err,
+        Qo, Qo_err,
+        Qo_wavg, Qo_wavg_err,
+        ra, ra_err_minus, ra_err_plus,
+        ra_wavg, ra_wavg_err_minus, ra_wavg_err_plus,
+        bsd, bsd_err_minus, bsd_err_plus,
+        bsd_wavg, bsd_wavg_err_minus, bsd_wavg_err_plus,
+        Er, Er_err_minus, Er_err_plus,
+        Ml, Ml_err,
+        run_completed, sourcespec_version,
+        author_name, author_email,
+        agency_full_name, agency_short_name, agency_url
+    );"""
+    c.execute(sql_create_events_table)
     means = sspec_output.mean_values()
     errors = sspec_output.mean_uncertainties()
     means_weight = sspec_output.weighted_mean_values()
@@ -124,8 +129,9 @@ def write_sqlite(config, sspec_output):
     ssp_version = get_versions()['version']
     # Remove event from Event table, if present
     t = (evid, runid)
+    sql_delete_from_events = 'DELETE FROM Events WHERE evid=? AND runid=?;'
     try:
-        c.execute('delete from Events where evid=? and runid=?;', t)
+        c.execute(sql_delete_from_events, t)
     except Exception as msg:
         _log_db_write_error(msg, database_file)
         ssp_exit(1)
@@ -157,9 +163,9 @@ def write_sqlite(config, sspec_output):
     )
     # Create a string like ?,?,?,?
     values = ','.join('?'*len(t))
+    sql_insert_into_events = 'INSERT INTO Events VALUES({});'.format(values)
     try:
-        c.execute(
-            'insert into Events values(' + values + ');', t)
+        c.execute(sql_insert_into_events, t)
     except Exception as msg:
         _log_db_write_error(msg, database_file)
         ssp_exit(1)
