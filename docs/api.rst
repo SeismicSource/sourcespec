@@ -133,6 +133,11 @@ ssp_radiation_pattern
 .. automodule:: ssp_radiation_pattern
    :members:
 
+ssp_sqlite_output
+-----------------
+.. automodule:: ssp_sqlite_output
+   :members:
+
 ssp_util
 --------
 .. automodule:: ssp_util
