@@ -1,6 +1,6 @@
 <img src="imgs/SourceSpec_logo.svg" width="600">
 
-# SourceSpec
+# SourceSpec - 1️⃣0️⃣0️⃣0️⃣ commits 🎂
 
 Earthquake source parameters from P- or S-wave displacement spectra
 
