@@ -126,8 +126,19 @@ def _format_exponent(value, reference):
     return '{:5.3f}e{:+03d}'.format(value/10**xp, xp)
 
 
-def _value_and_err_text(par, key, fmt):
-    """Format value and error text."""
+def _summary_value_and_err_text(value, error, fmt):
+    """Format summary value and error text."""
+    if error[0] == error[1]:
+        text = fmt + '<br>&#177;' + fmt
+        text = text.format(value, error[0])
+    else:
+        text = fmt + '<br>-' + fmt + '<br>+' + fmt
+        text = text.format(value, error[0], error[1])
+    return text
+
+
+def _station_value_and_err_text(par, key, fmt):
+    """Format station value and error text."""
     try:
         _par = par[key]
     except KeyError:
@@ -332,19 +343,21 @@ def html_report(config, sspec_output):
     for statId in sorted(stationpar.keys()):
         par = stationpar[statId]
         instrument_type = par.instrument_type
-        Mw_text, Mw_err_text = _value_and_err_text(par, 'Mw', '{:.3f}')
-        fc_text, fc_err_text = _value_and_err_text(par, 'fc', '{:.3f}')
+        Mw_text, Mw_err_text = _station_value_and_err_text(par, 'Mw', '{:.3f}')
+        fc_text, fc_err_text = _station_value_and_err_text(par, 'fc', '{:.3f}')
         t_star_text, t_star_err_text =\
-            _value_and_err_text(par, 't_star', '{:.3f}')
-        Qo_text, Qo_err_text = _value_and_err_text(par, 'Qo', '{:.1f}')
-        Mo_text, Mo_err_text = _value_and_err_text(par, 'Mo', '{:.3e}')
-        bsd_text, bsd_err_text = _value_and_err_text(par, 'bsd', '{:.3e}')
-        ra_text, ra_err_text = _value_and_err_text(par, 'radius', '{:.3f}')
-        Er_text, _ = _value_and_err_text(par, 'Er', '{:.3e}')
-        Ml_text, _ = _value_and_err_text(par, 'Ml', '{:.3f}')
+            _station_value_and_err_text(par, 't_star', '{:.3f}')
+        Qo_text, Qo_err_text = _station_value_and_err_text(par, 'Qo', '{:.1f}')
+        Mo_text, Mo_err_text = _station_value_and_err_text(par, 'Mo', '{:.3e}')
+        bsd_text, bsd_err_text =\
+            _station_value_and_err_text(par, 'bsd', '{:.3e}')
+        ra_text, ra_err_text =\
+            _station_value_and_err_text(par, 'radius', '{:.3f}')
+        Er_text, _ = _station_value_and_err_text(par, 'Er', '{:.3e}')
+        Ml_text, _ = _station_value_and_err_text(par, 'Ml', '{:.3f}')
         hyp_dist_text, _ =\
-            _value_and_err_text(par, 'hypo_dist_in_km', '{:.3f}')
-        az_text, _ = _value_and_err_text(par, 'azimuth', '{:.3f}')
+            _station_value_and_err_text(par, 'hypo_dist_in_km', '{:.3f}')
+        az_text, _ = _station_value_and_err_text(par, 'azimuth', '{:.3f}')
         replacements = {
             '{STATION_ID}': statId,
             '{STATION_TYPE}': instrument_type,
@@ -491,164 +504,129 @@ def html_report(config, sspec_output):
     Mw_wmean = wmeans['Mw']
     Mw_wmean_error = wmean_errors['Mw']
     Mw_perc = percentiles['Mw']
-    Mw_perc_error_minus, Mw_perc_error_plus = percentile_errors['Mw']
+    Mw_perc_error = percentile_errors['Mw']
     replacements.update({
-        '{MW_MEAN}': '{:.2f}'.format(Mw_mean),
-        '{MW_MEAN_ERR}': '{:.2f}'.format(Mw_mean_error),
-        '{MW_WMEAN}': '{:.2f}'.format(Mw_wmean),
-        '{MW_WMEAN_ERR}': '{:.2f}'.format(Mw_wmean_error),
-        '{MW_PERC}': '{:.2f}'.format(Mw_perc),
-        '{MW_PERC_ERR_MINUS}': '{:.2f}'.format(Mw_perc_error_minus),
-        '{MW_PERC_ERR_PLUS}': '{:.2f}'.format(Mw_perc_error_plus),
+        '{MW_MEAN_AND_ERR}': _summary_value_and_err_text(
+            Mw_mean, Mw_mean_error, '{:.2f}'),
+        '{MW_WMEAN_AND_ERR}': _summary_value_and_err_text(
+            Mw_wmean, Mw_wmean_error, '{:.2f}'),
+        '{MW_PERC_AND_ERR}': _summary_value_and_err_text(
+            Mw_perc, Mw_perc_error, '{:.2f}'),
     })
     Mo_mean = means['Mo']
-    Mo_mean_error_minus, Mo_mean_error_plus = mean_errors['Mo']
+    Mo_mean_error = mean_errors['Mo']
     Mo_wmean = wmeans['Mo']
-    Mo_wmean_error_minus, Mo_wmean_error_plus = wmean_errors['Mo']
+    Mo_wmean_error = wmean_errors['Mo']
     Mo_perc = percentiles['Mo']
-    Mo_perc_error_minus, Mo_perc_error_plus = percentile_errors['Mo']
+    Mo_perc_error = percentile_errors['Mo']
     replacements.update({
-        '{M0_MEAN}': '{:.3e}'.format(Mo_mean),
-        '{M0_MEAN_ERR_MINUS}': '{}'.format(
-            _format_exponent(Mo_mean_error_minus, Mo_mean)),
-        '{M0_MEAN_ERR_PLUS}': '{}'.format(
-            _format_exponent(Mo_mean_error_plus, Mo_mean)),
-        '{M0_WMEAN}': '{:.3e}'.format(Mo_wmean),
-        '{M0_WMEAN_ERR_MINUS}': '{}'.format(
-            _format_exponent(Mo_wmean_error_minus, Mo_wmean)),
-        '{M0_WMEAN_ERR_PLUS}': '{}'.format(
-            _format_exponent(Mo_wmean_error_plus, Mo_wmean)),
-        '{M0_PERC}': '{:.3e}'.format(Mo_perc),
-        '{M0_PERC_ERR_MINUS}': '{}'.format(
-            _format_exponent(Mo_perc_error_minus, Mo_perc)),
-        '{M0_PERC_ERR_PLUS}': '{}'.format(
-            _format_exponent(Mo_perc_error_plus, Mo_perc)),
+        '{M0_MEAN_AND_ERR}': _summary_value_and_err_text(
+            Mo_mean, Mo_mean_error, '{:.3e}'),
+        '{M0_WMEAN_AND_ERR}': _summary_value_and_err_text(
+            Mo_wmean, Mo_wmean_error, '{:.3e}'),
+        '{M0_PERC_AND_ERR}': _summary_value_and_err_text(
+            Mo_perc, Mo_perc_error, '{:.3e}'),
     })
     fc_mean = means['fc']
-    fc_mean_error_minus, fc_mean_error_plus = mean_errors['fc']
+    fc_mean_error = mean_errors['fc']
     fc_wmean = wmeans['fc']
-    fc_wmean_error_minus, fc_wmean_error_plus = wmean_errors['fc']
+    fc_wmean_error = wmean_errors['fc']
     fc_perc = percentiles['fc']
-    fc_perc_error_minus, fc_perc_error_plus = percentile_errors['fc']
+    fc_perc_error = percentile_errors['fc']
     replacements.update({
-        '{FC_MEAN}': '{:.3f}'.format(fc_mean),
-        '{FC_MEAN_ERR_MINUS}': '{:.3f}'.format(fc_mean_error_minus),
-        '{FC_MEAN_ERR_PLUS}': '{:.3f}'.format(fc_mean_error_plus),
-        '{FC_WMEAN}': '{:.3f}'.format(fc_wmean),
-        '{FC_WMEAN_ERR_MINUS}': '{:.3f}'.format(fc_wmean_error_minus),
-        '{FC_WMEAN_ERR_PLUS}': '{:.3f}'.format(fc_wmean_error_plus),
-        '{FC_PERC}': '{:.3f}'.format(fc_perc),
-        '{FC_PERC_ERR_MINUS}': '{:.3f}'.format(fc_perc_error_minus),
-        '{FC_PERC_ERR_PLUS}': '{:.3f}'.format(fc_perc_error_plus),
+        '{FC_MEAN_AND_ERR}': _summary_value_and_err_text(
+            fc_mean, fc_mean_error, '{:.3f}'),
+        '{FC_WMEAN_AND_ERR}': _summary_value_and_err_text(
+            fc_wmean, fc_wmean_error, '{:.3f}'),
+        '{FC_PERC_AND_ERR}': _summary_value_and_err_text(
+            fc_perc, fc_perc_error, '{:.3f}'),
     })
     t_star_mean = means['t_star']
     t_star_mean_error = mean_errors['t_star']
     t_star_wmean = wmeans['t_star']
     t_star_wmean_error = wmean_errors['t_star']
     t_star_perc = percentiles['t_star']
-    t_star_perc_error_minus, t_star_perc_error_plus =\
-        percentile_errors['t_star']
+    t_star_perc_error = percentile_errors['t_star']
     replacements.update({
-        '{TSTAR_MEAN}': '{:.3f}'.format(t_star_mean),
-        '{TSTAR_MEAN_ERR}': '{:.3f}'.format(t_star_mean_error),
-        '{TSTAR_WMEAN}': '{:.3f}'.format(t_star_wmean),
-        '{TSTAR_WMEAN_ERR}': '{:.3f}'.format(t_star_wmean_error),
-        '{TSTAR_PERC}': '{:.3f}'.format(t_star_perc),
-        '{TSTAR_PERC_ERR_MINUS}': '{:.3f}'.format(t_star_perc_error_minus),
-        '{TSTAR_PERC_ERR_PLUS}': '{:.3f}'.format(t_star_perc_error_plus),
+        '{TSTAR_MEAN_AND_ERR}': _summary_value_and_err_text(
+            t_star_mean, t_star_mean_error, '{:.3f}'),
+        '{TSTAR_WMEAN_AND_ERR}': _summary_value_and_err_text(
+            t_star_wmean, t_star_wmean_error, '{:.3f}'),
+        '{TSTAR_PERC_AND_ERR}': _summary_value_and_err_text(
+            t_star_perc, t_star_perc_error, '{:.3f}'),
     })
     Qo_mean = means['Qo']
     Qo_mean_error = mean_errors['Qo']
     Qo_wmean = wmeans['Qo']
     Qo_wmean_error = wmean_errors['Qo']
     Qo_perc = percentiles['Qo']
-    Qo_perc_error_minus, Qo_perc_error_plus = percentile_errors['Qo']
+    Qo_perc_error = percentile_errors['Qo']
     replacements.update({
-        '{Q0_MEAN}': '{:.1f}'.format(Qo_mean),
-        '{Q0_MEAN_ERR}': '{:.1f}'.format(Qo_mean_error),
-        '{Q0_WMEAN}': '{:.1f}'.format(Qo_wmean),
-        '{Q0_WMEAN_ERR}': '{:.1f}'.format(Qo_wmean_error),
-        '{Q0_PERC}': '{:.1f}'.format(Qo_perc),
-        '{Q0_PERC_ERR_MINUS}': '{:.1f}'.format(Qo_perc_error_minus),
-        '{Q0_PERC_ERR_PLUS}': '{:.1f}'.format(Qo_perc_error_plus),
+        '{Q0_MEAN_AND_ERR}': _summary_value_and_err_text(
+            Qo_mean, Qo_mean_error, '{:.1f}'),
+        '{Q0_WMEAN_AND_ERR}': _summary_value_and_err_text(
+            Qo_wmean, Qo_wmean_error, '{:.1f}'),
+        '{Q0_PERC_AND_ERR}': _summary_value_and_err_text(
+            Qo_perc, Qo_perc_error, '{:.1f}'),
     })
     ra_mean = means['radius']
-    ra_mean_error_minus, ra_mean_error_plus = mean_errors['radius']
+    ra_mean_error = mean_errors['radius']
     ra_wmean = wmeans['radius']
-    ra_wmean_error_minus, ra_wmean_error_plus = wmean_errors['radius']
+    ra_wmean_error = wmean_errors['radius']
     ra_perc = percentiles['radius']
-    ra_perc_error_minus, ra_perc_error_plus = percentile_errors['radius']
+    ra_perc_error = percentile_errors['radius']
     replacements.update({
-        '{RADIUS_MEAN}': '{:.3f}'.format(ra_mean),
-        '{RADIUS_MEAN_ERR_MINUS}': '{:.3f}'.format(ra_mean_error_minus),
-        '{RADIUS_MEAN_ERR_PLUS}': '{:.3f}'.format(ra_mean_error_plus),
-        '{RADIUS_WMEAN}': '{:.3f}'.format(ra_wmean),
-        '{RADIUS_WMEAN_ERR_MINUS}': '{:.3f}'.format(ra_wmean_error_minus),
-        '{RADIUS_WMEAN_ERR_PLUS}': '{:.3f}'.format(ra_wmean_error_plus),
-        '{RADIUS_PERC}': '{:.3f}'.format(ra_perc),
-        '{RADIUS_PERC_ERR_MINUS}': '{:.3f}'.format(ra_perc_error_minus),
-        '{RADIUS_PERC_ERR_PLUS}': '{:.3f}'.format(ra_perc_error_plus),
+        '{RADIUS_MEAN_AND_ERR}': _summary_value_and_err_text(
+            ra_mean, ra_mean_error, '{:.3f}'),
+        '{RADIUS_WMEAN_AND_ERR}': _summary_value_and_err_text(
+            ra_wmean, ra_wmean_error, '{:.3f}'),
+        '{RADIUS_PERC_AND_ERR}': _summary_value_and_err_text(
+            ra_perc, ra_perc_error, '{:.3f}'),
     })
     bsd_mean = means['bsd']
-    bsd_mean_error_minus, bsd_mean_error_plus = mean_errors['bsd']
+    bsd_mean_error = mean_errors['bsd']
     bsd_wmean = wmeans['bsd']
-    bsd_wmean_error_minus, bsd_wmean_error_plus = wmean_errors['bsd']
+    bsd_wmean_error = wmean_errors['bsd']
     bsd_perc = percentiles['bsd']
-    bsd_perc_error_minus, bsd_perc_error_plus = percentile_errors['bsd']
+    bsd_perc_error = percentile_errors['bsd']
     replacements.update({
-        '{BSD_MEAN}': '{:.3e}'.format(bsd_mean),
-        '{BSD_MEAN_ERR_MINUS}': '{}'.format(
-            _format_exponent(bsd_mean_error_minus, bsd_mean)),
-        '{BSD_MEAN_ERR_PLUS}': '{}'.format(
-            _format_exponent(bsd_mean_error_plus, bsd_mean)),
-        '{BSD_WMEAN}': '{:.3e}'.format(bsd_wmean),
-        '{BSD_WMEAN_ERR_MINUS}': '{}'.format(
-            _format_exponent(bsd_wmean_error_minus, bsd_wmean)),
-        '{BSD_WMEAN_ERR_PLUS}': '{}'.format(
-            _format_exponent(bsd_wmean_error_plus, bsd_wmean)),
-        '{BSD_PERC}': '{:.3e}'.format(bsd_perc),
-        '{BSD_PERC_ERR_MINUS}': '{}'.format(
-            _format_exponent(bsd_perc_error_minus, bsd_perc)),
-        '{BSD_PERC_ERR_PLUS}': '{}'.format(
-            _format_exponent(bsd_perc_error_plus, bsd_perc)),
+        '{BSD_MEAN_AND_ERR}': _summary_value_and_err_text(
+            bsd_mean, bsd_mean_error, '{:.3e}'),
+        '{BSD_WMEAN_AND_ERR}': _summary_value_and_err_text(
+            bsd_wmean, bsd_wmean_error, '{:.3e}'),
+        '{BSD_PERC_AND_ERR}': _summary_value_and_err_text(
+            bsd_perc, bsd_perc_error, '{:.3e}'),
     })
     Er_mean = means['Er']
-    Er_mean_error_minus, Er_mean_error_plus = mean_errors['Er']
+    Er_mean_error = mean_errors['Er']
     Er_perc = percentiles['Er']
-    Er_perc_error_minus, Er_perc_error_plus = percentile_errors['Er']
+    Er_perc_error = percentile_errors['Er']
     replacements.update({
-        '{ER_MEAN}': '{:.3e}'.format(Er_mean),
-        '{ER_MEAN_ERR_MINUS}': '{}'.format(
-            _format_exponent(Er_mean_error_minus, Er_mean)),
-        '{ER_MEAN_ERR_PLUS}': '{}'.format(
-            _format_exponent(Er_mean_error_plus, Er_mean)),
-        '{ER_PERC}': '{:.3e}'.format(Er_perc),
-        '{ER_PERC_ERR_MINUS}': '{}'.format(
-            _format_exponent(Er_perc_error_minus, Er_perc)),
-        '{ER_PERC_ERR_PLUS}': '{}'.format(
-            _format_exponent(Er_perc_error_plus, Er_perc)),
+        '{ER_MEAN_AND_ERR}': _summary_value_and_err_text(
+            Er_mean, Er_mean_error, '{:.3e}'),
+        '{ER_PERC_AND_ERR}': _summary_value_and_err_text(
+            Er_perc, Er_perc_error, '{:.3e}'),
     })
     # Local magnitude, if computed
     if config.compute_local_magnitude:
         Ml_mean = means['Ml']
-        Ml_error = mean_errors['Ml']
+        Ml_mean_error = mean_errors['Ml']
         Ml_perc = percentiles['Ml']
-        Ml_perc_error_minus, Ml_perc_error_plus = percentile_errors['Ml']
+        Ml_perc_error = percentile_errors['Ml']
         Ml_comment_begin = ''
         Ml_comment_end = ''
     else:
-        Ml_mean = Ml_error = np.nan
-        Ml_perc = Ml_perc_error_minus = Ml_perc_error_plus = np.nan
+        Ml_mean = Ml_perc = np.nan
+        Ml_mean_error = Ml_perc_error = (np.nan, np.nan)
         Ml_comment_begin = '<!--'
         Ml_comment_end = '-->'
     replacements.update({
-        '{ML_MEAN}': '{:.2f}'.format(Ml_mean),
-        '{ML_MEAN_ERR}': '{:.2f}'.format(Ml_error),
-        '{ML_PERC}': '{:.2f}'.format(Ml_perc),
-        '{ML_PERC_ERR_MINUS}': '{:.2f}'.format(Ml_perc_error_minus),
-        '{ML_PERC_ERR_PLUS}': '{:.2f}'.format(Ml_perc_error_plus),
+        '{ML_MEAN_AND_ERR}': _summary_value_and_err_text(
+            Ml_mean, Ml_mean_error, '{:.2f}'),
+        '{ML_PERC_AND_ERR}': _summary_value_and_err_text(
+            Ml_perc, Ml_perc_error, '{:.2f}'),
         '{ML_COMMENT_BEGIN}': Ml_comment_begin,
-        '{ML_COMMENT_END}': Ml_comment_end
+        '{ML_COMMENT_END}': Ml_comment_end,
     })
 
     # Output files and plots
