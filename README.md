@@ -69,8 +69,8 @@ traces via the `--trace_path` command line argument (see
 Information on the seismic event can be stored in the trace header ([SAC]
 format), or provided through a [QuakeML] file (`--qmlfile`) or a [HYPO71] or
 [HYPOINVERSE-2000] file (`--hypocenter`). See
-[Supported file formats](#supported-file-formats) below for more information on
-the supported file formats.
+[File formats](#file-formats) below for more information on the supported file
+formats.
 
 ### Configuration file
 
