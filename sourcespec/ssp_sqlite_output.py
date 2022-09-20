@@ -9,6 +9,7 @@ SQLite output for source_spec.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
+import os.path
 import logging
 import sqlite3
 from sourcespec.ssp_setup import ssp_exit
@@ -40,9 +41,39 @@ def write_sqlite(config, sspec_output):
     evid = hypo.evid
     runid = config.options.run_id
 
+    # Current supported DB version
+    DB_VERSION = 1
+
+    # only check version if database_file exsists
+    check_version = os.path.isfile(database_file)
+
     # Open SQLite database
-    conn = sqlite3.connect(database_file, timeout=60)
+    try:
+        conn = sqlite3.connect(database_file, timeout=60)
+    except Exception as msg:
+        logger.error(msg)
+        logger.info(
+            'Please check whether "{}" is a valid SQLite file.'.format(
+                database_file)
+        )
+        ssp_exit(1)
     c = conn.cursor()
+
+    if check_version:
+        # Get current DB version
+        db_version = c.execute('PRAGMA user_version').fetchone()[0]
+        if db_version < DB_VERSION:
+            msg = '"{}" has an old database version: "{}". '.format(
+                database_file, db_version)
+            msg += 'Current supported version is "{}".'.format(DB_VERSION)
+            logger.error(msg)
+            msg = 'Remove or rename your old database file, '
+            msg += 'so that a new one can be created.'
+            logger.info(msg)
+            exit(1)
+    else:
+        # Set the DB version
+        c.execute('PRAGMA user_version = {v:d}'.format(v=DB_VERSION))
 
     # Create Station table
     sql_create_stations_table = """CREATE TABLE IF NOT EXISTS Stations (
