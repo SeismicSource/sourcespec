@@ -289,7 +289,7 @@ class SummaryStatistics(OrderedAttribDict):
         if self.lower_uncertainty is not None:
             return (self.lower_uncertainty, self.upper_uncertainty)
         else:
-            return self.uncertainty
+            return (self.uncertainty, self.uncertainty)
 
 
 class SummarySpectralParameter(OrderedAttribDict):

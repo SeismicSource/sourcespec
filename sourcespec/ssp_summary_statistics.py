@@ -29,11 +29,11 @@ def _avg_and_std(values, errors=None, logarithmic=False):
     """
     average = std = np.nan
     if len(values) == 0:
-        return average, std
+        return average, np.array((std, std))
     if errors is not None and len(errors) == 0:
-        return average, std
+        return average, np.array((std, std))
     if np.all(np.isnan(values)):
-        return average, std
+        return average, np.array((std, std))
     if errors is None:
         weights = None
     else:
@@ -86,6 +86,8 @@ def _normal_confidence_level(n_sigma):
 def _percentiles(
         values, low_percentage=25, mid_percentage=50, up_percentage=75):
     """Compute lower, mid and upper percentiles."""
+    if len(values) == 0:
+        return np.nan, np.nan, np.nan
     low_percentile, mid_percentile, up_percentile =\
         np.nanpercentile(
             values, (low_percentage, mid_percentage, up_percentage))

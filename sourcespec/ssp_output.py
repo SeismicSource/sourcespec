@@ -27,14 +27,6 @@ from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
-def _format_exponent(value, reference):
-    """Format `value` to a string having the same exponent than `reference`."""
-    # get the exponent of reference value
-    xp = np.int(np.floor(np.log10(np.abs(reference))))
-    # format value to print it with the same exponent of reference value
-    return '{:5.3f}e{:+03d}'.format(value/10**xp, xp)
-
-
 def _write_author_and_agency_to_parfile(config, parfile):
     author_str = empty_author_str = '\n*** Author:'
     if config.author_name is not None:
@@ -60,6 +52,16 @@ def _write_author_and_agency_to_parfile(config, parfile):
         agency_str += ' {}'.format(config.agency_url)
     if agency_str != empty_agency_str:
         parfile.write(agency_str)
+
+
+def _value_error_str(value, error, fmt):
+    if error[0] == error[1]:
+        s = fmt + ' +/- ' + fmt
+        s = s.format(value, error[0])
+    else:
+        s = fmt + ' /- ' + fmt + ' /+ ' + fmt
+        s = s.format(value, error[0], error[1])
+    return s
 
 
 def _write_parfile(config, sspec_output):
@@ -209,89 +211,77 @@ def _write_parfile(config, sspec_output):
 
     Mw_mean = means['Mw']
     Mw_error = errors['Mw']
-    parfile.write('Mw: {:.2f} +/- {:.2f}\n'.format(Mw_mean, Mw_error))
+    s = _value_error_str(Mw_mean, Mw_error, '{:.2f}')
+    parfile.write('Mw: {}\n'.format(s))
     Mw_mean_weight = means_weight['Mw']
     Mw_error_weight = errors_weight['Mw']
-    parfile.write('Mw (weighted): {:.2f} +/- {:.2f}\n'.format(
-        Mw_mean_weight, Mw_error_weight))
+    s = _value_error_str(Mw_mean_weight, Mw_error_weight, '{:.2f}')
+    parfile.write('Mw (weighted): {}\n'.format(s))
 
     Mo_mean = means['Mo']
-    Mo_minus, Mo_plus = errors['Mo']
-    # format Mo_plus and Mo_minus to print it with the same exponent of Mo
-    Mo_minus_str = _format_exponent(Mo_minus, Mo_mean)
-    Mo_plus_str = _format_exponent(Mo_plus, Mo_mean)
-    parfile.write('Mo: {:.3e} /- {} /+ {} N.m\n'.format(
-        Mo_mean, Mo_minus_str, Mo_plus_str))
+    Mo_error = errors['Mo']
+    s = _value_error_str(Mo_mean, Mo_error, '{:.3e}')
+    parfile.write('Mo: {} N.m\n'.format(s))
     Mo_mean_weight = means_weight['Mo']
-    Mo_minus_weight, Mo_plus_weight = errors_weight['Mo']
-    # format Mo_plus and Mo_minus to print it with the same exponent of Mo
-    Mo_minus_str = _format_exponent(Mo_minus_weight, Mo_mean_weight)
-    Mo_plus_str = _format_exponent(Mo_plus_weight, Mo_mean_weight)
-    parfile.write('Mo (weighted): {:.3e} /- {} /+ {} N.m\n'.format(
-        Mo_mean_weight, Mo_minus_str, Mo_plus_str))
+    Mo_error_weight = errors_weight['Mo']
+    s = _value_error_str(Mo_mean_weight, Mo_error_weight, '{:.3e}')
+    parfile.write('Mo (weighted): {} N.m\n'.format(s))
 
     fc_mean = means['fc']
-    fc_minus, fc_plus = errors['fc']
-    parfile.write('fc: {:.3f} /- {:.3f} /+ {:.3f} Hz\n'.format(
-        fc_mean, fc_minus, fc_plus))
+    fc_error = errors['fc']
+    s = _value_error_str(fc_mean, fc_error, '{:.3f}')
+    parfile.write('fc: {} Hz\n'.format(s))
     fc_mean_weight = means_weight['fc']
-    fc_minus_weight, fc_plus_weight = errors_weight['fc']
-    parfile.write('fc (weighted): {:.3f} /- {:.3f} /+ {:.3f} Hz\n'.format(
-        fc_mean_weight, fc_minus_weight, fc_plus_weight))
+    fc_error_weight = errors_weight['fc']
+    s = _value_error_str(fc_mean_weight, fc_error_weight, '{:.3f}')
+    parfile.write('fc (weighted): {} Hz\n'.format(s))
 
     t_star_mean = means['t_star']
     t_star_error = errors['t_star']
-    parfile.write('t_star: {:.3f} +/- {:.3f} s\n'.format(
-        t_star_mean, t_star_error))
+    s = _value_error_str(t_star_mean, t_star_error, '{:.3f}')
+    parfile.write('t_star: {} s\n'.format(s))
     t_star_mean_weight = means_weight['t_star']
     t_star_error_weight = errors_weight['t_star']
-    parfile.write('t_star (weighted): {:.3f} +/- {:.3f} s\n'.format(
-        t_star_mean_weight, t_star_error_weight))
+    s = _value_error_str(t_star_mean_weight, t_star_error_weight, '{:.3f}')
+    parfile.write('t_star (weighted): {} s\n'.format(s))
 
     Qo_mean = means['Qo']
     Qo_error = errors['Qo']
-    parfile.write('Qo: {:.1f} +/- {:.1f}\n'.format(Qo_mean, Qo_error))
+    s = _value_error_str(Qo_mean, Qo_error, '{:.1f}')
+    parfile.write('Qo: {}\n'.format(s))
     Qo_mean_weight = means_weight['Qo']
     Qo_error_weight = errors_weight['Qo']
-    parfile.write('Qo (weighted): {:.1f} +/- {:.1f}\n'.format(
-        Qo_mean_weight, Qo_error_weight))
+    s = _value_error_str(Qo_mean_weight, Qo_error_weight, '{:.1f}')
+    parfile.write('Qo (weighted): {}\n'.format(s))
 
     ra_mean = means['radius']
-    ra_minus, ra_plus = errors['radius']
-    parfile.write('Source radius: {:.3f} /- {:.3f} /+ {:.3f} m\n'.format(
-        ra_mean, ra_minus, ra_plus))
+    ra_error = errors['radius']
+    s = _value_error_str(ra_mean, ra_error, '{:.3f}')
+    parfile.write('Source radius: {} m\n'.format(s))
     ra_mean_weight = means_weight['radius']
-    ra_minus_weight, ra_plus_weight = errors_weight['radius']
-    parfile.write(
-        'Source radius (weighted): {:.3f} /- {:.3f} /+ {:.3f} m\n'.format(
-            ra_mean_weight, ra_minus_weight, ra_plus_weight))
+    ra_error_weight = errors_weight['radius']
+    s = _value_error_str(ra_mean_weight, ra_error_weight, '{:.3f}')
+    parfile.write('Source radius (weighted): {} m\n'.format(s))
 
     bsd_mean = means['bsd']
-    bsd_minus, bsd_plus = errors['bsd']
-    bsd_minus_str = _format_exponent(bsd_minus, bsd_mean)
-    bsd_plus_str = _format_exponent(bsd_plus, bsd_mean)
-    parfile.write('Brune stress drop: {:.3e} /- {} /+ {} MPa\n'.format(
-        bsd_mean, bsd_minus_str, bsd_plus_str))
+    bsd_error = errors['bsd']
+    s = _value_error_str(bsd_mean, bsd_error, '{:.3e}')
+    parfile.write('Brune stress drop: {} MPa\n'.format(s))
     bsd_mean_weight = means_weight['bsd']
-    bsd_minus_weight, bsd_plus_weight = errors_weight['bsd']
-    bsd_minus_str = _format_exponent(bsd_minus_weight, bsd_mean_weight)
-    bsd_plus_str = _format_exponent(bsd_plus_weight, bsd_mean_weight)
-    parfile.write(
-        'Brune stress drop (weighted): {:.3e} /- {} /+ {} MPa\n'.format(
-            bsd_mean_weight, bsd_minus_str, bsd_plus_str))
+    bsd_error_weight = errors_weight['bsd']
+    s = _value_error_str(bsd_mean_weight, bsd_error_weight, '{:.3e}')
+    parfile.write('Brune stress drop (weighted): {} MPa\n'.format(s))
 
     Ml_mean = means.get('Ml', None)
     Ml_error = errors.get('Ml', None)
     if Ml_mean is not None:
-        parfile.write('Ml: {:.3f} +/- {:.3f}\n'.format(Ml_mean, Ml_error))
+        s = _value_error_str(Ml_mean, Ml_error, '{:.3f}')
+        parfile.write('Ml: {}\n'.format(s))
 
     Er_mean = means['Er']
-    Er_minus, Er_plus = errors['Er']
-    # format Er_plus and Er_minus to print it with the same exponent of Er
-    Er_minus_str = _format_exponent(Er_minus, Er_mean)
-    Er_plus_str = _format_exponent(Er_plus, Er_mean)
-    parfile.write('Er: {:.3e} /- {} /+ {} N.m\n'.format(
-        Er_mean, Er_minus_str, Er_plus_str))
+    Er_error = errors['Er']
+    s = _value_error_str(Er_mean, Er_error, '{:.3e}')
+    parfile.write('Er: {} N.m\n'.format(s))
 
     parfile.write('\n*** SourceSpec: {}'.format(get_versions()['version']))
     parfile.write('\n*** Run completed on: {} {}'.format(
