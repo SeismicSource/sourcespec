@@ -25,7 +25,7 @@ h6 {
   font-size: 0.8em;
   max-width: 75%;
 }
-h6 a, a:hover {
+h6 a, h6 a:hover {
   text-decoration: underline;
 }
 
