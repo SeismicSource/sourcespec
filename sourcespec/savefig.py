@@ -13,8 +13,8 @@ import io
 import PIL
 import logging
 # Reduce logging level for PIL to avoid DEBUG messages
-mpl_logger = logging.getLogger('PIL')
-mpl_logger.setLevel(logging.WARNING)
+pil_logger = logging.getLogger('PIL')
+pil_logger.setLevel(logging.WARNING)
 # Reduce logging level for fontTools to avoid DEBUG messages
 mpl_logger = logging.getLogger('fontTools')
 mpl_logger.setLevel(logging.WARNING)
