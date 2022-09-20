@@ -16,9 +16,9 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 ### Post-Inversion
 
-- Possibility of choosing the the reference summary statistics that will be
-  used for map plots, QuakeML and HYPO output, as well as for the "Event
-  Summary" section in HTML report and for computing station spectral residuals.
+- Possibility of choosing the reference summary statistics that will be used
+  for map plots, QuakeML and HYPO output, as well as for the "Event Summary"
+  section in HTML report and for computing station spectral residuals.
   Available summary statistics are:
   - mean
   - weighted_mean
