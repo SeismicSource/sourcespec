@@ -342,9 +342,9 @@ def write_sqlite(config, sspec_output):
         *percentile_errors['Er'],
         # Local magnitude
         means.get('Ml', None),
-        *mean_errors.get('Ml', None),
+        *mean_errors.get('Ml', (None, None)),
         percentiles.get('Ml', None),
-        *percentile_errors.get('Ml', None),
+        *percentile_errors.get('Ml', (None, None)),
         # Run info
         run_completed,
         ssp_version,
