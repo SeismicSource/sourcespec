@@ -52,6 +52,11 @@ metadata in [StationXML] format (e.g., `station.xml`) and event information in
    file;
 3. Run `source_spec -t traces.mseed -q event.xml`.
 
+> Note that the default config parameters are suited for a M<5 earthquake
+> recorded within ~100 km. Adjust `win_length`, `noise_pre_time`, and the
+> frequency bands (`bp_freqmin_*`, `bp_freqmax_*`, `freq1_*`, `freq2_*`)
+> according to your setup.
+
 ### Command line arguments
 
 After successfully installed SourceSpec (see [Installation](#installation)

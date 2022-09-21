@@ -206,6 +206,12 @@ def _write_sample_config(configspec, progname):
         with open(configfile, 'wb') as fp:
             c.write(fp)
         print('Sample config file written to: ' + configfile)
+        note = """
+Note that the default config parameters are suited for a M<5 earthquake
+recorded within ~100 km. Adjust `win_length`, `noise_pre_time`, and the
+frequency bands (`bp_freqmin_*`, `bp_freqmax_*`, `freq1_*`, `freq2_*`)
+according to your setup."""
+        print(note)
 
 
 def _update_config_file(config_file, configspec):
