@@ -48,6 +48,8 @@ Contents:
    file_formats
    installation
    sample_runs
+   getting_help
+   contributing
    citing
    api
    bibliography

@@ -39,7 +39,7 @@ The SourceSpec package is made of three command line tools:
   user-defined earthquake source parameters.
 - `source_residuals`: Compute station residuals from `source_spec` output.
 
-## Getting started
+## Getting Started
 
 ### For the impatient
 
@@ -91,7 +91,7 @@ Take your time to go through the generated configuration file (named
 `source_spec.conf`): the comments within the file will guide you on how to set
 up the different parameters.
 
-## File formats
+## File Formats
 
 ### Trace formats
 
@@ -193,7 +193,7 @@ file.
 Finally, always as an option, `source_spec` can generate a report in HTML
 format.
 
-## Theoretical background
+## Theoretical Background
 
 For each station, the code computes P- or S-wave displacement amplitude spectra
 for each component (e.g., Z, N, E), then combines the component spectra through
@@ -311,13 +311,29 @@ main directory by running:
 The official SourceSpec documentation can be find at
 [sourcespec.readthedocs.io][documentation].
 
-## Sample runs
+## Sample Runs
 
 Several sample runs are available in the
 [sourcespec_testruns](https://github.com/SeismicSource/sourcespec_testruns)
 repository.
 
-## How to cite
+## Getting Help / Reporting Bugs
+
+### 🙏 I need help
+
+Join the SourceSpec [Discussions] and feel free to ask!
+
+### 🐞 I found a bug
+
+Please open an [Issue][Issues].
+
+## Contributing
+
+I'm very open to contributions: if you have new ideas, please open an
+[Issue][Issues].
+Don't hesitate sending me pull requests with new features and/or bugfixes!
+
+## How to Cite
 
 If you used SourceSpec for a scientific paper, please cite it as:
 
@@ -349,6 +365,8 @@ Please replace `X.Y` with the SourceSpec version number you used.
 [DOI-badge]: https://zenodo.org/badge/DOI/10.5281/zenodo.3688587.svg
 [DOI-link]: https://doi.org/10.5281/zenodo.3688587
 [documentation]: https://sourcespec.readthedocs.io
+[Discussions]: https://github.com/SeismicSource/sourcespec/discussions
+[Issues]: https://github.com/SeismicSource/sourcespec/issues
 
 <!-- File formats -->
 [obspy_trace_formats]: https://docs.obspy.org/packages/autogen/obspy.core.stream.read.html

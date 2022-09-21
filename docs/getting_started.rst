@@ -1,7 +1,7 @@
 .. _getting_started:
 
 ###############
-Getting started
+Getting Started
 ###############
 
 For the impatient
