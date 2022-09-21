@@ -296,6 +296,14 @@ def _add_labels(axes, plotn, ncols):
         ax.set_xlabel('Time (s)', fontsize=8)
 
 
+def _set_ylim(axes):
+    """Set symmetric ylim."""
+    for ax in axes:
+        ylim = ax.get_ylim()
+        ymax = np.max(np.abs(ylim))
+        ax.set_ylim(-ymax, ymax)
+
+
 def _trim_traces(config, st):
     for trace in st:
         t1 = (trace.stats.arrivals['P'][1] - config.noise_pre_time)
@@ -343,6 +351,7 @@ def plot_traces(config, st, ncols=None, block=True):
         network, station, location, code = traceid.split('.')
         st_sel = st.select(network=network, station=station, location=location)
         if plotn > nlines*ncols:
+            _set_ylim(axes)
             _add_labels(axes, plotn-1, ncols)
             fig, axes = _make_fig(config, nlines, ncols)
             figures.append(fig)
@@ -382,7 +391,8 @@ def plot_traces(config, st, ncols=None, block=True):
                 config, trace, ntraces, tmax, ax, ax_text,
                 trans, trans3, path_effects)
 
-    # Add lables for the last figure
+    _set_ylim(axes)
+    # Add labels for the last figure
     _add_labels(axes, plotn, ncols)
     # Turn off the unused axes
     for ax in axes[plotn:]:
