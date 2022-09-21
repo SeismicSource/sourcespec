@@ -184,6 +184,26 @@ def _plot_min_max(ax, x_vals, y_vals, linewidth, color, alpha, zorder):
         zorder=zorder)
 
 
+def _freq_string(freq):
+    """Return a string representing the rounded frequency."""
+    if 1e-2 <= freq <= 1e2:
+        int_freq = int(round(freq))
+        if np.abs(int_freq - freq) < 1e-1:
+            freq_str = '{}'.format(int_freq)
+        else:
+            freq_str = '{:.1f}'.format(freq)
+    else:
+        freq_str = '{:.1e}'.format(freq)
+        m, n = map(float, freq_str.split('e'))
+        n = int(n)
+        int_m = int(round(m))
+        if np.abs(int_m - m) < 1e-1:
+            freq_str = '{}e{}'.format(int_m, n)
+        else:
+            freq_str = '{:.1f}e{}'.format(m, n)
+    return freq_str
+
+
 def _plot_trace(config, trace, ntraces, tmax,
                 ax, ax_text, trans, trans3, path_effects):
     orientation = trace.stats.channel[-1]
@@ -247,14 +267,15 @@ def _plot_trace(config, trace, ntraces, tmax,
                              alpha=0.5, zorder=-1)
     ax.add_patch(rect)
     if not ax_text:
-        text_y = 0.1
+        text_y = 0.01
         color = 'black'
         id_no_channel = '.'.join(trace.id.split('.')[:-1])
-        ax_text = '%s %s %.1f km (%.1f km)' %\
-                  (id_no_channel,
-                   trace.stats.instrtype,
-                   trace.stats.hypo_dist,
-                   trace.stats.epi_dist)
+        ax_text = '{} {} {:.1f} km ({:.1f} km)'.format(
+            id_no_channel, trace.stats.instrtype,
+            trace.stats.hypo_dist, trace.stats.epi_dist)
+        fmin_str = _freq_string(trace.stats.filter.freqmin)
+        fmax_str = _freq_string(trace.stats.filter.freqmax)
+        ax_text += '\nfilter: {} - {} Hz'.format(fmin_str, fmax_str)
         ax.text(0.05, text_y, ax_text,
                 fontsize=8,
                 horizontalalignment='left',
