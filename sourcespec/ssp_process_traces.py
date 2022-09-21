@@ -18,6 +18,7 @@ import logging
 import numpy as np
 import re
 from obspy.core import Stream
+from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import remove_instr_response, hypo_dist
 from sourcespec.ssp_wave_arrival import add_arrivals_to_trace
@@ -56,7 +57,10 @@ def filter_trace(config, trace):
         msg += 'is larger or equal to Nyquist. Setting it to {} Hz'
         msg = msg.format(trace.id, bp_freqmax)
         logger.warning(msg)
-    trace.filter(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
+    filter = dict(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
+    trace.filter(**filter)
+    # save filter info to trace stats
+    trace.stats.filter = AttribDict(filter)
 
 
 def _check_signal_level(config, trace):
