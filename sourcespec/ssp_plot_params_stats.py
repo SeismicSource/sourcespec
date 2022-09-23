@@ -88,6 +88,8 @@ def box_plots(config, sspec_output):
             ax.set_xlabel('{} ({})'.format(name, unit))
         ax.tick_params(left=False, labelleft=False)
         ax.minorticks_on()
+        if param == 'Er':
+            ax.set_xscale('log')
 
     # Add event information as a title
     hypo = config.hypo
