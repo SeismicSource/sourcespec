@@ -496,6 +496,10 @@ def configure(options, progname, config_overrides=None):
     # Add options to config:
     config.options = options
 
+    # Override station_metadata config option with command line option
+    if options.station_metadata is not None:
+        config.station_metadata = options.station_metadata
+
     # Additional config values
     config.vertical_channel_codes = ['Z']
     config.horizontal_channel_codes_1 = ['N', 'R']
