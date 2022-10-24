@@ -464,7 +464,7 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
 
 def build_spectra(config, st):
     """
-    Build spectra and the spec_st object.
+    Build spectra and the ``spec_st`` object.
 
     Computes P- or S-wave (displacement) spectra from
     accelerometers and velocimeters, uncorrected for anelastic attenuation,

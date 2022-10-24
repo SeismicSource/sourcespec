@@ -159,6 +159,9 @@ def _process_trace(config, trace):
 
 
 def _merge_stream(config, st):
+    """
+    Check for gaps and overlaps; remove mean; merge stream.
+    """
     traceid = st[0].id
     # First, compute gap/overlap statistics for the whole trace.
     gaps_olaps = st.get_gaps()
