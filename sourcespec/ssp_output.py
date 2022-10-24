@@ -399,7 +399,7 @@ def write_output(config, sspec_output):
     run_info.run_completed = '{} {}'.format(
         config.end_of_run, config.end_of_run_tz)
     if config.options.run_id:
-        run_info.run_id: config.options.run_id
+        run_info.run_id = config.options.run_id
     run_info.author_name = config.author_name
     run_info.author_email = config.author_email
     run_info.agency_full_name = config.agency_full_name
