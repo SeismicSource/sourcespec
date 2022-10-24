@@ -43,6 +43,7 @@ Contents:
    :maxdepth: 2
 
    theoretical_background
+   signal_processing
    getting_started
    configuration_file
    file_formats
