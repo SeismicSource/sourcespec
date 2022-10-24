@@ -34,6 +34,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosectionlabel',
+    'sphinx.ext.intersphinx',
     'sphinx-favicon',
     'sphinx_rtd_theme',
     'sphinxcontrib.bibtex',
@@ -42,6 +43,11 @@ autosectionlabel_prefix_document = True
 bibtex_bibfiles = ['refs.bib']
 bibtex_reference_style = 'author_year'
 bibtex_default_style = 'unsrt'
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'scipy': ('http://docs.scipy.org/doc/scipy/', None),
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
