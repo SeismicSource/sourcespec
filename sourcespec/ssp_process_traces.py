@@ -215,11 +215,12 @@ def _merge_stream(config, st):
         msg = '{}: Signal window has {:.3f} seconds of overlaps.'
         msg = msg.format(traceid, overlap_duration)
         logger.info(msg)
-    # Finally, demean and remove gaps and overlaps.
-    # Since the count value is generally huge, we need to demean twice
-    # to take into account for the rounding error
-    st.detrend(type='constant')
-    st.detrend(type='constant')
+    # Finally, demean (only if trace has not be already preprocessed)
+    if config.trace_units == 'auto':
+        # Since the count value is generally huge, we need to demean twice
+        # to take into account for the rounding error
+        st.detrend(type='constant')
+        st.detrend(type='constant')
     # Merge stream to remove gaps and overlaps
     try:
         st.merge(fill_value=0)
