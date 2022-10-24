@@ -46,10 +46,6 @@ def _get_bandpass_frequencies(config, trace):
 
 def filter_trace(config, trace):
     bp_freqmin, bp_freqmax = _get_bandpass_frequencies(config, trace)
-    # remove the mean...
-    trace.detrend(type='constant')
-    # ...and the linear trend...
-    trace.detrend(type='linear')
     nyquist = 1./(2. * trace.stats.delta)
     if bp_freqmax >= nyquist:
         bp_freqmax = nyquist * 0.999
