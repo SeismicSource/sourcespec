@@ -37,6 +37,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 ### Bugfixes
 
+- Properly ignore vertical components when `ignore_vertical` is `True`
 - Fix for noise window not showing up in PNG trace plots in some cases
 - HTML report: better scrollbars for station table across all the browsers
 

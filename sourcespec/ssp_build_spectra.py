@@ -80,7 +80,7 @@ def _cut_spectrum(config, spec):
     return spec.slice(freq1, freq2)
 
 
-def _compute_h(spec_st, code, wave_type='S'):
+def _compute_h(spec_st, code, vertical_channel_codes=['Z'], wave_type='S'):
     """
     Compute the component 'H' from geometric mean of the stream components.
 
@@ -99,11 +99,12 @@ def _compute_h(spec_st, code, wave_type='S'):
         # only use transverse component for SH
         if wave_type == 'SH' and channel[-1] != 'T':
             continue
-        # only use radial and, optionally, vertical component for SV
+        # do not use transverse component for SV
+        # (only raidal and, optionally, vertical)
         if wave_type == 'SV' and channel[-1] == 'T':
             continue
         # only use vertical component for P
-        if wave_type == 'P' and channel[-1] != 'Z':
+        if wave_type == 'P' and channel[-1] not in vertical_channel_codes:
             continue
         if spec_h is None:
             spec_h = spec.copy()
@@ -419,7 +420,8 @@ def _select_spectra(spec_st, specid):
     return spec_st_sel
 
 
-def _build_H(spec_st, specnoise_st=None, wave_type='S'):
+def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=['Z'],
+             wave_type='S'):
     """
     Add to spec_st and specnoise_st the "H" component.
 
@@ -431,10 +433,12 @@ def _build_H(spec_st, specnoise_st=None, wave_type='S'):
         specnoise_st_sel = _select_spectra(specnoise_st, specid)
         # 'code' is band+instrument code
         for code in set(x.stats.channel[:-1] for x in spec_st_sel):
-            spec_h = _compute_h(spec_st_sel, code, wave_type)
+            spec_h = _compute_h(
+                spec_st_sel, code, vertical_channel_codes, wave_type)
             if spec_h is not None:
                 spec_st.append(spec_h)
-            specnoise_h = _compute_h(specnoise_st_sel, code, wave_type)
+            specnoise_h = _compute_h(
+                specnoise_st_sel, code, vertical_channel_codes, wave_type)
             if specnoise_h is not None:
                 specnoise_st.append(specnoise_h)
 
@@ -501,7 +505,8 @@ def build_spectra(config, st):
         ssp_exit()
 
     # build H component
-    _build_H(spec_st, specnoise_st, config.wave_type)
+    _build_H(
+        spec_st, specnoise_st, config.vertical_channel_codes, config.wave_type)
 
     # convert the spectral amplitudes to moment magnitude
     for spec in spec_st:

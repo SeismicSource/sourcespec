@@ -136,8 +136,18 @@ def _process_trace(config, trace):
     trace_process = trace.copy()
     comp = trace_process.stats.channel
     instrtype = trace_process.stats.instrtype
-    if config.ignore_vertical and comp[-1] in ['Z', '1']:
-        raise RuntimeError
+    if config.ignore_vertical and comp[-1] in config.vertical_channel_codes:
+        if config.wave_type == 'P':
+            msg = '{} {}: cannot ignore vertical trace, '
+            msg += 'since "wave_type" is set to "P"'
+            msg = msg.format(trace.id, trace.stats.instrtype)
+            logger.warning(msg)
+        else:
+            msg = '{} {}: ignoring vertical trace as requested'.format(
+                trace.id, trace.stats.instrtype
+            )
+            logger.info(msg)
+            trace_process.stats.ignore = True
     # check if the trace has (significant) signal
     _check_signal_level(config, trace_process)
     # check if trace is clipped
