@@ -379,6 +379,9 @@ a.article:hover {
 .dontprint {
   display: block;
 }
+.dontprint_inline {
+  display: inline;
+}
 .print_inline {
   display: none;
 }
@@ -401,6 +404,9 @@ a.article:hover {
     display: block;
   }
   .dontprint {
+    display: none;
+  }
+  .dontprint_inline {
     display: none;
   }
   .print_inline {
