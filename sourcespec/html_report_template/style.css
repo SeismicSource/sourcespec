@@ -91,9 +91,36 @@ table.stations td.station_id {
   z-index: 3;
 }
 
-.table_wrapper{
-  height:500px;
+.table_wrapper {
+  height: 500px;
   white-space: nowrap;
+  overflow: hidden;
+  /* scrollbar style for Firefox */
+  scrollbar-width: auto;
+}
+.table_wrapper:hover {
+  overflow: scroll;
+}
+/* scrollbar styles for webkit browsers */
+.table_wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.table_wrapper::-webkit-scrollbar-track {
+  background: rgb(240, 240, 240);
+  border-radius: 8px;
+}
+.table_wrapper::-webkit-scrollbar-thumb {
+  background: rgb(200, 200, 200);
+  border-radius: 8px;
+}
+.table_wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgb(100, 100, 100);
+  border-radius: 8px;
+}
+.table_wrapper::-webkit-scrollbar-thumb:active {
+  background: rgb(68, 68, 68);
+  border-radius: 8px;
 }
 
 .navbar {
