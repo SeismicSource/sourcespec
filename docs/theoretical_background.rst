@@ -244,6 +244,9 @@ S-wave quality factor :math:`Q_0^{[P|S]}` using the following expression:
 where :math:`tt_{[P|S]}(r)` is the P- or S-wave travel time from source to
 station and :math:`r` is the hypocentral distance.
 
+
+Station Residuals
+-----------------
 Station-specific effects can be determined by running ``source_spec`` on several
 events and computing the average of station residuals between observed and
 inverted spectra. These averages are obtained through the command
