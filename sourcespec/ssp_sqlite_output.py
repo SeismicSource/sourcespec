@@ -77,7 +77,7 @@ def write_sqlite(config, sspec_output):
 
     # Create Station table
     sql_create_stations_table = """CREATE TABLE IF NOT EXISTS Stations (
-        stid TEXT PRIMARY KEY,
+        stid TEXT,
         evid TEXT,
         runid TEXT,
         Mo REAL,
