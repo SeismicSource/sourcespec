@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 # SPDX-License-Identifier: CECILL-2.1
 """
-Compute station residuals from source_spec.py output.
+Compute station residuals from source_spec output.
 
 :copyright:
     2013-2014 Claudio Satriano <satriano@ipgp.fr>,
@@ -17,7 +17,7 @@ import os
 from glob import glob
 from collections import defaultdict
 import pickle
-from optparse import OptionParser
+from argparse import ArgumentParser
 from obspy.core import Stream
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
 from sourcespec.spectrum import Spectrum
@@ -27,25 +27,21 @@ matplotlib.use('Agg')  # NOQA
 
 
 def main():
-    usage = 'usage: %prog [options] residuals_dir'
-
-    parser = OptionParser(usage=usage)
-    parser.add_option(
+    parser = ArgumentParser(
+        description='Compute station residuals from source_spec output.')
+    parser.add_argument(
         '-m', '--min_spectra', dest='min_spectra', action='store',
         default='20', help='minimum number of spectra to '
         'compute residuals (default=20)', metavar='NUMBER')
-    parser.add_option(
+    parser.add_argument(
         '-p', '--plot', dest='plot', action='store_true',
         default=False, help='save residuals plots to file')
-    (options, args) = parser.parse_args()
+    parser.add_argument(
+        'sspec_out_dir', help='directory containing source_spec output')
+    args = parser.parse_args()
 
-    if len(args) < 1:
-        parser.print_usage(file=sys.stderr)
-        sys.stderr.write("\tUse '-h' for help\n\n")
-        sys.exit(1)
-
-    resdir = args[0]
-    min_spectra = int(options.min_spectra)
+    resdir = args.sspec_out_dir
+    min_spectra = int(args.min_spectra)
     outdir = 'sspec_residuals'
 
     residual_dict = defaultdict(Stream)
@@ -94,7 +90,7 @@ def main():
         residual_mean.append(spec_mean)
 
         # plot traces
-        if options.plot:
+        if args.plot:
             stnm = spec_mean.stats.station
             figurefile = os.path.join(outdir, stnm + '-res.png')
             fig = plt.figure(dpi=160)
