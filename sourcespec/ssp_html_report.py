@@ -13,11 +13,11 @@ import os
 import logging
 import shutil
 import re
-from typing import Type
 import numpy as np
 from urllib.parse import urlparse
 from sourcespec._version import get_versions
 from sourcespec.ssp_data_types import SpectralParameter
+from sourcespec.ssp_setup import ssp_exit
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -71,6 +71,37 @@ def _multireplace(string, replacements, ignore_case=False):
     # the normalized old string
     return pattern.sub(
         lambda match: replacements[normalize_old(match.group(0))], string)
+
+
+def _agency_logo(config):
+    agency_logo = config.agency_logo
+    if config.agency_logo is None:
+        return ""
+    # check if agency_logo is a URL
+    parsed_url = urlparse(agency_logo)
+    if not parsed_url.scheme:
+        # check if it is a file
+        if not os.path.exists(agency_logo):
+            logger.error('Cannot find the agency logo file: {}'.format(
+                agency_logo))
+            ssp_exit(1)
+        shutil.copy(agency_logo, config.options.outdir)
+        agency_logo = os.path.basename(agency_logo)
+    agency_logo_img = '<img class="logo" src="{}"/>'.format(agency_logo)
+    indent5 = 5*'  '
+    indent6 = 6*'  '
+    if config.agency_url is not None:
+        agency_logo_html =\
+            '{}<a href="{}" target="_blank">\n{}{}\n{}</a>'.format(
+                indent5, config.agency_url,
+                indent6, agency_logo_img,
+                indent5
+            )
+    else:
+        agency_logo_html = indent5 + agency_logo_img
+    agency_logo_html = agency_logo_html +\
+        '\n{}<hr class="solid">'.format(indent5)
+    return agency_logo_html
 
 
 def _logo_file_url():
@@ -275,6 +306,9 @@ def html_report(config, sspec_output):
     # Logo file
     logo_file = _logo_file_url()
 
+    # HTML for agency logo
+    agency_logo = _agency_logo(config)
+
     # Version and run completed
     ssp_version, run_completed = _version_and_run_completed(config)
 
@@ -395,6 +429,7 @@ def html_report(config, sspec_output):
 
     # Event and run info
     replacements = {
+        '{AGENCY_LOGO}': agency_logo,
         '{LOGO_FILE}': logo_file,
         '{VERSION}': ssp_version,
         '{RUN_COMPLETED}': run_completed,

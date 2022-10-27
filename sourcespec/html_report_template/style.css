@@ -178,6 +178,10 @@ table.stations td.station_id {
   width: 100%;
 }
 
+hr.solid {
+  border-top: 3px solid #505050;
+}
+
 #sidebar {
   width: 250px;
   position: fixed;
