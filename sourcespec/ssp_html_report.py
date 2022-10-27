@@ -73,21 +73,31 @@ def _multireplace(string, replacements, ignore_case=False):
         lambda match: replacements[normalize_old(match.group(0))], string)
 
 
-def _agency_logo(config):
-    agency_logo = config.agency_logo
-    if config.agency_logo is None:
-        return ""
+def _agency_logo_path(config):
+    agency_logo_path = config.agency_logo
+    if agency_logo_path is None:
+        return None
     # check if agency_logo is a URL
-    parsed_url = urlparse(agency_logo)
+    parsed_url = urlparse(agency_logo_path)
     if not parsed_url.scheme:
         # check if it is a file
-        if not os.path.exists(agency_logo):
+        if not os.path.exists(agency_logo_path):
             logger.error('Cannot find the agency logo file: {}'.format(
-                agency_logo))
+                agency_logo_path))
             ssp_exit(1)
-        shutil.copy(agency_logo, config.options.outdir)
-        agency_logo = os.path.basename(agency_logo)
-    agency_logo_img = '<img class="logo" src="{}"/>'.format(agency_logo)
+        bname = os.path.basename(agency_logo_path)
+        dest = os.path.join(config.options.outdir, bname)
+        if not os.path.exists(dest):
+            shutil.copy(agency_logo_path, config.options.outdir)
+        agency_logo_path = bname
+    return agency_logo_path
+
+
+def _agency_logo(config):
+    agency_logo_path = _agency_logo_path(config)
+    if agency_logo_path is None:
+        return ""
+    agency_logo_img = '<img class="logo" src="{}"/>'.format(agency_logo_path)
     indent5 = 5*'  '
     indent6 = 6*'  '
     if config.agency_url is not None:
@@ -119,7 +129,7 @@ def _version_and_run_completed(config):
     return ssp_version, run_completed
 
 
-def _author_and_agency(config):
+def _author_html(config):
     author = ''
     if config.author_name is not None:
         author = config.author_name
@@ -128,6 +138,9 @@ def _author_and_agency(config):
     if config.author_email is not None:
         author = '<a href="mailto:{}">{}</a>'.format(
             config.author_email, author)
+    return author
+
+def _agency_html(config):
     agency = ''
     if config.agency_full_name is not None:
         agency = config.agency_full_name
@@ -140,6 +153,12 @@ def _author_and_agency(config):
     if config.agency_url is not None:
         agency = '<a href="{}" target="_blank">{}</a>'.format(
             config.agency_url, agency)
+    return agency
+
+
+def _author_and_agency(config):
+    author = _author_html(config)
+    agency = _agency_html(config)
     if author != '':
         author = '<br/><br/>' + author
     if author == '' and agency != '':
@@ -147,6 +166,47 @@ def _author_and_agency(config):
     if author != '' and agency != '':
         agency = '<br/>' + agency
     return author, agency
+
+
+def _page_footer(config):
+    agency_logo_path = _agency_logo_path(config)
+    footer_html = ''
+    indent3 = 3*'  '
+    indent4 = 4*'  '
+    footer_html +=\
+        '{}<div class="text_footer">\n'.format(indent3)
+    author = _author_html(config)
+    agency = _agency_html(config)
+    auth_agen_text = ''
+    if author != '' and agency != '':
+        auth_agen_text += '{}{}\n{}-\n{}{}\n'.format(
+            indent4, author, indent4, indent4, agency)
+    if author != '' and agency == '':
+        auth_agen_text += '{}{}\n'.format(indent4, author)
+    if author == '' and agency != '':
+        auth_agen_text += '{}{}\n'.format(indent4, agency)
+    run_completed = config.end_of_run.strftime('%Y-%m-%d')
+    if auth_agen_text == '':
+        footer_html += '{}{}\n'.format(indent4, run_completed)
+    else:
+        footer_html += '{}\n{}-\n{}{}\n'.format(
+            auth_agen_text, indent4, indent4, run_completed)
+    footer_html += '{}</div>\n'.format(indent3)
+    if agency_logo_path is not None:
+        if config.agency_url is not None:
+            a_agency = '<a href="{}" target="_blank">'.format(
+                config.agency_url)
+            a_agency_close = '</a>'
+        else:
+            a_agency = a_agency_close = ''
+        footer_html +=\
+            '{}<div class="logo_footer">\n{}{}<img src="{}"/>{}\n{}</div>\n'.\
+            format(
+                indent3, indent4,
+                a_agency, agency_logo_path, a_agency_close,
+                indent3
+            )
+    return footer_html
 
 
 def _format_exponent(value, reference):
@@ -315,6 +375,9 @@ def html_report(config, sspec_output):
     # Author and agency
     author, agency = _author_and_agency(config)
 
+    # Page footer
+    page_footer = _page_footer(config)
+
     # Output files and maps
     hypo = config.hypo
     evid = hypo.evid
@@ -435,6 +498,7 @@ def html_report(config, sspec_output):
         '{RUN_COMPLETED}': run_completed,
         '{AUTHOR}': author,
         '{AGENCY}': agency,
+        '{PAGE_FOOTER}': page_footer,
         '{EVENTID}': evid,
         '{RUNID}': run_id,
         '{EVENT_LONGITUDE}': '{:8.3f}'.format(hypo.longitude),
