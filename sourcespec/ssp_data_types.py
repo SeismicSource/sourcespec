@@ -256,7 +256,7 @@ class StationParameters(OrderedAttribDict):
 class SummaryStatistics(OrderedAttribDict):
     """
     A summary statistics (e.g., mean, weighted_mean, percentile), along with
-    its uncertainity.
+    its uncertainty.
     """
 
     def __init__(self, type, value=None, uncertainty=None,

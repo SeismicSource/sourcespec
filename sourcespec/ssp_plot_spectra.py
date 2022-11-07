@@ -614,7 +614,7 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
     spec_st_sel = spec_st.select(
         network=network, station=station, location=location)
     if plotn > nlines*ncols:
-        # Add lables and legend before making a new figure
+        # Add labels and legend before making a new figure
         _add_labels(plot_params)
         _add_legend(config, plot_params, spec_st, specnoise_st)
         _make_fig(config, plot_params)
@@ -696,7 +696,7 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
     for _, specid in stalist:
         _plot_specid(config, plot_params, specid, spec_st, specnoise_st)
 
-    # Add lables and legend for the last figure
+    # Add labels and legend for the last figure
     _add_labels(plot_params)
     _add_legend(config, plot_params, spec_st, specnoise_st)
     # Turn off the unused axes

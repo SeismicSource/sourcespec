@@ -71,7 +71,7 @@ def make_synth(config, spec_st, trace_spec=None):
     # fp = open(figurefile,'wb')
     # pickle.dump(residuals,fp)
     # fp.close()
-    # print 'residuals caculated. exit code'
+    # print 'residuals calculated. exit code'
 
 
 def main():

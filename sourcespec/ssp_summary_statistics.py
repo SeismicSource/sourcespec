@@ -24,7 +24,7 @@ def _avg_and_std(values, errors=None, logarithmic=False):
     Return the average and standard deviation.
 
     Optionally:
-    - errors can be specfied for weighted statistics
+    - errors can be specified for weighted statistics
     - logarithmic average and standard deviation
     """
     average = std = np.nan

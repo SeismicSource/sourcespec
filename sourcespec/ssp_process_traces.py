@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__.split('.')[-1])
 
 def _get_bandpass_frequencies(config, trace):
     """Get frequencies for bandpass filter."""
-    # see if there is a station-specfic filter
+    # see if there is a station-specific filter
     station = trace.stats.station
     try:
         bp_freqmin = float(config['bp_freqmin_' + station])

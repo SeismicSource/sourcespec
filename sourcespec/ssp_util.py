@@ -191,7 +191,7 @@ def remove_instr_response(trace, correct='True',
         correct = 'sensitivity_only'
     if correct == 'sensitivity_only':
         trace.data /= paz.sensitivity
-    # Otherwhise we need to call trace.simulate(), which is quite slow...
+    # Otherwise we need to call trace.simulate(), which is quite slow...
     else:
         with warnings.catch_warnings(record=True) as w:
             # N.B. using "sacsim=True" makes this two times slower!

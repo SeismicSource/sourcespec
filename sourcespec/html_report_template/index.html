@@ -462,7 +462,7 @@
             xvalue = x.innerHTML.toLowerCase();
             yvalue = y.innerHTML.toLowerCase();
             if (numeric) {
-              // split with respect to "<br>", then strip all remainig tags
+              // split with respect to "<br>", then strip all remaining tags
               xvalue = xvalue.split("<br>")[0].replace(/<\/?[^>]+(>|$)/g, "");
               yvalue = yvalue.split("<br>")[0].replace(/<\/?[^>]+(>|$)/g, "");
               if (xvalue == "nan") {

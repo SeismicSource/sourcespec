@@ -56,7 +56,7 @@ def _radiated_energy_coefficient(rho, vel):
     # and receiver. Here we put <Fs>/Fs = 1, meaning that we rely on the
     # averaging between measurements at different stations, instead of
     # precise measurements at a single station.
-    # S is the free-surface amplification factor, whihch we put = 2
+    # S is the free-surface amplification factor, which we put = 2
     coeff = 8 * np.pi * (1./2.)**2 * rho * vel
     return coeff
 

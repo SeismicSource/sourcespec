@@ -65,13 +65,13 @@ def box_plots(config, sspec_output):
             continue
         vmean = np.mean(values)
         # remove values that are very far from the mean
-        # (otherwhise plot is too compressed)
+        # (otherwise plot is too compressed)
         values = values[np.abs(values-vmean)/vmean < 10]
-        whis = config.nIQR
-        if whis is None:
-            whis = (0, 100)
+        whiskers = config.nIQR
+        if whiskers is None:
+            whiskers = (0, 100)
         bplot = ax.boxplot(
-            values, vert=False, whis=whis,
+            values, vert=False, whis=whiskers,
             widths=0.7, patch_artist=True)
         ax.scatter(
             values, np.ones_like(values), color='dimgray', edgecolor='white',

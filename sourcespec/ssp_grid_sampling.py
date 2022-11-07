@@ -4,7 +4,7 @@
 """
 A class for sampling a parameter space over a grid.
 
-Sampling can be perfomred by several approaches.
+Sampling can be performed by several approaches.
 The class provides optimal solutions, uncertainties and plotting methods.
 
 :copyright:
@@ -29,7 +29,7 @@ def peak_width(x, peak_idx, rel_height, negative=False):
     """
     Find width of a single peak at a given relative height.
 
-    rel_height: float paramter between 0 and 1
+    rel_height: float parameter between 0 and 1
                 0 means the base of the curve and 1 the peak value
                 (Note: this is the opposite of scipy.peak_widths)
     """
@@ -80,7 +80,7 @@ class GridSampling():
     """
     A class for sampling a parameter space over a grid.
 
-    Sampling can be perfomred by several approaches.
+    Sampling can be performed by several approaches.
     The class provides optimal solutions, uncertainties and plotting methods.
     """
 
@@ -199,7 +199,7 @@ class GridSampling():
 
     @property
     def conditional_peak_widths(self):
-        """Find width of conditional misfit around its mininum."""
+        """Find width of conditional misfit around its minimum."""
         if self.misfit is None:
             return None
         if self._conditional_peak_widths is not None:
@@ -264,7 +264,7 @@ class GridSampling():
             ax[dim].plot((w[1], w[2]), (w[0], w[0]), color='red', ls='dashed')
             ax[dim].axvline(popt, color='red')
             text = '  {:.3f}  '.format(popt)
-            # set horizontal alignement based on wether we are
+            # set horizontal alignment based on whether we are
             # on the left or right part of the plot
             if popt < np.nanmean(v):
                 ha = 'left'
