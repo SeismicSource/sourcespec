@@ -44,7 +44,7 @@ def write_sqlite(config, sspec_output):
     # Current supported DB version
     DB_VERSION = 1
 
-    # only check version if database_file exsists
+    # only check version if database_file exists
     check_version = os.path.isfile(database_file)
 
     # Open SQLite database

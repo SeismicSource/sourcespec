@@ -110,7 +110,7 @@ class KDTree():
         extent_new = []
         for v in np.hstack((extent, deltas)):
             start, stop, step = v
-            # add a small number to make sure end value is inclued
+            # add a small number to make sure end value is included
             stop += stop/1e5
             rng = np.arange(start, stop, step)
             ranges.append(rng)

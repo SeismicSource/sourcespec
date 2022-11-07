@@ -4,7 +4,7 @@
 A Spectrum() class defined as a modification of the ObsPy class Trace().
 
 Provides the high-level function do_spectrum()
-and the low-level funciton do_fft().
+and the low-level function do_fft().
 
 :copyright:
     2012-2022 Claudio Satriano <satriano@ipgp.fr>

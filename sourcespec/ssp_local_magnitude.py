@@ -100,7 +100,7 @@ def _process_trace(config, tr, t0, t1):
         raise RuntimeError
 
     # If the check is ok, recover the full trace
-    # (it will be cutted later on)
+    # (it will be cut later on)
     tr_process = tr.copy()
     # remove the mean...
     tr_process.detrend(type='constant')

@@ -63,7 +63,7 @@ def _frequency_integrate(config, spec):
 
 
 def _cut_spectrum(config, spec):
-    # see if there is a station-specfic frequency range
+    # see if there is a station-specific frequency range
     station = spec.stats.station
     try:
         freq1 = float(config['freq1_' + station])
@@ -147,7 +147,7 @@ def _cut_signal_noise(config, trace):
     trace_noise = trace.copy()
 
     # Integrate in time domain, if required.
-    # (otherwhise frequency-domain integration is
+    # (otherwise frequency-domain integration is
     # performed later)
     if config.time_domain_int:
         _time_integrate(config, trace_signal)
