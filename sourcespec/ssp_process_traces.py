@@ -116,9 +116,15 @@ def _check_sn_ratio(config, trace):
     rmsS2 = np.power(trace_signal.data, 2).sum()
     rmsS = np.sqrt(rmsS2)
     if rmsnoise == 0:
-        msg = '{} {}: empty noise window: skipping trace'
-        msg = msg.format(trace.id, trace.stats.instrtype)
-        raise RuntimeError(msg)
+        if config.weighting == 'noise':
+            msg = '{} {}: empty noise window: skipping trace'
+            msg = msg.format(trace.id, trace.stats.instrtype)
+            raise RuntimeError(msg)
+        else:
+            msg = '{} {}: empty noise window!'
+            msg = msg.format(trace.id, trace.stats.instrtype)
+            logger.warning(msg)
+            rmsnoise = 1.
     sn_ratio = rmsS/rmsnoise
     logger.info('{} {}: S/N: {:.1f}'.format(
         trace.id, trace.stats.instrtype, sn_ratio))
@@ -265,31 +271,45 @@ def _add_hypo_dist_and_arrivals(config, st):
             msg = '{}: Unable to get P arrival time: skipping trace'
             msg = msg.format(trace.id)
             raise RuntimeError(msg)
+        if config.wave_type[0] == 'P' and p_arrival_time < trace.stats.starttime:
+            msg = '{}: P-window incomplete: skipping trace'
+            msg = msg.format(trace.id)
+            raise RuntimeError(msg)
         try:
             s_arrival_time = trace.stats.arrivals['S'][1]
         except KeyError:
             msg = '{}: Unable to get S arrival time: skipping trace'
             msg = msg.format(trace.id)
             raise RuntimeError(msg)
+        if config.wave_type[0] == 'S' and s_arrival_time < trace.stats.starttime:
+            msg = '{}: S-window incomplete: skipping trace'
+            msg = msg.format(trace.id)
+            raise RuntimeError(msg)
         # Signal window for spectral analysis (S phase)
-        t1 = s_arrival_time - config.signal_pre_time
+        s_minus_p = s_arrival_time-p_arrival_time
+        t1 = s_arrival_time - min(config.signal_pre_time, s_minus_p / 2.)
+        t1 = max(trace.stats.starttime, t1)
         t2 = t1 + config.win_length
         trace.stats.arrivals['S1'] = ('S1', t1)
         trace.stats.arrivals['S2'] = ('S2', t2)
         # Signal window for spectral analysis (P phase)
         t1 = p_arrival_time - config.signal_pre_time
-        t2 = t1 + min(config.win_length, s_arrival_time-p_arrival_time)
+        t1 = max(trace.stats.starttime, t1)
+        t2 = t1 + min(config.win_length, s_minus_p)
         trace.stats.arrivals['P1'] = ('P1', t1)
         trace.stats.arrivals['P2'] = ('P2', t2)
         # Noise window for spectral analysis
-        t1 = p_arrival_time - config.noise_pre_time
+        t1 = max(trace.stats.starttime, p_arrival_time - config.noise_pre_time)
         t2 = t1 + config.win_length
-        if t2 >= s_arrival_time:
-            logger.warning(
-                '{}: noise window ends after S-wave arrival'.format(trace.id))
-        elif t2 >= p_arrival_time:
+        #if t2 >= s_arrival_time:
+        #    logger.warning(
+        #        '{}: noise window ends after S-wave arrival'.format(trace.id))
+        if t2 >= p_arrival_time:
             logger.warning(
                 '{}: noise window ends after P-wave arrival'.format(trace.id))
+            # Note: maybe we should also take into account signal_pre_time here
+            t2 = p_arrival_time
+            t1 = min(t1, t2)
         trace.stats.arrivals['N1'] = ('N1', t1)
         trace.stats.arrivals['N2'] = ('N2', t2)
 
