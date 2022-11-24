@@ -74,7 +74,8 @@ def _set_plot_params(config, spec_st, specnoise_st, ncols, plot_params):
         if specnoise_st:
             specnoise_sel = specnoise_st.select(
                 network=network, station=station, location=location)
-            spec_st_sel += specnoise_sel
+            if not specnoise_sel[0].data.sum() == 0:
+                spec_st_sel += specnoise_sel
         for spec in spec_st_sel:
             moment_minmax, freq_minmax =\
                 spec_minmax(spec.data, spec.get_freq(),
