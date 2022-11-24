@@ -169,8 +169,32 @@ def _cut_signal_noise(config, trace):
     # ...taper...
     cosine_taper(trace_signal.data, width=config.taper_halfwidth)
     cosine_taper(trace_noise.data, width=config.taper_halfwidth)
+
+    # Be sure that both traces have same length:
+    if len(trace_signal) != len(trace_noise):
+        npts = min(len(trace_signal), len(trace_noise))
+        if config.weighting == 'noise' or len(trace_noise) >= len(trace_signal):
+            if len(trace_signal) > len(trace_noise):
+                msg = '{}: Truncating signal window to noise length!'
+                msg = msg.format(trace_signal.get_id()[0:-1])
+                logger.warning(msg)
+            trace_signal.data = trace_signal.data[:npts]
+            trace_noise.data = trace_noise.data[:npts]
+        else:
+            # Zero-pad noise to signal length
+            # Note: no risk of ringing, as noise has been tapered
+            pad_len = len(trace_signal) - len(trace_noise)
+            pad_before, pad_after = np.floor(pad_len / 2.), np.ceil(pad_len / 2.)
+            time_delta = trace_noise.stats.delta
+            t1 = trace_noise.stats.starttime - pad_before * time_delta
+            t2 = trace_noise.stats.endtime + pad_after * time_delta
+            trace_noise.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+            msg = '{}: Zero-padding noise window to signal length'
+            msg = msg.format(trace_noise.get_id()[0:-1])
+            logger.warning(msg)
+
+    # ...and zero pad to spectral_win_length
     if config.spectral_win_length is not None:
-        # ...and zero pad to spectral_win_length
         trace_signal.trim(starttime=t1,
                           endtime=t1+config.spectral_win_length,
                           pad=True,
@@ -179,23 +203,27 @@ def _cut_signal_noise(config, trace):
                          endtime=noise_t1+config.spectral_win_length,
                          pad=True,
                          fill_value=0)
-    # Be sure that both traces have same length:
-    if len(trace_signal) != len(trace_noise):
-        npts = min(len(trace_signal), len(trace_noise))
-        trace_signal.data = trace_signal.data[:npts]
-        trace_noise.data = trace_noise.data[:npts]
 
     return trace_signal, trace_noise
 
 
-def _check_noise_level(trace_signal, trace_noise):
+def _check_noise_level(trace_signal, trace_noise, config):
     traceId = trace_signal.get_id()
     trace_signal_rms = ((trace_signal.data**2).sum())**0.5
-    trace_noise_rms = ((trace_noise.data**2).sum())**0.5
-    if trace_noise_rms/trace_signal_rms < 1e-6:
+    # Scale trace_noise_rms to length of signal window,
+    # based on length of non-zero noise window
+    try:
+        scale_factor = float(len(trace_signal)) / len(trace_noise.data != 0)
+    except ZeroDivisionError:
+        scale_factor = 1
+    trace_noise_rms = ((trace_noise.data**2 * scale_factor).sum())**0.5
+    if trace_noise_rms/trace_signal_rms < 1e-6 and config.weighting == 'noise':
         msg =\
-            '{}: Noise level is too low or zero: ignoring for noise weighting'
+            '{}: Noise level is too low or zero: station will be skipped'
         msg = msg.format(traceId)
+        # I think this error should only be raised if noise weighting is used
+        # Message is also confusing: it's not just ignored for noise weighting,
+        # but skipped entirely
         raise RuntimeError(msg)
 
 
@@ -361,7 +389,7 @@ def _build_weight_from_frequency(config, spec):
 
 def _build_weight_from_noise(config, spec, specnoise):
     weight = spec.copy()
-    if specnoise is not None:
+    if specnoise is not None and not np.all(specnoise.data == 0):
         weight.data /= specnoise.data
         # save data to raw_data
         weight.data_raw = weight.data.copy()
@@ -381,6 +409,7 @@ def _build_weight_from_noise(config, spec, specnoise):
         msg = msg.format(weight.get_id()[0:-1])
         logger.warning(msg)
         weight.data = np.ones(len(spec.data))
+        weight.data_raw = np.ones(len(spec.data))
     # interpolate to log-frequencies
     f = interp1d(weight.get_freq(), weight.data, fill_value='extrapolate')
     weight.data_log = f(weight.freq_log)
@@ -483,7 +512,7 @@ def build_spectra(config, st):
         try:
             _check_data_len(config, trace)
             trace_signal, trace_noise = _cut_signal_noise(config, trace)
-            _check_noise_level(trace_signal, trace_noise)
+            _check_noise_level(trace_signal, trace_noise, config)
             spec = _build_spectrum(config, trace_signal)
             specnoise = _build_spectrum(config, trace_noise)
             _check_spectral_sn_ratio(config, spec, specnoise)
