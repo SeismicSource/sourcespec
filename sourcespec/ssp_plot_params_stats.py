@@ -25,23 +25,30 @@ mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
 
 
+class PlotParam():
+    def __init__(self, name, unit, color):
+        self.name = name
+        self.unit = unit
+        self.color = color
+
+
 def box_plots(config, sspec_output):
     """Show parameter statistics through box plots."""
     # Check config, if we need to plot at all
     if not config.plot_show and not config.plot_save:
         return
 
-    param_names_units_colors = {
-        'Mw': ('Mw', None, '#EE5835'),
-        'fc': ('Corner Frequency', 'Hz', '#6FBA6C'),
-        't_star': ('t-star', 's', '#9EBAE2'),
-        'radius': ('Source Radius', 'm', '#FAAC64'),
-        'bsd': ('Brune Stress Drop', 'MPa', '#D4ADD2'),
-        'Qo': ('Quality Factor', None, '#C07131'),
-        'Er': ('Radiated Energy', 'N.m', '#00E3E9'),
-        'Ml': ('Ml', None, '#FC8384')
+    plot_params = {
+        'Mw': PlotParam('Mw', None, '#EE5835'),
+        'fc': PlotParam('Corner Frequency', 'Hz', '#6FBA6C'),
+        't_star': PlotParam('t-star', 's', '#9EBAE2'),
+        'radius': PlotParam('Source Radius', 'm', '#FAAC64'),
+        'bsd': PlotParam('Brune Stress Drop', 'MPa', '#D4ADD2'),
+        'Qo': PlotParam('Quality Factor', None, '#C07131'),
+        'Er': PlotParam('Radiated Energy', 'N.m', '#00E3E9'),
+        'Ml': PlotParam('Ml', None, '#FC8384')
     }
-    npars = len(param_names_units_colors)
+    npars = len(plot_params)
 
     path_effect = [
         mpe.Stroke(linewidth=5, foreground='black'),
@@ -54,8 +61,8 @@ def box_plots(config, sspec_output):
     # Create an invisible axis and use it for title and footer
     ax0 = fig.add_subplot(111, label='ax0')
     ax0.set_axis_off()
-    for ax, (param, (name, unit, color)) in zip(
-            axes, param_names_units_colors.items()):
+    for ax, param in zip(axes, plot_params.keys()):
+        plot_param = plot_params[param]
         values = sspec_output.value_array(param)
         # remove nan and inf values
         values = values[~np.isnan(values)]
@@ -67,6 +74,9 @@ def box_plots(config, sspec_output):
         # remove values that are very far from the mean
         # (otherwise plot is too compressed)
         values = values[np.abs(values-vmean)/vmean < 10]
+        # use logscale if values span a large interval
+        if max(values)/min(values) > 50:
+            ax.set_xscale('log')
         whiskers = config.nIQR
         if whiskers is None:
             whiskers = (0, 100)
@@ -77,15 +87,15 @@ def box_plots(config, sspec_output):
             values, np.ones_like(values), color='dimgray', edgecolor='white',
             zorder=10)
         for box in bplot['boxes']:
-            box.set_facecolor(color)
+            box.set_facecolor(plot_param.color)
         for line in bplot['medians']:
             line.set_color('white')
             line.set_linewidth(2)
             line.set_path_effects(path_effect)
-        if unit is None:
-            ax.set_xlabel('{}'.format(name))
+        if plot_param.unit is None:
+            ax.set_xlabel('{}'.format(plot_param.name))
         else:
-            ax.set_xlabel('{} ({})'.format(name, unit))
+            ax.set_xlabel('{} ({})'.format(plot_param.name, plot_param.unit))
         ax.tick_params(left=False, labelleft=False)
         ax.minorticks_on()
 

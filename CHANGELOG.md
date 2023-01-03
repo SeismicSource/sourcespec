@@ -18,6 +18,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
   stations
 - Command line option `--station_metadata` for overriding the config file
   parameter with the same name (see pull request [#16])
+- Logscale for boxplots, if parameters span a large interval
+  (see pull request [#15])
 
 ### Post-Inversion
 
@@ -400,4 +402,5 @@ Initial Python port.
 [#8]: https://github.com/SeismicSource/sourcespec/issues/8
 [#9]: https://github.com/SeismicSource/sourcespec/issues/9
 [#10]: https://github.com/SeismicSource/sourcespec/issues/10
+[#15]: https://github.com/SeismicSource/sourcespec/issues/15
 [#16]: https://github.com/SeismicSource/sourcespec/issues/16
