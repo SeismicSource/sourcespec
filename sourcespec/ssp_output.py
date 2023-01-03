@@ -249,8 +249,13 @@ def _write_parfile(config, sspec_output):
     Qo_error = errors['Qo']
     s = _value_error_str(Qo_mean, Qo_error, '{:.1f}')
     parfile.write('Qo: {}\n'.format(s))
-    Qo_mean_weight = means_weight['Qo']
-    Qo_error_weight = errors_weight['Qo']
+    try:
+        Qo_mean_weight = means_weight['Qo']
+        Qo_error_weight = errors_weight['Qo']
+    except KeyError:
+        # weighted Qo might not be computed
+        Qo_mean_weight = np.nan
+        Qo_error_weight = [np.nan, np.nan]
     s = _value_error_str(Qo_mean_weight, Qo_error_weight, '{:.1f}')
     parfile.write('Qo (weighted): {}\n'.format(s))
 
