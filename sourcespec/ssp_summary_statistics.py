@@ -37,18 +37,20 @@ def _avg_and_std(values, errors=None, logarithmic=False):
     if errors is None:
         weights = None
     else:
+        # negative errors should not happen
+        errors[errors < 0] = 0
+        values_minus = values - errors[:, 0]
+        values_plus = values + errors[:, 1]
         if logarithmic:
             # compute the width of the error bar in log10 units
-            values_minus = values - errors[:, 0]
             # replace negative left values with 1/10 of the central value
             values_minus[values_minus <= 0] = values[values_minus <= 0]/10
             values_log_minus = np.log10(values_minus)
-            values_plus = values + errors[:, 1]
             values_log_plus = np.log10(values_plus)
             errors_width = values_log_plus - values_log_minus
         else:
-            # compute the width of the error bar
-            errors_width = errors[:, 0] + errors[:, 1]
+            # compute the width of the error bar in linear units
+            errors_width = values_plus - values_minus
         # fix for infinite weight (zero error width)
         errors_width[errors_width == 0] =\
             np.nanmin(errors_width[errors_width > 0])
