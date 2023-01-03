@@ -477,6 +477,8 @@ def _parse_paz_file(file):
         for line in lines:
             linenumber += 1
             word = line.split()
+            if not word:
+                continue
             if word[0] == 'ZEROS':
                 nzeros = int(word[1])
                 for _ in range(nzeros):
