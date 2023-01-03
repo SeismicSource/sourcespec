@@ -14,6 +14,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
   alternative to PNG)
 - Improved trace plot quality for vector formats (PDF, SVG)
 - Option to add an agency logo to the HTML page
+- Possibility of using a single PAZ file as a "generic" PAZ file for all the
+  stations
 
 ### Post-Inversion
 
