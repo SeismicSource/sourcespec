@@ -147,26 +147,39 @@ def _add_paz_and_coords(trace, inventory, config):
     trace.stats.coords = None
     time = trace.stats.starttime
     if isinstance(inventory, Inventory):
+        # check if traceid is in the inventory, otherwhise try with a
+        # generic traceid
+        inv_channels = inventory.get_contents()['channels']
+        if traceid in inv_channels:
+            inv_traceid = traceid
+        else:
+            inv_traceid = 'XX.GENERIC.XX.XXX'
         try:
             with warnings.catch_warnings(record=True) as warns:
                 # get_sacpz() can issue warnings on more than one PAZ found,
                 # so let's catch those warnings and log them properly
                 # warnings.filterwarnings('ignore', message='Found more than')
                 # warnings.filterwarnings('ignore', message='More than')
-                sacpz = inventory.get_response(traceid, time).get_sacpz()
+                sacpz = inventory.get_response(inv_traceid, time).get_sacpz()
                 for w in warns:
                     msg = str(w.message)
                     logger.warning(
                         '{}: {} Time: {}'.format(traceid, msg, time))
             attach_paz(trace, io.StringIO(sacpz))
             paz = trace.stats.paz
-            coords = AttribDict(inventory.get_coordinates(traceid, time))
-            coords = _validate_coords(coords)
         except Exception as msg:
             logger.warning('{}: {} Time: {}'.format(traceid, msg, time))
             pass
+        try:
+            coords = AttribDict(inventory.get_coordinates(traceid, time))
+            coords = _validate_coords(coords)
+        except Exception as msg:
+            pass
     try:
         trace.stats.paz = paz
+    except Exception:
+        pass
+    try:
         # elevation is in meters
         coords.elevation /= 1000.
         trace.stats.coords = coords
@@ -508,12 +521,11 @@ def _read_paz_file(file):
     """
     Read a paz file into an ``Inventory``object.
 
-    Limitations:
-    (1) paz file must have ".pz" or ".paz" suffix (or no suffix)
-    (2) paz file name (without prefix and suffix) *has* to have
-        the trace_id (NET.STA.LOC.CHAN) of the corresponding trace
-        in the last part of his name
-        (e.g., 20110208_1600.NOW.IV.CRAC.00.EHZ.paz)
+    - paz file must have ".pz" or ".paz" suffix (or no suffix)
+    - paz file name (without prefix and suffix) can have
+      the trace_id (NET.STA.LOC.CHAN) of the corresponding trace in the last
+      part of his name (e.g., 20110208_1600.NOW.IV.CRAC.00.EHZ.paz),
+      otherwhise it will be treaten as a generic paz.
     """
     bname = os.path.basename(file)
     # strip .pz suffix, if there
@@ -523,11 +535,19 @@ def _read_paz_file(file):
     # we assume that the last four fields of bname
     # (separated by '.') are the trace_id
     trace_id = '.'.join(bname.split('.')[-4:])
+    try:
+        # check if trace_id is an actual trace ID
+        net, sta, loc, chan = trace_id.split('.')
+    except ValueError:
+        # otherwhise, let's use this PAZ for a generic trace ID
+        net = 'XX'
+        sta = 'GENERIC'
+        loc = 'XX'
+        chan = 'XXX'
     zeros, poles, constant = _parse_paz_file(file)
     resp = Response().from_paz(
         zeros, poles, stage_gain=1, input_units='M/S', output_units='COUNTS')
     resp.instrument_sensitivity.value = constant
-    net, sta, loc, chan = trace_id.split('.')
     channel = Channel(
         code=chan, location_code=loc, response=resp,
         latitude=0, longitude=0, elevation=123456, depth=123456)
