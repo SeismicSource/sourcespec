@@ -7,7 +7,7 @@ Compute mean station residuals from source_spec output.
     2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Agnes Chounet <chounet@ipgp.fr>
 
-    2015-2022 Claudio Satriano <satriano@ipgp.fr>
+    2015-2023 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)

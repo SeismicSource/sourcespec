@@ -4,7 +4,7 @@
 QuakeML output for source_spec.
 
 :copyright:
-    2016-2022 Claudio Satriano <satriano@ipgp.fr>
+    2016-2023 Claudio Satriano <satriano@ipgp.fr>
 
 :license:
     CeCILL Free Software License Agreement, Version 2.1

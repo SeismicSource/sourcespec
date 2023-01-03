@@ -4,7 +4,7 @@
 Argument parser for sourcespec.
 
 :copyright:
-    2021-2022 Claudio Satriano <satriano@ipgp.fr>
+    2021-2023 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)

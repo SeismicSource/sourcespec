@@ -5,7 +5,7 @@
 Wrapper to run source_model.py from source tree.
 
 :copyright:
-    2016-2022 Claudio Satriano <satriano@ipgp.fr>
+    2016-2023 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
