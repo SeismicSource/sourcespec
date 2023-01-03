@@ -16,6 +16,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - Option to add an agency logo to the HTML page
 - Possibility of using a single PAZ file as a "generic" PAZ file for all the
   stations
+- Command line option `--station_metadata` for overriding the config file
+  parameter with the same name (see pull request [#16])
 
 ### Post-Inversion
 
@@ -398,3 +400,4 @@ Initial Python port.
 [#8]: https://github.com/SeismicSource/sourcespec/issues/8
 [#9]: https://github.com/SeismicSource/sourcespec/issues/9
 [#10]: https://github.com/SeismicSource/sourcespec/issues/10
+[#16]: https://github.com/SeismicSource/sourcespec/issues/16
