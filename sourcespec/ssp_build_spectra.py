@@ -218,12 +218,10 @@ def _check_noise_level(trace_signal, trace_noise, config):
         scale_factor = 1
     trace_noise_rms = ((trace_noise.data**2 * scale_factor).sum())**0.5
     if trace_noise_rms/trace_signal_rms < 1e-6 and config.weighting == 'noise':
+        # Skip trace if noice level is too low and if noise weighting is used
         msg =\
             '{}: Noise level is too low or zero: station will be skipped'
         msg = msg.format(traceId)
-        # I think this error should only be raised if noise weighting is used
-        # Message is also confusing: it's not just ignored for noise weighting,
-        # but skipped entirely
         raise RuntimeError(msg)
 
 
