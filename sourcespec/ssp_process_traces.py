@@ -287,7 +287,16 @@ def _add_hypo_dist_and_arrivals(config, st):
             raise RuntimeError(msg)
         # Signal window for spectral analysis (S phase)
         s_minus_p = s_arrival_time-p_arrival_time
-        t1 = s_arrival_time - min(config.signal_pre_time, s_minus_p / 2.)
+        s_pre_time = config.signal_pre_time
+        if s_minus_p/2 < s_pre_time:
+            # use (Ts-Tp)/2 if it is smaller than signal_pre_time
+            # (for short-distance records with short S-P interval)
+            s_pre_time = s_minus_p/2
+            msg = '{}: signal_pre_time is larger than (Ts-Tp)/2.'
+            msg += 'Using (Ts-Tp)/2 instead'
+            msg = msg.format(trace.id)
+            logger.warning(msg)
+        t1 = s_arrival_time - s_pre_time
         t1 = max(trace.stats.starttime, t1)
         t2 = t1 + config.win_length
         trace.stats.arrivals['S1'] = ('S1', t1)
