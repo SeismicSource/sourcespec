@@ -171,27 +171,27 @@ def _cut_signal_noise(config, trace):
     cosine_taper(trace_noise.data, width=config.taper_halfwidth)
 
     # Be sure that both traces have same length:
-    if len(trace_signal) != len(trace_noise):
-        npts = min(len(trace_signal), len(trace_noise))
-        if config.weighting == 'noise' or len(trace_noise) >= len(trace_signal):
-            if len(trace_signal) > len(trace_noise):
-                msg = '{}: Truncating signal window to noise length!'
-                msg = msg.format(trace_signal.get_id()[0:-1])
-                logger.warning(msg)
+    npts = min(len(trace_signal), len(trace_noise))
+    if len(trace_signal) <= len(trace_noise):
+        # truncate noise to signal length
+        trace_noise.data = trace_noise.data[:npts]
+    else:
+        if config.weighting == 'noise':
+            msg = '{}: Truncating signal window to noise length!'
             trace_signal.data = trace_signal.data[:npts]
-            trace_noise.data = trace_noise.data[:npts]
         else:
-            # Zero-pad noise to signal length
-            # Note: no risk of ringing, as noise has been tapered
-            pad_len = len(trace_signal) - len(trace_noise)
-            pad_before, pad_after = np.floor(pad_len / 2.), np.ceil(pad_len / 2.)
-            time_delta = trace_noise.stats.delta
-            t1 = trace_noise.stats.starttime - pad_before * time_delta
-            t2 = trace_noise.stats.endtime + pad_after * time_delta
-            trace_noise.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
             msg = '{}: Zero-padding noise window to signal length'
-            msg = msg.format(trace_noise.get_id()[0:-1])
-            logger.warning(msg)
+            # Notes:
+            # 1. no risk of ringing, as noise has been tapered
+            # 2. we use np.pad instead of obspy trim method
+            #    to avoid potential rounding errors with start/end times
+            # 3. we just pad at the end for simplicity (no changes
+            #    in trace headers required) and it is identical to
+            #    symmetric padding (tested)
+            pad_len = len(trace_signal) - len(trace_noise)
+            trace_noise.data = np.pad(trace_noise.data, (0, pad_len))
+        msg = msg.format(trace_noise.get_id()[0:-1])
+        logger.warning(msg)
 
     # ...and zero pad to spectral_win_length
     if config.spectral_win_length is not None:
