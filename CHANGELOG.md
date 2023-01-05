@@ -21,6 +21,21 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - Logscale for boxplots, if parameters span a large interval
   (see pull request [#15])
 
+### Processing
+
+- Relax noise window requirements if noise weighting is not used.
+  This is useful for older triggered records with noise windows
+  that are short or even missing entirely (see pull request [#18])
+- Some small improvements were made in the window definitions
+  (see pull request [#18]):
+  - Generate error if signal window is incomplete (P- or S-arrival
+    before the start time of the trace)
+  - Generate error if noise window overlaps with P-window (instead
+    of S-window, as in previous versions)
+  - Constrain `signal_pre_time` for S-phase to half the S-P interval, if this
+    interval is shorter than `signal_pre_time` (i.e., for short-distance
+    records with short S-P interval)
+
 ### Post-Inversion
 
 - Possibility of choosing the reference summary statistics that will be used
@@ -404,3 +419,4 @@ Initial Python port.
 [#10]: https://github.com/SeismicSource/sourcespec/issues/10
 [#15]: https://github.com/SeismicSource/sourcespec/issues/15
 [#16]: https://github.com/SeismicSource/sourcespec/issues/16
+[#18]: https://github.com/SeismicSource/sourcespec/issues/18
