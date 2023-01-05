@@ -387,7 +387,13 @@ def _build_weight_from_frequency(config, spec):
 
 def _build_weight_from_noise(config, spec, specnoise):
     weight = spec.copy()
-    if specnoise is not None and not np.all(specnoise.data == 0):
+    if specnoise is None or np.all(specnoise.data == 0):
+        msg = '{}: No available noise window: a uniform weight will be applied'
+        msg = msg.format(weight.get_id()[0:-1])
+        logger.warning(msg)
+        weight.data = np.ones(len(spec.data))
+        weight.data_raw = np.ones(len(spec.data))
+    else:
         weight.data /= specnoise.data
         # save data to raw_data
         weight.data_raw = weight.data.copy()
@@ -402,12 +408,6 @@ def _build_weight_from_noise(config, spec, specnoise):
         cosine_taper(weight.data, spec.stats.delta/4, left_taper=True)
         # Make sure weight is positive
         weight.data[weight.data <= 0] = 0.001
-    else:
-        msg = '{}: No available noise window: a uniform weight will be applied'
-        msg = msg.format(weight.get_id()[0:-1])
-        logger.warning(msg)
-        weight.data = np.ones(len(spec.data))
-        weight.data_raw = np.ones(len(spec.data))
     # interpolate to log-frequencies
     f = interp1d(weight.get_freq(), weight.data, fill_value='extrapolate')
     weight.data_log = f(weight.freq_log)
