@@ -6,6 +6,33 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 ## Unreleased
 
+### Relax noise window requirements
+Relax noise window requirements if noise weighting is not used.
+This is useful for older triggered records with noise windows
+that are short or even missing entirely. This includes the
+following changes:
+- Constrain start time of noise window to start time of trace
+- If noise RMS in time domain is zero, only raise an error if
+  noise weighting is used, otherwise just log a warning
+- If noise weighting is used and signal window is truncated to
+  the length of the noise window, a warning is logged
+- If noise weighting is not used and noise window is shorter than
+  signal window, it is zero-padded to the signal window length
+- Apply scale factor if noise window (minus zero pads) is shorter
+  than signal window when calculating spectral SNR
+- If noise RMS in spectral domain is too low, only raise an error
+  if noise weighting is used
+- Avoid zero noise spectra to be plotted
+
+### Window definitions
+Some small improvements were made in the window definitions:
+- Generate error if signal window is incomplete (P- or S-arrival
+  before the start time of the trace)
+- Generate error if noise window overlaps with P-window (instead
+  of S-window previously)
+- Constrain signal_pre_time for S-phase to half the S-P interval
+  (for short-distance records with short S-P interval)
+
 ### Input/output
 
 - New output file in YAML format. The old `.out` file is still available but
