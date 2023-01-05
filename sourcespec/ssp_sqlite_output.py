@@ -70,7 +70,7 @@ def write_sqlite(config, sspec_output):
             msg = 'Remove or rename your old database file, '
             msg += 'so that a new one can be created.'
             logger.info(msg)
-            exit(1)
+            ssp_exit(1)
     else:
         # Set the DB version
         c.execute('PRAGMA user_version = {v:d}'.format(v=DB_VERSION))
