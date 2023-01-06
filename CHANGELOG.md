@@ -48,6 +48,12 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - Possibility of defining the number of sigmas for uncertainties on event means
   and weighted means
 
+### Plotting
+
+- Do not zero-pad traces to common length when plotting, so that missing data
+  at beginning or at the end can be easily detected (see [#21])
+- Plot noise and signal windows separately for each component (see [#21])
+
 ### Config file
 
 - Config file section `AVERAGES PARAMETERS` renamed to
@@ -221,7 +227,9 @@ Note that v1.5 is no more compatible with Python 2!
 - Compute errors for all station parameters
 - Compute weighted averages for all event parameters (except radiated energy)
 - Compute spectral residuals using weighted average spectral parameters
-- Plotting:
+
+### v1.5: Plotting
+
 - Source parameter box plots to evaluate parameter dispersion across stations
   and visually detect outliers
 - Misfit plot (2D and 1D) when using grid sampling
@@ -420,3 +428,4 @@ Initial Python port.
 [#15]: https://github.com/SeismicSource/sourcespec/issues/15
 [#16]: https://github.com/SeismicSource/sourcespec/issues/16
 [#18]: https://github.com/SeismicSource/sourcespec/issues/18
+[#21]: https://github.com/SeismicSource/sourcespec/issues/21

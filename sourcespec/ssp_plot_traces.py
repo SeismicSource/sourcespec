@@ -206,17 +206,27 @@ def _freq_string(freq):
 
 def _plot_trace(config, trace, ntraces, tmax,
                 ax, ax_text, trans, trans3, path_effects):
+    # Origin and height to draw vertical patches for noise and signal windows
+    rectangle_patch_origin = 0
+    rectangle_patch_height = 1
     orientation = trace.stats.channel[-1]
     if orientation in config.vertical_channel_codes:
         color = 'purple'
+        if ntraces > 1:
+            rectangle_patch_origin = 1./3
+            rectangle_patch_height = 1./3
     if orientation in config.horizontal_channel_codes_1:
         color = 'green'
         if ntraces > 1:
             trace.data = (trace.data / tmax - 1) * tmax
+            rectangle_patch_origin = 0
+            rectangle_patch_height = 1./3
     if orientation in config.horizontal_channel_codes_2:
         color = 'blue'
         if ntraces > 1:
             trace.data = (trace.data / tmax + 1) * tmax
+            rectangle_patch_origin = 2./3
+            rectangle_patch_height = 1./3
     # dim out ignored traces
     if trace.stats.ignore:
         alpha = 0.3
@@ -249,9 +259,11 @@ def _plot_trace(config, trace, ntraces, tmax,
     try:
         N1 = trace.stats.arrivals['N1'][1] - trace.stats.starttime
         N2 = trace.stats.arrivals['N2'][1] - trace.stats.starttime
-        rect = patches.Rectangle((N1, 0), width=N2-N1, height=1,
-                                 transform=trans, color='#eeeeee',
-                                 zorder=-1)
+        rect = patches.Rectangle(
+            (N1, rectangle_patch_origin),
+            width=N2-N1, height=rectangle_patch_height,
+            transform=trans, color='#eeeeee',
+            zorder=-1)
         ax.add_patch(rect)
     except KeyError:
         pass
@@ -262,9 +274,11 @@ def _plot_trace(config, trace, ntraces, tmax,
     elif config.wave_type[0] == 'P':
         t1 = trace.stats.arrivals['P1'][1] - trace.stats.starttime
         t2 = trace.stats.arrivals['P2'][1] - trace.stats.starttime
-    rect = patches.Rectangle((t1, 0), width=t2-t1, height=1,
-                             transform=trans, color='yellow',
-                             alpha=0.5, zorder=-1)
+    rect = patches.Rectangle(
+        (t1, rectangle_patch_origin),
+        width=t2-t1, height=rectangle_patch_height,
+        transform=trans, color='yellow',
+        alpha=0.5, zorder=-1)
     ax.add_patch(rect)
     if not ax_text:
         text_y = 0.01
@@ -308,7 +322,7 @@ def _trim_traces(config, st):
     for trace in st:
         t1 = (trace.stats.arrivals['P'][1] - config.noise_pre_time)
         t2 = (trace.stats.arrivals['S'][1] + 3 * config.win_length)
-        trace.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+        trace.trim(starttime=t1, endtime=t2)
 
 
 def plot_traces(config, st, ncols=None, block=True):
