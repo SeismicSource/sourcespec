@@ -894,6 +894,9 @@ def _parse_hypo71_picks(config):
 def _hypo_vel(hypo, config):
     hypo.vp = get_vel(hypo.longitude, hypo.latitude, hypo.depth, 'P', config)
     hypo.vs = get_vel(hypo.longitude, hypo.latitude, hypo.depth, 'S', config)
+    msg = 'Vp_hypo: {:.2f} km/s, Vs_hypo: {:.2f} km/s'.format(
+        hypo.vp, hypo.vs)
+    logger.info(msg)
 
 
 def _build_filelist(path, filelist, tmpdir):

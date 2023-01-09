@@ -71,15 +71,7 @@ def _get_vel_from_config(wave, where, config):
     return vel
 
 
-def get_vel(lon, lat, depth_in_km, wave, config):
-    """Get velocity at a given point from NonLinLoc grid or config."""
-    # If depth is large, we assume that we are close to the source
-    if depth_in_km >= 2:
-        vel = _get_vel_from_config(wave, 'source', config)
-    else:
-        vel = _get_vel_from_config(wave, 'stations', config)
-    if config.NLL_model_dir is None:
-        return vel
+def _get_vel_from_NLL(lon, lat, depth_in_km, wave, config):
     # Lazy-import here, since nllgrid is not an installation requirement
     from nllgrid import NLLGrid
     grdfile = '*.{}.mod.hdr'.format(wave)
@@ -87,11 +79,45 @@ def get_vel(lon, lat, depth_in_km, wave, config):
     try:
         grdfile = glob(grdfile)[0]
     except IndexError:
-        return vel
+        raise FileNotFoundError('Unable to find model file {}'.format(grdfile))
     grd = NLLGrid(grdfile)
-    if grd.type == 'SLOW_LEN':
-        slow_len = grd.get_value(lon, lat, depth_in_km)
-        vel = grd.dx / slow_len
+    x, y = grd.project(lon, lat)
+    value = grd.get_value(x, y, depth_in_km)
+    if grd.type == 'VELOCITY':
+        vel = value
+    elif grd.type == 'VELOCITY_METERS':
+        vel = value/1e3
+    elif grd.type == 'SLOWNESS':
+        vel = 1./value
+    elif grd.type == 'SLOW_LEN':
+        vel = grd.dx / value
+    elif grd.type == 'VEL2':
+        vel = value**0.5
+    elif grd.type == 'SLOW2':
+        vel = 1./(value**0.5)
+    elif grd.type == 'SLOW2_METERS':
+        vel = (1./(value**0.5))/1e3
+    else:
+        raise ValueError('Unsupported grid type: {}'.format(grd.type))
+    logger.info(
+        'Using {} velocity from NLL model'.format(wave))
+    return vel
+
+
+def get_vel(lon, lat, depth_in_km, wave, config):
+    """Get velocity at a given point from NonLinLoc grid or config."""
+    # If depth is large, we assume that we are close to the source
+    if depth_in_km >= 2:
+        vel = _get_vel_from_config(wave, 'source', config)
+    else:
+        vel = _get_vel_from_config(wave, 'stations', config)
+    if config.NLL_model_dir is not None:
+        try:
+            vel = _get_vel_from_NLL(lon, lat, depth_in_km, wave, config)
+        except Exception as msg:
+            logger.warning(msg)
+            msg = 'Using {} velocity from config'.format(wave)
+            logger.warning(msg)
     return vel
 # -----------------------------------------------------------------------------
 
