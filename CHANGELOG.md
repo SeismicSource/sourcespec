@@ -429,5 +429,5 @@ Initial Python port.
 [#15]: https://github.com/SeismicSource/sourcespec/issues/15
 [#16]: https://github.com/SeismicSource/sourcespec/issues/16
 [#18]: https://github.com/SeismicSource/sourcespec/issues/18
-[#21]: https://github.com/SeismicSource/sourcespec/issues/20
+[#20]: https://github.com/SeismicSource/sourcespec/issues/20
 [#21]: https://github.com/SeismicSource/sourcespec/issues/21
