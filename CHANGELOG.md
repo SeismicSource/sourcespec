@@ -35,6 +35,9 @@ Earthquake source parameters from P- or S-wave displacement spectra
   - Constrain `signal_pre_time` for S-phase to half the S-P interval, if this
     interval is shorter than `signal_pre_time` (i.e., for short-distance
     records with short S-P interval)
+- Extract source and station P and S velocities from global 'iasp91' velocity
+  model, if both `v(p,s)_source` and `v(p,s)_stations` are set to `None`
+  (see [#20])
 
 ### Post-Inversion
 

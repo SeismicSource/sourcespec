@@ -400,8 +400,6 @@ def _check_mandatory_config_params(config_obj):
         'sn_min',
         'clip_max_percent',
         'spectral_sn_min',
-        'vp_source',
-        'vs_source',
         'rho',
         'rpp',
         'rps',

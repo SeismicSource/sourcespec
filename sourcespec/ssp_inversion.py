@@ -284,7 +284,7 @@ def _spec_inversion(config, spec, spec_weight):
         confidence_level=68.2, format='{:.3f}')
 
     # additional parameters, computed from fc, Mw and t_star
-    vs = config.vs_source
+    vs = config.hypo.vs
     travel_time = spec.stats.travel_times[config.wave_type[0]]
     # seismic moment
     station_pars.Mo = SpectralParameter(

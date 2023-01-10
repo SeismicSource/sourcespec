@@ -17,6 +17,9 @@ import math
 import numpy as np
 from obspy.signal.invsim import cosine_taper as _cos_taper
 from obspy.geodetics import gps2dist_azimuth, kilometers2degrees
+from obspy.taup import TauPyModel
+model = TauPyModel(model='iasp91')
+v_model = model.model.s_mod.v_mod
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -104,6 +107,12 @@ def _get_vel_from_NLL(lon, lat, depth_in_km, wave, config):
     return vel
 
 
+def _get_vel_from_taup(depth_in_km, wave):
+    if depth_in_km < 0:
+        depth_in_km = 1e-3
+    return v_model.evaluate_above(depth_in_km, wave)[0]
+
+
 def get_vel(lon, lat, depth_in_km, wave, config):
     """Get velocity at a given point from NonLinLoc grid or config."""
     # If depth is large, we assume that we are close to the source
@@ -111,6 +120,11 @@ def get_vel(lon, lat, depth_in_km, wave, config):
         vel = _get_vel_from_config(wave, 'source', config)
     else:
         vel = _get_vel_from_config(wave, 'stations', config)
+    if vel is None and config.NLL_model_dir is None:
+        vel = _get_vel_from_taup(depth_in_km, wave)
+        logger.info(
+            'Using {} velocity from global velocity model (iasp91)'
+            .format(wave))
     if config.NLL_model_dir is not None:
         try:
             vel = _get_vel_from_NLL(lon, lat, depth_in_km, wave, config)
