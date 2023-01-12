@@ -114,7 +114,7 @@ def _get_vel_from_taup(depth_in_km, wave):
 
 
 def get_vel(lon, lat, depth_in_km, wave, config):
-    """Get velocity at a given point from NonLinLoc grid or config."""
+    """Get velocity at a given point from NLL grid, config or taup model."""
     # If depth is large, we assume that we are close to the source
     if depth_in_km >= 2:
         vel = _get_vel_from_config(wave, 'source', config)
