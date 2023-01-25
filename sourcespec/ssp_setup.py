@@ -398,7 +398,6 @@ def _check_mandatory_config_params(config_obj):
         'freq2_broadb',
         'rmsmin',
         'sn_min',
-        'clip_max_percent',
         'spectral_sn_min',
         'rho',
         'rpp',

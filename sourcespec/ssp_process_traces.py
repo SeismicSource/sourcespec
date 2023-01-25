@@ -17,6 +17,8 @@ Trace processing for sourcespec.
 import logging
 import numpy as np
 import re
+from scipy.ndimage.filters import gaussian_filter
+from scipy.signal import find_peaks
 from obspy.core import Stream
 from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
@@ -70,22 +72,48 @@ def _check_signal_level(config, trace):
 
 
 def _check_clipping(config, trace):
-    t1 = (trace.stats.arrivals['P'][1] - config.noise_pre_time)
+    trace.stats.clipped = False
+    if not config.check_clipping:
+        return
+    t1 = trace.stats.arrivals['N1'][1]
+    if config.wave_type[0] == 'S':
+        t2 = trace.stats.arrivals['S2'][1]
+    elif config.wave_type[0] == 'P':
+        t2 = trace.stats.arrivals['P2'][1]
     t2 = (trace.stats.arrivals['S'][1] + config.win_length)
     tr = trace.copy().trim(t1, t2).detrend('demean')
     npts = len(tr.data)
-    # Compute data histogram with a number of bins equal to 10% of data points
-    hist, bins = np.histogram(np.abs(tr.data), bins=int(npts*0.1))
-    # Clipped samples are in the last bin
-    nclips = hist[-1]
-    clip_max_percent = config.clip_max_percent
-    if nclips/npts > clip_max_percent/100.:
+    # Compute data histogram with a number of bins equal to 0.5% of data points
+    nbins = int(npts*0.005)
+    counts, bins = np.histogram(tr.data, bins=nbins)
+    counts_smooth = gaussian_filter(counts, sigma=1.5)
+    # Find peaks in counts_smooth which are at least 2% of max peak
+    maxcounts = np.max(counts_smooth)
+    peaks, _ = find_peaks(
+        counts_smooth,
+        height=0.02*maxcounts,
+    )
+    # The following code is for debug purposes
+    # import matplotlib.pyplot as plt
+    # fig, ax = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
+    # fig.suptitle(tr.id)
+    # ax[0].plot(tr.times(), tr.data)
+    # ax[1].hist(
+    #     bins[:-1], bins=len(counts), weights=counts,
+    #     orientation='horizontal')
+    # ax[1].plot(counts_smooth, bins[:-1])
+    # ax[1].scatter(
+    #     counts_smooth[peaks], bins[peaks], s=100, marker='x', color='red')
+    # plt.show()
+    # If more than one peak, then the signal is probably clipped or distorted
+    if len(peaks) > 1:
+        trace.stats.clipped = True
+        trace.stats.ignore = True
         msg = (
-            '{} {}: Trace is clipped for more than {:.2f}% '
-            'skipping trace'.format(
-                tr.id, tr.stats.instrtype, clip_max_percent)
+            '{} {}: Trace is clipped or significantly distorted: '
+            'skipping trace'.format(tr.id, tr.stats.instrtype)
         )
-        raise RuntimeError(msg)
+        logger.warning(msg)
 
 
 def _check_sn_ratio(config, trace):
