@@ -208,8 +208,8 @@ def _spec_inversion(config, spec, spec_weight):
     initial_values = InitialValues(Mw_0, fc_0, t_star_0)
     logger.info('{}: initial values: {}'.format(statId, str(initial_values)))
     bounds = Bounds(config, spec, initial_values)
-    bounds.Mw_min = Mw_0 - config.Mw_0_variability
-    bounds.Mw_max = Mw_0 + config.Mw_0_variability
+    bounds.Mw_min = np.nanmin(ydata[idx0: idx1]) * 0.9
+    bounds.Mw_max = np.nanmax(ydata[idx0: idx1]) * 1.1
     if t_star_min is not None:
         bounds.t_star_min = t_star_min
     if t_star_max is not None:

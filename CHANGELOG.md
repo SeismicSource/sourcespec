@@ -23,6 +23,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 ### Processing
 
+- Magnitude limits for inversion are now autoset between 90% of the minimum
+  of the spectral plateau and 110% of its maximum
 - Relax noise window requirements if noise weighting is not used.
   This is useful for older triggered records with noise windows
   that are short or even missing entirely (see pull request [#18])
@@ -59,6 +61,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 ### Config file
 
+- Removed config parameter: `Mw_0_variability`
 - Config file section `AVERAGES PARAMETERS` renamed to
   `SUMMARY STATISTICS PARAMETERS`
 - New config parameter: `reference_statistics`

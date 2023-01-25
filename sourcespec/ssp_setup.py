@@ -409,7 +409,6 @@ def _check_mandatory_config_params(config_obj):
         'weight',
         't_star_0',
         't_star_0_variability',
-        'Mw_0_variability',
         'a', 'b', 'c',
         'ml_bp_freqmin',
         'ml_bp_freqmax',
