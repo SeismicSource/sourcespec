@@ -33,7 +33,10 @@ def _summary_synth_spec(sspec_output, fmin, fmax):
     summary_params = {p: summary_values[p] for p in params_name}
     synth_model_mag = spectral_model(freq, **summary_params)
     synth_model = mag_to_moment(synth_model_mag)
-    return freq, synth_model
+    summary_params['t_star'] = 0
+    synth_model_mag_no_att = spectral_model(freq, **summary_params)
+    synth_model_no_att = mag_to_moment(synth_model_mag_no_att)
+    return freq, synth_model, synth_model_no_att
 
 
 def _make_fig(config):
@@ -210,11 +213,19 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
         fmaxs.append(freqs.max())
     fmin = min(fmins)
     fmax = max(fmaxs)
-    freq, synth_model = _summary_synth_spec(sspec_output, fmin, fmax)
+    freq, synth_model, synth_model_no_att =\
+        _summary_synth_spec(sspec_output, fmin, fmax)
     color = 'black'
+    linewidth = 2
     ax.loglog(
         freq, synth_model, color=color, lw=linewidth,
         alpha=alpha, zorder=40)
+    if config.plot_spectra_no_attenuation:
+        color = 'gray'
+        linewidth = 2
+        ax.loglog(
+            freq, synth_model_no_att, color=color, lw=linewidth,
+            alpha=alpha, zorder=39)
     ax2 = _make_ax2(ax)
     _plot_fc_and_mw(sspec_output, ax, ax2)
     _nspectra_text(spec_st, ax)
