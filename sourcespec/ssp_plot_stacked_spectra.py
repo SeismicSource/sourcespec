@@ -11,7 +11,7 @@ Plot stacked spectra, along with summary inverted spectrum.
 """
 import os
 import logging
-from sourcespec.spectrum import Spectrum
+import numpy as np
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
 from sourcespec.ssp_spectral_model import spectral_model
 from sourcespec.savefig import savefig
@@ -26,19 +26,14 @@ mpl_logger.setLevel(logging.WARNING)
 
 
 def _summary_synth_spec(sspec_output, fmin, fmax):
-    spec_synth = Spectrum()
     npts = 100
-    delta = (fmax-fmin)/npts
-    spec_synth.stats.delta = delta
-    spec_synth.stats.begin = fmin
-    spec_synth.stats.npts = npts
+    freq = np.logspace(np.log10(fmin), np.log10(fmax), npts)
     summary_values = sspec_output.reference_values()
     params_name = ('Mw', 'fc', 't_star')
     summary_params = {p: summary_values[p] for p in params_name}
-    freq = spec_synth.get_freq()
-    spec_synth.data_mag = spectral_model(freq, **summary_params)
-    spec_synth.data = mag_to_moment(spec_synth.data_mag)
-    return spec_synth
+    synth_model_mag = spectral_model(freq, **summary_params)
+    synth_model = mag_to_moment(synth_model_mag)
+    return freq, synth_model
 
 
 def _make_fig(config):
@@ -189,10 +184,10 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
         fmaxs.append(freqs.max())
     fmin = min(fmins)
     fmax = max(fmaxs)
-    spec_synth = _summary_synth_spec(sspec_output, fmin, fmax)
+    freq, synth_model = _summary_synth_spec(sspec_output, fmin, fmax)
     color = 'black'
     ax.loglog(
-        spec_synth.get_freq(), spec_synth.data, color=color, lw=linewidth,
+        freq, synth_model, color=color, lw=linewidth,
         alpha=alpha, zorder=40)
     _make_ax2(ax)
     _nspectra_text(spec_st, ax)
