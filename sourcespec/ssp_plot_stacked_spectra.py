@@ -50,6 +50,22 @@ def _make_fig(config):
     return fig, ax
 
 
+def _plot_fc_and_mw(sspec_output, ax, ax2):
+    fc = sspec_output.reference_values()['fc']
+    fc_err_left, fc_err_right = sspec_output.reference_uncertainties()['fc']
+    fc_min = fc - fc_err_left
+    if fc_min < 0:
+        fc_min = 0.01
+    ax.axvspan(
+        fc_min, fc+fc_err_right, color='#bbbbbb', alpha=0.3, zorder=9)
+    ax.axvline(fc, color='#999999', linewidth=2., zorder=10)
+    Mw = sspec_output.reference_values()['Mw']
+    Mw_err_left, Mw_err_right = sspec_output.reference_uncertainties()['Mw']
+    ax2.axhspan(
+        Mw-Mw_err_left, Mw+Mw_err_right, color='#bbbbbb',
+        alpha=0.3, zorder=8)
+
+
 def _make_ax2(ax):
     ax2 = ax.twinx()
     moment_minmax = ax.get_ylim()
@@ -57,6 +73,7 @@ def _make_ax2(ax):
     ax2.set_ylim(mag_minmax)
     ax2.yaxis.set_tick_params(which='both', labelright=True, pad=0, width=2)
     ax2.set_ylabel('Magnitude')
+    return ax2
 
 
 def _nspectra_text(spec_st, ax):
@@ -189,7 +206,8 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
     ax.loglog(
         freq, synth_model, color=color, lw=linewidth,
         alpha=alpha, zorder=40)
-    _make_ax2(ax)
+    ax2 = _make_ax2(ax)
+    _plot_fc_and_mw(sspec_output, ax, ax2)
     _nspectra_text(spec_st, ax)
     _summary_params_text(sspec_output, ax)
     _add_title(config, ax)
