@@ -98,22 +98,31 @@ def _nspectra_text(spec_st, ax):
 
 def _summary_params_text(sspec_output, ax):
     summary_values = sspec_output.reference_values()
+    summary_uncertainties = sspec_output.reference_uncertainties()
     params_name = ('Mo', 'Mw', 'fc', 't_star')
     summary_params = {p: summary_values[p] for p in params_name}
+    summary_errors = {p: summary_uncertainties[p] for p in params_name}
+    Mo_text = 'Mo: {:.1e} [- {:.1e}, + {:.1e}] Nm'.format(
+        summary_params['Mo'], *summary_errors['Mo'])
+    Mw_text = 'Mw: {:.2f} [- {:.2f}, + {:.2f}]'.format(
+        summary_params['Mw'], *summary_errors['Mw'])
+    fc_text = 'fc: {:.2f} [- {:.2f}, + {:.2f}] Hz'.format(
+        summary_params['fc'], *summary_errors['fc'])
+    t_star_text = 't*: {:.2f} [- {:.2f}, + {:.2f}] s'.format(
+        summary_params['t_star'], *summary_errors['t_star'])
     params_text = 'Summary parameters:\n'
-    params_text += 'Mo: {:.1e} Mw: {:.2f}\n'.format(
-        summary_params['Mo'], summary_params['Mw'])
-    params_text += 'fc: {:.2f} t*: {:.2f}\n'.format(
-        summary_params['fc'], summary_params['t_star'])
+    params_text += '{}\n{}\n{}\n{}'.format(
+        Mo_text, Mw_text, fc_text, t_star_text)
     color = 'black'
     # Path effect to contour text in white
     path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
     ax.text(
-        0.05, 0.01, params_text,
+        0.05, 0.02, params_text,
         horizontalalignment='left',
         verticalalignment='bottom',
         color=color,
         fontsize=9,
+        linespacing=1.5,
         transform=ax.transAxes,
         zorder=50,
         path_effects=path_effects)
