@@ -59,6 +59,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - Do not zero-pad traces to common length when plotting, so that missing data
   at beginning or at the end can be easily detected (see [#21])
 - Plot noise and signal windows separately for each component (see [#21])
+- Show on the trace plot the reason why a trace has been ignored
 
 ### Config file
 

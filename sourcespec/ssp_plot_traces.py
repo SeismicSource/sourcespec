@@ -299,6 +299,12 @@ def _plot_trace(config, trace, ntraces, tmax,
                 zorder=50,
                 path_effects=path_effects)
         ax_text = True
+    # Reason why trace is ignored
+    if trace.stats.ignore:
+        _text = trace.stats.ignore_reason
+        ax.text(0.5, trace.data.mean(), _text, ha='center',
+                fontsize=8, color=color, transform=trans3, zorder=22,
+                path_effects=path_effects)
 
 
 def _add_labels(axes, plotn, ncols):

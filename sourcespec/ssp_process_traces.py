@@ -109,6 +109,7 @@ def _check_clipping(config, trace):
     if len(peaks) > 1:
         trace.stats.clipped = True
         trace.stats.ignore = True
+        trace.stats.ignore_reason = 'distorted'
         msg = (
             '{} {}: Trace is clipped or significantly distorted: '
             'skipping trace'.format(tr.id, tr.stats.instrtype)
@@ -163,6 +164,7 @@ def _check_sn_ratio(config, trace):
         msg = msg.format(trace.id, trace.stats.instrtype, snratio_min)
         logger.warning(msg)
         trace.stats.ignore = True
+        trace.stats.ignore_reason = 'low S/N'
 
 
 def _process_trace(config, trace):
@@ -182,6 +184,7 @@ def _process_trace(config, trace):
             )
             logger.info(msg)
             trace_process.stats.ignore = True
+            trace_process.stats.ignore_reason = 'vertical'
     # check if the trace has (significant) signal
     _check_signal_level(config, trace_process)
     # check if trace is clipped

@@ -30,6 +30,14 @@ from sourcespec.ssp_radiation_pattern import get_radiation_pattern_coefficient
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
+class SpectrumIgnored(Exception):
+    def __init__(self, message, reason):
+        # Call the base class constructor with the parameters it needs
+        super().__init__(message)
+        # Now for your custom code...
+        self.reason = reason
+
+
 def _get_nint(config, trace):
     if config.trace_units == 'auto':
         instrtype = trace.stats.instrtype
@@ -218,7 +226,7 @@ def _check_noise_level(trace_signal, trace_noise, config):
         scale_factor = 1
     trace_noise_rms = ((trace_noise.data**2 * scale_factor).sum())**0.5
     if trace_noise_rms/trace_signal_rms < 1e-6 and config.weighting == 'noise':
-        # Skip trace if noice level is too low and if noise weighting is used
+        # Skip trace if noise level is too low and if noise weighting is used
         msg =\
             '{}: Noise level is too low or zero: station will be skipped'
         msg = msg.format(traceId)
@@ -490,7 +498,8 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
             msg = '{}: spectral S/N smaller than {:.2f}: '
             msg += 'ignoring spectrum'
             msg = msg.format(spec.get_id(), ssnmin)
-            raise ValueError(msg)
+            reason = 'low spectral S/N'
+            raise SpectrumIgnored(msg, reason)
 
 
 def build_spectra(config, st):
@@ -505,8 +514,9 @@ def build_spectra(config, st):
     spec_st = Stream()
     specnoise_st = Stream()
 
+    traces = [tr for tr in st if not tr.stats.ignore]
     # sort by trace id
-    for trace in sorted(st, key=lambda tr: tr.id):
+    for trace in sorted(traces, key=lambda tr: tr.id):
         try:
             _check_data_len(config, trace)
             trace_signal, trace_noise = _cut_signal_noise(config, trace)
@@ -518,12 +528,14 @@ def build_spectra(config, st):
             # RuntimeError is for skipped spectra
             logger.warning(msg)
             continue
-        except ValueError as msg:
-            # ValueError is for ignored spectra, which are still stored
-            logger.warning(msg)
+        except SpectrumIgnored as ex:
+            logger.warning(ex)
             trace.stats.ignore = True
+            trace.stats.ignore_reason = ex.reason
             spec.stats.ignore = True
+            spec.stats.ignore_reason = ex.reason
             specnoise.stats.ignore = True
+            specnoise.stats.ignore_reason = ex.reason
         spec_st.append(spec)
         specnoise_st.append(specnoise)
 
