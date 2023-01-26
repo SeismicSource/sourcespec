@@ -169,6 +169,10 @@ table.stations td.station_id {
   max-width: 80%;
 }
 
+.stacked_spectra {
+  max-width: 68%;
+}
+
 /* ---------------------------------------------------
     SIDEBAR STYLE
 ----------------------------------------------------- */

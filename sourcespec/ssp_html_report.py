@@ -392,6 +392,8 @@ def html_report(config, sspec_output):
     map_fc = os.path.basename(map_fc)
     box_plots = config.figures['boxplots'][0]
     box_plots = os.path.basename(box_plots)
+    stacked_spectra = config.figures['stacked_spectra'][0]
+    stacked_spectra = os.path.basename(stacked_spectra)
 
     # Trace plot files
     traces_plot = open(traces_plot_html).read()
@@ -741,6 +743,7 @@ def html_report(config, sspec_output):
         '{TRACES_PLOTS}': traces_plots,
         '{SPECTRA_PLOTS}': spectra_plots,
         '{BOX_PLOTS}': box_plots,
+        '{STACKED_SPECTRA}': stacked_spectra,
         '{STATION_TABLE_ROWS}': station_table_rows,
     })
     # Misfit plots (when using grid search)

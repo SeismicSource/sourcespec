@@ -56,6 +56,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 ### Plotting
 
+- New plot: stacked spectra
 - Do not zero-pad traces to common length when plotting, so that missing data
   at beginning or at the end can be easily detected (see [#21])
 - Plot noise and signal windows separately for each component (see [#21])
