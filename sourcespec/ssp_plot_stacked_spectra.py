@@ -33,10 +33,15 @@ def _summary_synth_spec(sspec_output, fmin, fmax):
     summary_params = {p: summary_values[p] for p in params_name}
     synth_model_mag = spectral_model(freq, **summary_params)
     synth_model = mag_to_moment(synth_model_mag)
-    summary_params['t_star'] = 0
-    synth_model_mag_no_att = spectral_model(freq, **summary_params)
+    summary_params_no_att = summary_params.copy()
+    summary_params_no_att['t_star'] = 0
+    synth_model_mag_no_att = spectral_model(freq, **summary_params_no_att)
     synth_model_no_att = mag_to_moment(synth_model_mag_no_att)
-    return freq, synth_model, synth_model_no_att
+    summary_params_no_fc = summary_params.copy()
+    summary_params_no_fc['fc'] = 1e999
+    synth_model_mag_no_fc = spectral_model(freq, **summary_params_no_fc)
+    synth_model_no_fc = mag_to_moment(synth_model_mag_no_fc)
+    return freq, synth_model, synth_model_no_att, synth_model_no_fc
 
 
 def _make_fig(config):
@@ -202,7 +207,7 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
         fmaxs.append(freqs.max())
     fmin = min(fmins)
     fmax = max(fmaxs)
-    freq, synth_model, synth_model_no_att =\
+    freq, synth_model, synth_model_no_att, synth_model_no_fc =\
         _summary_synth_spec(sspec_output, fmin, fmax)
     color = 'black'
     alpha = 0.9
@@ -223,6 +228,15 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
             alpha=alpha, zorder=39)
         legend_handles.append(synth_no_att_handle)
         legend_labels.append('Summary parameters,\nno attenuation')
+    if config.plot_spectra_no_fc:
+        color = 'gray'
+        linewidth = 2
+        linestyle = 'dashed'
+        synth_no_fc_handle, = ax.loglog(
+            freq, synth_model_no_fc, color=color, lw=linewidth, ls=linestyle,
+            alpha=alpha, zorder=39)
+        legend_handles.append(synth_no_fc_handle)
+        legend_labels.append('Summary parameters,\nno fc')
     ax.legend(
         legend_handles, legend_labels,
         loc='upper right', framealpha=1
