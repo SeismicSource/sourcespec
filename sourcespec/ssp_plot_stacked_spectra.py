@@ -79,24 +79,13 @@ def _make_ax2(ax):
     return ax2
 
 
-def _nspectra_text(spec_st, ax):
+def _nspectra_text(spec_st):
     nspectra = len(spec_st)
     if nspectra == 1:
-        text = '{} inverted spectrum'.format(nspectra)
+        text = 'Inverted spectrum ({})'.format(nspectra)
     else:
-        text = '{} inverted spectra'.format(nspectra)
-    # Path effect to contour text in white
-    path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
-    color = 'red'
-    ax.text(
-        0.95, 0.95, text,
-        horizontalalignment='right',
-        verticalalignment='top',
-        color=color,
-        fontsize=9,
-        transform=ax.transAxes,
-        zorder=50,
-        path_effects=path_effects)
+        text = 'Inverted spectra ({})'.format(nspectra)
+    return text
 
 
 def _summary_params_text(sspec_output, ax):
@@ -206,7 +195,7 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
     fmaxs = list()
     for spec in spec_st:
         freqs = spec.get_freq()
-        ax.loglog(
+        spec_handle, = ax.loglog(
             freqs, spec.data, color=color, lw=linewidth,
             alpha=alpha, zorder=20)
         fmins.append(freqs.min())
@@ -216,19 +205,30 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
     freq, synth_model, synth_model_no_att =\
         _summary_synth_spec(sspec_output, fmin, fmax)
     color = 'black'
+    alpha = 0.9
     linewidth = 2
-    ax.loglog(
+    synth_handle, = ax.loglog(
         freq, synth_model, color=color, lw=linewidth,
         alpha=alpha, zorder=40)
+    legend_handles = [spec_handle, synth_handle]
+    legend_labels = [
+        _nspectra_text(spec_st),
+        'Summary parameters'
+    ]
     if config.plot_spectra_no_attenuation:
         color = 'gray'
         linewidth = 2
-        ax.loglog(
+        synth_no_att_handle, = ax.loglog(
             freq, synth_model_no_att, color=color, lw=linewidth,
             alpha=alpha, zorder=39)
+        legend_handles.append(synth_no_att_handle)
+        legend_labels.append('Summary parameters,\nno attenuation')
+    ax.legend(
+        legend_handles, legend_labels,
+        loc='upper right', framealpha=1
+    ).set_zorder(100)
     ax2 = _make_ax2(ax)
     _plot_fc_and_mw(sspec_output, ax, ax2)
-    _nspectra_text(spec_st, ax)
     _summary_params_text(sspec_output, ax)
     _add_title(config, ax)
     _add_code_author(config, ax)
