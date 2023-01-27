@@ -76,6 +76,11 @@ def _plot_fc_and_mw(sspec_output, ax, ax2):
 
 def _make_ax2(ax):
     ax2 = ax.twinx()
+    # Move ax2 below ax
+    ax.zorder = 2
+    ax2.zorder = 1
+    ax.patch.set_visible(False)
+    ax2.patch.set_visible(True)
     moment_minmax = ax.get_ylim()
     mag_minmax = moment_to_mag(moment_minmax)
     ax2.set_ylim(mag_minmax)
