@@ -150,7 +150,7 @@ def write_sqlite(config, sspec_output):
     # Create Event table
     sql_create_events_table = """CREATE TABLE IF NOT EXISTS Events (
         /* Event info */
-            evid TEXT PRIMARY KEY,
+            evid TEXT,
             runid TEXT,
             orig_time REAL,
             lon REAL,
