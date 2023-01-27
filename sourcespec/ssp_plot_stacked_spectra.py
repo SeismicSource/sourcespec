@@ -200,7 +200,7 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
     # plotting
     fig, ax = _make_fig(config)
     color = 'red'
-    alpha = 0.9
+    alpha = 0.5
     linewidth = 2
     fmins = list()
     fmaxs = list()
