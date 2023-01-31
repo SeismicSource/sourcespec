@@ -172,3 +172,8 @@ clipping_detection
 ------------------
 .. automodule:: clipping_detection
    :members:
+
+plot_sourcepars
+---------------
+.. automodule:: plot_sourcepars
+   :members:
