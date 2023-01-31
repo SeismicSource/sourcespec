@@ -65,6 +65,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
   at beginning or at the end can be easily detected (see [#21])
 - Plot noise and signal windows separately for each component (see [#21])
 - Show on the trace plot the reason why a trace has been ignored
+- New command line tool: `plot_sourcepars` to make 1D or 2D plot of source
+  parameters from a sqlite parameter file.
 
 ### Config file
 

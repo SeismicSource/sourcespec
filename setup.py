@@ -48,8 +48,10 @@ setup(
             'source_spec = sourcespec.source_spec:main',
             'source_model = sourcespec.source_model:main',
             'source_residuals = sourcespec.source_residuals:main',
-            'clipping_detection = sourcespec.clipping_detection:main']
-        },
+            'clipping_detection = sourcespec.clipping_detection:main',
+            'plot_sourcepars = sourcespec.plot_sourcepars:main',
+        ]
+    },
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
     description='Earthquake source parameters from P- or S-wave '
