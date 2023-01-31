@@ -92,7 +92,7 @@ def _make_ax2(ax):
 def _nspectra_text(spec_st):
     nspectra = len(spec_st)
     if nspectra == 1:
-        text = 'Inverted spectrum ({})'.format(nspectra)
+        text = 'Inverted spectrum'
     else:
         text = 'Inverted spectra ({})'.format(nspectra)
     return text
