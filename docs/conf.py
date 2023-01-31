@@ -28,6 +28,7 @@ sys.modules.update((mod_name, MagicMock()) for mod_name in MOCK_MODULES)
 # custom ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
     'sphinx.ext.doctest',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
@@ -47,6 +48,7 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'scipy': ('http://docs.scipy.org/doc/scipy/', None),
+    'obspy': ('http://docs.obspy.org', None),
 }
 
 # Add any paths that contain templates here, relative to this directory.

@@ -167,3 +167,8 @@ spectrum
 --------
 .. automodule:: spectrum
    :members:
+
+clipping_detection
+------------------
+.. automodule:: clipping_detection
+   :members:
