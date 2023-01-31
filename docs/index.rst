@@ -27,7 +27,7 @@ environment to run (see :ref:`installation:Installation`).
 However, since SourceSpec is based on command line, you don’t have to
 know how to code in Python to use it.
 
-The SourceSpec package is made of three command line tools:
+The SourceSpec package is made of several command line tools:
 
 -  ``source_spec``: Compute earthquake source parameters from the
    inversion of P- or S-wave spectra.
@@ -35,6 +35,9 @@ The SourceSpec package is made of three command line tools:
    user-defined earthquake source parameters.
 -  ``source_residuals``: Compute station residuals from ``source_spec``
    output.
+- ``clipping_detection``: Test the clipping detection algorithm.
+- ``plot_sourcepars``: 1D or 2D plot of source parameters from a sqlite
+  parameter file.
 
 
 Contents:
