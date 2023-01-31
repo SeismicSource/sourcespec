@@ -23,7 +23,11 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 ### Processing
 
-- New algorithm for clipping detection, not requiring any parameter
+- New algorithm for clipping detection, tuned through a sensitivity parameter
+  (`clipping_sensitivity`) between 0 (no clipping detection) and
+  5 (max sensitivity)
+  - The algorithm can also be called from the command line, e.g. for debug
+    purposes, using the command `clipping_detection`
 - Magnitude limits for inversion are now autoset between 90% of the minimum
   of the spectral plateau and 110% of its maximum
 - Relax noise window requirements if noise weighting is not used.
@@ -66,7 +70,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 - Removed config parameter: `Mw_0_variability`
 - Removed config parameter: `clip_max_percent`
-- New config parameter: `check_clipping`
+- New config parameter: `clipping_sensitivity`
 - Config file section `AVERAGES PARAMETERS` renamed to
   `SUMMARY STATISTICS PARAMETERS`
 - New config parameter: `reference_statistics`

@@ -17,13 +17,12 @@ Trace processing for sourcespec.
 import logging
 import numpy as np
 import re
-from scipy.ndimage.filters import gaussian_filter
-from scipy.signal import find_peaks
 from obspy.core import Stream
 from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import remove_instr_response, hypo_dist
 from sourcespec.ssp_wave_arrival import add_arrivals_to_trace
+from sourcespec.clipping_detection import is_clipped
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -73,40 +72,18 @@ def _check_signal_level(config, trace):
 
 def _check_clipping(config, trace):
     trace.stats.clipped = False
-    if not config.check_clipping:
+    if config.clipping_sensitivity == 0:
         return
-    t1 = trace.stats.arrivals['N1'][1]
+    # cut the trace between the end of noise window
+    # and the end of the signal window
+    t1 = trace.stats.arrivals['N2'][1]
     if config.wave_type[0] == 'S':
         t2 = trace.stats.arrivals['S2'][1]
     elif config.wave_type[0] == 'P':
         t2 = trace.stats.arrivals['P2'][1]
     t2 = (trace.stats.arrivals['S'][1] + config.win_length)
     tr = trace.copy().trim(t1, t2).detrend('demean')
-    npts = len(tr.data)
-    # Compute data histogram with a number of bins equal to 0.5% of data points
-    nbins = int(npts*0.005)
-    counts, bins = np.histogram(tr.data, bins=nbins)
-    counts_smooth = gaussian_filter(counts, sigma=1.5)
-    # Find peaks in counts_smooth which are at least 2% of max peak
-    maxcounts = np.max(counts_smooth)
-    peaks, _ = find_peaks(
-        counts_smooth,
-        height=0.02*maxcounts,
-    )
-    # The following code is for debug purposes
-    # import matplotlib.pyplot as plt
-    # fig, ax = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
-    # fig.suptitle(tr.id)
-    # ax[0].plot(tr.times(), tr.data)
-    # ax[1].hist(
-    #     bins[:-1], bins=len(counts), weights=counts,
-    #     orientation='horizontal')
-    # ax[1].plot(counts_smooth, bins[:-1])
-    # ax[1].scatter(
-    #     counts_smooth[peaks], bins[peaks], s=100, marker='x', color='red')
-    # plt.show()
-    # If more than one peak, then the signal is probably clipped or distorted
-    if len(peaks) > 1:
+    if is_clipped(tr, config.clipping_sensitivity):
         trace.stats.clipped = True
         trace.stats.ignore = True
         trace.stats.ignore_reason = 'distorted'

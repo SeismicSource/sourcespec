@@ -44,10 +44,11 @@ setup(
     packages=['sourcespec', 'sourcespec.configobj', 'sourcespec.adjustText'],
     include_package_data=True,
     entry_points={
-        'console_scripts': ['source_spec = sourcespec.source_spec:main',
-                            'source_model = sourcespec.source_model:main',
-                            'source_residuals = '
-                            'sourcespec.source_residuals:main']
+        'console_scripts': [
+            'source_spec = sourcespec.source_spec:main',
+            'source_model = sourcespec.source_model:main',
+            'source_residuals = sourcespec.source_residuals:main',
+            'clipping_detection = sourcespec.clipping_detection:main']
         },
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
