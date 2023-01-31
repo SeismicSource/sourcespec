@@ -40,6 +40,8 @@ extensions = [
     'sphinx_rtd_theme',
     'sphinxcontrib.bibtex',
 ]
+napoleon_use_param = True
+napoleon_preprocess_types = True
 autosectionlabel_prefix_document = True
 bibtex_bibfiles = ['refs.bib']
 bibtex_reference_style = 'author_year'
