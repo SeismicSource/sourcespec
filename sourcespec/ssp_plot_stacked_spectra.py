@@ -89,8 +89,8 @@ def _make_ax2(ax):
     return ax2
 
 
-def _nspectra_text(spec_st):
-    nspectra = len(spec_st)
+def _nspectra_text(spec_list):
+    nspectra = len(spec_list)
     if nspectra == 1:
         text = 'Inverted spectrum'
     else:
@@ -194,8 +194,10 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
     # Check config, if we need to plot at all
     if not config.plot_show and not config.plot_save:
         return
-    # Select "H" spectra
-    spec_st = spec_st.select(channel='??H')
+    # Select "H" spectra (note: spec_st.select cannot be used because it is
+    # case unsensitive)
+    selected_specs = [
+        spec for spec in spec_st if spec.stats.channel[-1] == 'H']
     # plotting
     fig, ax = _make_fig(config)
     color = 'red'
@@ -203,7 +205,7 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
     linewidth = 2
     fmins = list()
     fmaxs = list()
-    for spec in spec_st:
+    for spec in selected_specs:
         freqs = spec.get_freq()
         spec_handle, = ax.loglog(
             freqs, spec.data, color=color, lw=linewidth,
@@ -222,7 +224,7 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
         alpha=alpha, zorder=40)
     legend_handles = [spec_handle, synth_handle]
     legend_labels = [
-        _nspectra_text(spec_st),
+        _nspectra_text(selected_specs),
         'Summary parameters'
     ]
     if config.plot_spectra_no_attenuation:
