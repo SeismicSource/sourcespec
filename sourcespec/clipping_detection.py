@@ -47,16 +47,13 @@ def is_clipped(trace, sensitivity, debug=False):
     trace = trace.copy().detrend('demean')
     npts = len(trace.data)
     # Compute data histogram with a number of bins equal to 0.5% of data points
-    nbins = max(11, int(npts*0.005))
-    if nbins % 2 == 0:
-        nbins += 1
+    nbins = int(npts*0.005)
     counts, bins = np.histogram(trace.data, bins=nbins)
     counts = counts/np.max(counts)
-    bin_width = bins[1] - bins[0]
     # Compute gaussian kernel density
-    kde = gaussian_kde(trace.data, bw_method=0.1)
-    max_data = np.max(np.abs(trace.data))#*1.2
-    density_points = np.linspace(-max_data, max_data, 101)
+    kde = gaussian_kde(trace.data, bw_method=0.2)
+    max_data = np.max(np.abs(trace.data))*1.2
+    density_points = np.linspace(-max_data, max_data, 100)
     density = kde.pdf(density_points)
     maxdensity = np.max(density)
     density /= maxdensity
@@ -65,21 +62,12 @@ def is_clipped(trace, sensitivity, debug=False):
     dist_weight *= 4/dist_weight.max()
     dist_weight += 1
     density_weight = density*dist_weight
-    # Add 1 bin at start/end with value equal to min. of 5 first/last
-    # bins to ensure local maxima at start/end are recognized as peaks
-    density_weight = np.hstack([[density_weight[:5].min()],
-                                density_weight,
-                                [density_weight[-5:].min()]])
     # find peaks with minimum prominence based on clipping sensitivity
     min_prominence = [0.1, 0.05, 0.03, 0.02, 0.01]
     peaks, _ = find_peaks(
         density_weight,
         prominence=min_prominence[sensitivity-1]
     )
-    # Remove start/end bins again
-    peaks = peaks[(0 < peaks) & (peaks < 102)]
-    peaks -= 1
-    density_weight = density_weight[1:-1]
     if debug:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
@@ -89,7 +77,7 @@ def is_clipped(trace, sensitivity, debug=False):
         ax[0].set_xlabel('Time (s)')
         ax[0].set_ylabel('Amplitude')
         ax[1].hist(
-            bins[:-1] + bin_width/2., bins=len(counts), weights=counts,
+            bins[:-1], bins=len(counts), weights=counts,
             orientation='horizontal')
         ax[1].plot(density, density_points, label='kernel density')
         ax[1].plot(
@@ -100,11 +88,9 @@ def is_clipped(trace, sensitivity, debug=False):
         ax[1].set_xlabel('Density')
         ax[1].legend()
         plt.show()
-    # If there is a peak in the first/last 5 bins,
-    # then the signal is probably clipped or distorted
-    for peak in peaks:
-        if peak < 5 or peak > 95:
-            return True
+    # If more than one peak, then the signal is probably clipped or distorted
+    if len(peaks) > 1:
+        return True
     else:
         return False
 

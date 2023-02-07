@@ -81,7 +81,7 @@ def _check_clipping(config, trace):
         t2 = trace.stats.arrivals['S2'][1]
     elif config.wave_type[0] == 'P':
         t2 = trace.stats.arrivals['P2'][1]
-    #t2 = (trace.stats.arrivals['S'][1] + config.win_length)
+    t2 = (trace.stats.arrivals['S'][1] + config.win_length)
     tr = trace.copy().trim(t1, t2).detrend('demean')
     if is_clipped(tr, config.clipping_sensitivity):
         trace.stats.clipped = True
