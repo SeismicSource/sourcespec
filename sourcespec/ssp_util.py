@@ -211,12 +211,31 @@ def smooth(x, window_len=11, window='hanning'):
 
 def remove_instr_response(trace, correct='True',
                           pre_filt=(0.5, 0.6, 40., 45.)):
+    """
+    Remove instrument response from a trace.
+
+    Trace is converted to the sensor units (m for a displacement sensor,
+    m/s for a short period or broadband velocity sensor, m/s**2 for a strong
+    motion sensor).
+
+    :param trace: Trace to be corrected.
+    :type trace: :class:`~obspy.core.trace.Trace`
+    :param correct: If ``True``, the instrument response will be corrected.
+        If ``False``, the instrument response will not be corrected.
+        If ``sensitivity_only``, the instrument response will be corrected
+        using only the sensitivity.
+    :type correct: bool or str
+    :param pre_filt: Pre-filter frequencies (``None`` means no pre-filtering).
+    :type pre_filt: tuple of four floats
+    :returns: Corrected trace.
+    :rtype: :class:`~obspy.core.trace.Trace`
+    """
     if correct == 'False':
         return trace
     traceId = trace.get_id()
     paz = trace.stats.paz
     if paz is None:
-        logger.warning('%s: no poles and zeros for trace' % traceId)
+        logger.warning('{}: no poles and zeros for trace'.format(traceId))
         return None
 
     # remove the mean...
@@ -241,8 +260,10 @@ def remove_instr_response(trace, correct='True',
                            remove_sensitivity=True, simulate_sensitivity=None,
                            pre_filt=pre_filt, sacsim=False)
             if len(w) > 0:
-                logger.warning('%s: remove_instr_response: %s' %
-                               (trace.stats.station, w[-1].message))
+                logger.warning(
+                    '{}: remove_instr_response: {}'.format(
+                        trace.stats.station, w[-1].message)
+                )
     return trace
 # -----------------------------------------------------------------------------
 
