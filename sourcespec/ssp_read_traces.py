@@ -32,7 +32,7 @@ from obspy.core.util import AttribDict
 from obspy.io.sac import attach_paz
 from obspy.core.inventory import Inventory
 from obspy import read_events
-from sourcespec.ssp_setup import ssp_exit
+from sourcespec.ssp_setup import ssp_exit, instr_codes_vel, instr_codes_acc
 from sourcespec.ssp_util import get_vel
 from sourcespec.ssp_read_station_metadata import read_station_metadata
 logger = logging.getLogger(__name__.split('.')[-1])
@@ -230,10 +230,9 @@ def _add_paz_and_coords(trace, inventory, config):
 _add_paz_and_coords.skipped = list()
 
 
-def _add_instrtype(trace, config):
+def _add_instrtype(trace):
     instrtype = None
     trace.stats.instrtype = None
-
     # First, try to get the instrtype from channel name
     chan = trace.stats.channel
     if len(chan) > 2:
@@ -242,28 +241,6 @@ def _add_instrtype(trace, config):
     else:
         band_code = None
         instr_code = None
-    # SEED standard instrument codes:
-    # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
-    instr_codes_vel = ['H', 'L']
-    instr_codes_acc = ['N', ]
-    # User-defined instrument codes:
-    instr_code_acc_user = config.instrument_code_acceleration
-    instr_code_vel_user = config.instrument_code_velocity
-    # Remove user-defined instrument codes if they conflict
-    # with another instrument
-    try:
-        instr_codes_vel.remove(instr_code_acc_user)
-    except ValueError:
-        pass
-    try:
-        instr_codes_acc.remove(instr_code_vel_user)
-    except ValueError:
-        pass
-    # Add user-defined instrument codes
-    if instr_code_vel_user is not None:
-        instr_codes_vel.append(instr_code_vel_user)
-    if instr_code_acc_user is not None:
-        instr_codes_acc.append(instr_code_acc_user)
     if instr_code in instr_codes_vel:
         # SEED standard band codes from higher to lower sampling rate
         # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
@@ -273,7 +250,6 @@ def _add_instrtype(trace, config):
             instrtype = 'broadb'
     if instr_code in instr_codes_acc:
         instrtype = 'acc'
-
     # If, not possible, let's see if there is an instrument
     # name in "kinst" (ISNet format).
     # In this case, we define band and instrument codes
@@ -866,7 +842,7 @@ def read_traces(config):
             _correct_traceid(trace, config.traceid_mapping_file)
             try:
                 _add_paz_and_coords(trace, inventory, config)
-                _add_instrtype(trace, config)
+                _add_instrtype(trace)
                 _add_hypocenter(trace, hypo)
                 _add_picks(trace, picks)
             except Exception as err:

@@ -15,6 +15,7 @@ import re
 import logging
 from obspy import read_inventory
 from obspy.core.inventory import Inventory, Network, Station, Channel, Response
+from sourcespec.ssp_setup import instr_codes_vel, instr_codes_acc
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -103,6 +104,31 @@ def _parse_paz_file(file):
     return zeros, poles, constant
 
 
+def _find_input_units(trace_id):
+    """
+    Find the input units of a trace, based on its trace ID.
+
+    :param traceid: trace ID
+    :type traceid: str
+    """
+    chan = trace_id.split('.')[-1]
+    if len(chan) < 3:
+        raise ValueError(f'Cannot find input units for trace ID "{trace_id}"')
+    band_code = chan[0]
+    instr_code = chan[1]
+    input_units = None
+    if instr_code in instr_codes_vel:
+        # SEED standard band codes from higher to lower sampling rate
+        # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
+        if band_code in ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'S']:
+            input_units = 'M/S'
+    elif instr_code in instr_codes_acc:
+        input_units = 'M/S**2'
+    if input_units is None:
+        raise ValueError(f'Cannot find input units for trace ID "{trace_id}"')
+    return input_units
+
+
 def _read_paz_file(file):
     """
     Read a paz file into an ``Inventory``object.
@@ -131,15 +157,21 @@ def _read_paz_file(file):
     try:
         # check if trace_id is an actual trace ID
         net, sta, loc, chan = trace_id.split('.')
+        input_units = _find_input_units(trace_id)
     except ValueError:
         # otherwhise, let's use this PAZ for a generic trace ID
         net = 'XX'
         sta = 'GENERIC'
         loc = 'XX'
         chan = 'XXX'
+        # We use M/S as default input units, if "trace_units" is specified
+        # in the config file, we will change this later
+        input_units = 'M/S'
+        logger.info(f'Using generic trace ID for PAZ file {file}')
     zeros, poles, constant = _parse_paz_file(file)
     resp = Response().from_paz(
-        zeros, poles, stage_gain=1, input_units='M/S', output_units='COUNTS')
+        zeros, poles, stage_gain=1,
+        input_units=input_units, output_units='COUNTS')
     resp.instrument_sensitivity.value = constant
     channel = Channel(
         code=chan, location_code=loc, response=resp,

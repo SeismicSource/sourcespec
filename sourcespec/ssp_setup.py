@@ -22,6 +22,7 @@ import shutil
 import logging
 import signal
 import uuid
+import contextlib
 from datetime import datetime
 from collections import defaultdict
 from sourcespec.configobj import ConfigObj
@@ -431,6 +432,34 @@ def _check_mandatory_config_params(config_obj):
         ssp_exit(1)
 
 
+# SEED standard instrument codes:
+# https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
+instr_codes_vel = ['H', 'L']
+instr_codes_acc = ['N', ]
+
+
+def _init_instrument_codes(config):
+    """
+    Initialize instrument codes from config file.
+    """
+    global instr_codes_vel
+    global instr_codes_acc
+    # User-defined instrument codes:
+    instr_code_acc_user = config.instrument_code_acceleration
+    instr_code_vel_user = config.instrument_code_velocity
+    # Remove user-defined instrument codes if they conflict
+    # with another instrument
+    with contextlib.suppress(ValueError):
+        instr_codes_vel.remove(instr_code_acc_user)
+    with contextlib.suppress(ValueError):
+        instr_codes_acc.remove(instr_code_vel_user)
+    # Add user-defined instrument codes
+    if instr_code_vel_user is not None:
+        instr_codes_vel.append(instr_code_vel_user)
+    if instr_code_acc_user is not None:
+        instr_codes_acc.append(instr_code_acc_user)
+
+
 def configure(options, progname, config_overrides=None):
     """
     Parse command line arguments and read config file.
@@ -552,6 +581,7 @@ def configure(options, progname, config_overrides=None):
             sys.stderr.write(str(err))
             sys.exit(1)
 
+    _init_instrument_codes(config)
     _init_plotting(config.plot_show)
     # Create a dict to store figure paths
     config.figures = defaultdict(list)
