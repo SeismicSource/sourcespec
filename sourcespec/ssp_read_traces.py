@@ -15,6 +15,7 @@ Read traces in multiple formats of data and metadata.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
+
 import sys
 import os
 import io
@@ -24,13 +25,14 @@ import warnings
 import shutil
 import tarfile
 import tempfile
-import json
+import contextlib
 from obspy import read
 from obspy.core import Stream
 from obspy.core.util import AttribDict
 from obspy.io.sac import attach_paz
 from obspy.core.inventory import Inventory
-from sourcespec.ssp_setup import ssp_exit, instr_codes_vel, instr_codes_acc
+from sourcespec.ssp_setup import (
+    ssp_exit, instr_codes_vel, instr_codes_acc, traceid_map)
 from sourcespec.ssp_util import get_vel
 from sourcespec.ssp_read_station_metadata import read_station_metadata
 from sourcespec.ssp_read_event_metadata import (
@@ -39,36 +41,16 @@ logger = logging.getLogger(__name__.split('.')[-1])
 
 
 # TRACE MANIPULATION ----------------------------------------------------------
-correct_traceids = None
-
-
-def _get_correct_traceids(traceid_file):
-    global correct_traceids
-    if correct_traceids is None:
-        with open(traceid_file, 'r') as fp:
-            correct_traceids = json.loads(fp.read())
-    return correct_traceids
-
-
-def _correct_traceid(trace, traceid_file):
-    if traceid_file is None:
+def _correct_traceid(trace):
+    if traceid_map is None:
         return
-    try:
-        correct_traceids = _get_correct_traceids(traceid_file)
-    except Exception:
-        msg = ('traceid mapping file "{}" not found '
-               'or not in json format'.format(traceid_file))
-        logger.error(msg)
-        ssp_exit(1)
-    try:
-        traceid = correct_traceids[trace.get_id()]
+    with contextlib.suppress(KeyError):
+        traceid = traceid_map[trace.get_id()]
         net, sta, loc, chan = traceid.split('.')
         trace.stats.network = net
         trace.stats.station = sta
         trace.stats.location = loc
         trace.stats.channel = chan
-    except KeyError:
-        pass
 
 
 def _compute_sensitivity(trace, config):
@@ -477,7 +459,7 @@ def read_traces(config):
             if config.options.station is not None:
                 if not trace.stats.station == config.options.station:
                     continue
-            _correct_traceid(trace, config.traceid_mapping_file)
+            _correct_traceid(trace)
             try:
                 _add_paz_and_coords(trace, inventory, config)
                 _add_instrtype(trace)

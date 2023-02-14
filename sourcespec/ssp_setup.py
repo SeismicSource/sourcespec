@@ -22,6 +22,7 @@ import shutil
 import logging
 import signal
 import uuid
+import json
 import contextlib
 from datetime import datetime
 from collections import defaultdict
@@ -46,6 +47,7 @@ OS = os.name
 oldlogfile = None
 logger = None
 ssp_exit_called = False
+traceid_map = None
 OBSPY_VERSION = None
 OBSPY_VERSION_STR = None
 NUMPY_VERSION_STR = None
@@ -460,6 +462,25 @@ def _init_instrument_codes(config):
         instr_codes_acc.append(instr_code_acc_user)
 
 
+def _init_traceid_map(traceid_map_file):
+    """
+    Initialize trace ID map from file.
+    """
+    global traceid_map
+    if traceid_map_file is None:
+        return
+    try:
+        with open(traceid_map_file, 'r') as fp:
+            traceid_map = json.loads(fp.read())
+    except Exception:
+        msg = (
+            f'traceid mapping file "{traceid_map_file}" not found '
+            'or not in json format'
+        )
+        sys.stderr.write(msg + '\n')
+        ssp_exit(1)
+
+
 def configure(options, progname, config_overrides=None):
     """
     Parse command line arguments and read config file.
@@ -582,6 +603,7 @@ def configure(options, progname, config_overrides=None):
             sys.exit(1)
 
     _init_instrument_codes(config)
+    _init_traceid_map(config.traceid_mapping_file)
     _init_plotting(config.plot_show)
     # Create a dict to store figure paths
     config.figures = defaultdict(list)

@@ -15,7 +15,7 @@ import logging
 from datetime import datetime
 from obspy import UTCDateTime
 from obspy import read_events
-from sourcespec.ssp_setup import ssp_exit
+from sourcespec.ssp_setup import ssp_exit, traceid_map
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -290,24 +290,35 @@ def _is_hypo71_picks(pick_file):
             raise Exception(msg)
 
 
-def _correct_station_name(station, traceid_file):
-    if traceid_file is None:
+def _correct_station_name(station):
+    """
+    Correct station name, based on a traceid map.
+
+    :param station: station name
+
+    :return: corrected station name
+    """
+    if traceid_map is None:
         return station
-    correct_traceids = _get_correct_traceids(traceid_file)
     # get all the keys containing station name in it
-    keys = [key for key in correct_traceids
-            if station == key.split('.')[1]]
+    keys = [key for key in traceid_map if station == key.split('.')[1]]
     # then take just the first one
     try:
         key = keys[0]
     except IndexError:
         return station
-    traceid = correct_traceids[key]
-    correct_station = traceid.split('.')[1]
-    return correct_station
+    traceid = traceid_map[key]
+    return traceid.split('.')[1]
 
 
 def parse_hypo71_picks(config):
+    """
+    Parse hypo71 picks file
+
+    :param config: Config object
+
+    :return: list of Pick objects
+    """
     pick_file = config.options.pick_file
     if pick_file is None:
         return None
@@ -323,7 +334,7 @@ def parse_hypo71_picks(config):
         line = line.replace('\n', '')
         # skip separator and empty lines
         stripped_line = line.strip()
-        if stripped_line == '10' or stripped_line == '':
+        if stripped_line in ['10', '']:
             continue
         # Check if it is a pick line
         # 6th character should be alpha (phase name: P or S)
@@ -332,11 +343,9 @@ def parse_hypo71_picks(config):
                 line[9].isdigit() and
                 line[20].isdigit()):
             continue
-
         pick = Pick()
-        pick.station = line[0:4].strip()
-        pick.station = \
-            _correct_station_name(pick.station, config.traceid_mapping_file)
+        pick.station = line[:4].strip()
+        pick.station = _correct_station_name(pick.station)
         pick.flag = line[4:5]
         pick.phase = line[5:6]
         pick.polarity = line[6:7]
@@ -350,14 +359,12 @@ def parse_hypo71_picks(config):
         dt = datetime.strptime(timestr, '%y%m%d%H%M%S.%f')
         pick.time = UTCDateTime(dt)
         picks.append(pick)
-
         try:
             stime = line[31:36]
         except Exception:
             continue
         if stime.strip() == '':
             continue
-
         pick2 = Pick()
         pick2.station = pick.station
         pick2.flag = line[36:37]
