@@ -48,6 +48,10 @@ oldlogfile = None
 logger = None
 ssp_exit_called = False
 traceid_map = None
+# SEED standard instrument codes:
+# https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
+instr_codes_vel = ['H', 'L']
+instr_codes_acc = ['N', ]
 OBSPY_VERSION = None
 OBSPY_VERSION_STR = None
 NUMPY_VERSION_STR = None
@@ -432,12 +436,6 @@ def _check_mandatory_config_params(config_obj):
         msg = '\n'.join(messages)
         sys.stderr.write(msg + '\n')
         ssp_exit(1)
-
-
-# SEED standard instrument codes:
-# https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
-instr_codes_vel = ['H', 'L']
-instr_codes_acc = ['N', ]
 
 
 def _init_instrument_codes(config):
