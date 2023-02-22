@@ -346,6 +346,15 @@ If you used SourceSpec for a scientific paper, please cite it as:
 
 Please replace `X.Y` with the SourceSpec version number you used.
 
+You can also cite the following abstract presented at the
+2016 AGU Fall Meeting:
+
+> Satriano, C., Mejia Uquiche, A. R., & Saurel, J. M. (2016). Spectral
+> estimation of seismic moment, corner frequency and radiated energy for
+> earthquakes in the Lesser Antilles. In AGU Fall Meeting Abstracts
+> (Vol. 2016, pp. S13A-2518), [bibcode: 2016AGUFM.S13A2518S]
+
+
 ## References
 
 - Brune, J. N. (1970). Tectonic stress and the spectra of seismic shear waves
@@ -401,6 +410,7 @@ Please replace `X.Y` with the SourceSpec version number you used.
 
 <!-- References -->
 [doi: 10.5281/ZENODO.3688587]: https://doi.org/10.5281/ZENODO.3688587
+[bibcode: 2016AGUFM.S13A2518S]: https://ui.adsabs.harvard.edu/abs/2016AGUFM.S13A2518S
 [doi: 10.1007/978-1-4419-7695-6_22]: https://doi.org/10.1007/978-1-4419-7695-6_22
 [doi: 10.1029/JB075i026p04997]: https://doi.org/10.1029/JB075i026p04997
 [doi: 10.1111/j.1365-246X.2011.05327.x]: https://doi.org/10.1111/j.1365-246X.2011.05327.x
