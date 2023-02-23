@@ -135,11 +135,12 @@ def get_clipping_score(trace, remove_baseline=False, debug=False):
 
 def run():
     import argparse
-    from obspy import read
+    from obspy import read, Stream
     parser = argparse.ArgumentParser(
         description='Compute trace clipping score')
     parser.add_argument(
-        'infile', type=str, help='input file name')
+        'infile', nargs='+', help='input file(s) in any format supported by '
+        'ObsPy (e.g., miniSEED, SAC, GSE2, SU, etc.)')
     parser.add_argument(
         '--remove_baseline', '-r', action='store_true',
         help='remove trace baseline before computing the score',
@@ -149,7 +150,12 @@ def run():
         help='plot trace, samples histogram, kernel density '
         'and the exponential fit', default=False)
     args = parser.parse_args()
-    st = read(args.infile)
+    st = Stream()
+    for file in args.infile:
+        try:
+            st += read(file)
+        except Exception as msg:
+            print(f'Error reading file {file}: {msg}')
     for tr in st:
         clipping_score = get_clipping_score(
             tr, args.remove_baseline, args.debug)
