@@ -73,8 +73,8 @@ def get_clipping_score(trace, remove_baseline=False, debug=False):
         baseline = _get_baseline(trace.data)
         trace.data -= baseline
     # Compute data histogram with a number of bins equal to 0.5% of data points
-    # or 11, whichever is larger
-    nbins = max(11, int(len(trace.data)*0.005))
+    # or 31, whichever is larger
+    nbins = max(31, int(len(trace.data)*0.005))
     if nbins % 2 == 0:
         nbins += 1
     counts, bins = np.histogram(trace.data, bins=nbins)
