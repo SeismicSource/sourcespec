@@ -135,6 +135,9 @@ def _check_sn_ratio(config, trace):
     logger.info('{} {}: S/N: {:.1f}'.format(
         trace.id, trace.stats.instrtype, sn_ratio))
     trace.stats.sn_ratio = sn_ratio
+    # stop here if trace is already ignored
+    if trace.stats.ignore:
+        return
     snratio_min = config.sn_min
     if sn_ratio < snratio_min:
         msg = '{} {}: S/N smaller than {:g}: skipping trace'
