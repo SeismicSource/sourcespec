@@ -24,7 +24,7 @@ def _get_baseline(signal):
     """Get the signal baseline using a Savitzky-Golay filter."""
     from scipy.signal import savgol_filter
     npts = len(signal)
-    wlen = npts // 5
+    wlen = npts // 10
     if wlen % 2 == 0:
         wlen += 1
     return savgol_filter(signal, wlen, 3)
