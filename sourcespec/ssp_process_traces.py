@@ -16,6 +16,7 @@ Trace processing for sourcespec.
 """
 import logging
 import numpy as np
+from scipy.signal import savgol_filter
 import re
 from obspy.core import Stream
 from obspy.core.util import AttribDict
@@ -80,7 +81,7 @@ def _check_clipping(config, trace):
     elif config.wave_type[0] == 'P':
         t2 = trace.stats.arrivals['P2'][1]
     tr = trace.copy().trim(t1, t2)
-    clipping_score = get_clipping_score(tr)
+    clipping_score = get_clipping_score(tr, config.remove_baseline)
     tr_info = f'{tr.id} {tr.stats.instrtype}'
     logger.info(f'{tr_info}: clipping score: {clipping_score:.1f}%')
     if clipping_score > config.clipping_score_threshold:
@@ -147,6 +148,21 @@ def _check_sn_ratio(config, trace):
         trace.stats.ignore_reason = 'low S/N'
 
 
+def _remove_baseline(config, trace):
+    """
+    Get the signal baseline using a Savitzky-Golay filter and subtract it
+    from the trace.
+    """
+    if not config.remove_baseline:
+        return
+    npts = len(trace.data)
+    wlen = npts // 10
+    if wlen % 2 == 0:
+        wlen += 1
+    baseline = savgol_filter(trace.data, wlen, 3)
+    trace.data -= baseline
+
+
 def _process_trace(config, trace):
     # copy trace for manipulation
     trace_process = trace.copy()
@@ -179,6 +195,7 @@ def _process_trace(config, trace):
             msg += 'skipping trace'
             msg = msg.format(trace_process.id, instrtype)
             raise RuntimeError(msg)
+    _remove_baseline(config, trace_process)
     filter_trace(config, trace_process)
     # Check if the trace has significant signal to noise ratio
     _check_sn_ratio(config, trace_process)

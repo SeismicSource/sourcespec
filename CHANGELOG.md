@@ -23,6 +23,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 ### Processing
 
+- Option to remove the trace baseline after instrument correction and before
+  filtering (`remove_baseline` config parameter)
 - New algorithm for clipping detection based on a clipping score.
   Adjust the `clipping_score_threshold` config parameter between 0 (all traces
   are marked as clipped) and 100 (no clipping detection)
@@ -72,6 +74,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 - Removed config parameter: `Mw_0_variability`
 - Removed config parameter: `clip_max_percent`
+- New config parameter: `remove_baseline`
 - New config parameter: `clipping_score_threshold`
 - Config file section `AVERAGES PARAMETERS` renamed to
   `SUMMARY STATISTICS PARAMETERS`
