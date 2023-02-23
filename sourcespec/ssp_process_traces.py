@@ -22,7 +22,7 @@ from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import remove_instr_response, hypo_dist
 from sourcespec.ssp_wave_arrival import add_arrivals_to_trace
-from sourcespec.clipping_detection import is_clipped
+from sourcespec.clipping_detection import get_clipping_score
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -72,24 +72,24 @@ def _check_signal_level(config, trace):
 
 def _check_clipping(config, trace):
     trace.stats.clipped = False
-    if config.clipping_sensitivity == 0:
-        return
-    # cut the trace between the end of noise window
+    # cut the trace between the beginning of noise window
     # and the end of the signal window
-    t1 = trace.stats.arrivals['N2'][1]
+    t1 = trace.stats.arrivals['N1'][1]
     if config.wave_type[0] == 'S':
         t2 = trace.stats.arrivals['S2'][1]
     elif config.wave_type[0] == 'P':
         t2 = trace.stats.arrivals['P2'][1]
-    t2 = (trace.stats.arrivals['S'][1] + config.win_length)
-    tr = trace.copy().trim(t1, t2).detrend('demean')
-    if is_clipped(tr, config.clipping_sensitivity):
+    tr = trace.copy().trim(t1, t2)
+    clipping_score = get_clipping_score(tr)
+    tr_info = f'{tr.id} {tr.stats.instrtype}'
+    logger.info(f'{tr_info}: clipping score: {clipping_score:.1f}%')
+    if clipping_score > config.clipping_score_threshold:
         trace.stats.clipped = True
         trace.stats.ignore = True
-        trace.stats.ignore_reason = 'distorted'
+        trace.stats.ignore_reason = f'clipping: {clipping_score:.1f}%'
         msg = (
-            '{} {}: Trace is clipped or significantly distorted: '
-            'skipping trace'.format(tr.id, tr.stats.instrtype)
+            f'{tr_info}: Trace is clipped or significantly distorted: '
+            'skipping trace'
         )
         logger.warning(msg)
 
