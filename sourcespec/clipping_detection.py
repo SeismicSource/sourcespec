@@ -12,12 +12,6 @@ Trace clipping score based on kernel density estimation.
 """
 import numpy as np
 from scipy.stats import gaussian_kde
-from scipy.optimize import curve_fit
-
-
-def _exp_func(x, a, b):
-    """Exponential function for fitting kernel density."""
-    return a*np.exp(-b*np.abs(x))
 
 
 def _get_baseline(signal):
@@ -30,25 +24,95 @@ def _get_baseline(signal):
     return savgol_filter(signal, wlen, 3)
 
 
+def _plot_clipping_analysis(
+        trace, trace_baseline, max_data,
+        counts, bins, bin_width,
+        density_points, density,
+        density_weight_full, density_weight_no_central,
+        clipping_score):
+    """
+    Plot trace, samples histogram and kernel densities
+    (unweighted and weighted)
+    """
+    # Force loading of a matplotlib GUI backend
+    import matplotlib
+    mpl_backends = 'macosx', 'qt5agg', 'qt4agg', 'gtk3agg', 'tkagg', 'wxagg'
+    for backend in mpl_backends:
+        try:
+            matplotlib.use(backend, force=True)
+            from matplotlib import pyplot as plt
+            break
+        except Exception:
+            continue
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import ScalarFormatter
+
+    class ScalarFormatterForceFormat(ScalarFormatter):
+        def _set_format(self):
+            self.format = '%1.1f'
+
+    fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
+    ax0.plot(
+        trace.times(), trace.data, zorder=10, label='baseline removed')
+    if trace_baseline is not None:
+        ax0.plot(
+            trace.times(), trace.data + trace_baseline, zorder=5,
+            label='original trace')
+        ax0.plot(trace.times(), trace_baseline, zorder=20, label='baseline')
+        ax0.legend()
+    ax0.set_ylim(-max_data, max_data)
+    yfmt = ScalarFormatterForceFormat()
+    yfmt.set_powerlimits((0,0))
+    ax0.yaxis.set_major_formatter(yfmt)
+    ax0.grid(True)
+    ax0.set_title(trace.id)
+    ax0.set_xlabel('Time (s)')
+    ax0.set_ylabel('Amplitude')
+    ax1.hist(
+        bins[:-1] + bin_width/2., bins=len(counts), weights=counts,
+        orientation='horizontal', zorder=10)
+    ax1.plot(density, density_points, label='kernel density', zorder=20)
+    ax1.plot(
+        density_weight_full, density_points,
+        label='weighted kernel density', zorder=30)
+    ax1.fill_betweenx(
+        density_points, density_weight_no_central,
+        alpha=0.5, color='gray',
+        label='weighted kernel density\nno central peak', zorder=10)
+    ax1.grid(True, axis='y')
+    ax1.set_xlabel('Density')
+    ax1.legend()
+    ax1.set_title(f'Clipping score: {clipping_score:.2f}%')
+    plt.tight_layout()
+    plt.show()
+
+
 def get_clipping_score(trace, remove_baseline=False, debug=False):
     """
     Compute a trace clipping score based on kernel density estimation.
 
-    Trace is demeaned and detrended before computing the score.
-    Optionally, the trace baseline can be removed before computing the score.
+    The algorithm is based on the following steps:
 
-    The score, ranging from 0 to 100, is calculated as the misfit between the
-    kernel density of trace amplitude values (weighted by distance from the
-    zero mean value) and an exponential fit to the kernel density.
+    1.  The trace is detrended and demeaned. Optionally, the trace baseline
+        can be removed.
 
-    Distance weighting (8th order power function between 1 and 100) is used
-    to give more weight to samples far from the zero mean value.
+    2.  A kernel density estimation is performed on the trace amplitude values.
 
-    Distorted traces (e.g., signals with strong baselines) will also get a
-    high clipping score. To avoid this, the trace baseline can be removed.
+    3.  Two weighted kernel density functions are computed:
+          - a full weighted kernel density, where the kernel density is
+            weighted by the distance from the zero mean value, using a 8th
+            order power function between 1 and 100.
+          - a weighted kernel density without the central peak, where the
+            kernel density is weighted by the distance from the zero mean
+            value, using a 8th order power function between 0 and 100.
+        In both cases, the weight gives more importance to samples far from
+        the zero mean value. In the second case, the central peak is ignored.
 
-    A debug mode is available to plot the trace, the samples histogram and the
-    kernel density (unweighted and weighted) and the exponential fit.
+    4.  The score, ranging from 0 to 100, is the ratio between the sum of the
+        squares of the values of the full weighted kernel density and the
+        sum of the squares of the values of the weighted kernel density without
+        the central peak. The score is 0 if there is no additional peak beyond
+        the central peak.
 
     Parameters
     ----------
@@ -57,79 +121,70 @@ def get_clipping_score(trace, remove_baseline=False, debug=False):
     remove_baseline : bool, optional
         If set, remove the trace baseline before computing the score.
     debug : bool, optional
-        If set, plot trace, samples histogram, kernel density and the
-        exponential fit. Default is False.
+        If set, plot the trace, the samples histogram, the kernel density
+        (unweighted and weighted), the kernel baseline model, and the misfit.
+        Default is False.
 
     Returns
     -------
     clipping_score : float
         Clipping score, in percentage.
+
+    Notes
+    -----
+    Distorted traces (e.g., signals with strong baselines) can also get a
+    high clipping score. To avoid this, the trace baseline can be removed.
+
+    A debug mode is available to plot the trace, the samples histogram, the
+    kernel density (unweighted and weighted), the kernel baseline model,
+    and the misfit.
     """
     trace = trace.copy().detrend('linear')
     trace.detrend('demean')
-    max_data = np.max(np.abs(trace.data)) * 1.05  # 5% margin
-    baseline = None
+    max_data = np.max(np.abs(trace.data)) * 1.10  # 10% margin
+    # Remove trace baseline if requested
+    trace_baseline = None
     if remove_baseline:
-        baseline = _get_baseline(trace.data)
-        trace.data -= baseline
+        trace_baseline = _get_baseline(trace.data)
+        trace.data -= trace_baseline
     # Compute data histogram with a number of bins equal to 0.5% of data points
     # or 31, whichever is larger
+    # Note: histogram is only used for plotting, the score is computed from
+    # the kernel density
     nbins = max(31, int(len(trace.data)*0.005))
     if nbins % 2 == 0:
         nbins += 1
     counts, bins = np.histogram(trace.data, bins=nbins)
     counts = counts/np.max(counts)
     bin_width = bins[1] - bins[0]
-    # Compute gaussian kernel density
-    kde = gaussian_kde(trace.data, bw_method=0.1)
+    # Compute gaussian kernel density using default bandwidth (Scott’s Rule)
+    kde = gaussian_kde(trace.data)
     n_density_points = 101
     density_points = np.linspace(-max_data, max_data, n_density_points)
     density = kde.pdf(density_points)
-    maxdensity = np.max(density)
-    density /= maxdensity
-    # Fit an exponential function to the kernel density
-    popt, _ = curve_fit(
-        _exp_func, density_points/max_data, density, p0=[1, 1])
-    density_fit = _exp_func(density_points/max_data, *popt)
-    # Distance weight, 8th order power function, between 1 and 100
+    density /= np.max(density)
+    # Base distance weight for kernel density, 8th order power function
+    # between 0 and 1
     dist_weight = np.abs(density_points)**8
-    dist_weight *= 99/dist_weight.max()
-    dist_weight += 1
-    density_weight = density*dist_weight
-    # Compute misfit between weighted density and fit
-    misfit = density_weight - density_fit
-    # Compute clipping score
-    clipping_score = 100 * np.sum(misfit**2)/np.sum(density_weight**2)
+    dist_weight /= dist_weight.max()
+    # Distance weight between 1 and 100
+    dist_weight_full = 1 + 99*dist_weight
+    # Compute full weighted kernel density, including the central part
+    density_weight_full = density*dist_weight_full
+    # Distance weight between 0 and 100
+    dist_weight_no_central = 100*dist_weight
+    # Compute weighted kernel density, excluding the central part
+    density_weight_no_central = density*dist_weight_no_central
+    # Compute the clipping score
+    clipping_score = 100 *\
+        np.sum(density_weight_no_central**2)/np.sum(density_weight_full**2)
     if debug:
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
-        ax[0].plot(
-            trace.times(), trace.data, zorder=10, label='baseline removed')
-        if baseline is not None:
-            ax[0].plot(
-                trace.times(), trace.data + baseline, zorder=5,
-                label='original trace')
-            ax[0].plot(trace.times(), baseline, zorder=20, label='baseline')
-            ax[0].legend()
-        ax[0].set_ylim(-max_data, max_data)
-        ax[0].ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
-        ax[0].grid(True)
-        ax[0].set_title(trace.id)
-        ax[0].set_xlabel('Time (s)')
-        ax[0].set_ylabel('Amplitude')
-        ax[1].hist(
-            bins[:-1] + bin_width/2., bins=len(counts), weights=counts,
-            orientation='horizontal', zorder=10)
-        ax[1].plot(density, density_points, label='kernel density', zorder=20)
-        ax[1].plot(
-            density_weight, density_points, label='weighted\nkernel density',
-            zorder=30)
-        ax[1].plot(density_fit, density_points, label='exp. fit', zorder=40)
-        ax[1].grid(True, axis='y')
-        ax[1].set_title(f'Clipping score: {clipping_score:.2f}%')
-        ax[1].set_xlabel('Density')
-        ax[1].legend()
-        plt.show()
+        _plot_clipping_analysis(
+            trace, trace_baseline, max_data,
+            counts, bins, bin_width,
+            density_points, density,
+            density_weight_full, density_weight_no_central,
+            clipping_score)
     return clipping_score
 
 
@@ -148,7 +203,7 @@ def run():
     parser.add_argument(
         '--debug', '-d', action='store_true',
         help='plot trace, samples histogram, kernel density '
-        'and the exponential fit', default=False)
+        'kernel baseline model and misfit', default=False)
     args = parser.parse_args()
     st = Stream()
     for file in args.infile:

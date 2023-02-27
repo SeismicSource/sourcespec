@@ -76,6 +76,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - Removed config parameter: `clip_max_percent`
 - New config parameter: `remove_baseline`
 - New config parameter: `clipping_score_threshold`
+- New config parameter: `clipping_debug_plot`
 - Config file section `AVERAGES PARAMETERS` renamed to
   `SUMMARY STATISTICS PARAMETERS`
 - New config parameter: `reference_statistics`

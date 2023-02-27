@@ -81,7 +81,8 @@ def _check_clipping(config, trace):
     elif config.wave_type[0] == 'P':
         t2 = trace.stats.arrivals['P2'][1]
     tr = trace.copy().trim(t1, t2)
-    clipping_score = get_clipping_score(tr, config.remove_baseline)
+    clipping_score = get_clipping_score(
+        tr, config.remove_baseline, config.clipping_debug_plot)
     tr_info = f'{tr.id} {tr.stats.instrtype}'
     logger.info(f'{tr_info}: clipping score: {clipping_score:.1f}%')
     if clipping_score > config.clipping_score_threshold:
