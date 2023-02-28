@@ -99,12 +99,14 @@ def get_clipping_score(trace, remove_baseline=False, debug=False):
     2.  A kernel density estimation is performed on the trace amplitude values.
 
     3.  Two weighted kernel density functions are computed:
+
           - a full weighted kernel density, where the kernel density is
             weighted by the distance from the zero mean value, using a 8th
             order power function between 1 and 100.
           - a weighted kernel density without the central peak, where the
             kernel density is weighted by the distance from the zero mean
             value, using a 8th order power function between 0 and 100.
+
         In both cases, the weight gives more importance to samples far from
         the zero mean value. In the second case, the central peak is ignored.
 
@@ -129,8 +131,8 @@ def get_clipping_score(trace, remove_baseline=False, debug=False):
     clipping_score : float
         Clipping score, in percentage.
 
-    Notes
-    -----
+    Note
+    ----
     Distorted traces (e.g., signals with strong baselines) can also get a
     high clipping score. To avoid this, the trace baseline can be removed.
 
