@@ -108,11 +108,10 @@ def get_clipping_score(trace, remove_baseline=False, debug=False):
         In both cases, the weight gives more importance to samples far from
         the zero mean value. In the second case, the central peak is ignored.
 
-    4.  The score, ranging from 0 to 100, is the ratio between the sum of the
-        squares of the values of the full weighted kernel density and the
-        sum of the squares of the values of the weighted kernel density without
-        the central peak. The score is 0 if there is no additional peak beyond
-        the central peak.
+    4.  The score, ranging from 0 to 100, is the sum of the squared weighted
+        kernel density without the central peak, normalized by the sum of
+        the squared full weighted kernel density. The score is 0 if there is no
+        additional peak beyond the central peak.
 
     Parameters
     ----------
