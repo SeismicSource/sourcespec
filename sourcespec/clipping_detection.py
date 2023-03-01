@@ -19,9 +19,18 @@ def _plot_clipping_analysis(
         density, density_points, density_weight,
         peaks, num_edge_bins, num_kde_bins):
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import ScalarFormatter
+
+    class ScalarFormatterForceFormat(ScalarFormatter):
+        def _set_format(self):
+            self.format = '%1.1f'
+
     fig, ax = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
     ax[0].plot(trace.times(), trace.data)
     ax[0].set_ylim(-max_data, max_data)
+    yfmt = ScalarFormatterForceFormat()
+    yfmt.set_powerlimits((0,0))
+    ax[0].yaxis.set_major_formatter(yfmt)
     ax[0].grid()
     ax[0].set_title(trace.id)
     ax[0].set_xlabel('Time (s)')
