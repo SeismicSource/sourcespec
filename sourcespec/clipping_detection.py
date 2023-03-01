@@ -15,8 +15,7 @@ from scipy.signal import find_peaks
 
 
 def _plot_clipping_analysis(
-        trace, max_data, min_data,
-        density, density_points, density_weight,
+        trace, max_data, density, density_points, density_weight,
         peaks, num_edge_bins, num_kde_bins):
     import matplotlib.pyplot as plt
     from matplotlib.ticker import ScalarFormatter
@@ -29,7 +28,7 @@ def _plot_clipping_analysis(
     ax[0].plot(trace.times(), trace.data)
     ax[0].set_ylim(-max_data, max_data)
     yfmt = ScalarFormatterForceFormat()
-    yfmt.set_powerlimits((0,0))
+    yfmt.set_powerlimits((0, 0))
     ax[0].yaxis.set_major_formatter(yfmt)
     ax[0].grid()
     ax[0].set_title(trace.id)
@@ -54,15 +53,12 @@ def _plot_clipping_analysis(
     ax[1].scatter(
         density_weight[peaks], density_points[peaks],
         s=100, marker='x', color='red')
-    ax[1].set_ylim(min_data, max_data)
     ax[1].set_xlabel('Density')
     ax[1].legend()
-    xmin, xmax = ax[1].get_xlim()
-    ax[1].fill_between(
-        [xmin, xmax], min_data, density_points[num_edge_bins],
-        alpha=0.5, color='yellow')
-    ax[1].fill_between(
-        [xmin, xmax], density_points[num_kde_bins-1-num_edge_bins], max_data,
+    ax[1].axhspan(
+        -max_data, density_points[num_edge_bins], alpha=0.5, color='yellow')
+    ax[1].axhspan(
+        density_points[num_kde_bins-1-num_edge_bins], max_data,
         alpha=0.5, color='yellow')
     ax[1].grid(axis='y')
     plt.tight_layout()
@@ -145,8 +141,7 @@ def is_clipped(trace, sensitivity=3, lower_clip_bound=90, debug=False):
         for peak, prominence in zip(peaks, props['prominences']):
             print('  idx %d: prominence=%G' % (peak, prominence))
         _plot_clipping_analysis(
-            trace, max_data, min_data,
-            density, density_points, density_weight,
+            trace, max_data, density, density_points, density_weight,
             peaks, num_edge_bins, num_kde_bins)
     # If there is a peak in the edge bins,
     # then the signal is probably clipped or distorted
