@@ -26,92 +26,6 @@ def _get_baseline(signal):
     return savgol_filter(signal, wlen, 3)
 
 
-def _plot_clipping_analysis(
-        trace, max_data, density_points, density, density_weight,
-        trace_baseline=None, density_weight_no_central=None,
-        clipping_score=None,
-        peaks=None, num_edge_bins=None, num_kde_bins=None,
-        trace_clipped=False):
-    """
-    Plot trace, samples histogram and kernel densities
-    (unweighted and weighted)
-    """
-    # Force loading of a matplotlib GUI backend
-    import matplotlib
-    mpl_backends = 'macosx', 'qt5agg', 'qt4agg', 'gtk3agg', 'tkagg', 'wxagg'
-    for backend in mpl_backends:
-        try:
-            matplotlib.use(backend, force=True)
-            from matplotlib import pyplot  #noqa
-            break
-        except Exception:
-            continue
-    import matplotlib.pyplot as plt
-    from matplotlib.ticker import ScalarFormatter
-
-    class ScalarFormatterForceFormat(ScalarFormatter):
-        def _set_format(self, *args):
-            self.format = '%1.1f'
-
-    # Compute data histogram with a number of bins equal to 0.5% of data points
-    # or 31, whichever is larger
-    nbins = max(31, int(len(trace.data)*0.005))
-    if nbins % 2 == 0:
-        nbins += 1
-    counts, bins = np.histogram(trace.data, bins=nbins)
-    counts = counts/np.max(counts)
-    bin_width = bins[1] - bins[0]
-    fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
-    ax0.plot(
-        trace.times(), trace.data, zorder=10, label='baseline removed')
-    if trace_baseline is not None:
-        ax0.plot(
-            trace.times(), trace.data + trace_baseline, zorder=5,
-            label='original trace')
-        ax0.plot(trace.times(), trace_baseline, zorder=20, label='baseline')
-        ax0.legend()
-    ax0.set_ylim(-max_data, max_data)
-    yfmt = ScalarFormatterForceFormat()
-    yfmt.set_powerlimits((0, 0))
-    ax0.yaxis.set_major_formatter(yfmt)
-    ax0.grid(True)
-    ax0.set_title(trace.id)
-    ax0.set_xlabel('Time (s)')
-    ax0.set_ylabel('Amplitude')
-    ax1.hist(
-        bins[:-1] + bin_width/2., bins=len(counts), weights=counts,
-        orientation='horizontal', zorder=10)
-    ax1.plot(density, density_points, label='kernel density', zorder=20)
-    ax1.plot(
-        density_weight, density_points,
-        label='weighted kernel density', zorder=30)
-    if density_weight_no_central is not None:
-        ax1.fill_betweenx(
-            density_points, density_weight_no_central,
-            alpha=0.5, color='gray',
-            label='weighted kernel density\nno central peak', zorder=10)
-    if peaks is not None:
-        ax1.scatter(
-            density_weight[peaks], density_points[peaks],
-            s=100, marker='x', color='red')
-    ax1.grid(True, axis='y')
-    ax1.set_xlabel('Density')
-    ax1.legend()
-    if num_edge_bins is not None and num_kde_bins is not None:
-        ax1.axhspan(
-            -max_data, density_points[num_edge_bins],
-            alpha=0.5, color='yellow')
-        ax1.axhspan(
-            density_points[num_kde_bins-1-num_edge_bins], max_data,
-            alpha=0.5, color='yellow')
-    if clipping_score is not None:
-        ax1.set_title(f'Clipping score: {clipping_score:.2f}%')
-    if trace_clipped:
-        ax1.set_title('Clipped!')
-    plt.tight_layout()
-    plt.show()
-
-
 def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
     """
     Check if a trace is clipped, based on kernel density estimation.
@@ -293,6 +207,92 @@ def get_clipping_score(trace, remove_baseline=False, debug=False):
             density_weight_no_central=density_weight_no_central,
             clipping_score=clipping_score)
     return clipping_score
+
+
+def _plot_clipping_analysis(
+        trace, max_data, density_points, density, density_weight,
+        trace_baseline=None, density_weight_no_central=None,
+        clipping_score=None,
+        peaks=None, num_edge_bins=None, num_kde_bins=None,
+        trace_clipped=False):
+    """
+    Plot trace, samples histogram and kernel densities
+    (unweighted and weighted)
+    """
+    # Force loading of a matplotlib GUI backend
+    import matplotlib
+    mpl_backends = 'macosx', 'qt5agg', 'qt4agg', 'gtk3agg', 'tkagg', 'wxagg'
+    for backend in mpl_backends:
+        try:
+            matplotlib.use(backend, force=True)
+            from matplotlib import pyplot  #noqa
+            break
+        except Exception:
+            continue
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import ScalarFormatter
+
+    class ScalarFormatterForceFormat(ScalarFormatter):
+        def _set_format(self, *args):
+            self.format = '%1.1f'
+
+    # Compute data histogram with a number of bins equal to 0.5% of data points
+    # or 31, whichever is larger
+    nbins = max(31, int(len(trace.data)*0.005))
+    if nbins % 2 == 0:
+        nbins += 1
+    counts, bins = np.histogram(trace.data, bins=nbins)
+    counts = counts/np.max(counts)
+    bin_width = bins[1] - bins[0]
+    fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
+    ax0.plot(
+        trace.times(), trace.data, zorder=10, label='baseline removed')
+    if trace_baseline is not None:
+        ax0.plot(
+            trace.times(), trace.data + trace_baseline, zorder=5,
+            label='original trace')
+        ax0.plot(trace.times(), trace_baseline, zorder=20, label='baseline')
+        ax0.legend()
+    ax0.set_ylim(-max_data, max_data)
+    yfmt = ScalarFormatterForceFormat()
+    yfmt.set_powerlimits((0, 0))
+    ax0.yaxis.set_major_formatter(yfmt)
+    ax0.grid(True)
+    ax0.set_title(trace.id)
+    ax0.set_xlabel('Time (s)')
+    ax0.set_ylabel('Amplitude')
+    ax1.hist(
+        bins[:-1] + bin_width/2., bins=len(counts), weights=counts,
+        orientation='horizontal', zorder=10)
+    ax1.plot(density, density_points, label='kernel density', zorder=20)
+    ax1.plot(
+        density_weight, density_points,
+        label='weighted kernel density', zorder=30)
+    if density_weight_no_central is not None:
+        ax1.fill_betweenx(
+            density_points, density_weight_no_central,
+            alpha=0.5, color='gray',
+            label='weighted kernel density\nno central peak', zorder=10)
+    if peaks is not None:
+        ax1.scatter(
+            density_weight[peaks], density_points[peaks],
+            s=100, marker='x', color='red')
+    ax1.grid(True, axis='y')
+    ax1.set_xlabel('Density')
+    ax1.legend()
+    if num_edge_bins is not None and num_kde_bins is not None:
+        ax1.axhspan(
+            -max_data, density_points[num_edge_bins],
+            alpha=0.5, color='yellow')
+        ax1.axhspan(
+            density_points[num_kde_bins-1-num_edge_bins], max_data,
+            alpha=0.5, color='yellow')
+    if clipping_score is not None:
+        ax1.set_title(f'Clipping score: {clipping_score:.2f}%')
+    if trace_clipped:
+        ax1.set_title('Clipped!')
+    plt.tight_layout()
+    plt.show()
 
 
 def run():
