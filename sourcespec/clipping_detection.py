@@ -135,11 +135,10 @@ def is_clipped(trace, sensitivity=3, lower_clip_bound=90, debug=False):
             peaks, num_edge_bins, num_kde_bins)
     # If there is a peak in the edge bins,
     # then the signal is probably clipped or distorted
-    for peak in peaks:
-        if peak < num_edge_bins or peak > (num_kde_bins - 1 - num_edge_bins):
-            return True
-    else:
-        return False
+    return any(
+        peak < num_edge_bins or peak > (num_kde_bins - 1 - num_edge_bins)
+        for peak in peaks
+    )
 
 
 def main():
