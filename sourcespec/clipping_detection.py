@@ -48,7 +48,7 @@ def _plot_clipping_analysis(
     from matplotlib.ticker import ScalarFormatter
 
     class ScalarFormatterForceFormat(ScalarFormatter):
-        def _set_format(self):
+        def _set_format(self, *args):
             self.format = '%1.1f'
 
     fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
