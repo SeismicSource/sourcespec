@@ -67,7 +67,7 @@ def _plot_clipping_analysis(
     plt.show()
 
 
-def is_clipped(trace, sensitivity=3, lower_clip_bound=90, debug=False):
+def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
     """
     Check if a trace is clipped, based on kernel density estimation.
 
@@ -87,10 +87,11 @@ def is_clipped(trace, sensitivity=3, lower_clip_bound=90, debug=False):
     sensitivity : int
         Sensitivity level, from 1 (least sensitive) to 5 (most sensitive).
         (default: 3)
-    lower_clip_bound : int
-        Lower bound of amplitude range (expressed as percentage) to consider
-        as potentially clipped
-        (default: 90)
+    clipping_percentile : float, between 0 and 100
+        Percentile of trace amplitude range (expressed as percentage) to check
+        for clipping. Default is 10, which means that the 10% highest and
+        lowest values of the trace amplitude will be checked for clipping.
+        A value of 0 means that no clipping check will be performed.
     debug : bool
         If True, plot trace, samples histogram and kernel density.
 
@@ -102,7 +103,11 @@ def is_clipped(trace, sensitivity=3, lower_clip_bound=90, debug=False):
     sensitivity = int(sensitivity)
     if sensitivity < 1 or sensitivity > 5:
         raise ValueError('sensitivity must be between 1 and 5')
-    lower_clip_bound = (min(100, max(0, lower_clip_bound)))
+    if clipping_percentile < 0 or clipping_percentile > 100:
+        raise ValueError('clipping_percentile must be between 0 and 100')
+    if clipping_percentile == 0:
+        return False
+    lower_clip_bound = 100 - clipping_percentile
     num_kde_bins = 101
     num_edge_bins = int(np.ceil(
         (num_kde_bins/2.) * (100 - lower_clip_bound) / 100.))
@@ -167,9 +172,12 @@ def main():
         help='Sensitivity level, from 1 (least sensitive) '
         'to 5 (most sensitive)')
     parser.add_argument(
-        '-l', '--lower_clip_bound', type=int, default=90,
-        help='Lower bound of amplitude range (expressed as percentage) '
-        'to consider as potentially clipped')
+        '-p', '--clipping_percentile', type=float, default=10,
+        help='Percentile of trace amplitude range (expressed as percentage) '
+        'to check for clipping. Default is 10, which means that the 10% '
+        'highest and lowest values of the trace amplitude will be checked '
+        'for clipping. A value of 0 means that no clipping check will be '
+        'performed.')
     parser.add_argument(
         '-d', '--debug', action='store_true',
         help='If set, plot trace, samples histogram and kernel density')
@@ -177,7 +185,7 @@ def main():
     st = read(args.infile)
     for tr in st:
         print(tr.id, is_clipped(
-                tr, args.sensitivity, args.lower_clip_bound, args.debug))
+                tr, args.sensitivity, args.clipping_percentile, args.debug))
 
 
 if __name__ == '__main__':
