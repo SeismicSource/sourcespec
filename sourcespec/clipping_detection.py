@@ -161,7 +161,7 @@ def main():
     args = parser.parse_args()
     st = read(args.infile)
     for tr in st:
-        print(tr.id, is_clipped(tr, args.sensitivity, args.debug))
+        print(tr.id, is_clipped(tr, args.sensitivity, debug=args.debug))
 
 
 if __name__ == '__main__':
