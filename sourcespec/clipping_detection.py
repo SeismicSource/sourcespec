@@ -62,7 +62,7 @@ def _plot_clipping_analysis(
         ax0.legend()
     ax0.set_ylim(-max_data, max_data)
     yfmt = ScalarFormatterForceFormat()
-    yfmt.set_powerlimits((0,0))
+    yfmt.set_powerlimits((0, 0))
     ax0.yaxis.set_major_formatter(yfmt)
     ax0.grid(True)
     ax0.set_title(trace.id)
