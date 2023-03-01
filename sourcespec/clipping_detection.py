@@ -28,6 +28,7 @@ def _plot_clipping_analysis(
 
     npts = len(trace.data)
     # Compute data histogram with a number of bins equal to 0.5% of data points
+    # or 11, whichever is greater
     nbins = max(11, int(npts*0.005))
     if nbins % 2 == 0:
         nbins += 1
@@ -47,10 +48,12 @@ def _plot_clipping_analysis(
     ax[1].set_xlabel('Density')
     ax[1].legend()
     xmin, xmax = ax[1].get_xlim()
-    ax[1].fill_between([xmin, xmax], min_data, density_points[num_edge_bins],
-                        alpha=0.5, color='yellow')
-    ax[1].fill_between([xmin, xmax], density_points[num_kde_bins-1-num_edge_bins],
-                        max_data, alpha=0.5, color='yellow')
+    ax[1].fill_between(
+        [xmin, xmax], min_data, density_points[num_edge_bins],
+        alpha=0.5, color='yellow')
+    ax[1].fill_between(
+        [xmin, xmax], density_points[num_kde_bins-1-num_edge_bins], max_data,
+        alpha=0.5, color='yellow')
     plt.show()
 
 
