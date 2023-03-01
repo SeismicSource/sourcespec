@@ -26,6 +26,39 @@ def _get_baseline(signal):
     return savgol_filter(signal, wlen, 3)
 
 
+def _preprocess(trace, remove_linear_trend=False, remove_baseline=False):
+    """Preprocess a trace for clipping detection."""
+    trace = trace.copy()
+    if remove_linear_trend:
+        trace.detrend('linear')
+    trace.detrend('demean')
+    max_abs_data = np.max(np.abs(trace.data)) * 1.10  # 10% margin
+    # Remove trace baseline if requested
+    trace_baseline = None
+    if remove_baseline:
+        trace_baseline = _get_baseline(trace.data)
+        trace.data -= trace_baseline
+    return trace, trace_baseline, max_abs_data
+
+
+def _get_kernel_density(trace, min_data, max_data, num_kde_bins=101):
+    """Compute the kernel density of a trace."""
+    # Compute gaussian kernel density using default bandwidth (Scott’s Rule)
+    kde = gaussian_kde(trace.data)
+    density_points = np.linspace(min_data, max_data, num_kde_bins)
+    density = kde.pdf(density_points)
+    density /= np.max(density)
+    return density, density_points
+
+
+def _get_distance_weight(density_points, order=2, min_weight=1, max_weight=5):
+    """Compute the distance weight for the kernel density."""
+    dist_weight = np.abs(density_points)**order
+    dist_weight *= (max_weight-min_weight)/dist_weight.max()
+    dist_weight += min_weight
+    return dist_weight
+
+
 def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
     """
     Check if a trace is clipped, based on kernel density estimation.
@@ -70,20 +103,15 @@ def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
     num_kde_bins = 101
     num_edge_bins = int(np.ceil(
         (num_kde_bins/2.) * (100 - lower_clip_bound) / 100.))
-    trace = trace.copy().detrend('demean')
-    # Compute gaussian kernel density
-    # Note: current value of bw_method is optimized for num_kde_bins = 101
-    kde = gaussian_kde(trace.data, bw_method=0.1)
+    trace, _, _ = _preprocess(
+        trace, remove_linear_trend=False, remove_baseline=False)
     min_data = np.min(trace.data)
     max_data = np.max(trace.data)
-    density_points = np.linspace(min_data, max_data, num_kde_bins)
-    density = kde.pdf(density_points)
-    maxdensity = np.max(density)
-    density /= maxdensity
+    density, density_points = _get_kernel_density(
+        trace, min_data, max_data, num_kde_bins)
     # Distance weight, parabolic, between 1 and 5
-    dist_weight = np.abs(density_points)**2
-    dist_weight *= 4/dist_weight.max()
-    dist_weight += 1
+    dist_weight = _get_distance_weight(
+        density_points, order=2, min_weight=1, max_weight=5)
     density_weight = density*dist_weight
     # Add 1 bin at start/end with value equal to min. of 5 first/last
     # bins to ensure local maxima at start/end are recognized as peaks
@@ -100,7 +128,6 @@ def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
     peaks = peaks[(peaks > 0) & (peaks < (num_kde_bins + 1))]
     peaks -= 1
     density_weight = density_weight[1:-1]
-
     # If there is a peak in the edge bins,
     # then the signal is probably clipped or distorted
     trace_clipped = any(
@@ -171,30 +198,20 @@ def get_clipping_score(trace, remove_baseline=False, debug=False):
     kernel density (unweighted and weighted), the kernel baseline model,
     and the misfit.
     """
-    trace = trace.copy().detrend('linear')
-    trace.detrend('demean')
-    max_data = np.max(np.abs(trace.data)) * 1.10  # 10% margin
-    # Remove trace baseline if requested
-    trace_baseline = None
-    if remove_baseline:
-        trace_baseline = _get_baseline(trace.data)
-        trace.data -= trace_baseline
-    # Compute gaussian kernel density using default bandwidth (Scott’s Rule)
-    kde = gaussian_kde(trace.data)
-    n_density_points = 101
-    density_points = np.linspace(-max_data, max_data, n_density_points)
-    density = kde.pdf(density_points)
-    density /= np.max(density)
-    # Base distance weight for kernel density, 8th order power function
-    # between 0 and 1
-    dist_weight = np.abs(density_points)**8
-    dist_weight /= dist_weight.max()
-    # Distance weight between 1 and 100
-    dist_weight_full = 1 + 99*dist_weight
+    trace, trace_baseline, max_data = _preprocess(
+        trace, remove_linear_trend=True, remove_baseline=remove_baseline)
+    density, density_points = _get_kernel_density(
+        trace, -max_data, max_data, 101)
+    # Distance weight for full weighted kernel density,
+    # 8th order, between 1 and 100
+    dist_weight_full = _get_distance_weight(
+        density_points, order=8, min_weight=1, max_weight=100)
     # Compute full weighted kernel density, including the central part
     density_weight_full = density*dist_weight_full
-    # Distance weight between 0 and 100
-    dist_weight_no_central = 100*dist_weight
+    # Distance weight for weighted kernel density without central peak,
+    # 8th order, between 0 and 100
+    dist_weight_no_central = _get_distance_weight(
+        density_points, order=8, min_weight=0, max_weight=100)
     # Compute weighted kernel density, excluding the central part
     density_weight_no_central = density*dist_weight_no_central
     # Compute the clipping score
