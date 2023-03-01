@@ -16,7 +16,7 @@ from scipy.signal import find_peaks
 
 def _plot_clipping_analysis(
         trace, max_data, density, density_points, density_weight,
-        peaks, num_edge_bins, num_kde_bins):
+        peaks, num_edge_bins, num_kde_bins, trace_clipped):
     import matplotlib.pyplot as plt
     from matplotlib.ticker import ScalarFormatter
 
@@ -61,9 +61,10 @@ def _plot_clipping_analysis(
         density_points[num_kde_bins-1-num_edge_bins], max_data,
         alpha=0.5, color='yellow')
     ax[1].grid(axis='y')
+    if trace_clipped:
+        ax[1].set_title('Clipped!')
     plt.tight_layout()
     plt.show()
-
 
 
 def is_clipped(trace, sensitivity=3, lower_clip_bound=90, debug=False):
@@ -136,19 +137,20 @@ def is_clipped(trace, sensitivity=3, lower_clip_bound=90, debug=False):
     peaks -= 1
     density_weight = density_weight[1:-1]
 
+    # If there is a peak in the edge bins,
+    # then the signal is probably clipped or distorted
+    trace_cipped = any(
+        peak < num_edge_bins or peak > (num_kde_bins - 1 - num_edge_bins)
+        for peak in peaks
+    )
     if debug:
         print('%2d peaks found:' % len(peaks))
         for peak, prominence in zip(peaks, props['prominences']):
             print('  idx %d: prominence=%G' % (peak, prominence))
         _plot_clipping_analysis(
             trace, max_data, density, density_points, density_weight,
-            peaks, num_edge_bins, num_kde_bins)
-    # If there is a peak in the edge bins,
-    # then the signal is probably clipped or distorted
-    return any(
-        peak < num_edge_bins or peak > (num_kde_bins - 1 - num_edge_bins)
-        for peak in peaks
-    )
+            peaks, num_edge_bins, num_kde_bins, trace_cipped)
+    return trace_cipped
 
 
 def main():
