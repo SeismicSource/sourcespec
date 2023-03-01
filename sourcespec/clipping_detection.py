@@ -9,12 +9,14 @@ A trace clipping detector based on kernel density estimation.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
+import logging
 import numpy as np
 from scipy.stats import gaussian_kde
 from scipy.signal import find_peaks
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
-def is_clipped(trace, sensitivity, debug=False):
+def is_clipped(trace, sensitivity=3, lower_clip_bound=90, debug=False):
     """
     Check if a trace is clipped, based on kernel density estimation.
 
@@ -24,8 +26,8 @@ def is_clipped(trace, sensitivity, debug=False):
     The peaks with the highest weight are then checked for prominence,
     which is a measure of how much higher the peak is than the surrounding
     data. The prominence threshold is determined by the sensitivity parameter.
-    If more than one peak is found, the trace is considered clipped or
-    distorted.
+    If a peak is found in the range defined by lower_clip_bound, the trace
+    is considered clipped or distorted.
 
     Parameters
     ----------
@@ -33,6 +35,11 @@ def is_clipped(trace, sensitivity, debug=False):
         Trace to check.
     sensitivity : int
         Sensitivity level, from 1 (least sensitive) to 5 (most sensitive).
+        (default: 3)
+    lower_clip_bound : int
+        Lower bound of amplitude range (expressed as percentage) to consider
+        as potentially clipped
+       (default: 90)
     debug : bool
         If True, plot trace, samples histogram and kernel density.
 
@@ -44,19 +51,18 @@ def is_clipped(trace, sensitivity, debug=False):
     sensitivity = int(sensitivity)
     if sensitivity < 1 or sensitivity > 5:
         raise ValueError('sensitivity must be between 1 and 5')
+    lower_clip_bound = (min(100, max(0, lower_clip_bound)))
+    num_kde_bins = 101
+    num_edge_bins = int(np.ceil((num_kde_bins/2.) * lower_clip_bound / 100.))
     trace = trace.copy().detrend('demean')
-    npts = len(trace.data)
-    # Compute data histogram with a number of bins equal to 0.5% of data points
-    nbins = max(11, int(npts*0.005))
-    if nbins % 2 == 0:
-        nbins += 1
-    counts, bins = np.histogram(trace.data, bins=nbins)
-    counts = counts/np.max(counts)
-    bin_width = bins[1] - bins[0]
     # Compute gaussian kernel density
+    # Note: current value of bw_method is optimized for num_kde_bins = 101
     kde = gaussian_kde(trace.data, bw_method=0.1)
-    max_data = np.max(np.abs(trace.data))#*1.2
-    density_points = np.linspace(-max_data, max_data, 101)
+    #max_data = np.max(np.abs(trace.data))
+    #density_points = np.linspace(-max_data, max_data, num_bins)
+    min_data = np.min(trace.data)
+    max_data = np.max(trace.data)
+    density_points = np.linspace(min_data, max_data, num_kde_bins)
     density = kde.pdf(density_points)
     maxdensity = np.max(density)
     density /= maxdensity
@@ -67,19 +73,30 @@ def is_clipped(trace, sensitivity, debug=False):
     density_weight = density*dist_weight
     # Add 1 bin at start/end with value equal to min. of 5 first/last
     # bins to ensure local maxima at start/end are recognized as peaks
-    density_weight = np.hstack([[density_weight[:5].min()],
+    density_weight = np.hstack([[density_weight[:num_edge_bins].min()],
                                 density_weight,
-                                [density_weight[-5:].min()]])
+                                [density_weight[-num_edge_bins:].min()]])
     # find peaks with minimum prominence based on clipping sensitivity
-    min_prominence = [0.1, 0.05, 0.03, 0.02, 0.01]
-    peaks, _ = find_peaks(
+    #min_prominence = [0.1, 0.05, 0.03, 0.02, 0.01]
+    #min_prominence = [1, 0.5, 0.25, 0.15, 0.125]
+    min_prominence = [0.5, 0.3, 0.2, 0.15, 0.125]
+    peaks, props = find_peaks(
         density_weight,
         prominence=min_prominence[sensitivity-1]
     )
     # Remove start/end bins again
-    peaks = peaks[(0 < peaks) & (peaks < 102)]
+    peaks = peaks[(0 < peaks) & (peaks < (num_kde_bins + 1))]
     peaks -= 1
     density_weight = density_weight[1:-1]
+
+    #logger.debug('%2d peaks found:' % len(peaks))
+    if debug:
+        print('%2d peaks found:' % len(peaks))
+    for peak, prominence in zip(peaks, props['prominences']):
+        #logger.debug('  idx %d: prominence=%G' % (peak, prominence))
+        if debug:
+            print('  idx %d: prominence=%G' % (peak, prominence))
+
     if debug:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
@@ -88,6 +105,15 @@ def is_clipped(trace, sensitivity, debug=False):
         ax[0].set_ylim(-max_data, max_data)
         ax[0].set_xlabel('Time (s)')
         ax[0].set_ylabel('Amplitude')
+
+        npts = len(trace.data)
+        # Compute data histogram with a number of bins equal to 0.5% of data points
+        nbins = max(11, int(npts*0.005))
+        if nbins % 2 == 0:
+            nbins += 1
+        counts, bins = np.histogram(trace.data, bins=nbins)
+        counts = counts/np.max(counts)
+        bin_width = bins[1] - bins[0]
         ax[1].hist(
             bins[:-1] + bin_width/2., bins=len(counts), weights=counts,
             orientation='horizontal')
@@ -97,13 +123,20 @@ def is_clipped(trace, sensitivity, debug=False):
         ax[1].scatter(
             density_weight[peaks], density_points[peaks],
             s=100, marker='x', color='red')
+        ax[1].set_ylim(min_data, max_data)
         ax[1].set_xlabel('Density')
         ax[1].legend()
+        xmin, xmax = ax[1].get_xlim()
+        ax[1].fill_between([xmin, xmax], min_data, density_points[num_edge_bins],
+                            alpha=0.5, color='yellow')
+        ax[1].fill_between([xmin, xmax], density_points[num_kde_bins-1-num_edge_bins],
+                            max_data, alpha=0.5, color='yellow')
         plt.show()
-    # If there is a peak in the first/last 5 bins,
+
+    # If there is a peak in the edge bins,
     # then the signal is probably clipped or distorted
     for peak in peaks:
-        if peak < 5 or peak > 95:
+        if peak < num_edge_bins or peak > (num_kde_bins - 1 - num_edge_bins):
             return True
     else:
         return False
