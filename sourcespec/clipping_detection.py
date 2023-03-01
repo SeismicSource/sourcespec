@@ -78,7 +78,7 @@ def is_clipped(trace, sensitivity=3, lower_clip_bound=90, debug=False):
     lower_clip_bound : int
         Lower bound of amplitude range (expressed as percentage) to consider
         as potentially clipped
-       (default: 90)
+        (default: 90)
     debug : bool
         If True, plot trace, samples histogram and kernel density.
 
@@ -155,12 +155,17 @@ def main():
         help='Sensitivity level, from 1 (least sensitive) '
         'to 5 (most sensitive)')
     parser.add_argument(
+        '-l', '--lower_clip_bound', type=int, default=90,
+        help='Lower bound of amplitude range (expressed as percentage) '
+        'to consider as potentially clipped')
+    parser.add_argument(
         '-d', '--debug', action='store_true',
         help='If set, plot trace, samples histogram and kernel density')
     args = parser.parse_args()
     st = read(args.infile)
     for tr in st:
-        print(tr.id, is_clipped(tr, args.sensitivity, debug=args.debug))
+        print(tr.id, is_clipped(
+                tr, args.sensitivity, args.lower_clip_bound, args.debug))
 
 
 if __name__ == '__main__':
