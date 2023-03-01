@@ -20,9 +20,10 @@ def _plot_clipping_analysis(
         peaks, num_edge_bins, num_kde_bins):
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
-    fig.suptitle(trace.id)
     ax[0].plot(trace.times(), trace.data)
     ax[0].set_ylim(-max_data, max_data)
+    ax[0].grid()
+    ax[0].set_title(trace.id)
     ax[0].set_xlabel('Time (s)')
     ax[0].set_ylabel('Amplitude')
 
@@ -54,6 +55,8 @@ def _plot_clipping_analysis(
     ax[1].fill_between(
         [xmin, xmax], density_points[num_kde_bins-1-num_edge_bins], max_data,
         alpha=0.5, color='yellow')
+    ax[1].grid(axis='y')
+    plt.tight_layout()
     plt.show()
 
 
