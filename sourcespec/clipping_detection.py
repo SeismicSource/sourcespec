@@ -92,7 +92,8 @@ def is_clipped(trace, sensitivity=3, lower_clip_bound=90, debug=False):
         raise ValueError('sensitivity must be between 1 and 5')
     lower_clip_bound = (min(100, max(0, lower_clip_bound)))
     num_kde_bins = 101
-    num_edge_bins = int(np.ceil((num_kde_bins/2.) * (100 - lower_clip_bound) / 100.))
+    num_edge_bins = int(np.ceil(
+        (num_kde_bins/2.) * (100 - lower_clip_bound) / 100.))
     trace = trace.copy().detrend('demean')
     # Compute gaussian kernel density
     # Note: current value of bw_method is optimized for num_kde_bins = 101
