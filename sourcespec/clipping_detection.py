@@ -16,6 +16,47 @@ from scipy.signal import find_peaks
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
+def _plot_clipping_analysis(
+        trace, max_data, min_data,
+        density, density_points, density_weight,
+        peaks, num_edge_bins, num_kde_bins):
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
+    fig.suptitle(trace.id)
+    ax[0].plot(trace.times(), trace.data)
+    ax[0].set_ylim(-max_data, max_data)
+    ax[0].set_xlabel('Time (s)')
+    ax[0].set_ylabel('Amplitude')
+
+    npts = len(trace.data)
+    # Compute data histogram with a number of bins equal to 0.5% of data points
+    nbins = max(11, int(npts*0.005))
+    if nbins % 2 == 0:
+        nbins += 1
+    counts, bins = np.histogram(trace.data, bins=nbins)
+    counts = counts/np.max(counts)
+    bin_width = bins[1] - bins[0]
+    ax[1].hist(
+        bins[:-1] + bin_width/2., bins=len(counts), weights=counts,
+        orientation='horizontal')
+    ax[1].plot(density, density_points, label='kernel density')
+    ax[1].plot(
+        density_weight, density_points, label='weighted\nkernel density')
+    ax[1].scatter(
+        density_weight[peaks], density_points[peaks],
+        s=100, marker='x', color='red')
+    ax[1].set_ylim(min_data, max_data)
+    ax[1].set_xlabel('Density')
+    ax[1].legend()
+    xmin, xmax = ax[1].get_xlim()
+    ax[1].fill_between([xmin, xmax], min_data, density_points[num_edge_bins],
+                        alpha=0.5, color='yellow')
+    ax[1].fill_between([xmin, xmax], density_points[num_kde_bins-1-num_edge_bins],
+                        max_data, alpha=0.5, color='yellow')
+    plt.show()
+
+
+
 def is_clipped(trace, sensitivity=3, lower_clip_bound=90, debug=False):
     """
     Check if a trace is clipped, based on kernel density estimation.
@@ -98,41 +139,10 @@ def is_clipped(trace, sensitivity=3, lower_clip_bound=90, debug=False):
             print('  idx %d: prominence=%G' % (peak, prominence))
 
     if debug:
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
-        fig.suptitle(trace.id)
-        ax[0].plot(trace.times(), trace.data)
-        ax[0].set_ylim(-max_data, max_data)
-        ax[0].set_xlabel('Time (s)')
-        ax[0].set_ylabel('Amplitude')
-
-        npts = len(trace.data)
-        # Compute data histogram with a number of bins equal to 0.5% of data points
-        nbins = max(11, int(npts*0.005))
-        if nbins % 2 == 0:
-            nbins += 1
-        counts, bins = np.histogram(trace.data, bins=nbins)
-        counts = counts/np.max(counts)
-        bin_width = bins[1] - bins[0]
-        ax[1].hist(
-            bins[:-1] + bin_width/2., bins=len(counts), weights=counts,
-            orientation='horizontal')
-        ax[1].plot(density, density_points, label='kernel density')
-        ax[1].plot(
-            density_weight, density_points, label='weighted\nkernel density')
-        ax[1].scatter(
-            density_weight[peaks], density_points[peaks],
-            s=100, marker='x', color='red')
-        ax[1].set_ylim(min_data, max_data)
-        ax[1].set_xlabel('Density')
-        ax[1].legend()
-        xmin, xmax = ax[1].get_xlim()
-        ax[1].fill_between([xmin, xmax], min_data, density_points[num_edge_bins],
-                            alpha=0.5, color='yellow')
-        ax[1].fill_between([xmin, xmax], density_points[num_kde_bins-1-num_edge_bins],
-                            max_data, alpha=0.5, color='yellow')
-        plt.show()
-
+        _plot_clipping_analysis(
+            trace, max_data, min_data,
+            density, density_points, density_weight,
+            peaks, num_edge_bins, num_kde_bins)
     # If there is a peak in the edge bins,
     # then the signal is probably clipped or distorted
     for peak in peaks:
