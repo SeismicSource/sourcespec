@@ -334,7 +334,7 @@ def _plot_clipping_analysis(
     plt.show()
 
 
-def parse_arguments():
+def _parse_arguments():
     """Parse command line arguments"""
     import sys
     import argparse
@@ -387,7 +387,7 @@ def parse_arguments():
 
 def run():
     from obspy import read, Stream
-    args = parse_arguments()
+    args = _parse_arguments()
     st = Stream()
     for file in args.infile:
         try:
