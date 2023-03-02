@@ -23,7 +23,7 @@ from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import remove_instr_response, hypo_dist
 from sourcespec.ssp_wave_arrival import add_arrivals_to_trace
-from sourcespec.clipping_detection import get_clipping_score
+from sourcespec.clipping_detection import get_clipping_score, is_clipped
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -73,6 +73,8 @@ def _check_signal_level(config, trace):
 
 def _check_clipping(config, trace):
     trace.stats.clipped = False
+    if config.clipping_detection_algorithm == 'none':
+        return
     # cut the trace between the beginning of noise window
     # and the end of the signal window
     t1 = trace.stats.arrivals['N1'][1]
@@ -81,19 +83,34 @@ def _check_clipping(config, trace):
     elif config.wave_type[0] == 'P':
         t2 = trace.stats.arrivals['P2'][1]
     tr = trace.copy().trim(t1, t2)
-    clipping_score = get_clipping_score(
-        tr, config.remove_baseline, config.clipping_debug_plot)
     tr_info = f'{tr.id} {tr.stats.instrtype}'
-    logger.info(f'{tr_info}: clipping score: {clipping_score:.1f}%')
-    if clipping_score > config.clipping_score_threshold:
-        trace.stats.clipped = True
-        trace.stats.ignore = True
-        trace.stats.ignore_reason = f'clipping: {clipping_score:.1f}%'
-        msg = (
+    if config.clipping_detection_algorithm == 'clipping_score':
+        clipping_score = get_clipping_score(
+            tr, config.remove_baseline, config.clipping_debug_plot)
+        logger.info(f'{tr_info}: clipping score: {clipping_score:.1f}%')
+        if clipping_score > config.clipping_score_threshold:
+            trace.stats.clipped = True
+            trace.stats.ignore = True
+            trace.stats.ignore_reason = f'clipping: {clipping_score:.1f}%'
+    elif config.clipping_detection_algorithm == 'clipping_peaks':
+        trace_clipped, properties = is_clipped(
+            tr,
+            config.clipping_peaks_sensitivity,
+            config.clipping_peaks_percentile,
+            config.clipping_debug_plot)
+        logger.info(
+            f'{tr_info}: total peaks: {properties["npeaks"]}, '
+            f'clipped peaks: {properties["npeaks_clipped"]}'
+        )
+        if trace_clipped:
+            trace.stats.clipped = True
+            trace.stats.ignore = True
+            trace.stats.ignore_reason = 'clipped'
+    if trace.stats.clipped:
+        logger.warning(
             f'{tr_info}: Trace is clipped or significantly distorted: '
             'skipping trace'
         )
-        logger.warning(msg)
 
 
 def _check_sn_ratio(config, trace):
