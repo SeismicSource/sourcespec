@@ -39,11 +39,11 @@ def _get_bandpass_frequencies(config, trace):
         try:
             bp_freqmin = float(config[f'bp_freqmin_{instrtype}'])
             bp_freqmax = float(config[f'bp_freqmax_{instrtype}'])
-        except KeyError:
+        except KeyError as e:
             raise ValueError(
                 f'{trace.id}: Unknown instrument type: {instrtype}: '
                 'skipping trace'
-            )
+            ) from e
     return bp_freqmin, bp_freqmax
 
 
@@ -291,8 +291,8 @@ def _merge_stream(config, st):
         st.merge(fill_value=0)
         # st.merge raises a generic Exception if traces have
         # different sampling rates
-    except Exception:
-        raise RuntimeError(f'{traceid}: unable to fill gaps: skipping trace')
+    except Exception as e:
+        raise RuntimeError(f'{traceid}: unable to fill gaps: skipping trace') from e
     return st[0]
 
 
@@ -314,20 +314,20 @@ def _add_hypo_dist_and_arrivals(config, st):
         add_arrivals_to_trace(trace, config)
         try:
             p_arrival_time = trace.stats.arrivals['P'][1]
-        except KeyError:
+        except KeyError as e:
             raise RuntimeError(
                 f'{trace.id}: Unable to get P arrival time: skipping trace'
-            )
+            ) from e
         if config.wave_type[0] == 'P' and p_arrival_time < trace.stats.starttime:
             raise RuntimeError(
                 f'{trace.id}: P-window incomplete: skipping trace'
             )
         try:
             s_arrival_time = trace.stats.arrivals['S'][1]
-        except KeyError:
+        except KeyError as e:
             raise RuntimeError(
                 f'{trace.id}: Unable to get S arrival time: skipping trace'
-            )
+            ) from e
         if config.wave_type[0] == 'S' and s_arrival_time < trace.stats.starttime:
             raise RuntimeError(
                 f'{trace.id}: S-window incomplete: skipping trace'
