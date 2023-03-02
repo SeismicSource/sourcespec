@@ -36,7 +36,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.intersphinx',
-    'sphinx-favicon',
+    'sphinx_favicon',
     'sphinx_rtd_theme',
     'sphinxcontrib.bibtex',
 ]
