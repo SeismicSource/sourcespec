@@ -5,10 +5,10 @@ Check trace for clipping using kernel density estimation of the trace amplitude
 values.
 
 Two methods are available:
-    1. check if trace is clipped, based on the number of peaks in the kernel
-       density estimation;
-    2. compute a trace clipping score based on the shape of the kernel
-       density estimation.
+    1.  :func:`clipping_peaks()`: check if trace is clipped, based on the
+        number of peaks in the kernel density estimation;
+    2.  :func:`clipping_score()`: compute a trace clipping score based on the
+        shape of the kernel density estimation.
 
 :copyright:
     2023 Claudio Satriano <satriano@ipgp.fr>,
