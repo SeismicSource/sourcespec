@@ -5,10 +5,10 @@ Check trace for clipping using kernel density estimation of the trace=
 amplitude values.
 
 Two methods are available:
-    1.  :func:`clipping_peaks()`: check if trace is clipped, based on the
-        number of peaks in the kernel density estimation;
-    2.  :func:`clipping_score()`: compute a trace clipping score based on the
+    1.  :func:`clipping_score()`: compute a trace clipping score based on the
         shape of the kernel density estimation.
+    2.  :func:`clipping_peaks()`: check if trace is clipped, based on the
+        number of peaks in the kernel density estimation;
 
 :copyright:
     2023 Claudio Satriano <satriano@ipgp.fr>,
@@ -402,6 +402,10 @@ Two methods are implemented:
         '--debug', '-d', action='store_true',
         help='Plot trace, samples histogram, kernel density, and clipping '
         'parameters', default=False)
+    subparser.add_parser(
+        'clipping_score', help='Get trace clipping score from kernel density '
+        '(method 2)', parents=[common_parser]
+    )
     sp_clipping_peaks = subparser.add_parser(
         'clipping_peaks', help='Check if trace is clipped, based on counting '
         'peaks in kernel density (method 1)', parents=[common_parser]
@@ -414,10 +418,6 @@ Two methods are implemented:
         '-p', '--clipping_percentile', type=float, default=10,
         help='Percentile of trace amplitude range (expressed as percentage) '
         'to check for clipping. Default is %(default)s%%.')
-    subparser.add_parser(
-        'clipping_score', help='Get trace clipping score from kernel density '
-        '(method 2)', parents=[common_parser]
-    )
     args = parser.parse_args()
     if args.command is None:
         parser.print_usage(sys.stderr)

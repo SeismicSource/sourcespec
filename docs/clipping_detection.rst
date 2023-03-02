@@ -7,10 +7,10 @@ Clipping Detection
 SourceSpec can optionally check for clipping in the traces.
 Two algorithms are available for this purpose:
 
-1. :ref:`clipping-peaks-algorithm`: check if trace is clipped, based on the
+1. :ref:`clipping-score-algorithm` (default): compute a trace clipping score
+   based on the shape of the kernel density estimation.
+2. :ref:`clipping-peaks-algorithm`: check if trace is clipped, based on the
    number of peaks in the kernel density estimation;
-2. :ref:`clipping-score-algorithm`: compute a trace clipping score based on
-   the shape of the kernel density estimation.
 
 Both algorithms are based on the kernel density estimation of the trace
 amplitude values, using the :class:`scipy.stats.gaussian_kde` class.
@@ -31,45 +31,6 @@ clipping detection algorithm on a set of traces. Run:
     $ clipping_detection --help
 
 for details on the script usage.
-
-
-.. _clipping-peaks-algorithm:
-
-"Clipping Peaks" algorithm
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The "Clipping Peaks" algorithm checks if a trace is clipped, based on the
-number of peaks in the kernel density estimation of the trace amplitude values.
-
-The algorithm is based on the following steps:
-
-1. The trace is demeaned.
-
-2. A kernel density estimation is computed on the trace amplitude values.
-
-3. The kernel density estimation is weightd by the distance from the
-   zero mean amplitude value, using a parabolic function, between 1 and 5.
-
-4. Peaks are detected in the weighted kernel density estimation. The
-   sensitivity of the peak detection algorithm is controlled by the
-   ``clipping_peaks_sensitivity`` parameter, based on which a minimum
-   prominence threshold is set.
-
-5. The trace is considered clipped if there is at least one peak in the
-   amplitude range corresponding to the ``clipping_peaks_percentile``
-   parameter.
-
-See the :func:`clipping_detection.clipping_peaks()` function for more
-details.
-
-.. figure:: imgs/WI.DSD.00.HHZ-clipping_peaks.svg
-  :alt: Example debug plot for the "Clipping Peaks" algorithm
-  :width: 700
-
-  Example debug plot for the "Clipping Peaks" algorithm. If there is at least
-  one peak in the amplitude range corresponding to the
-  ``clipping_peaks_percentile`` (yellow areas), the trace is considered
-  clipped.
 
 
 .. _clipping-score-algorithm:
@@ -121,3 +82,42 @@ details.
   area), normalized by the sum of the squared full weighted kernel density
   (green curve). The largest the peaks far from the central peak, the higher
   the score.
+
+
+.. _clipping-peaks-algorithm:
+
+"Clipping Peaks" algorithm
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The "Clipping Peaks" algorithm checks if a trace is clipped, based on the
+number of peaks in the kernel density estimation of the trace amplitude values.
+
+The algorithm is based on the following steps:
+
+1. The trace is demeaned.
+
+2. A kernel density estimation is computed on the trace amplitude values.
+
+3. The kernel density estimation is weightd by the distance from the
+   zero mean amplitude value, using a parabolic function, between 1 and 5.
+
+4. Peaks are detected in the weighted kernel density estimation. The
+   sensitivity of the peak detection algorithm is controlled by the
+   ``clipping_peaks_sensitivity`` parameter, based on which a minimum
+   prominence threshold is set.
+
+5. The trace is considered clipped if there is at least one peak in the
+   amplitude range corresponding to the ``clipping_peaks_percentile``
+   parameter.
+
+See the :func:`clipping_detection.clipping_peaks()` function for more
+details.
+
+.. figure:: imgs/WI.DSD.00.HHZ-clipping_peaks.svg
+  :alt: Example debug plot for the "Clipping Peaks" algorithm
+  :width: 700
+
+  Example debug plot for the "Clipping Peaks" algorithm. If there is at least
+  one peak in the amplitude range corresponding to the
+  ``clipping_peaks_percentile`` (yellow areas), the trace is considered
+  clipped.
