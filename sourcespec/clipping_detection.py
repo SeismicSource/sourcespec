@@ -385,7 +385,7 @@ def _parse_arguments():
     return args
 
 
-def run():
+def _command_line_interface():
     from obspy import read, Stream
     args = _parse_arguments()
     st = Stream()
@@ -417,7 +417,7 @@ def run():
 def main():
     import sys
     try:
-        run()
+        _command_line_interface()
     except Exception as msg:
         sys.exit(msg)
     except KeyboardInterrupt:
