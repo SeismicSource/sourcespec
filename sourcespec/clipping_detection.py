@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: CECILL-2.1
 """
-Check trace for clipping using kernel density estimation of the trace amplitude
-values.
+Check trace for clipping using kernel density estimation of the trace=
+amplitude values.
 
 Two methods are available:
     1.  :func:`clipping_peaks()`: check if trace is clipped, based on the
@@ -112,9 +112,9 @@ def clipping_peaks(trace, sensitivity=3, clipping_percentile=10, debug=False):
         See the :func:`scipy.signal.find_peaks()` documentation for more
         details.
     clipping_percentile : float, between 0 and 100
-        Percentile of trace amplitude range (expressed as percentage) to check
-        for clipping. Default is 10, which means that the 10% highest and
-        lowest values of the trace amplitude will be checked for clipping.
+        Percentile of trace amplitude range (expressed as percentage) to
+        check for clipping. Default is 10, which means that the 10% highest
+        and lowest values of the trace amplitude will be checked for clipping.
         A value of 0 means that no clipping check will be performed.
     debug : bool
         If True, plot trace, samples histogram and kernel density.
@@ -133,8 +133,8 @@ def clipping_peaks(trace, sensitivity=3, clipping_percentile=10, debug=False):
               kernel density that are considered clipped
             * peaks (:class:`numpy.ndarray`): list of peaks found in the
               kernel density
-            * prominences (:class:`numpy.ndarray`): list of prominences of the
-              peaks found in the kernel density
+            * prominences (:class:`numpy.ndarray`): list of prominences of
+              the peaks found in the kernel density
     """
     sensitivity = int(sensitivity)
     if sensitivity < 1 or sensitivity > 5:
@@ -223,8 +223,8 @@ def clipping_score(trace, remove_baseline=False, debug=False):
 
     4.  The score, ranging from 0 to 100, is the sum of the squared weighted
         kernel density without the central peak, normalized by the sum of
-        the squared full weighted kernel density. The score is 0 if there is no
-        additional peak beyond the central peak.
+        the squared full weighted kernel density. The score is 0 if there is
+        no additional peak beyond the central peak.
 
     Parameters
     ----------
