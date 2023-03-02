@@ -300,7 +300,8 @@ def _plot_clipping_analysis(
         ax_trace.plot(
             trace.times(), trace.data + trace_baseline, zorder=5,
             label='original trace')
-        ax_trace.plot(trace.times(), trace_baseline, zorder=20, label='baseline')
+        ax_trace.plot(
+            trace.times(), trace_baseline, zorder=20, label='baseline')
         ax_trace.legend()
     ax_trace.set_ylim(-max_data, max_data)
     ax_trace.set_title(trace.id)
