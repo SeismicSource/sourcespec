@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: CECILL-2.1
 """
-Trace clipping score based on kernel density estimation.
+Check trace for clipping using kernel density estimation.
+
+Two methods are available:
+    (1) check if trace is clipped, based on counting peaks in kernel density;
+    (2) compute a trace clipping score based on kernel density estimation.
 
 :copyright:
     2023 Claudio Satriano <satriano@ipgp.fr>,
