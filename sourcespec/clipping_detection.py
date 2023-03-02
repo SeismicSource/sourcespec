@@ -48,10 +48,10 @@ def _preprocess(trace, remove_linear_trend=False, remove_baseline=False):
     return trace, trace_baseline, max_abs_data
 
 
-def _get_kernel_density(trace, min_data, max_data, num_kde_bins=101):
+def _get_kernel_density(trace, min_data, max_data, num_kde_bins=101,
+                        bw_method='scott'):
     """Compute the kernel density of a trace."""
-    # Compute gaussian kernel density using default bandwidth (Scott’s Rule)
-    kde = gaussian_kde(trace.data)
+    kde = gaussian_kde(trace.data, bw_method=bw_method)
     density_points = np.linspace(min_data, max_data, num_kde_bins)
     density = kde.pdf(density_points)
     density /= np.max(density)
@@ -152,7 +152,7 @@ def clipping_peaks(trace, sensitivity=3, clipping_percentile=10, debug=False):
     min_data = np.min(trace.data)
     max_data = np.max(trace.data)
     density, density_points = _get_kernel_density(
-        trace, min_data, max_data, num_kde_bins)
+        trace, min_data, max_data, num_kde_bins, bw_method=0.1)
     # Distance weight, parabolic, between 1 and 5
     dist_weight = _get_distance_weight(
         density_points, order=2, min_weight=1, max_weight=5)
