@@ -427,7 +427,42 @@ Two methods are implemented:
     return args
 
 
+# ainsi codes for fancy output
+reset = "\u001b[0m"
+red = "\u001b[31m"
+green = "\u001b[32m"
+yellow = "\u001b[33m"
+
+
+def _run_clipping_peaks(trace, args):
+    """Run clipping peaks method and print results"""
+    trace_clipped, properties = clipping_peaks(
+        trace, args.sensitivity, args.clipping_percentile, args.debug)
+    msg = (
+        f'{trace.id} - '
+        f'total peaks: {properties["npeaks"]}, '
+        f'clipped peaks: {properties["npeaks_clipped"]}'
+    )
+    if trace_clipped:
+        msg += f' - {red}clipped!{reset}'
+    print(msg)
+
+
+def _run_clipping_score(trace, args):
+    """Run clipping score method and print results"""
+    score = clipping_score(
+        trace, args.remove_baseline, args.debug)
+    if score < 10:
+        color = green
+    elif score < 20:
+        color = yellow
+    else:
+        color = red
+    print(f'{trace.id} - clipping score: {color}{score:.2f}%{reset}')
+
+
 def _command_line_interface():
+    """Command line interface"""
     from obspy import read, Stream
     args = _parse_arguments()
     st = Stream()
@@ -441,33 +476,11 @@ def _command_line_interface():
     if not st:
         print('No traces found')
         return
-    # ainsi codes for fancy output
-    reset = "\u001b[0m"
-    red = "\u001b[31m"
-    green = "\u001b[32m"
-    yellow = "\u001b[33m"
     for tr in st:
         if args.command == 'clipping_peaks':
-            trace_clipped, properties = clipping_peaks(
-                tr, args.sensitivity, args.clipping_percentile, args.debug)
-            msg = (
-                f'{tr.id} - '
-                f'total peaks: {properties["npeaks"]}, '
-                f'clipped peaks: {properties["npeaks_clipped"]}'
-            )
-            if trace_clipped:
-                msg += f' - {red}clipped!{reset}'
-            print(msg)
+            _run_clipping_peaks(tr, args)
         elif args.command == 'clipping_score':
-            score = clipping_score(
-                tr, args.remove_baseline, args.debug)
-            if score < 10:
-                color = green
-            elif score < 20:
-                color = yellow
-            else:
-                color = red
-            print(f'{tr.id} - clipping score: {color}{score:.2f}%{reset}')
+            _run_clipping_score(tr, args)
 
 
 def main():
