@@ -318,10 +318,10 @@ def _plot_clipping_analysis(
     plt.show()
 
 
-def run():
+def parse_arguments():
+    """Parse command line arguments"""
     import sys
     import argparse
-    from obspy import read, Stream
     parser = argparse.ArgumentParser(
         description='Check trace for clipping using kernel density '
         'estimation. Two methods are available: (1) check if trace is '
@@ -362,6 +362,12 @@ def run():
         sys.stderr.write(
             'Error: at least one positional argument is required.\n')
         sys.exit(2)
+    return args
+
+
+def run():
+    from obspy import read, Stream
+    args = parse_arguments()
     st = Stream()
     for file in args.infile:
         try:
