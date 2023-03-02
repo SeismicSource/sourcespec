@@ -5,7 +5,7 @@ Check trace for clipping using kernel density estimation of the trace amplitude
 values.
 
 Two methods are available:
-    1. check if trace is clipped, based on counting peaks in the kernel
+    1. check if trace is clipped, based on the number of peaks in the kernel
        density estimation;
     2. compute a trace clipping score based on the shape of the kernel
        density estimation.
@@ -81,17 +81,25 @@ def _get_distance_weight(density_points, order=2, min_weight=1, max_weight=5):
 
 def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
     """
-    Check if a trace is clipped, based on counting peaks in the kernel density
-    estimation of the trace amplitude values.
+    Check if a trace is clipped, based on the number of peaks in the kernel
+    density estimation of the trace amplitude values.
 
-    Kernel density estimation is used to find the peaks of the histogram of
-    the trace data points. The peaks are then weighted by their distance from
-    the trace average (which should be the most common value).
-    The peaks with the highest weight are then checked for prominence,
-    which is a measure of how much higher the peak is than the surrounding
-    data. The prominence threshold is determined by the sensitivity parameter.
-    If a peak is found in the range defined by lower_clip_bound, the trace
-    is considered clipped or distorted.
+    The algorithm is based on the following steps:
+
+    1.  The trace is demeaned.
+
+    2.  A kernel density estimation is computed on the trace amplitude values.
+
+    3.  The kernel density estimation is weightd by the distance from the
+        zero mean amplitude value, using a parabolic function, between 1 and 5.
+
+    4.  Peaks are detected in the weighted kernel density estimation. The
+        sensitivity of the peak detection algorithm is controlled by the
+        ``sensitivity`` parameter, based on which a minimum prominence
+        threshold is set.
+
+    5.  The trace is considered clipped if there is at least one peak in the
+        amplitude range corresponding to the ``clipping_percentile`` parameter.
 
     Parameters
     ----------
@@ -99,7 +107,10 @@ def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
         Trace to check.
     sensitivity : int
         Sensitivity level, from 1 (least sensitive) to 5 (most sensitive).
-        (default: 3)
+        (default: 3). The sensitivity level controls the minimum prominence
+        threshold used for peak detection in the kernel density estimation.
+        See the :func:`scipy.signal.find_peaks()` documentation for more
+        details.
     clipping_percentile : float, between 0 and 100
         Percentile of trace amplitude range (expressed as percentage) to check
         for clipping. Default is 10, which means that the 10% highest and
@@ -110,8 +121,20 @@ def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
 
     Returns
     -------
-    bool
+    trace_clipped: bool
         True if trace is clipped, False otherwise.
+    properties : dict
+        Dictionary with the properties used for the clipping detection.
+        The dictionary contains the following keys:
+
+            * npeaks (:class:`int`): number of peaks found in the kernel
+              density
+            * npeaks_clipped (:class:`int`): number of peaks found in the
+              kernel density that are considered clipped
+            * peaks (:class:`numpy.ndarray`): list of peaks found in the
+              kernel density
+            * prominences (:class:`numpy.ndarray`): list of prominences of the
+              peaks found in the kernel density
     """
     sensitivity = int(sensitivity)
     if sensitivity < 1 or sensitivity > 5:
@@ -183,16 +206,17 @@ def get_clipping_score(trace, remove_baseline=False, debug=False):
     1.  The trace is detrended and demeaned. Optionally, the trace baseline
         can be removed.
 
-    2.  A kernel density estimation is performed on the trace amplitude values.
+    2.  A kernel density estimation is computed on the trace amplitude values.
 
     3.  Two weighted kernel density functions are computed:
 
           - a full weighted kernel density, where the kernel density is
-            weighted by the distance from the zero mean value, using a 8th
-            order power function between 1 and 100.
+            weighted by the distance from the zero mean amplitude value,
+            using a 8th order power function between 1 and 100.
           - a weighted kernel density without the central peak, where the
             kernel density is weighted by the distance from the zero mean
-            value, using a 8th order power function between 0 and 100.
+            amplitude value, using a 8th order power function between 0
+            and 100.
 
         In both cases, the weight gives more importance to samples far from
         the zero mean value. In the second case, the central peak is ignored.
@@ -353,11 +377,12 @@ Check for clipping in traces, based on the kernel density estimation of the
 trace amplitude values.
 
 Two methods are implemented:
-1. Check if trace is clipped, based on counting peaks in the kernel density;
+1. Check if trace is clipped, based on the number of peaks in the kernel
+   density;
 2. Compute a trace clipping score based on the shape of the kernel density.
 """
     parser = argparse.ArgumentParser(
-        description = description,
+        description=description,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     subparser = parser.add_subparsers(dest='command')
