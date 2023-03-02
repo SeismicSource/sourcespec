@@ -128,21 +128,27 @@ def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
     peaks = peaks[(peaks > 0) & (peaks < (num_kde_bins + 1))]
     peaks -= 1
     density_weight = density_weight[1:-1]
-    # If there is a peak in the edge bins,
-    # then the signal is probably clipped or distorted
-    trace_clipped = any(
+    npeaks = len(peaks)
+    # Clipped peaks are peaks in the edge bins
+    npeaks_clipped = np.sum(
         peak < num_edge_bins or peak > (num_kde_bins - 1 - num_edge_bins)
         for peak in peaks
     )
+    properties = {
+        'npeaks': npeaks,
+        'npeaks_clipped': npeaks_clipped,
+        'peaks': peaks,
+        'prominences': props['prominences'],
+    }
+    # If there is at least a peak in the edge bins,
+    # then the signal is probably clipped or distorted
+    trace_clipped = npeaks_clipped > 0
     if debug:
-        print('%2d peaks found:' % len(peaks))
-        for peak, prominence in zip(peaks, props['prominences']):
-            print('  idx %d: prominence=%G' % (peak, prominence))
         _plot_clipping_analysis(
             trace, max_data, density_points, density, density_weight,
             peaks=peaks, num_edge_bins=num_edge_bins,
             num_kde_bins=num_kde_bins, trace_clipped=trace_clipped)
-    return trace_clipped
+    return trace_clipped, properties
 
 
 def get_clipping_score(trace, remove_baseline=False, debug=False):
@@ -364,8 +370,13 @@ def run():
             print(f'Error reading file {file}: {msg}')
     for tr in st:
         if args.command == 'is_clipped':
-            print(tr.id, is_clipped(
-                tr, args.sensitivity, args.clipping_percentile, args.debug))
+            trace_clipped, properties = is_clipped(
+                tr, args.sensitivity, args.clipping_percentile, args.debug)
+            print(
+                f'{tr.id} - clipped: {trace_clipped}, '
+                f'total peaks: {properties["npeaks"]}, '
+                f'clipped peaks: {properties["npeaks_clipped"]}'
+            )
         elif args.command == 'clipping_score':
             clipping_score = get_clipping_score(
                 tr, args.remove_baseline, args.debug)
