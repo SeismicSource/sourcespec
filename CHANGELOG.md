@@ -24,14 +24,20 @@ Earthquake source parameters from P- or S-wave displacement spectra
 ### Processing
 
 - Option to remove the trace baseline after instrument correction and before
-  filtering (`remove_baseline` config parameter)
-- New algorithm for clipping detection based on a clipping score.
-  Adjust the `clipping_score_threshold` config parameter between 0 (all traces
-  are marked as clipped) and 100 (no clipping detection)
-  - The algorithm can also be called from the command line, e.g. for debug
-    purposes, using the command `clipping_detection`
+  filtering (`remove_baseline` config parameter) (see [#25])
+- New algorithms for clipping detection based on kernel density estimation of
+  the trace amplitude values (see [#23], [#24], [#25])
+  - Two methods are available:
+    - `clipping_peaks`: check if trace is clipped, based on the number of peaks
+    in the kernel density estimation;
+    - `clipping_score`: compute a trace clipping score based on the shape of
+      the kernel density estimation.
+  - Use `clipping_detection_algorithm` in the config file to choose the
+    algorithm and the other `clipping_*` parameters to adjust the results.
+  - The algorithms can also be called from the command line, e.g. for debug
+    purposes, using the shell command `clipping_detection`.
 - Magnitude limits for inversion are now autoset between 90% of the minimum
-  of the spectral plateau and 110% of its maximum
+  of the spectral plateau and 110% of its maximum (see [#22])
 - Relax noise window requirements if noise weighting is not used.
   This is useful for older triggered records with noise windows
   that are short or even missing entirely (see pull request [#18])
@@ -75,8 +81,12 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - Removed config parameter: `Mw_0_variability`
 - Removed config parameter: `clip_max_percent`
 - New config parameter: `remove_baseline`
-- New config parameter: `clipping_score_threshold`
-- New config parameter: `clipping_debug_plot`
+- New config parameters for clipping detection:
+  - `clipping_detection_algorithm`
+  - `clipping_debug_plot`
+  - `clipping_score_threshold`
+  - `clipping_peaks_sensitivity`
+  - `clipping_peaks_percentile`
 - Config file section `AVERAGES PARAMETERS` renamed to
   `SUMMARY STATISTICS PARAMETERS`
 - New config parameter: `reference_statistics`
@@ -452,3 +462,7 @@ Initial Python port.
 [#18]: https://github.com/SeismicSource/sourcespec/issues/18
 [#20]: https://github.com/SeismicSource/sourcespec/issues/20
 [#21]: https://github.com/SeismicSource/sourcespec/issues/21
+[#22]: https://github.com/SeismicSource/sourcespec/issues/22
+[#23]: https://github.com/SeismicSource/sourcespec/issues/23
+[#24]: https://github.com/SeismicSource/sourcespec/issues/24
+[#25]: https://github.com/SeismicSource/sourcespec/issues/25
