@@ -47,6 +47,7 @@ Contents:
 
    theoretical_background
    signal_processing
+   clipping_detection
    getting_started
    configuration_file
    file_formats

@@ -49,8 +49,8 @@ bibtex_default_style = 'unsrt'
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
-    'scipy': ('http://docs.scipy.org/doc/scipy/', None),
-    'obspy': ('http://docs.obspy.org', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
+    'obspy': ('https://docs.obspy.org', None),
 }
 
 # Add any paths that contain templates here, relative to this directory.
@@ -286,7 +286,7 @@ texinfo_documents = [(
 # -- Custom functions for SourceSpec ------------------------------------------
 def update_configfile(app):
     with open('configuration_file.rst', 'w') as fp:
-        fp.write('''.. _Configuration File:
+        fp.write('''.. _configuration_file:
 
 ##################
 Configuration File
