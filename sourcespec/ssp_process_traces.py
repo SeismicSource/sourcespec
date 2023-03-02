@@ -23,7 +23,7 @@ from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import remove_instr_response, hypo_dist
 from sourcespec.ssp_wave_arrival import add_arrivals_to_trace
-from sourcespec.clipping_detection import get_clipping_score, is_clipped
+from sourcespec.clipping_detection import clipping_score, clipping_peaks
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -85,15 +85,15 @@ def _check_clipping(config, trace):
     tr = trace.copy().trim(t1, t2)
     tr_info = f'{tr.id} {tr.stats.instrtype}'
     if config.clipping_detection_algorithm == 'clipping_score':
-        clipping_score = get_clipping_score(
+        score = clipping_score(
             tr, config.remove_baseline, config.clipping_debug_plot)
-        logger.info(f'{tr_info}: clipping score: {clipping_score:.1f}%')
-        if clipping_score > config.clipping_score_threshold:
+        logger.info(f'{tr_info}: clipping score: {score:.1f}%')
+        if score > config.clipping_score_threshold:
             trace.stats.clipped = True
             trace.stats.ignore = True
-            trace.stats.ignore_reason = f'clipping: {clipping_score:.1f}%'
+            trace.stats.ignore_reason = f'clipping: {score:.1f}%'
     elif config.clipping_detection_algorithm == 'clipping_peaks':
-        trace_clipped, properties = is_clipped(
+        trace_clipped, properties = clipping_peaks(
             tr,
             config.clipping_peaks_sensitivity,
             config.clipping_peaks_percentile,

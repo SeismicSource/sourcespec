@@ -79,7 +79,7 @@ def _get_distance_weight(density_points, order=2, min_weight=1, max_weight=5):
     return dist_weight
 
 
-def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
+def clipping_peaks(trace, sensitivity=3, clipping_percentile=10, debug=False):
     """
     Check if a trace is clipped, based on the number of peaks in the kernel
     density estimation of the trace amplitude values.
@@ -196,7 +196,7 @@ def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
     return trace_clipped, properties
 
 
-def get_clipping_score(trace, remove_baseline=False, debug=False):
+def clipping_score(trace, remove_baseline=False, debug=False):
     """
     Compute a trace clipping score based on the shape of the kernel density
     estimation of the trace amplitude values.
@@ -402,15 +402,15 @@ Two methods are implemented:
         '--debug', '-d', action='store_true',
         help='Plot trace, samples histogram, kernel density, and clipping '
         'parameters', default=False)
-    sp_is_clipped = subparser.add_parser(
-        'is_clipped', help='Check if trace is clipped, based on counting '
+    sp_clipping_peaks = subparser.add_parser(
+        'clipping_peaks', help='Check if trace is clipped, based on counting '
         'peaks in kernel density (method 1)', parents=[common_parser]
     )
-    sp_is_clipped.add_argument(
+    sp_clipping_peaks.add_argument(
         '-s', '--sensitivity', type=int, default=3,
         help='Sensitivity level, from 1 (least sensitive) '
         'to 5 (most sensitive). Default is %(default)s.')
-    sp_is_clipped.add_argument(
+    sp_clipping_peaks.add_argument(
         '-p', '--clipping_percentile', type=float, default=10,
         help='Percentile of trace amplitude range (expressed as percentage) '
         'to check for clipping. Default is %(default)s%%.')
@@ -442,8 +442,8 @@ def _command_line_interface():
         print('No traces found')
         return
     for tr in st:
-        if args.command == 'is_clipped':
-            trace_clipped, properties = is_clipped(
+        if args.command == 'clipping_peaks':
+            trace_clipped, properties = clipping_peaks(
                 tr, args.sensitivity, args.clipping_percentile, args.debug)
             print(
                 f'{tr.id} - clipped: {trace_clipped}, '
@@ -451,9 +451,9 @@ def _command_line_interface():
                 f'clipped peaks: {properties["npeaks_clipped"]}'
             )
         elif args.command == 'clipping_score':
-            clipping_score = get_clipping_score(
+            score = clipping_score(
                 tr, args.remove_baseline, args.debug)
-            print(f'{tr.id} - clipping score: {clipping_score:.2f}%')
+            print(f'{tr.id} - clipping score: {score:.2f}%')
 
 
 def main():
