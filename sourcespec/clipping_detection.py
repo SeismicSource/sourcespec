@@ -51,6 +51,19 @@ def _get_kernel_density(trace, min_data, max_data, num_kde_bins=101):
     return density, density_points
 
 
+def _get_histogram(trace):
+    """Compute the histogram of a trace."""
+    # Compute data histogram with a number of bins equal to 0.5% of data points
+    # or 31, whichever is larger
+    nbins = max(31, int(len(trace.data)*0.005))
+    if nbins % 2 == 0:
+        nbins += 1
+    counts, bins = np.histogram(trace.data, bins=nbins)
+    counts = counts/np.max(counts)
+    bin_width = bins[1] - bins[0]
+    return counts, bins, bin_width
+
+
 def _get_distance_weight(density_points, order=2, min_weight=1, max_weight=5):
     """Compute the distance weight for the kernel density."""
     dist_weight = np.abs(density_points)**order
@@ -259,14 +272,6 @@ def _plot_clipping_analysis(
         def _set_format(self, *args):
             self.format = '%1.1f'
 
-    # Compute data histogram with a number of bins equal to 0.5% of data points
-    # or 31, whichever is larger
-    nbins = max(31, int(len(trace.data)*0.005))
-    if nbins % 2 == 0:
-        nbins += 1
-    counts, bins = np.histogram(trace.data, bins=nbins)
-    counts = counts/np.max(counts)
-    bin_width = bins[1] - bins[0]
     fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
     ax0.plot(
         trace.times(), trace.data, zorder=10, label='baseline removed')
@@ -284,6 +289,7 @@ def _plot_clipping_analysis(
     ax0.set_title(trace.id)
     ax0.set_xlabel('Time (s)')
     ax0.set_ylabel('Amplitude')
+    counts, bins, bin_width = _get_histogram(trace.data)
     ax1.hist(
         bins[:-1] + bin_width/2., bins=len(counts), weights=counts,
         orientation='horizontal', zorder=10)
