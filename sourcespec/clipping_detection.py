@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: CECILL-2.1
 """
-Check trace for clipping using kernel density estimation.
+Check trace for clipping using kernel density estimation of the trace amplitude
+values.
 
 Two methods are available:
-    (1) check if trace is clipped, based on counting peaks in kernel density;
-    (2) compute a trace clipping score based on kernel density estimation.
+    1. check if trace is clipped, based on counting peaks in the kernel
+       density estimation;
+    2. compute a trace clipping score based on the shape of the kernel
+       density estimation.
 
 :copyright:
     2023 Claudio Satriano <satriano@ipgp.fr>,
@@ -78,7 +81,8 @@ def _get_distance_weight(density_points, order=2, min_weight=1, max_weight=5):
 
 def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
     """
-    Check if a trace is clipped, based on kernel density estimation.
+    Check if a trace is clipped, based on counting peaks in the kernel density
+    estimation of the trace amplitude values.
 
     Kernel density estimation is used to find the peaks of the histogram of
     the trace data points. The peaks are then weighted by their distance from
@@ -171,7 +175,8 @@ def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
 
 def get_clipping_score(trace, remove_baseline=False, debug=False):
     """
-    Compute a trace clipping score based on kernel density estimation.
+    Compute a trace clipping score based on the shape of the kernel density
+    estimation of the trace amplitude values.
 
     The algorithm is based on the following steps:
 
@@ -343,11 +348,18 @@ def _parse_arguments():
     """Parse command line arguments"""
     import sys
     import argparse
+    description = """\
+Check for clipping in traces, based on the kernel density estimation of the
+trace amplitude values.
+
+Two methods are implemented:
+1. Check if trace is clipped, based on counting peaks in the kernel density;
+2. Compute a trace clipping score based on the shape of the kernel density.
+"""
     parser = argparse.ArgumentParser(
-        description='Check trace for clipping using kernel density '
-        'estimation. Two methods are available: (1) check if trace is '
-        'clipped, based on counting peaks in kernel density; (2) compute '
-        'a trace clipping score based on kernel density estimation.')
+        description = description,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     subparser = parser.add_subparsers(dest='command')
     common_parser = argparse.ArgumentParser(add_help=False)
     common_parser.add_argument(
