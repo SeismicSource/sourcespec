@@ -304,6 +304,7 @@ def _add_instrtype(trace, config):
         orientation = trace.stats.channel[-1]
         trace.stats.channel = ''.join((band_code, instr_code, orientation))
     trace.stats.instrtype = instrtype
+    trace.stats.info = f'{trace.id} {trace.stats.instrtype}'
 
 
 def _add_hypocenter(trace, hypo):

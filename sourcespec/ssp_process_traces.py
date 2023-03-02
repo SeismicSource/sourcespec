@@ -32,17 +32,18 @@ def _get_bandpass_frequencies(config, trace):
     # see if there is a station-specific filter
     station = trace.stats.station
     try:
-        bp_freqmin = float(config['bp_freqmin_' + station])
-        bp_freqmax = float(config['bp_freqmax_' + station])
+        bp_freqmin = float(config[f'bp_freqmin_{station}'])
+        bp_freqmax = float(config[f'bp_freqmax_{station}'])
     except KeyError:
         instrtype = trace.stats.instrtype
         try:
-            bp_freqmin = float(config['bp_freqmin_' + instrtype])
-            bp_freqmax = float(config['bp_freqmax_' + instrtype])
+            bp_freqmin = float(config[f'bp_freqmin_{instrtype}'])
+            bp_freqmax = float(config[f'bp_freqmax_{instrtype}'])
         except KeyError:
-            msg = '{}: Unknown instrument type: {}: skipping trace'
-            msg = msg.format(trace.id, instrtype)
-            raise ValueError(msg)
+            raise ValueError(
+                f'{trace.id}: Unknown instrument type: {instrtype}: '
+                'skipping trace'
+            )
     return bp_freqmin, bp_freqmax
 
 
@@ -51,10 +52,10 @@ def filter_trace(config, trace):
     nyquist = 1./(2. * trace.stats.delta)
     if bp_freqmax >= nyquist:
         bp_freqmax = nyquist * 0.999
-        msg = '{}: maximum frequency for bandpass filtering '
-        msg += 'is larger or equal to Nyquist. Setting it to {} Hz'
-        msg = msg.format(trace.id, bp_freqmax)
-        logger.warning(msg)
+        logger.warning(
+            f'{trace.id}: maximum frequency for bandpass filtering '
+            f'is larger or equal to Nyquist. Setting it to {bp_freqmax} Hz'
+        )
     filter = dict(type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
     trace.filter(**filter)
     # save filter info to trace stats
@@ -66,9 +67,10 @@ def _check_signal_level(config, trace):
     rms = np.sqrt(rms2)
     rms_min = config.rmsmin
     if rms <= rms_min:
-        msg = '{} {}: Trace RMS smaller than {:g}: skipping trace'
-        msg = msg.format(trace.id, trace.stats.instrtype, rms_min)
-        raise RuntimeError(msg)
+        raise RuntimeError(
+            f'{trace.stats.info}: Trace RMS smaller than {rms_min:g}: '
+            'skipping trace'
+        )
 
 
 def _check_clipping(config, trace):
@@ -83,11 +85,10 @@ def _check_clipping(config, trace):
     elif config.wave_type[0] == 'P':
         t2 = trace.stats.arrivals['P2'][1]
     tr = trace.copy().trim(t1, t2)
-    tr_info = f'{tr.id} {tr.stats.instrtype}'
     if config.clipping_detection_algorithm == 'clipping_score':
         score = clipping_score(
             tr, config.remove_baseline, config.clipping_debug_plot)
-        logger.info(f'{tr_info}: clipping score: {score:.1f}%')
+        logger.info(f'{tr.stats.info}: clipping score: {score:.1f}%')
         if score > config.clipping_score_threshold:
             trace.stats.clipped = True
             trace.stats.ignore = True
@@ -99,7 +100,7 @@ def _check_clipping(config, trace):
             config.clipping_peaks_percentile,
             config.clipping_debug_plot)
         logger.info(
-            f'{tr_info}: total peaks: {properties["npeaks"]}, '
+            f'{tr.stats.info}: total peaks: {properties["npeaks"]}, '
             f'clipped peaks: {properties["npeaks_clipped"]}'
         )
         if trace_clipped:
@@ -108,7 +109,7 @@ def _check_clipping(config, trace):
             trace.stats.ignore_reason = 'clipped'
     if trace.stats.clipped:
         logger.warning(
-            f'{tr_info}: Trace is clipped or significantly distorted: '
+            f'{tr.stats.info}: Trace is clipped or significantly distorted: '
             'skipping trace'
         )
 
@@ -142,26 +143,24 @@ def _check_sn_ratio(config, trace):
     rmsS = np.sqrt(rmsS2)
     if rmsnoise == 0:
         if config.weighting == 'noise':
-            msg = '{} {}: empty noise window: skipping trace'
-            msg = msg.format(trace.id, trace.stats.instrtype)
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                f'{trace.stats.info}: empty noise window: skipping trace'
+            )
         else:
-            msg = '{} {}: empty noise window!'
-            msg = msg.format(trace.id, trace.stats.instrtype)
-            logger.warning(msg)
+            logger.warning(f'{trace.stats.info}: empty noise window!')
             rmsnoise = 1.
     sn_ratio = rmsS/rmsnoise
-    logger.info('{} {}: S/N: {:.1f}'.format(
-        trace.id, trace.stats.instrtype, sn_ratio))
+    logger.info(f'{trace.stats.info}: S/N: {sn_ratio:.1f}')
     trace.stats.sn_ratio = sn_ratio
     # stop here if trace is already ignored
     if trace.stats.ignore:
         return
     snratio_min = config.sn_min
     if sn_ratio < snratio_min:
-        msg = '{} {}: S/N smaller than {:g}: skipping trace'
-        msg = msg.format(trace.id, trace.stats.instrtype, snratio_min)
-        logger.warning(msg)
+        logger.warning(
+            f'{trace.stats.info}: S/N smaller than {snratio_min:g}: '
+            'skipping trace'
+        )
         trace.stats.ignore = True
         trace.stats.ignore_reason = 'low S/N'
 
@@ -188,15 +187,14 @@ def _process_trace(config, trace):
     instrtype = trace_process.stats.instrtype
     if config.ignore_vertical and comp[-1] in config.vertical_channel_codes:
         if config.wave_type == 'P':
-            msg = '{} {}: cannot ignore vertical trace, '
-            msg += 'since "wave_type" is set to "P"'
-            msg = msg.format(trace.id, trace.stats.instrtype)
-            logger.warning(msg)
-        else:
-            msg = '{} {}: ignoring vertical trace as requested'.format(
-                trace.id, trace.stats.instrtype
+            logger.warning(
+                f'{trace.stats.info}: cannot ignore vertical trace, '
+                'since "wave_type" is set to "P"'
             )
-            logger.info(msg)
+        else:
+            logger.info(
+                f'{trace.stats.info}: ignoring vertical trace as requested'
+            )
             trace_process.stats.ignore = True
             trace_process.stats.ignore_reason = 'vertical'
     # check if the trace has (significant) signal
@@ -209,10 +207,10 @@ def _process_trace(config, trace):
         bp_freqmin, bp_freqmax = _get_bandpass_frequencies(config, trace)
         pre_filt = (bp_freqmin, bp_freqmin*1.1, bp_freqmax*0.9, bp_freqmax)
         if remove_instr_response(trace_process, correct, pre_filt) is None:
-            msg = '{} {}: Unable to remove instrument response: '
-            msg += 'skipping trace'
-            msg = msg.format(trace_process.id, instrtype)
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                f'{trace.stats.info}: Unable to remove instrument response: '
+                'skipping trace'
+            )
     _remove_baseline(config, trace_process)
     filter_trace(config, trace_process)
     # Check if the trace has significant signal to noise ratio
@@ -231,26 +229,26 @@ def _merge_stream(config, st):
     overlaps = [g for g in gaps_olaps if g[6] < 0]
     gap_duration = sum(g[6] for g in gaps)
     if gap_duration > 0:
-        msg = '{}: trace has {:.3f} seconds of gaps.'
-        msg = msg.format(traceid, gap_duration)
-        logger.info(msg)
+        logger.info(
+            f'{traceid}: trace has {gap_duration:.3f} seconds of gaps.'
+        )
         gap_max = config.gap_max
         if gap_max is not None and gap_duration > gap_max:
-            msg = '{}: Gap duration larger than gap_max ({:.1f} s): '
-            msg += 'skipping trace'
-            msg = msg.format(traceid, gap_max)
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                f'{traceid}: Gap duration larger than gap_max '
+                f'({gap_max:.1f} s): skipping trace'
+            )
     overlap_duration = -1 * sum(g[6] for g in overlaps)
     if overlap_duration > 0:
-        msg = '{}: trace has {:.3f} seconds of overlaps.'
-        msg = msg.format(traceid, overlap_duration)
-        logger.info(msg)
+        logger.info(
+            f'{traceid}: trace has {overlap_duration:.3f} seconds of overlaps.'
+        )
         overlap_max = config.overlap_max
         if overlap_max is not None and overlap_duration > overlap_max:
-            msg = '{}: Overlap duration larger than overlap_max ({:.1f} s): '
-            msg += 'skipping trace'
-            msg = msg.format(traceid, overlap_max)
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                f'{traceid}: overlap duration larger than overlap_max '
+                f'({overlap_max:.1f} s): skipping trace'
+            )
     # Then, compute the same statisics for the signal window.
     st_cut = st.copy()
     if config.wave_type[0] == 'S':
@@ -261,25 +259,27 @@ def _merge_stream(config, st):
         t2 = st[0].stats.arrivals['P2'][1]
     st_cut.trim(starttime=t1, endtime=t2)
     if not st_cut:
-        msg = '{}: No signal for the selected {}-wave cut interval: '
-        msg += 'skipping trace >\n'
-        msg += '> Cut interval: {} - {}'
-        msg = msg.format(traceid, config.wave_type[0], t1, t2)
-        raise RuntimeError(msg)
+        raise RuntimeError(
+            f'{traceid}: no signal for the selected '
+            f'{config.wave_type[0]}-wave cut interval: skipping trace >\n'
+            f'> Cut interval: {t1} - {t2}'
+        )
     gaps_olaps = st_cut.get_gaps()
     gaps = [g for g in gaps_olaps if g[6] >= 0]
     overlaps = [g for g in gaps_olaps if g[6] < 0]
     duration = st_cut[-1].stats.endtime - st_cut[0].stats.starttime
     gap_duration = sum(g[6] for g in gaps)
     if gap_duration > duration/4:
-        msg = '{}: Too many gaps for the selected cut interval: skipping trace'
-        msg = msg.format(traceid)
-        raise RuntimeError(msg)
+        raise RuntimeError(
+            f'{traceid}: too many gaps for the selected cut interval: '
+            'skipping trace'
+        )
     overlap_duration = -1 * sum(g[6] for g in overlaps)
     if overlap_duration > 0:
-        msg = '{}: Signal window has {:.3f} seconds of overlaps.'
-        msg = msg.format(traceid, overlap_duration)
-        logger.info(msg)
+        logger.info(
+            f'{traceid}: signal window has {overlap_duration:.3f} seconds '
+            'of overlaps.'
+        )
     # Finally, demean (only if trace has not be already preprocessed)
     if config.trace_units == 'auto':
         # Since the count value is generally huge, we need to demean twice
@@ -292,45 +292,46 @@ def _merge_stream(config, st):
         # st.merge raises a generic Exception if traces have
         # different sampling rates
     except Exception:
-        msg = '{}: unable to fill gaps: skipping trace'.format(traceid)
-        raise RuntimeError(msg)
+        raise RuntimeError(f'{traceid}: unable to fill gaps: skipping trace')
     return st[0]
 
 
 def _add_hypo_dist_and_arrivals(config, st):
     for trace in st:
         if hypo_dist(trace) is None:
-            msg = '{}: Unable to compute hypocentral distance: skipping trace'
-            msg = msg.format(trace.id)
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                f'{trace.id}: Unable to compute hypocentral distance: '
+                'skipping trace'
+            )
         if config.max_epi_dist is not None and \
                 trace.stats.epi_dist > config.max_epi_dist:
-            msg = '{}: Epicentral distance ({:.1f} km) '
-            msg += 'larger than max_epi_dist ({:.1f} km): skipping trace'
-            msg = msg.format(
-                trace.id, trace.stats.epi_dist, config.max_epi_dist)
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                f'{trace.id}: Epicentral distance '
+                f'({trace.stats.epi_dist:.1f} km) '
+                f'larger than max_epi_dist ({config.max_epi_dist:.1f} km): '
+                'skipping trace'
+            )
         add_arrivals_to_trace(trace, config)
         try:
             p_arrival_time = trace.stats.arrivals['P'][1]
         except KeyError:
-            msg = '{}: Unable to get P arrival time: skipping trace'
-            msg = msg.format(trace.id)
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                f'{trace.id}: Unable to get P arrival time: skipping trace'
+            )
         if config.wave_type[0] == 'P' and p_arrival_time < trace.stats.starttime:
-            msg = '{}: P-window incomplete: skipping trace'
-            msg = msg.format(trace.id)
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                f'{trace.id}: P-window incomplete: skipping trace'
+            )
         try:
             s_arrival_time = trace.stats.arrivals['S'][1]
         except KeyError:
-            msg = '{}: Unable to get S arrival time: skipping trace'
-            msg = msg.format(trace.id)
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                f'{trace.id}: Unable to get S arrival time: skipping trace'
+            )
         if config.wave_type[0] == 'S' and s_arrival_time < trace.stats.starttime:
-            msg = '{}: S-window incomplete: skipping trace'
-            msg = msg.format(trace.id)
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                f'{trace.id}: S-window incomplete: skipping trace'
+            )
         # Signal window for spectral analysis (S phase)
         s_minus_p = s_arrival_time-p_arrival_time
         s_pre_time = config.signal_pre_time
@@ -338,10 +339,10 @@ def _add_hypo_dist_and_arrivals(config, st):
             # use (Ts-Tp)/2 if it is smaller than signal_pre_time
             # (for short-distance records with short S-P interval)
             s_pre_time = s_minus_p/2
-            msg = '{}: signal_pre_time is larger than (Ts-Tp)/2.'
-            msg += 'Using (Ts-Tp)/2 instead'
-            msg = msg.format(trace.id)
-            logger.warning(msg)
+            logger.warning(
+                f'{trace.id}: signal_pre_time is larger than (Ts-Tp)/2. '
+                'Using (Ts-Tp)/2 instead'
+            )
         t1 = s_arrival_time - s_pre_time
         t1 = max(trace.stats.starttime, t1)
         t2 = t1 + config.win_length
@@ -358,7 +359,7 @@ def _add_hypo_dist_and_arrivals(config, st):
         t2 = t1 + config.win_length
         if t2 >= p_arrival_time:
             logger.warning(
-                '{}: noise window ends after P-wave arrival'.format(trace.id))
+                f'{trace.id}: noise window ends after P-wave arrival')
             # Note: maybe we should also take into account signal_pre_time here
             t2 = p_arrival_time
             t1 = min(t1, t2)
@@ -380,15 +381,13 @@ def _skip_ignored(config, id):
             "(" + ")|(".join(config.use_traceids) + ")"
             ).replace('.', r'\.')
         if not any(re.match(combined, s) for s in ss):
-            msg = '{}: ignored from config file'.format(id)
-            raise RuntimeError(msg)
+            raise RuntimeError(f'{id}: ignored from config file')
     if config.ignore_traceids is not None:
         combined = (
             "(" + ")|(".join(config.ignore_traceids) + ")"
             ).replace('.', r'\.')
         if any(re.match(combined, s) for s in ss):
-            msg = '{}: ignored from config file'.format(id)
-            raise RuntimeError(msg)
+            raise RuntimeError(f'{id}: ignored from config file')
 
 
 def process_traces(config, st):
