@@ -245,16 +245,8 @@ def get_clipping_score(trace, remove_baseline=False, debug=False):
     return clipping_score
 
 
-def _plot_clipping_analysis(
-        trace, max_data, density_points, density, density_weight,
-        trace_baseline=None, density_weight_no_central=None,
-        clipping_score=None,
-        peaks=None, num_edge_bins=None, num_kde_bins=None,
-        trace_clipped=False):
-    """
-    Plot trace, samples histogram and kernel densities
-    (unweighted and weighted)
-    """
+def _get_plotting_axes():
+    """Get matplotlib axes for plotting"""
     # Force loading of a matplotlib GUI backend
     import matplotlib
     mpl_backends = 'macosx', 'qt5agg', 'qt4agg', 'gtk3agg', 'tkagg', 'wxagg'
@@ -272,54 +264,71 @@ def _plot_clipping_analysis(
         def _set_format(self, *args):
             self.format = '%1.1f'
 
-    fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(15, 5), sharey=True)
-    ax0.plot(
-        trace.times(), trace.data, zorder=10, label='baseline removed')
-    if trace_baseline is not None:
-        ax0.plot(
-            trace.times(), trace.data + trace_baseline, zorder=5,
-            label='original trace')
-        ax0.plot(trace.times(), trace_baseline, zorder=20, label='baseline')
-        ax0.legend()
-    ax0.set_ylim(-max_data, max_data)
+    fig, (ax_trace, ax_density) = plt.subplots(
+        1, 2, figsize=(15, 5), sharey=True)
     yfmt = ScalarFormatterForceFormat()
     yfmt.set_powerlimits((0, 0))
-    ax0.yaxis.set_major_formatter(yfmt)
-    ax0.grid(True)
-    ax0.set_title(trace.id)
-    ax0.set_xlabel('Time (s)')
-    ax0.set_ylabel('Amplitude')
+    ax_trace.yaxis.set_major_formatter(yfmt)
+    ax_trace.grid(True)
+    ax_trace.set_xlabel('Time (s)')
+    ax_trace.set_ylabel('Amplitude')
+    ax_density.grid(True, axis='y')
+    ax_density.set_xlabel('Density')
+    return plt, ax_trace, ax_density
+
+
+def _plot_clipping_analysis(
+        trace, max_data, density_points, density, density_weight,
+        trace_baseline=None, density_weight_no_central=None,
+        clipping_score=None,
+        peaks=None, num_edge_bins=None, num_kde_bins=None,
+        trace_clipped=False):
+    """
+    Plot trace, samples histogram and kernel densities
+    (unweighted and weighted)
+    """
+    plt, ax_trace, ax_density = _get_plotting_axes()
+    # trace plot
+    ax_trace.plot(
+        trace.times(), trace.data, zorder=10, label='baseline removed')
+    if trace_baseline is not None:
+        ax_trace.plot(
+            trace.times(), trace.data + trace_baseline, zorder=5,
+            label='original trace')
+        ax_trace.plot(trace.times(), trace_baseline, zorder=20, label='baseline')
+        ax_trace.legend()
+    ax_trace.set_ylim(-max_data, max_data)
+    ax_trace.set_title(trace.id)
+    # density plots
     counts, bins, bin_width = _get_histogram(trace.data)
-    ax1.hist(
+    ax_density.hist(
         bins[:-1] + bin_width/2., bins=len(counts), weights=counts,
         orientation='horizontal', zorder=10)
-    ax1.plot(density, density_points, label='kernel density', zorder=20)
-    ax1.plot(
+    ax_density.plot(density, density_points, label='kernel density', zorder=20)
+    ax_density.plot(
         density_weight, density_points,
         label='weighted kernel density', zorder=30)
     if density_weight_no_central is not None:
-        ax1.fill_betweenx(
+        ax_density.fill_betweenx(
             density_points, density_weight_no_central,
             alpha=0.5, color='gray',
             label='weighted kernel density\nno central peak', zorder=10)
     if peaks is not None:
-        ax1.scatter(
+        ax_density.scatter(
             density_weight[peaks], density_points[peaks],
             s=100, marker='x', color='red')
-    ax1.grid(True, axis='y')
-    ax1.set_xlabel('Density')
-    ax1.legend()
+    ax_density.legend()
     if num_edge_bins is not None and num_kde_bins is not None:
-        ax1.axhspan(
+        ax_density.axhspan(
             -max_data, density_points[num_edge_bins],
             alpha=0.5, color='yellow')
-        ax1.axhspan(
+        ax_density.axhspan(
             density_points[num_kde_bins-1-num_edge_bins], max_data,
             alpha=0.5, color='yellow')
     if clipping_score is not None:
-        ax1.set_title(f'Clipping score: {clipping_score:.2f}%')
+        ax_density.set_title(f'Clipping score: {clipping_score:.2f}%')
     if trace_clipped:
-        ax1.set_title('Clipped!')
+        ax_density.set_title('Clipped!')
     plt.tight_layout()
     plt.show()
 
