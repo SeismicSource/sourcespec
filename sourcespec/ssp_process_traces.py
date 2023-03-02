@@ -16,13 +16,14 @@ Trace processing for sourcespec.
 """
 import logging
 import numpy as np
+from scipy.signal import savgol_filter
 import re
 from obspy.core import Stream
 from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import remove_instr_response, hypo_dist
 from sourcespec.ssp_wave_arrival import add_arrivals_to_trace
-from sourcespec.clipping_detection import is_clipped
+from sourcespec.clipping_detection import clipping_score, clipping_peaks
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -72,26 +73,44 @@ def _check_signal_level(config, trace):
 
 def _check_clipping(config, trace):
     trace.stats.clipped = False
-    if config.clipping_sensitivity == 0:
+    if config.clipping_detection_algorithm == 'none':
         return
-    # cut the trace between the end of noise window
+    # cut the trace between the beginning of noise window
     # and the end of the signal window
-    t1 = trace.stats.arrivals['N2'][1]
+    t1 = trace.stats.arrivals['N1'][1]
     if config.wave_type[0] == 'S':
         t2 = trace.stats.arrivals['S2'][1]
     elif config.wave_type[0] == 'P':
         t2 = trace.stats.arrivals['P2'][1]
-    t2 = (trace.stats.arrivals['S'][1] + config.win_length)
-    tr = trace.copy().trim(t1, t2).detrend('demean')
-    if is_clipped(tr, config.clipping_sensitivity):
-        trace.stats.clipped = True
-        trace.stats.ignore = True
-        trace.stats.ignore_reason = 'distorted'
-        msg = (
-            '{} {}: Trace is clipped or significantly distorted: '
-            'skipping trace'.format(tr.id, tr.stats.instrtype)
+    tr = trace.copy().trim(t1, t2)
+    tr_info = f'{tr.id} {tr.stats.instrtype}'
+    if config.clipping_detection_algorithm == 'clipping_score':
+        score = clipping_score(
+            tr, config.remove_baseline, config.clipping_debug_plot)
+        logger.info(f'{tr_info}: clipping score: {score:.1f}%')
+        if score > config.clipping_score_threshold:
+            trace.stats.clipped = True
+            trace.stats.ignore = True
+            trace.stats.ignore_reason = f'clipping: {score:.1f}%'
+    elif config.clipping_detection_algorithm == 'clipping_peaks':
+        trace_clipped, properties = clipping_peaks(
+            tr,
+            config.clipping_peaks_sensitivity,
+            config.clipping_peaks_percentile,
+            config.clipping_debug_plot)
+        logger.info(
+            f'{tr_info}: total peaks: {properties["npeaks"]}, '
+            f'clipped peaks: {properties["npeaks_clipped"]}'
         )
-        logger.warning(msg)
+        if trace_clipped:
+            trace.stats.clipped = True
+            trace.stats.ignore = True
+            trace.stats.ignore_reason = 'clipped'
+    if trace.stats.clipped:
+        logger.warning(
+            f'{tr_info}: Trace is clipped or significantly distorted: '
+            'skipping trace'
+        )
 
 
 def _check_sn_ratio(config, trace):
@@ -135,6 +154,9 @@ def _check_sn_ratio(config, trace):
     logger.info('{} {}: S/N: {:.1f}'.format(
         trace.id, trace.stats.instrtype, sn_ratio))
     trace.stats.sn_ratio = sn_ratio
+    # stop here if trace is already ignored
+    if trace.stats.ignore:
+        return
     snratio_min = config.sn_min
     if sn_ratio < snratio_min:
         msg = '{} {}: S/N smaller than {:g}: skipping trace'
@@ -142,6 +164,21 @@ def _check_sn_ratio(config, trace):
         logger.warning(msg)
         trace.stats.ignore = True
         trace.stats.ignore_reason = 'low S/N'
+
+
+def _remove_baseline(config, trace):
+    """
+    Get the signal baseline using a Savitzky-Golay filter and subtract it
+    from the trace.
+    """
+    if not config.remove_baseline:
+        return
+    npts = len(trace.data)
+    wlen = npts // 10
+    if wlen % 2 == 0:
+        wlen += 1
+    baseline = savgol_filter(trace.data, wlen, 3)
+    trace.data -= baseline
 
 
 def _process_trace(config, trace):
@@ -176,6 +213,7 @@ def _process_trace(config, trace):
             msg += 'skipping trace'
             msg = msg.format(trace_process.id, instrtype)
             raise RuntimeError(msg)
+    _remove_baseline(config, trace_process)
     filter_trace(config, trace_process)
     # Check if the trace has significant signal to noise ratio
     _check_sn_ratio(config, trace_process)

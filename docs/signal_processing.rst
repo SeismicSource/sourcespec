@@ -22,7 +22,7 @@ Trace Processing
 
 4. Traces with RMS smaller than ``rmsmin`` are skipped.
 
-5. Traces clipped more than ``clip_max_percent`` are skipped.
+5. Traces are optionally checked for clipping (see :ref:`clipping_detection`).
 
 6. Instrumental response is removed and trace transformed in its physical units
    (e.g., velocity, acceleration).
