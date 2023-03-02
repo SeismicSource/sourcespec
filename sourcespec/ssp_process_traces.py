@@ -318,7 +318,8 @@ def _add_hypo_dist_and_arrivals(config, st):
             raise RuntimeError(
                 f'{trace.id}: Unable to get P arrival time: skipping trace'
             ) from e
-        if config.wave_type[0] == 'P' and p_arrival_time < trace.stats.starttime:
+        if (config.wave_type[0] == 'P' and
+                p_arrival_time < trace.stats.starttime):
             raise RuntimeError(
                 f'{trace.id}: P-window incomplete: skipping trace'
             )
@@ -328,7 +329,8 @@ def _add_hypo_dist_and_arrivals(config, st):
             raise RuntimeError(
                 f'{trace.id}: Unable to get S arrival time: skipping trace'
             ) from e
-        if config.wave_type[0] == 'S' and s_arrival_time < trace.stats.starttime:
+        if (config.wave_type[0] == 'S' and
+                s_arrival_time < trace.stats.starttime):
             raise RuntimeError(
                 f'{trace.id}: S-window incomplete: skipping trace'
             )
