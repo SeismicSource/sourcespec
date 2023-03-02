@@ -330,18 +330,22 @@ def parse_arguments():
     subparser = parser.add_subparsers(dest='command')
     common_parser = argparse.ArgumentParser(add_help=False)
     common_parser.add_argument(
-        'infile', nargs='+', help='input file(s) in any format supported by '
+        'infile', nargs='+', help='Input file(s) in any format supported by '
         'ObsPy (e.g., miniSEED, SAC, GSE2, SU, etc.)')
     common_parser.add_argument(
+        '--traceid', '-t', help='Only process this trace ID. Trace ID can '
+        'contain wildcards (e.g., "IU.ANMO.00.BHZ", "IU.ANMO.00.*", '
+        '"IU.*.00.BHZ", etc.)')
+    common_parser.add_argument(
         '--remove_baseline', '-r', action='store_true',
-        help='remove trace baseline before computing the score',
+        help='Remove trace baseline before processing',
         default=False)
     common_parser.add_argument(
         '--debug', '-d', action='store_true',
-        help='plot trace, samples histogram, kernel density '
-        'kernel baseline model and misfit', default=False)
+        help='Plot trace, samples histogram, kernel density, and clipping '
+        'parameters', default=False)
     sp_is_clipped = subparser.add_parser(
-        'is_clipped', help='check if trace is clipped, based on counting '
+        'is_clipped', help='Check if trace is clipped, based on counting '
         'peaks in kernel density (method 1)', parents=[common_parser]
     )
     sp_is_clipped.add_argument(
@@ -353,7 +357,7 @@ def parse_arguments():
         help='Percentile of trace amplitude range (expressed as percentage) '
         'to check for clipping. Default is %(default)s%%.')
     subparser.add_parser(
-        'clipping_score', help='get trace clipping score from kernel density '
+        'clipping_score', help='Get trace clipping score from kernel density '
         '(method 2)', parents=[common_parser]
     )
     args = parser.parse_args()
@@ -374,6 +378,11 @@ def run():
             st += read(file)
         except Exception as msg:
             print(f'Error reading file {file}: {msg}')
+    if args.traceid is not None:
+        st = st.select(id=args.traceid)
+    if not st:
+        print('No traces found')
+        return
     for tr in st:
         if args.command == 'is_clipped':
             trace_clipped, properties = is_clipped(
