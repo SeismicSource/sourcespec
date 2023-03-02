@@ -16,7 +16,7 @@ Both algorithms are based on the kernel density estimation of the trace
 amplitude values, using the :class:`scipy.stats.gaussian_kde` class.
 See the documentation of this class for more details on the kernel density.
 
-The clipping detection algorithm is selected by the
+The clipping detection algorithm is selected through the
 ``clipping_detection_algorithm`` parameter in the :ref:`configuration_file`.
 The algorithm options are set via the configuration file.
 
@@ -62,6 +62,15 @@ The algorithm is based on the following steps:
 See the :func:`clipping_detection.clipping_peaks()` function for more
 details.
 
+.. figure:: imgs/WI.DSD.00.HHZ-clipping_peaks.svg
+  :alt: Example debug plot for the "Clipping Peaks" algorithm
+  :width: 700
+
+  Example debug plot for the "Clipping Peaks" algorithm. If there is at least
+  one peak in the amplitude range corresponding to the
+  ``clipping_peaks_percentile`` (yellow areas), the trace is considered
+  clipped.
+
 
 .. _clipping-score-algorithm:
 
@@ -102,3 +111,13 @@ The algorithm is based on the following steps:
 
 See the :func:`clipping_detection.clipping_score()` function for more
 details.
+
+.. figure:: imgs/WI.DSD.00.HHZ-clipping_score.svg
+  :alt: Example debug plot for the "Clipping Score" algorithm
+  :width: 700
+
+  Example debug plot for the "Clipping Score" algorithm. The score is the sum
+  of the squared weighted kernel density without the central peak (shaded
+  area), normalized by the sum of the squared full weighted kernel density
+  (green curve). The largest the peaks far from the central peak, the higher
+  the score.
