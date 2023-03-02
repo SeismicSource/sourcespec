@@ -157,8 +157,9 @@ def is_clipped(trace, sensitivity=3, clipping_percentile=10, debug=False):
     # then the signal is probably clipped or distorted
     trace_clipped = npeaks_clipped > 0
     if debug:
+        abs_max_data = max(abs(min_data), abs(max_data))
         _plot_clipping_analysis(
-            trace, max_data, density_points, density, density_weight,
+            trace, abs_max_data, density_points, density, density_weight,
             peaks=peaks, num_edge_bins=num_edge_bins,
             num_kde_bins=num_kde_bins, trace_clipped=trace_clipped)
     return trace_clipped, properties
