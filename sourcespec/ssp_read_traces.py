@@ -713,7 +713,7 @@ def _parse_hypo2000_hypo_line(line):
     return hypo
 
 
-def _parse_hypo2000_station_line(line, oldpick, orig_time):
+def _parse_hypo2000_station_line(line, oldpick, origin_time):
     if oldpick is not None:
         oldstation = oldpick.station
         oldnetwork = oldpick.network
@@ -737,7 +737,7 @@ def _parse_hypo2000_station_line(line, oldpick, orig_time):
     if not pick.phase:
         raise ValueError('Cannot read pick phase')
     seconds = float(line[37:43])
-    time = orig_time.replace(second=0, microsecond=0)
+    time = origin_time.replace(second=0, microsecond=0)
     pick.time = time + seconds
     return pick
 
