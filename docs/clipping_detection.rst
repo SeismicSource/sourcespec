@@ -98,7 +98,7 @@ The algorithm is based on the following steps:
 
 2. A kernel density estimation is computed on the trace amplitude values.
 
-3. The kernel density estimation is weightd by the distance from the
+3. The kernel density estimation is weighted by the distance from the
    zero mean amplitude value, using a parabolic function, between 1 and 5.
 
 4. Peaks are detected in the weighted kernel density estimation. The
