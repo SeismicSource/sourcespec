@@ -97,6 +97,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 ### Bugfixes
 
 - Properly ignore vertical components when `ignore_vertical` is `True`
+- Fix a bug preventing reading phase picks from HYPOINVERSE-2000 files
 - Fix for noise window not showing up in PNG trace plots in some cases
 - Fix reading velocities from NLL model (see [#20])
 - HTML report: better scrollbars for station table across all the browsers

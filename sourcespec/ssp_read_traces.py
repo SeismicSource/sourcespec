@@ -735,7 +735,7 @@ def _parse_hypo2000_station_line(line, oldpick, orig_time):
     # pick.flag = line[4:5]
     pick.phase = line[31:34].strip()
     if not pick.phase:
-        raise Exception()
+        raise ValueError('Cannot read pick phase')
     seconds = float(line[37:43])
     time = orig_time.replace(second=0, microsecond=0)
     pick.time = time + seconds
@@ -748,7 +748,7 @@ def _parse_hypo2000_file(hypo_file):
     hypo_line = False
     station_line = False
     oldpick = None
-    for line in open(hypo_file):
+    for n, line in enumerate(open(hypo_file)):
         word = line.split()
         if not word:
             continue
@@ -760,10 +760,11 @@ def _parse_hypo2000_file(hypo_file):
         if station_line:
             try:
                 pick = _parse_hypo2000_station_line(
-                    line, oldpick, hypo.orig_time)
+                    line, oldpick, hypo.origin_time)
                 oldpick = pick
                 picks.append(pick)
-            except Exception:
+            except Exception as err:
+                logger.warning(f'Error parsing line {n} in {hypo_file}: {err}')
                 continue
         if word[0] == 'YEAR':
             hypo_line = True
