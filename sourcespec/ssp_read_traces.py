@@ -75,6 +75,25 @@ def _compute_sensitivity(trace, config):
     return sensitivity
 
 
+def _add_inventory(trace, inventory):
+    """Add inventory to trace."""
+    net, sta, loc, chan = trace.id.split('.')
+    inv = (
+        inventory.select(
+            network=net, station=sta, location=loc, channel=chan)
+        or inventory.select(
+            network='XX', station='GENERIC', location='XX', channel='XXX')
+    )
+    if 'XX.GENERIC.XX.XXX' in inv.get_contents()['channels']:
+        inv = inv.copy()
+        inv.networks[0].code = net
+        inv.networks[0].stations[0].code = sta
+        inv.networks[0].stations[0].channels[0].code = chan
+        inv.networks[0].stations[0].channels[0].location_code = loc
+    # TODO: update inventory with station metadata contained in trace header
+    trace.stats.inventory = inv
+
+
 def _validate_coords(coords):
     """
     Return ``None`` if lon==lat==0 and depth==elevation==123456.
@@ -91,7 +110,7 @@ def _validate_coords(coords):
     return coords
 
 
-def _add_paz_and_coords(trace, inventory, config):
+def _add_paz_and_coords(trace, config):
     traceid = trace.get_id()
     # If we already know that traceid is skipped, raise a silent exception
     if traceid in _add_paz_and_coords.skipped:
@@ -99,6 +118,7 @@ def _add_paz_and_coords(trace, inventory, config):
     trace.stats.paz = None
     trace.stats.coords = None
     time = trace.stats.starttime
+    inventory = trace.stats.inventory
     if isinstance(inventory, Inventory):
         # check if traceid is in the inventory, otherwhise try with a
         # generic traceid
@@ -463,7 +483,8 @@ def read_traces(config):
                 continue
             _correct_traceid(trace)
             try:
-                _add_paz_and_coords(trace, inventory, config)
+                _add_inventory(trace, inventory)
+                _add_paz_and_coords(trace, config)
                 _add_instrtype(trace)
                 _add_hypocenter(trace, hypo)
                 _add_picks(trace, picks)

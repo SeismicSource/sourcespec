@@ -193,10 +193,10 @@ def read_station_metadata(path):
     :return: inventory
     :rtype: :class:`~obspy.core.inventory.inventory.Inventory`
     """
-    if path is None:
-        return None
-    logger.info('Reading station metadata...')
     inventory = Inventory()
+    if path is None:
+        return inventory
+    logger.info('Reading station metadata...')
     if os.path.isdir(path):
         filelist = [os.path.join(path, file) for file in os.listdir(path)]
     else:
@@ -216,7 +216,5 @@ def read_station_metadata(path):
                 logger.warning(msg1)
                 logger.warning(msg2)
                 continue
-    if not inventory:
-        inventory = None
     logger.info('Reading station metadata: done')
     return inventory
