@@ -456,9 +456,11 @@ def read_traces(config):
                 logger.warning('%s: Unknown channel orientation: "%s": '
                                'skipping trace' % (trace.id, orientation))
                 continue
-            if config.options.station is not None:
-                if not trace.stats.station == config.options.station:
-                    continue
+            # only use the station specified by the command line option
+            # "--station", if any
+            if (config.options.station is not None and
+                    trace.stats.station != config.options.station):
+                continue
             _correct_traceid(trace)
             try:
                 _add_paz_and_coords(trace, inventory, config)
