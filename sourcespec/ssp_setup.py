@@ -71,13 +71,11 @@ def _check_obspy_version():
     # special case for "rc" versions:
     OBSPY_VERSION[2] = OBSPY_VERSION[2].split('rc')[0]
     OBSPY_VERSION = tuple(map(int, OBSPY_VERSION))
-    try:
+    with contextlib.suppress(IndexError):
         # add half version number for development versions
         # check if there is a fourth field in version string:
         OBSPY_VERSION_STR.split('.')[3]
         OBSPY_VERSION = OBSPY_VERSION[:2] + (OBSPY_VERSION[2] + 0.5,)
-    except IndexError:
-        pass
     if OBSPY_VERSION < MIN_OBSPY_VERSION:
         msg = 'ERROR: ObsPy >= %s.%s.%s is required.' % MIN_OBSPY_VERSION
         msg += ' You have version: %s\n' % OBSPY_VERSION_STR
@@ -95,7 +93,7 @@ def _check_cartopy_version():
         cartopy_ver = tuple(map(int, cartopy.__version__.split('.')[:3]))
         if cartopy_ver < cartopy_min_ver:
             raise ImportError
-    except ImportError:
+    except ImportError as e:
         msg = (
             '\nPlease install cartopy >= {}.{}.{} to plot maps.\n'
             'How to install: '
@@ -105,10 +103,8 @@ def _check_cartopy_version():
             .format(*cartopy_min_ver)
         )
         if cartopy_ver is not None:
-            msg += (
-                'Installed cartopy version: {}.\n'.format(CARTOPY_VERSION_STR)
-            )
-        raise ImportError(msg)
+            msg += f'Installed cartopy version: {CARTOPY_VERSION_STR}.\n'
+        raise ImportError(msg) from e
 
 
 def _check_pyproj_version():
