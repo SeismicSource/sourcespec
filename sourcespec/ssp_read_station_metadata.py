@@ -19,89 +19,48 @@ from sourcespec.ssp_setup import instr_codes_vel, instr_codes_acc
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
-def _parse_poles_and_zeros_from_paz_file(lines, what='poles'):
-    """
-    Parse poles or zeros from a PAZ file.
+class PAZFile():
+    """Class to parse a PAZ file."""
+    zeros = []
+    poles = []
+    constant = 1.
 
-    :param lines: lines of the PAZ file
-    :type lines: list of str
-    :param what: 'poles' or 'zeros'
-    :type what: str
+    def __init__(self, file):
+        """
+        Parse a PAZ file.
+        :param file: path to the PAZ file
+        :type file: str
+        """
+        self.lines = enumerate(open(file, 'r'), start=1)
+        while True:
+            try:
+                self._parse_paz_file_lines()
+            except StopIteration:
+                break
+            except Exception as e:
+                raise TypeError(
+                    f'Unable to parse file "{file}" as PAZ file. '
+                    f'Error at line {self.linenum}: {e}'
+                ) from e
 
-    :return: list of poles or zeros
-    :rtype: list of complex
-    """
-    if what not in ['poles', 'zeros']:
-        msg = f'Invalid value for "what": {what}'
-        raise ValueError(msg)
-    # Change to iterator, so that we can use next()
-    lines = iter(lines)
-    poles_or_zeros = []
-    linenum = 0
-    for line in lines:
-        linenum += 1
-        try:
-            word = line.split()
-            if not word:
-                continue
-            if word[0].lower() == what:
-                nvalues = int(word[1])
-                for _ in range(nvalues):
-                    linenum += 1
-                    value = complex(*map(float, next(lines).split()))
-                    poles_or_zeros.append(value)
-        except Exception as e:
-            msg = f'Parse error at line {linenum}: {e}'
-            raise TypeError(msg) from e
-    return poles_or_zeros
-
-
-def _parse_constant_from_paz_file(lines):
-    """
-    Parse constant from a PAZ file.
-
-    :param lines: lines of the PAZ file
-    :type lines: list of str
-
-    :return: constant
-    :rtype: float
-    """
-    constant = None
-    for linenum, line in enumerate(lines):
-        try:
-            word = line.split()
-            if not word:
-                continue
-            if word[0] == 'CONSTANT':
-                constant = float(word[1])
-        except Exception as e:
-            msg = f'Parse error at line {linenum}: {e}'
-            raise TypeError(msg) from e
-    if constant is None:
-        msg = 'Cannot find a "CONSTANT" value'
-        raise TypeError(msg)
-    return constant
-
-
-def _parse_paz_file(file):
-    """
-    Parse a PAZ file.
-
-    :param file: path to the PAZ file
-    :type file: str
-
-    :return: zeros, poles, constant
-    :rtype: list of complex, list of complex, float
-    """
-    try:
-        lines = open(file, 'r').readlines()
-        poles = _parse_poles_and_zeros_from_paz_file(lines, what='poles')
-        zeros = _parse_poles_and_zeros_from_paz_file(lines, what='zeros')
-        constant = _parse_constant_from_paz_file(lines)
-    except Exception as e:
-        msg = f'Unable to parse file "{file}" as PAZ: {e}'
-        raise TypeError(msg) from e
-    return zeros, poles, constant
+    def _parse_paz_file_lines(self):
+        """Parse a line or a set of lines of a PAZ file."""
+        self.linenum, line = next(self.lines)
+        word = line.split()
+        if not word:
+            return
+        what = word[0].lower()
+        if what in ['poles', 'zeros']:
+            nvalues = int(word[1])
+            poles_zeros = []
+            for _ in range(nvalues):
+                self.linenum, line = next(self.lines)
+                value = complex(*map(float, line.split()))
+                poles_zeros.append(value)
+                self.__setattr__(what, poles_zeros)
+        elif what == 'constant':
+            constant = float(word[1])
+            self.__setattr__(what, constant)
 
 
 def _find_input_units(trace_id):
@@ -168,11 +127,11 @@ def _read_paz_file(file):
         # in the config file, we will change this later
         input_units = 'M/S'
         logger.info(f'Using generic trace ID for PAZ file {file}')
-    zeros, poles, constant = _parse_paz_file(file)
+    paz = PAZFile(file)
     resp = Response().from_paz(
-        zeros, poles, stage_gain=1,
+        paz.zeros, paz.poles, stage_gain=1,
         input_units=input_units, output_units='COUNTS')
-    resp.instrument_sensitivity.value = constant
+    resp.instrument_sensitivity.value = paz.constant
     channel = Channel(
         code=chan, location_code=loc, response=resp,
         latitude=0, longitude=0, elevation=123456, depth=123456)
