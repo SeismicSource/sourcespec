@@ -116,17 +116,20 @@ def _read_paz_file(file):
     try:
         # check if trace_id is an actual trace ID
         net, sta, loc, chan = trace_id.split('.')
-        input_units = _find_input_units(trace_id)
     except ValueError:
         # otherwhise, let's use this PAZ for a generic trace ID
         net = 'XX'
         sta = 'GENERIC'
         loc = 'XX'
         chan = 'XXX'
-        # We use M/S as default input units, if "trace_units" is specified
-        # in the config file, we will change this later
-        input_units = 'M/S'
         logger.info(f'Using generic trace ID for PAZ file {file}')
+    try:
+        input_units = _find_input_units(trace_id)
+    except ValueError:
+        input_units = 'M/S'
+        logger.info(
+            f'Cannot find input units for trace ID "{trace_id}", '
+            'using M/S as default.')
     paz = PAZFile(file)
     resp = Response().from_paz(
         paz.zeros, paz.poles, stage_gain=1,
