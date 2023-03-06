@@ -34,7 +34,8 @@ from obspy.core.inventory import Inventory
 from sourcespec.ssp_setup import (
     ssp_exit, instr_codes_vel, instr_codes_acc, traceid_map)
 from sourcespec.ssp_util import get_vel
-from sourcespec.ssp_read_station_metadata import read_station_metadata
+from sourcespec.ssp_read_station_metadata import (
+    read_station_metadata, PAZ)
 from sourcespec.ssp_read_event_metadata import (
     parse_qml, parse_hypo_file, parse_hypo71_picks, Pick)
 logger = logging.getLogger(__name__.split('.')[-1])
@@ -63,19 +64,18 @@ def _compute_sensitivity(trace, config):
     if re.search(r'[a-zA-Z]', inp):
         try:
             namespace = trace.stats.sac
-        except Exception:
-            raise Exception(
-                '{}: trace must be in SAC format'.format(trace.id))
+        except Exception as e:
+            raise TypeError(f'{trace.id}: trace must be in SAC format') from e
     try:
         sensitivity = eval(inp, {}, namespace)
     except NameError as msg:
         hdr_field = str(msg).split()[1]
-        logger.error('SAC header field {} does not exist'.format(hdr_field))
+        logger.error(f'SAC header field {hdr_field} does not exist')
         ssp_exit(1)
     return sensitivity
 
 
-def _add_inventory(trace, inventory):
+def _add_inventory(trace, inventory, config):
     """Add inventory to trace."""
     net, sta, loc, chan = trace.id.split('.')
     inv = (
@@ -90,7 +90,30 @@ def _add_inventory(trace, inventory):
         inv.networks[0].stations[0].code = sta
         inv.networks[0].stations[0].channels[0].code = chan
         inv.networks[0].stations[0].channels[0].location_code = loc
-    # TODO: update inventory with station metadata contained in trace header
+    # If a "sensitivity" config option is provided, override the Inventory
+    # object with a new one constructed from the sensitivity value
+    if config.sensitivity is not None:
+        # save coordinates from the inventory, if available
+        coords = None
+        with contextlib.suppress(Exception):
+            coords = inv.get_coordinates(trace.id, trace.stats.starttime)
+        paz = PAZ()
+        paz.seedID = trace.id
+        paz.sensitivity = _compute_sensitivity(trace, config)
+        paz.poles = []
+        paz.zeros = []
+        if inv:
+            logger.warning(
+                f'Overriding response for {trace.id} with constant '
+                f'sensitivity {paz.sensitivity}')
+        inv = paz.to_inventory()
+        # restore coordinates, if available
+        if coords is not None:
+            chan = inv.networks[0].stations[0].channels[0]
+            chan.latitude = coords['latitude']
+            chan.longitude = coords['longitude']
+            chan.elevation = coords['elevation']
+            chan.depth = coords['local_depth']
     trace.stats.inventory = inv
 
 
@@ -483,7 +506,7 @@ def read_traces(config):
                 continue
             _correct_traceid(trace)
             try:
-                _add_inventory(trace, inventory)
+                _add_inventory(trace, inventory, config)
                 _add_paz_and_coords(trace, config)
                 _add_instrtype(trace)
                 _add_hypocenter(trace, hypo)

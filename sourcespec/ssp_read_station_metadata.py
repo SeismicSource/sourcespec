@@ -19,18 +19,64 @@ from sourcespec.ssp_setup import instr_codes_vel, instr_codes_acc
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
-class PAZFile():
-    """Class to parse a PAZ file."""
+class PAZ():
+    """Instrument response defined through poles and zeros."""
     zeros = []
     poles = []
-    constant = 1.
+    sensitivity = 1.
+    _seedID = None
+    network = None
+    station = None
+    location = None
+    channel = None
+    input_units = None
 
-    def __init__(self, file):
+    def __init__(self, file=None):
         """
-        Parse a PAZ file.
+        Init PAZ object.
+
         :param file: path to the PAZ file
         :type file: str
         """
+        if file is not None:
+            self._read(file)
+
+    @property
+    def seedID(self):
+        return self._seedID
+
+    @seedID.setter
+    def seedID(self, seedID):
+        try:
+            self.network, self.station, self.location, self.channel =\
+                seedID.split('.')
+        except ValueError as e:
+            raise ValueError(
+                f'Invalid seedID "{seedID}". '
+                'SeedID must be in the form NET.STA.LOC.CHAN'
+            ) from e
+        self._seedID = seedID
+        self._guess_input_units()
+
+    def _guess_input_units(self):
+        """
+        Guess the input units from the seedID.
+        """
+        if len(self.channel) < 3:
+            return
+        instr_code = self.channel[1]
+        self.input_units = None
+        if instr_code in instr_codes_vel:
+            band_code = self.channel[0]
+            # SEED standard band codes from higher to lower sampling rate
+            # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming
+            if band_code in ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'S']:
+                self.input_units = 'M/S'
+        elif instr_code in instr_codes_acc:
+            self.input_units = 'M/S**2'
+
+    def _read(self, file):
+        """Read a PAZ file."""
         self.lines = enumerate(open(file, 'r'), start=1)
         while True:
             try:
@@ -57,40 +103,32 @@ class PAZFile():
                 self.linenum, line = next(self.lines)
                 value = complex(*map(float, line.split()))
                 poles_zeros.append(value)
-                self.__setattr__(what, poles_zeros)
+            self.__setattr__(what, poles_zeros)
         elif what == 'constant':
-            constant = float(word[1])
-            self.__setattr__(what, constant)
+            self.sensitivity = float(word[1])
 
-
-def _find_input_units(trace_id):
-    """
-    Find the input units of a trace, based on its trace ID.
-
-    :param traceid: trace ID
-    :type traceid: str
-    """
-    chan = trace_id.split('.')[-1]
-    if len(chan) < 3:
-        raise ValueError(f'Cannot find input units for trace ID "{trace_id}"')
-    band_code = chan[0]
-    instr_code = chan[1]
-    input_units = None
-    if instr_code in instr_codes_vel:
-        # SEED standard band codes from higher to lower sampling rate
-        # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
-        if band_code in ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'S']:
-            input_units = 'M/S'
-    elif instr_code in instr_codes_acc:
-        input_units = 'M/S**2'
-    if input_units is None:
-        raise ValueError(f'Cannot find input units for trace ID "{trace_id}"')
-    return input_units
+    def to_inventory(self):
+        """
+        Convert PAZ object to an Inventory object.
+        """
+        resp = Response().from_paz(
+            self.zeros, self.poles, stage_gain=1,
+            input_units=self.input_units, output_units='COUNTS')
+        resp.instrument_sensitivity.value = self.sensitivity
+        channel = Channel(
+            code=self.channel, location_code=self.location, response=resp,
+            latitude=0, longitude=0, elevation=123456, depth=123456)
+        station = Station(
+            code=self.station, channels=[channel, ],
+            latitude=0, longitude=0, elevation=123456)
+        network = Network(
+            code=self.network, stations=[station, ])
+        return Inventory(networks=[network, ])
 
 
 def _read_paz_file(file):
     """
-    Read a paz file into an ``Inventory``object.
+    Read a paz file into an ``Inventory`` object.
 
     :note:
     - paz file must have ".pz" or ".paz" suffix (or no suffix)
@@ -113,36 +151,18 @@ def _read_paz_file(file):
     # we assume that the last four fields of bname
     # (separated by '.') are the trace_id
     trace_id = '.'.join(bname.split('.')[-4:])
+    paz = PAZ(file)
     try:
-        # check if trace_id is an actual trace ID
-        net, sta, loc, chan = trace_id.split('.')
+        paz.seedID = trace_id
     except ValueError:
-        # otherwhise, let's use this PAZ for a generic trace ID
-        net = 'XX'
-        sta = 'GENERIC'
-        loc = 'XX'
-        chan = 'XXX'
+        paz.seedID = 'XX.GENERIC.XX.XXX'
         logger.info(f'Using generic trace ID for PAZ file {file}')
-    try:
-        input_units = _find_input_units(trace_id)
-    except ValueError:
-        input_units = 'M/S'
-        logger.info(
-            f'Cannot find input units for trace ID "{trace_id}", '
-            'using M/S as default.')
-    paz = PAZFile(file)
-    resp = Response().from_paz(
-        paz.zeros, paz.poles, stage_gain=1,
-        input_units=input_units, output_units='COUNTS')
-    resp.instrument_sensitivity.value = paz.constant
-    channel = Channel(
-        code=chan, location_code=loc, response=resp,
-        latitude=0, longitude=0, elevation=123456, depth=123456)
-    station = Station(
-        code=sta, channels=[channel, ],
-        latitude=0, longitude=0, elevation=123456)
-    network = Network(code=net, stations=[station, ])
-    return Inventory(networks=[network, ])
+    if paz.input_units is None:
+        paz.input_units = 'M/S'
+        logger.warning(
+            f'Cannot find input units for ID "{paz.seedID}". '
+            'Defaulting to M/S')
+    return paz.to_inventory()
 
 
 def read_station_metadata(path):
