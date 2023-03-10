@@ -30,7 +30,6 @@ from obspy import read
 from obspy.core import Stream
 from obspy.core.util import AttribDict
 from obspy.io.sac import attach_paz
-from obspy.core.inventory import Inventory
 from sourcespec.ssp_setup import (
     ssp_exit, instr_codes_vel, instr_codes_acc, traceid_map)
 from sourcespec.ssp_util import get_vel
@@ -117,113 +116,64 @@ def _add_inventory(trace, inventory, config):
     trace.stats.inventory = inv
 
 
-def _validate_coords(coords):
-    """
-    Return ``None`` if lon==lat==0 and depth==elevation==123456.
-
-    Those values are given when reading an ``Inventory`` object from a
-    RESP or PAZ file.
-    """
-    lon = coords.longitude
-    lat = coords.latitude
-    depth = coords.local_depth
-    elevation = coords.elevation
-    if lon == lat == 0 and depth == elevation == 123456:
-        return None
-    return coords
-
-
-def _add_paz_and_coords(trace, config):
-    traceid = trace.get_id()
+def _add_coords(trace):
+    """Add coordinates to trace."""
     # If we already know that traceid is skipped, raise a silent exception
-    if traceid in _add_paz_and_coords.skipped:
-        raise Exception()
-    trace.stats.paz = None
-    trace.stats.coords = None
-    time = trace.stats.starttime
-    inventory = trace.stats.inventory
-    if isinstance(inventory, Inventory):
-        # check if traceid is in the inventory, otherwhise try with a
-        # generic traceid
-        inv_channels = inventory.get_contents()['channels']
-        if traceid in inv_channels:
-            inv_traceid = traceid
-        else:
-            inv_traceid = 'XX.GENERIC.XX.XXX'
-        try:
-            with warnings.catch_warnings(record=True) as warns:
-                # get_sacpz() can issue warnings on more than one PAZ found,
-                # so let's catch those warnings and log them properly
-                # warnings.filterwarnings('ignore', message='Found more than')
-                # warnings.filterwarnings('ignore', message='More than')
-                sacpz = inventory.get_response(inv_traceid, time).get_sacpz()
-                for w in warns:
-                    msg = str(w.message)
-                    logger.warning(
-                        '{}: {} Time: {}'.format(traceid, msg, time))
-            attach_paz(trace, io.StringIO(sacpz))
-            paz = trace.stats.paz
-        except Exception as msg:
-            logger.warning('{}: {} Time: {}'.format(traceid, msg, time))
-            pass
-        try:
-            coords = AttribDict(inventory.get_coordinates(traceid, time))
-            coords = _validate_coords(coords)
-        except Exception as msg:
-            pass
-    try:
-        trace.stats.paz = paz
-    except Exception:
-        pass
-    try:
-        # elevation is in meters
-        coords.elevation /= 1000.
-        trace.stats.coords = coords
-    except Exception:
-        pass
-    # If a "sensitivity" config option is provided, override the paz computed
-    # from the "Inventory" object (if any)
-    if config.sensitivity is not None:
-        # instrument constants
-        paz = AttribDict()
-        paz.sensitivity = _compute_sensitivity(trace, config)
-        paz.poles = []
-        paz.zeros = []
-        paz.gain = 1
-        trace.stats.paz = paz
+    if trace.id in _add_coords.skipped:
+        raise RuntimeError()
+    coords = None
+    with contextlib.suppress(Exception):
+        coords = AttribDict(
+            trace.stats.inventory.get_coordinates(
+                trace.id, trace.stats.starttime))
+        coords = (
+            None if (
+                coords.longitude == 0 and coords.latitude == 0 and
+                coords.local_depth == 123456 and coords.elevation == 123456)
+            else coords)
     # If we still don't have trace coordinates,
     # we try to get them from SAC header
-    if trace.stats.coords is None:
+    if coords is None:
         try:
             stla = trace.stats.sac.stla
             stlo = trace.stats.sac.stlo
-            try:
-                stel = trace.stats.sac.stel
-                # elevation is in meters in SAC header:
-                stel /= 1000.
-            except AttributeError:
-                stel = 0.
-            coords = AttribDict()
-            coords.elevation = stel
-            coords.latitude = stla
-            coords.longitude = stlo
-            trace.stats.coords = coords
-        except AttributeError:
-            pass
-    # Still no coords? Raise an exception
-    if trace.stats.coords is None:
-        _add_paz_and_coords.skipped.append(traceid)
-        raise Exception(
-            '{}: could not find coords for trace: skipping trace'.format(
-                traceid))
-    if trace.stats.coords.latitude == trace.stats.coords.longitude == 0:
+            stel = trace.stats.sac.get('stel', 0.)
+            coords = AttribDict(latitude=stla, longitude=stlo, elevation=stel)
+            logger.info(
+                f'{trace.id}: station coordinates read from SAC header')
+        except Exception as e:
+            _add_coords.skipped.append(trace.id)
+            raise RuntimeError(
+                f'{trace.id}: could not find coords for trace: skipping trace'
+            ) from e
+    if coords.latitude == coords.longitude == 0:
         logger.warning(
-            '{}: trace has latitude and longitude equal to zero!'.format(
-                traceid))
-
-
+            f'{trace.id}: trace has latitude and longitude equal to zero!')
+    # elevation is in meters in StationXML or SAC header
+    coords.elevation /= 1e3
+    trace.stats.coords = coords
 # list to keep track of skipped traces
-_add_paz_and_coords.skipped = list()
+_add_coords.skipped = []  #noqa
+
+
+def _add_paz(trace):
+    """Add PAZ to trace."""
+    traceid = trace.id
+    time = trace.stats.starttime
+    try:
+        with warnings.catch_warnings(record=True) as warns:
+            # get_sacpz() can issue warnings on more than one PAZ found,
+            # so let's catch those warnings and log them properly
+            # warnings.filterwarnings('ignore', message='Found more than')
+            # warnings.filterwarnings('ignore', message='More than')
+            inventory = trace.stats.inventory
+            sacpz = inventory.get_response(traceid, time).get_sacpz()
+            for w in warns:
+                msg = str(w.message)
+                logger.warning(f'{traceid}: {msg} Time: {time}')
+        attach_paz(trace, io.StringIO(sacpz))
+    except Exception as msg:
+        logger.warning(f'{traceid}: {msg} Time: {time}')
 
 
 def _add_instrtype(trace):
@@ -507,7 +457,8 @@ def read_traces(config):
             _correct_traceid(trace)
             try:
                 _add_inventory(trace, inventory, config)
-                _add_paz_and_coords(trace, config)
+                _add_coords(trace)
+                _add_paz(trace)
                 _add_instrtype(trace)
                 _add_hypocenter(trace, hypo)
                 _add_picks(trace, picks)
