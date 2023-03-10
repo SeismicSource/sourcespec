@@ -179,17 +179,28 @@ def _add_paz(trace):
         logger.warning(f'{traceid}: {msg} Time: {time}')
 
 
+# handpicked list of instruments, instrtypes and band/instr codes,
+# mainly for ISNet compatibility
+instruments = {
+    'CMG-5T': {'instrtype': 'acc', 'band_code': 'H', 'instr_code': 'N'},
+    'CMG-40T': {'instrtype': 'broadb', 'band_code': 'H', 'instr_code': 'H'},
+    'TRILLIUM': {'instrtype': 'broadb', 'band_code': 'H', 'instr_code': 'H'},
+    'S13J': {'instrtype': 'shortp', 'band_code': 'S', 'instr_code': 'H'},
+    'KS2000ED': {'instrtype': 'shortp', 'band_code': 'S', 'instr_code': 'H'},
+}
+
+
 def _add_instrtype(trace):
+    """Add instrtype to trace."""
     instrtype = None
+    band_code = None
+    instr_code = None
     trace.stats.instrtype = None
     # First, try to get the instrtype from channel name
     chan = trace.stats.channel
     if len(chan) > 2:
         band_code = chan[0]
         instr_code = chan[1]
-    else:
-        band_code = None
-        instr_code = None
     if instr_code in instr_codes_vel:
         # SEED standard band codes from higher to lower sampling rate
         # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
@@ -201,31 +212,17 @@ def _add_instrtype(trace):
         instrtype = 'acc'
     # If, not possible, let's see if there is an instrument
     # name in "kinst" (ISNet format).
-    # In this case, we define band and instrument codes
-    # a posteriori.
+    # In this case, we define band and instrument codes a posteriori.
     if instrtype is None:
         try:
-            instr = trace.stats.sac.kinst
-            if 'CMG-5T' in instr:
-                instrtype = 'acc'
-                band_code = 'H'
-                instr_code = 'N'
-            elif 'TRILLIUM' or 'CMG-40T' in instr:
-                instrtype = 'broadb'
-                band_code = 'H'
-                instr_code = 'H'
-            elif 'S13J' in instr:
-                instrtype = 'shortp'
-                band_code = 'S'
-                instr_code = 'H'
-            elif 'KS2000ED' in instr:
-                instrtype = 'shortp'
-                band_code = 'S'
-                instr_code = 'H'
-            else:
-                return
-        except AttributeError:
-            return
+            codes = instruments[trace.stats.sac.kinst]
+            instrtype = codes['instrtype']
+            band_code = codes['band_code']
+            instr_code = codes['instr_code']
+        except AttributeError as e:
+            raise RuntimeError(
+                f'{trace.id}: cannot find instrtype for trace: skipping trace'
+            ) from e
         orientation = trace.stats.channel[-1]
         trace.stats.channel = ''.join((band_code, instr_code, orientation))
     trace.stats.instrtype = instrtype
@@ -459,10 +456,10 @@ def read_traces(config):
                 continue
             _correct_traceid(trace)
             try:
+                _add_instrtype(trace)
                 _add_inventory(trace, inventory, config)
                 _add_coords(trace)
                 _add_paz(trace)
-                _add_instrtype(trace)
                 _add_hypocenter(trace, hypo)
                 _add_picks(trace, picks)
             except Exception as err:
