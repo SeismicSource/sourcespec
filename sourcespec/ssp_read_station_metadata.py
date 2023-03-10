@@ -41,6 +41,15 @@ class PAZ():
         if file is not None:
             self._read(file)
 
+    def __str__(self):
+        return (
+            f'PAZ: {self.seedID}'
+            f'  zeros: {self.zeros}'
+            f'  poles: {self.poles}'
+            f'  sensitivity: {self.sensitivity}'
+            f'  input_units: {self.input_units}'
+        )
+
     @property
     def seedID(self):
         return self._seedID
@@ -68,7 +77,7 @@ class PAZ():
         self.input_units = None
         if instr_code in instr_codes_vel:
             band_code = self.channel[0]
-            # SEED standard band codes from higher to lower sampling rate
+            # SEED standard band codes for velocity channels
             # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming
             if band_code in ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'S']:
                 self.input_units = 'M/S'
