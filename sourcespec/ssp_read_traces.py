@@ -172,6 +172,9 @@ def _add_paz(trace):
                 msg = str(w.message)
                 logger.warning(f'{traceid}: {msg} Time: {time}')
         attach_paz(trace, io.StringIO(sacpz))
+        sens = trace.stats.paz.sensitivity
+        trace.stats.paz.sensitivity = trace.stats.paz.gain
+        trace.stats.paz.gain = sens
     except Exception as msg:
         logger.warning(f'{traceid}: {msg} Time: {time}')
 
