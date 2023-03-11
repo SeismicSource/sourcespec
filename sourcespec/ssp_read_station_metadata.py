@@ -121,7 +121,7 @@ class PAZ():
         Convert PAZ object to an Inventory object.
         """
         resp = Response().from_paz(
-            self.zeros, self.poles, stage_gain=1,
+            self.zeros, self.poles, stage_gain=self.sensitivity,
             input_units=self.input_units, output_units='COUNTS')
         resp.instrument_sensitivity.value = self.sensitivity
         channel = Channel(
