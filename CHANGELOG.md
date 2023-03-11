@@ -80,6 +80,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 ### Config file
 
+- Removed `sensitivity_only` option from `correct_instrumental_response`
 - Removed config parameter: `Mw_0_variability`
 - Removed config parameter: `clip_max_percent`
 - New config parameter: `remove_baseline`

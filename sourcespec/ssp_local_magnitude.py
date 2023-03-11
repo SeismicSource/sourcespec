@@ -110,8 +110,8 @@ def _process_trace(config, tr, t0, t1):
     freqmax = config.ml_bp_freqmax
     # ...remove response...
     pre_filt = (freqmin, freqmin*1.1, freqmax*0.9, freqmax)
-    remove_instr_response(
-        tr_process, config.correct_instrumental_response, pre_filt)
+    if config.correct_instrumental_response:
+        remove_instr_response(tr_process, pre_filt)
     # ...filter
     tr_process.filter(type='bandpass', freqmin=freqmin, freqmax=freqmax)
     # Convert to Wood-Anderson
