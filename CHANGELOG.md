@@ -18,6 +18,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
   stations
 - Command line option `--station_metadata` for overriding the config file
   parameter with the same name (see pull request [#16])
+- Removed command line option `--no-response` for avoiding removing instrument
+  response (use the config option `correct_instrumental_response` instead)
 - Logscale for boxplots, if parameters span a large interval
   (see pull request [#15])
 
