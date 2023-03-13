@@ -12,7 +12,6 @@ Utility functions for sourcespec.
 import os
 from glob import glob
 import logging
-import warnings
 import math
 import numpy as np
 from obspy.signal.invsim import cosine_taper as _cos_taper
