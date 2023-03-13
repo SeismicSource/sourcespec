@@ -18,10 +18,8 @@ Read traces in multiple formats of data and metadata.
 
 import sys
 import os
-import io
 import re
 import logging
-import warnings
 import shutil
 import tarfile
 import tempfile
@@ -29,7 +27,6 @@ import contextlib
 from obspy import read
 from obspy.core import Stream
 from obspy.core.util import AttribDict
-from obspy.io.sac import attach_paz
 from sourcespec.ssp_setup import (
     ssp_exit, instr_codes_vel, instr_codes_acc, traceid_map)
 from sourcespec.ssp_util import get_vel
@@ -154,29 +151,6 @@ def _add_coords(trace):
     trace.stats.coords = coords
 # list to keep track of skipped traces
 _add_coords.skipped = []  #noqa
-
-
-def _add_paz(trace):
-    """Add PAZ to trace."""
-    traceid = trace.id
-    time = trace.stats.starttime
-    try:
-        with warnings.catch_warnings(record=True) as warns:
-            # get_sacpz() can issue warnings on more than one PAZ found,
-            # so let's catch those warnings and log them properly
-            # warnings.filterwarnings('ignore', message='Found more than')
-            # warnings.filterwarnings('ignore', message='More than')
-            inventory = trace.stats.inventory
-            sacpz = inventory.get_response(traceid, time).get_sacpz()
-            for w in warns:
-                msg = str(w.message)
-                logger.warning(f'{traceid}: {msg} Time: {time}')
-        attach_paz(trace, io.StringIO(sacpz))
-        sens = trace.stats.paz.sensitivity
-        trace.stats.paz.sensitivity = trace.stats.paz.gain
-        trace.stats.paz.gain = sens
-    except Exception as msg:
-        logger.warning(f'{traceid}: {msg} Time: {time}')
 
 
 # handpicked list of instruments, instrtypes and band/instr codes,
@@ -459,7 +433,6 @@ def read_traces(config):
                 _add_instrtype(trace)
                 _add_inventory(trace, inventory, config)
                 _add_coords(trace)
-                _add_paz(trace)
                 _add_hypocenter(trace, hypo)
                 _add_picks(trace, picks)
             except Exception as err:
