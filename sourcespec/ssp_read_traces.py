@@ -50,6 +50,56 @@ def _correct_traceid(trace):
         trace.stats.channel = chan
 
 
+# handpicked list of instruments, instrtypes and band/instr codes,
+# mainly for ISNet compatibility
+instruments = {
+    'CMG-5T': {'instrtype': 'acc', 'band_code': 'H', 'instr_code': 'N'},
+    'CMG-40T': {'instrtype': 'broadb', 'band_code': 'H', 'instr_code': 'H'},
+    'TRILLIUM': {'instrtype': 'broadb', 'band_code': 'H', 'instr_code': 'H'},
+    'S13J': {'instrtype': 'shortp', 'band_code': 'S', 'instr_code': 'H'},
+    'KS2000ED': {'instrtype': 'shortp', 'band_code': 'S', 'instr_code': 'H'},
+}
+
+
+def _add_instrtype(trace):
+    """Add instrtype to trace."""
+    instrtype = None
+    band_code = None
+    instr_code = None
+    trace.stats.instrtype = None
+    # First, try to get the instrtype from channel name
+    chan = trace.stats.channel
+    if len(chan) > 2:
+        band_code = chan[0]
+        instr_code = chan[1]
+    if instr_code in instr_codes_vel:
+        # SEED standard band codes from higher to lower sampling rate
+        # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
+        if band_code in ['G', 'D', 'E', 'S']:
+            instrtype = 'shortp'
+        if band_code in ['F', 'C', 'H', 'B']:
+            instrtype = 'broadb'
+    if instr_code in instr_codes_acc:
+        instrtype = 'acc'
+    # If, not possible, let's see if there is an instrument
+    # name in "kinst" (ISNet format).
+    # In this case, we define band and instrument codes a posteriori.
+    if instrtype is None:
+        try:
+            codes = instruments[trace.stats.sac.kinst]
+            instrtype = codes['instrtype']
+            band_code = codes['band_code']
+            instr_code = codes['instr_code']
+        except AttributeError as e:
+            raise RuntimeError(
+                f'{trace.id}: cannot find instrtype for trace: skipping trace'
+            ) from e
+        orientation = trace.stats.channel[-1]
+        trace.stats.channel = ''.join((band_code, instr_code, orientation))
+    trace.stats.instrtype = instrtype
+    trace.stats.info = f'{trace.id} {trace.stats.instrtype}'
+
+
 def _compute_sensitivity(trace, config):
     # Securize the string before calling eval()
     # see https://stackoverflow.com/a/25437733/2021880
@@ -172,56 +222,6 @@ def _add_coords(trace):
     trace.stats.coords = coords
 # list to keep track of skipped traces
 _add_coords.skipped = []  #noqa
-
-
-# handpicked list of instruments, instrtypes and band/instr codes,
-# mainly for ISNet compatibility
-instruments = {
-    'CMG-5T': {'instrtype': 'acc', 'band_code': 'H', 'instr_code': 'N'},
-    'CMG-40T': {'instrtype': 'broadb', 'band_code': 'H', 'instr_code': 'H'},
-    'TRILLIUM': {'instrtype': 'broadb', 'band_code': 'H', 'instr_code': 'H'},
-    'S13J': {'instrtype': 'shortp', 'band_code': 'S', 'instr_code': 'H'},
-    'KS2000ED': {'instrtype': 'shortp', 'band_code': 'S', 'instr_code': 'H'},
-}
-
-
-def _add_instrtype(trace):
-    """Add instrtype to trace."""
-    instrtype = None
-    band_code = None
-    instr_code = None
-    trace.stats.instrtype = None
-    # First, try to get the instrtype from channel name
-    chan = trace.stats.channel
-    if len(chan) > 2:
-        band_code = chan[0]
-        instr_code = chan[1]
-    if instr_code in instr_codes_vel:
-        # SEED standard band codes from higher to lower sampling rate
-        # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
-        if band_code in ['G', 'D', 'E', 'S']:
-            instrtype = 'shortp'
-        if band_code in ['F', 'C', 'H', 'B']:
-            instrtype = 'broadb'
-    if instr_code in instr_codes_acc:
-        instrtype = 'acc'
-    # If, not possible, let's see if there is an instrument
-    # name in "kinst" (ISNet format).
-    # In this case, we define band and instrument codes a posteriori.
-    if instrtype is None:
-        try:
-            codes = instruments[trace.stats.sac.kinst]
-            instrtype = codes['instrtype']
-            band_code = codes['band_code']
-            instr_code = codes['instr_code']
-        except AttributeError as e:
-            raise RuntimeError(
-                f'{trace.id}: cannot find instrtype for trace: skipping trace'
-            ) from e
-        orientation = trace.stats.channel[-1]
-        trace.stats.channel = ''.join((band_code, instr_code, orientation))
-    trace.stats.instrtype = instrtype
-    trace.stats.info = f'{trace.id} {trace.stats.instrtype}'
 
 
 def _add_hypocenter(trace, hypo):
