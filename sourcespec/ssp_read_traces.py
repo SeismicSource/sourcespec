@@ -289,36 +289,34 @@ def _add_hypocenter(trace, hypo):
 
 
 def _get_picks_from_SAC(trace):
+    """Get picks from SAC header."""
+    try:
+        sac_hdr = trace.stats.sac
+    except AttributeError as e:
+        raise RuntimeError(
+            f'{trace.id}: not a SAC trace: cannot get picks from header'
+        ) from e
     trace_picks = []
-    station = trace.stats.station
-    fields = ('a', 't0', 't1', 't2', 't3', 't4',
-              't5', 't6', 't7', 't8', 't9')
-    times = []
-    labels = []
-    for key in fields:
+    pick_fields = (
+        'a', 't0', 't1', 't2', 't3', 't4',
+        't5', 't6', 't7', 't8', 't9')
+    for field in pick_fields:
         try:
-            times.append(trace.stats.sac[key])
+            time = sac_hdr[field]
         except KeyError:
-            times.append(None)
-        # now look at labels (ka, kt0, ...)
-        key = 'k' + key
-        try:
-            labels.append(trace.stats.sac[key].strip())
-        except KeyError:
-            labels.append(None)
-    for time, label, field in zip(times, labels, fields):
-        if time is None:
             continue
         pick = Pick()
-        pick.station = station
-        begin = trace.stats.sac.b
+        pick.station = trace.stats.station
+        begin = sac_hdr['b']
         pick.time = trace.stats.starttime + time - begin
-        if label is not None and len(label) == 4:
+        # now look at labels (ka, kt0, ...)
+        try:
+            label = sac_hdr[f'k{field}'].strip()
             pick.flag = label[0]
             pick.phase = label[1]
             pick.polarity = label[2]
             pick.quality = label[3]
-        else:
+        except Exception:
             if field == 'a':
                 pick.phase = 'P'
             elif field == 't0':
@@ -330,44 +328,40 @@ def _get_picks_from_SAC(trace):
 
 
 def _add_picks(trace, picks):
+    """Add picks to trace."""
     trace_picks = []
-    station = trace.stats.station
-    if picks is None:
-        # try to get picks from SAC header
-        if trace.stats._format == 'SAC':
-            trace_picks = _get_picks_from_SAC(trace)
-    else:
+    with contextlib.suppress(Exception):
+        trace_picks = _get_picks_from_SAC(trace)
+    if picks is not None:
         for pick in picks:
-            if pick.station == station:
+            if pick.station == trace.stats.station:
                 trace_picks.append(pick)
     trace.stats.picks = trace_picks
     # Create empty dicts for arrivals, travel_times and takeoff angles.
     # They will be used later.
-    trace.stats.arrivals = dict()
-    trace.stats.travel_times = dict()
-    trace.stats.takeoff_angles = dict()
+    trace.stats.arrivals = {}
+    trace.stats.travel_times = {}
+    trace.stats.takeoff_angles = {}
 
 
 def _complete_picks(st):
     """Add component-specific picks to all components."""
-    for station in set(tr.stats.station for tr in st):
+    for station in {tr.stats.station for tr in st}:
         st_sel = st.select(station=station)
         # 'code' is band+instrument code
-        for code in set(tr.stats.channel[:-1] for tr in st_sel):
-            st_sel2 = st_sel.select(channel=code + '?')
-            # Select default P and S picks as the first in list
-            all_picks = [pick for tr in st_sel2 for pick in tr.stats.picks]
-            default_P_pick = [pick for pick in all_picks
-                              if pick.phase == 'P'][0:1]
-            default_S_pick = [pick for pick in all_picks
-                              if pick.phase == 'S'][0:1]
+        for code in {tr.stats.channel[:-1] for tr in st_sel}:
+            st_sel2 = st_sel.select(channel=f'{code}?')
+            all_picks = [p for tr in st_sel2 for p in tr.stats.picks]
+            all_P_picks = [p for p in all_picks if p.phase == 'P']
+            all_S_picks = [p for p in all_picks if p.phase == 'S']
+            # Select default P and S picks as the first in list (or empty list)
+            default_P_pick = all_P_picks[:1]
+            default_S_pick = all_S_picks[:1]
             for tr in st_sel2:
                 # Attribute default picks to components without picks
-                if len([pick for pick in tr.stats.picks
-                        if pick.phase == 'P']) == 0:
+                if not [p for p in tr.stats.picks if p.phase == 'P']:
                     tr.stats.picks += default_P_pick
-                if len([pick for pick in tr.stats.picks
-                        if pick.phase == 'S']) == 0:
+                if not [p for p in tr.stats.picks if p.phase == 'S']:
                     tr.stats.picks += default_S_pick
 # -----------------------------------------------------------------------------
 
