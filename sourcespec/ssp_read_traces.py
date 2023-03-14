@@ -92,7 +92,14 @@ def _add_instrtype(trace):
             instr_code = codes['instr_code']
         except AttributeError as e:
             raise RuntimeError(
-                f'{trace.id}: cannot find instrtype for trace: skipping trace'
+                f'{trace.id}: cannot find instrtype for trace: '
+                'missing SAC header field "kinst": skipping trace'
+            ) from e
+        except KeyError as e:
+            raise RuntimeError(
+                f'{trace.id}: cannot find instrtype for trace: '
+                f'unknown instrument "{trace.stats.sac.kinst}": '
+                'skipping trace'
             ) from e
         orientation = trace.stats.channel[-1]
         trace.stats.channel = ''.join((band_code, instr_code, orientation))
