@@ -113,6 +113,27 @@ def _add_inventory(trace, inventory, config):
     trace.stats.inventory = inv
 
 
+def _check_instrtype(trace):
+    """Check if instrument type is consistent with units in inventory."""
+    inv = trace.stats.inventory
+    instrtype = trace.stats.instrtype
+    new_instrtype = None
+    units = inv.get_response(trace.id, trace.stats.starttime).\
+        instrument_sensitivity.input_units
+    if units.lower() == 'm' and trace.stats.instrtype != 'disp':
+        new_instrtype = 'disp'
+    if units.lower() == 'm/s' and instrtype not in ['shortp', 'broadb']:
+        new_instrtype = 'broadb'
+    if units.lower() == 'm/s**2' and instrtype != 'acc':
+        new_instrtype = 'acc'
+    if new_instrtype is not None:
+        logger.warning(
+            f'{trace.id}: instrument response units are "{units}" but '
+            f'instrument type is "{instrtype}". Changing instrument type '
+            f'to "{new_instrtype}"')
+        trace.stats.instrtype = new_instrtype
+
+
 def _add_coords(trace):
     """Add coordinates to trace."""
     # If we already know that traceid is skipped, raise a silent exception
@@ -432,6 +453,7 @@ def read_traces(config):
             try:
                 _add_instrtype(trace)
                 _add_inventory(trace, inventory, config)
+                _check_instrtype(trace)
                 _add_coords(trace)
                 _add_hypocenter(trace, hypo)
                 _add_picks(trace, picks)
