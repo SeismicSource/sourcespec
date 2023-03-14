@@ -220,8 +220,6 @@ def remove_instr_response(trace, pre_filt=(0.5, 0.6, 40., 45.)):
     :type trace: :class:`~obspy.core.trace.Trace`
     :param pre_filt: Pre-filter frequencies (``None`` means no pre-filtering).
     :type pre_filt: tuple of four floats
-    :returns: Corrected trace.
-    :rtype: :class:`~obspy.core.trace.Trace`
     """
     traceId = trace.get_id()
     inventory = trace.stats.inventory
