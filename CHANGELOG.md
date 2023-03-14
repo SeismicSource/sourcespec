@@ -96,6 +96,10 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - New config parameter: `n_sigma`
 - New config parameters for percentiles calculation: `lower_percentage`,
   `mid_percentage` and `upper_percentage`
+- New config parameters for filtering and spectral windowing of displacement
+  signals:
+  - `bp_freqmin_disp`, `bp_freqmax_disp`
+  - `freq1_disp`, `freq2_disp`
 
 ### Bugfixes
 
