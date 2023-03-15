@@ -112,7 +112,7 @@ def _init_parser(description, epilog, nargs):
         metavar='FILE'
     )
     parser.add_argument(
-        '-m', '--station_metadata', dest='station_metadata',
+        '-w', '--station_metadata', dest='station_metadata',
         action='store', default=None,
         help='get station metadata from FILE (directory or single file\n'
              'name). Supported format: StationXML, dataless SEED, SEED\n'

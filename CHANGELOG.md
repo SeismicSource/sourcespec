@@ -16,8 +16,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - Option to add an agency logo to the HTML page
 - Possibility of using a single PAZ file as a "generic" PAZ file for all the
   stations
-- Command line option `--station_metadata` for overriding the config file
-  parameter with the same name (see pull request [#16])
+- Command line option `--station_metadata` (or `-w`) for overriding the config
+  file parameter with the same name (see pull request [#16])
 - Removed command line option `--no-response` for avoiding removing instrument
   response (use the config option `correct_instrumental_response` instead)
 - Logscale for boxplots, if parameters span a large interval
