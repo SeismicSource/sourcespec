@@ -109,7 +109,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
             grid_sampling.kdtree_search()
         params_opt = grid_sampling.params_opt
         params_err = grid_sampling.params_err
-        spec_label = '{} {}'.format(spec.id, spec.stats.instrtype)
+        spec_label = f'{spec.id} {spec.stats.instrtype}'
         grid_sampling.plot_conditional_misfit(config, spec_label)
         # fc-t_star
         plot_par_idx = (1, 2)
@@ -136,11 +136,11 @@ def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_log, statId):
         if not idx_max:
             # if idx_max is empty, then the source and/or noise spectrum
             # is most certainly "strange". In this case, we simply give up.
-            msg = '{}: unable to find a frequency range to compute Mw_0. '
-            msg += 'This is possibly due to an uncommon spectrum '
-            msg += '(e.g., a resonance).'
-            msg = msg.format(statId)
-            raise RuntimeError(msg)
+            raise RuntimeError(
+                f'{statId}: unable to find a frequency range to compute Mw_0. '
+                'This is possibly due to an uncommon spectrum '
+                '(e.g., a resonance).'
+            )
         idx1 = idx_max[0]
         if idx1 == idx0:
             try:
@@ -154,7 +154,7 @@ def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_log, statId):
         idx1 = np.where(freq_log <= config.f_weight)[0][-1]
     else:
         idx0 = 0
-        idx1 = int(len(weight)/2)
+        idx1 = len(weight) // 2
     return idx0, idx1
 
 
@@ -172,7 +172,7 @@ def _spec_inversion(config, spec, spec_weight):
 
     freq_log = spec.freq_log
     ydata = spec.data_log_mag
-    statId = '{} {}'.format(spec.id, spec.stats.instrtype)
+    statId = f'{spec.id} {spec.stats.instrtype}'
     weight = spec_weight.data_log
 
     # 'curve_fit' interprets 'yerr' as standard deviation array
@@ -206,7 +206,7 @@ def _spec_inversion(config, spec, spec_weight):
         t_star_0 = config.t_star_0
 
     initial_values = InitialValues(Mw_0, fc_0, t_star_0)
-    logger.info('{}: initial values: {}'.format(statId, str(initial_values)))
+    logger.info(f'{statId}: initial values: {initial_values}')
     bounds = Bounds(config, spec, initial_values)
     bounds.Mw_min = np.nanmin(ydata[idx0: idx1]) * 0.9
     bounds.Mw_max = np.nanmax(ydata[idx0: idx1]) * 1.1
@@ -214,55 +214,53 @@ def _spec_inversion(config, spec, spec_weight):
         bounds.t_star_min = t_star_min
     if t_star_max is not None:
         bounds.t_star_max = t_star_max
-    logger.info('{}: bounds: {}'.format(statId, str(bounds)))
+    logger.info(f'{statId}: bounds: {bounds}')
     try:
         params_opt, params_err, misfit = _curve_fit(
             config, spec, weight, yerr, initial_values, bounds)
     except (RuntimeError, ValueError) as m:
-        msg = str(m) + '\n'
-        msg += '{}: unable to fit spectral model'.format(statId)
-        raise RuntimeError(msg)
+        raise RuntimeError(f'{m}\n{statId}: unable to fit spectral model')
 
     Mw, fc, t_star = params_opt
     Mw_err, fc_err, t_star_err = params_err
-    inverted_par_str = 'Mw: {:.4f}; fc: {:.4f}; t_star: {:.4f}'.format(
-        Mw, fc, t_star)
-    logger.info('{}: optimal values: {}'.format(statId, inverted_par_str))
-    logger.info('{}: misfit: {:.3f}'.format(statId, misfit))
+    inverted_par_str = f'Mw: {Mw:.4f}; fc: {fc:.4f}; t_star: {t_star:.4f}'
+    logger.info(f'{statId}: optimal values: {inverted_par_str}')
+    logger.info(f'{statId}: misfit: {misfit:.3f}')
 
     if np.isclose(fc, bounds.fc_min, rtol=0.1):
-        msg = '{}: optimal fc within 10% of fc_min: {:.3f} ~= {:.3f}: '
-        msg += 'ignoring inversion results'
-        msg = msg.format(statId, fc, bounds.fc_min)
-        raise ValueError(msg)
+        raise ValueError(
+            f'{statId}: optimal fc within 10% of fc_min: '
+            f'{fc:.3f} ~= {bounds.fc_min:.3f}: ignoring inversion results'
+        )
 
     if np.isclose(fc, bounds.fc_max, rtol=1e-4):
-        msg = '{}: optimal fc within 10% of fc_max: {:.3f} ~= {:.3f}: '
-        msg += 'ignoring inversion results'
-        msg = msg.format(statId, fc, bounds.fc_max)
-        raise ValueError(msg)
+        raise ValueError(
+            f'{statId}: optimal fc within 0.1% of fc_max: '
+            f'{fc:.3f} ~= {bounds.fc_max:.3f}: ignoring inversion results'
+        )
 
     misfit_max = config.pi_misfit_max or np.inf
     if misfit > misfit_max:
-        msg = '{}: misfit larger than pi_misfit_max: {:.3f} > {:.3f}: '
-        msg += 'ignoring inversion results'
-        msg = msg.format(statId, misfit, misfit_max)
-        raise ValueError(msg)
+        raise ValueError(
+            f'{statId}: misfit larger than pi_misfit_max: '
+            f'{misfit:.3f} > {misfit_max:.3f}: ignoring inversion results'
+        )
 
     # Check post-inversion bounds for t_star and fc
     pi_t_star_min, pi_t_star_max =\
         config.pi_t_star_min_max or (-np.inf, np.inf)
     if not (pi_t_star_min <= t_star <= pi_t_star_max):
-        msg = '{}: t_star: {:.3f} not in allowed range [{:.3f}, {:.3f}]: '
-        msg += 'ignoring inversion results'
-        msg = msg.format(statId, t_star, pi_t_star_min, pi_t_star_max)
-        raise ValueError(msg)
+        raise ValueError(
+            f'{statId}: t_star: {t_star:.3f} not in allowed range '
+            f'[{pi_t_star_min:.3f}, {pi_t_star_max:.3f}]: '
+            'ignoring inversion results'
+        )
     pi_fc_min, pi_fc_max = config.pi_fc_min_max or (-np.inf, np.inf)
     if not (pi_fc_min <= fc <= pi_fc_max):
-        msg = '{}: fc: {:.3f} not in allowed range [{:.3f}, {:.3f}]: '
-        msg += 'ignoring inversion results'
-        msg = msg.format(statId, fc, pi_fc_min, pi_fc_max)
-        raise ValueError(msg)
+        raise ValueError(
+            f'{statId}: fc: {fc:.3f} not in allowed range '
+            f'[{pi_fc_min:.3f}, {pi_fc_max:.3f}]: ignoring inversion results'
+        )
 
     station_pars = StationParameters(
         id=spec.id, instrument_type=spec.stats.instrtype,
@@ -303,11 +301,11 @@ def _spec_inversion(config, spec, spec_weight):
     # Check post-inversion bounds for bsd
     pi_bsd_min, pi_bsd_max = config.pi_bsd_min_max or (-np.inf, np.inf)
     if not (pi_bsd_min <= station_pars.bsd.value <= pi_bsd_max):
-        msg = '{}: bsd: {:.3e} not in allowed range [{:.3e}, {:.3e}]: '
-        msg += 'ignoring inversion results'
-        msg = msg.format(
-            statId, station_pars.bsd.value, pi_bsd_min, pi_bsd_max)
-        raise ValueError(msg)
+        raise ValueError(
+            f'{statId}: bsd: {station_pars.bsd.value:.3e} '
+            f'not in allowed range [{pi_bsd_min:.3e}, {pi_bsd_max:.3e}]: '
+            'ignoring inversion results'
+        )
 
     # additional parameter errors, computed from fc, Mw and t_star
     # seismic moment
@@ -357,10 +355,12 @@ def _synth_spec(config, spec, station_pars):
     spec_st = Stream()
     params_opt = [par[key] for key in ('Mw', 'fc', 't_star')]
 
+    chan_no_orientation = spec.stats.channel[:-1]
+
     freq = spec.get_freq()
     freq_log = spec.freq_log
     spec_synth = spec.copy()
-    spec_synth.stats.channel = spec.stats.channel[:-1] + 'S'
+    spec_synth.stats.channel = f'{chan_no_orientation}S'
     spec_synth.stats.par = par
     spec_synth.stats.par_err = par_err
     spec_synth.data_mag = spectral_model(freq, *params_opt)
@@ -372,7 +372,7 @@ def _synth_spec(config, spec, station_pars):
     # Add an extra spectrum with no attenuation
     if config.plot_spectra_no_attenuation:
         spec_synth = spec.copy()
-        spec_synth.stats.channel = spec.stats.channel[:-1] + 's'
+        spec_synth.stats.channel = f'{chan_no_orientation}s'
         _params = list(params_opt)
         _params[-1] = 0
         spec_synth.data_mag = spectral_model(freq, *_params)
@@ -381,9 +381,10 @@ def _synth_spec(config, spec, station_pars):
         spec_synth.data_log = mag_to_moment(spec_synth.data_log_mag)
         spec_st.append(spec_synth)
 
+    # Add an extra spectrum with no corner frequency
     if config.plot_spectra_no_fc:
         spec_synth = spec.copy()
-        spec_synth.stats.channel = spec.stats.channel[:-1] + 't'
+        spec_synth.stats.channel = f'{chan_no_orientation}t'
         _params = list(params_opt)
         _params[1] = 1e999
         spec_synth.data_mag = spectral_model(freq, *_params)
@@ -412,7 +413,7 @@ def spectral_inversion(config, spec_st, weight_st):
     }
     logger.info(algorithm_messages[config.inv_algorithm])
 
-    stations = set(x.stats.station for x in spec_st)
+    stations = {x.stats.station for x in spec_st}
     spectra = [sp for sta in stations for sp in spec_st.select(station=sta)]
 
     sspec_output = SourceSpecOutput()
