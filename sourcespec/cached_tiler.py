@@ -41,7 +41,7 @@ class CachedTiler(object):
 
     def get_image(self, tile):
         """Only download a tile if it is not cached."""
-        tileset_name = '{}'.format(self.tiler.__class__.__name__.lower())
+        tileset_name = f'{self.tiler.__class__.__name__.lower()}'
         cache_dir = self.cache_dir
         if cache_dir is None:
             cache_dir = os.path.expanduser(
