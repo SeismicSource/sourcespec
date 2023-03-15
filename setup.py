@@ -86,7 +86,7 @@ setup(
         'scipy>=0.17',
         'matplotlib>=2.2',
         'pillow>=4.0.0',
-        'obspy>=1.3.0',
+        'obspy>=1.2.0',
         'pyproj',
         'tzlocal']
     )

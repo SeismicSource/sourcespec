@@ -177,6 +177,7 @@ def _check_instrtype(trace):
     new_instrtype = None
     units = inv.get_response(trace.id, trace.stats.starttime).\
         instrument_sensitivity.input_units
+    trace.stats.units = units
     if units.lower() == 'm' and trace.stats.instrtype != 'disp':
         new_instrtype = 'disp'
     if units.lower() == 'm/s' and instrtype not in ['shortp', 'broadb']:

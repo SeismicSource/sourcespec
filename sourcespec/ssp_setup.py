@@ -65,7 +65,7 @@ def _check_obspy_version():
     global OBSPY_VERSION, OBSPY_VERSION_STR
     # check ObsPy version
     import obspy
-    MIN_OBSPY_VERSION = (1, 3, 0)
+    MIN_OBSPY_VERSION = (1, 2, 0)
     OBSPY_VERSION_STR = obspy.__version__
     OBSPY_VERSION = OBSPY_VERSION_STR.split('.')[:3]
     # special case for "rc" versions:

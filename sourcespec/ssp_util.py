@@ -231,9 +231,19 @@ def remove_instr_response(trace, pre_filt=(0.5, 0.6, 40., 45.)):
     trace.detrend(type='constant')
     # ...and the linear trend
     trace.detrend(type='linear')
+    # Define output units based on nominal units in inventory
+    # Note: ObsPy >= 1.3.0 supports the 'DEF' output unit, which will make
+    #       this step unnecessary
+    if trace.stats.units.lower() == 'm':
+        output = 'DISP'
+    if trace.stats.units.lower() == 'm/s':
+        output = 'VEL'
+    if trace.stats.units.lower() == 'm/s**2':
+        output = 'ACC'
     # Finally remove instrument response,
     # trace is converted to the sensor units
-    trace.remove_response(inventory=inventory, output='DEF', pre_filt=pre_filt)
+    trace.remove_response(
+        inventory=inventory, output=output, pre_filt=pre_filt)
 # -----------------------------------------------------------------------------
 
 
