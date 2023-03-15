@@ -11,6 +11,7 @@ Read event metadata in QuakeML, HYPO71 or HYPOINVERSE format.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import contextlib
 import logging
 from datetime import datetime
 from obspy import UTCDateTime
@@ -39,42 +40,61 @@ class Pick():
 
 
 def parse_qml(qml_file, evid=None):
+    """Parse event metadata and picks from a QuakeML file."""
     hypo = None
     picks = []
     if qml_file is None:
         return hypo, picks
-    hypo = Hypo()
     try:
-        cat = read_events(qml_file)
+        ev = _get_event_from_qml(qml_file, evid)
+        hypo = _get_hypo_from_event(ev)
+        picks = _get_picks_from_event(ev)
     except Exception as err:
         logger.error(err)
         ssp_exit(1)
-    if evid is not None:
-        ev = [e for e in cat if evid in str(e.resource_id)][0]
-    else:
-        # just take the first event
-        ev = cat[0]
+    # See if there is a focal mechanism with nodal planes
+    with contextlib.suppress(Exception):
+        _get_focal_mechanism_from_event(ev, hypo)
+        logger.info('Found focal mechanism in QuakeML file')
+    return hypo, picks
+
+
+def _get_event_from_qml(qml_file, evid=None):
+    cat = read_events(qml_file)
+    # If evid is None, return the first event in the catalog
+    # otherwise return the event with the given evid
+    return (
+        [e for e in cat if evid in str(e.resource_id)][0]
+        if evid is not None
+        else cat[0]
+    )
+
+
+def _get_hypo_from_event(ev):
     # See if there is a preferred origin...
     origin = ev.preferred_origin()
     # ...or just use the first one
     if origin is None:
         origin = ev.origins[0]
-    hypo.origin_time = origin.time
+    hypo = Hypo()
     hypo.latitude = origin.latitude
     hypo.longitude = origin.longitude
     hypo.depth = origin.depth/1000.
+    hypo.origin_time = origin.time
     hypo.evid = ev.resource_id.id.split('/')[-1].split('=')[-1]
+    return hypo
 
-    # See if there is a focal mechanism with nodal planes
-    try:
-        fm = ev.focal_mechanisms[0]
-        nodal_plane = fm.nodal_planes.nodal_plane_1
-        hypo.strike = nodal_plane.strike
-        hypo.dip = nodal_plane.dip
-        hypo.rake = nodal_plane.rake
-        logger.info('Found focal mechanism in QuakeML file')
-    except Exception:
-        pass
+
+def _get_focal_mechanism_from_event(ev, hypo):
+    fm = ev.focal_mechanisms[0]
+    nodal_plane = fm.nodal_planes.nodal_plane_1
+    hypo.strike = nodal_plane.strike
+    hypo.dip = nodal_plane.dip
+    hypo.rake = nodal_plane.rake
+
+
+def _get_picks_from_event(ev):
+    picks = []
     for pck in ev.picks:
         pick = Pick()
         pick.station = pck.waveform_id.station_code
@@ -89,17 +109,17 @@ def parse_qml(qml_file, evid=None):
         elif pck.onset == 'impulsive':
             pick.flag = 'I'
         try:
-            pick.phase = pck.phase_hint[0:1]
+            pick.phase = pck.phase_hint[:1]
         except Exception:
             # ignore picks with no phase hint
             continue
-        if pck.polarity == 'positive':
-            pick.polarity = 'U'
-        elif pck.polarity == 'negative':
+        if pck.polarity == 'negative':
             pick.polarity = 'D'
+        elif pck.polarity == 'positive':
+            pick.polarity = 'U'
         pick.time = pck.time
         picks.append(pick)
-    return hypo, picks
+    return picks
 
 
 def _parse_hypo71_hypocenter(hypo_file):
