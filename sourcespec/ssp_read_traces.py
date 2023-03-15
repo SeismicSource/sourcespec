@@ -232,59 +232,54 @@ def _add_coords(trace):
 _add_coords.skipped = []  #noqa
 
 
-def _add_hypocenter(trace, hypo):
+def _get_hypo_from_SAC(trace):
+    """Get hypocenter information from SAC header."""
+    try:
+        sac_hdr = trace.stats.sac
+    except AttributeError as e:
+        raise RuntimeError(
+            f'{trace.id}: not a SAC trace: cannot get hypocenter from header'
+        ) from e
+    evla = sac_hdr['evla']
+    evlo = sac_hdr['evlo']
+    evdp = sac_hdr['evdp']
+    begin = sac_hdr['b']
+    starttime = trace.stats.starttime
+    try:
+        tori = sac_hdr['o']
+        origin_time = starttime + tori - begin
+        # make a copy of origin_time and round it to the nearest second
+        second = origin_time.second
+        if origin_time.microsecond >= 500000:
+            second += 1
+        evid_time = origin_time.replace(second=second, microsecond=0)
+    except Exception:
+        origin_time = None
+        # make a copy of starttime and round it to the nearest minute
+        minute = starttime.minute
+        if starttime.second >= 30:
+            minute += 1
+        evid_time = starttime.replace(minute=minute, second=0, microsecond=0)
+    # create evid from origin time, it will be replaced by kevnm if available
+    evid = evid_time.strftime('%Y%m%d_%H%M%S')
+    kevnm = sac_hdr.get('kevnm', '').strip()
+    # Check if kevnm is not empty and does not contain spaces
+    # (if it has spaces, then kevnm is probably not an evid)
+    if kevnm and ' ' not in kevnm:
+        evid = kevnm
+    return AttribDict(
+        latitude=evla, longitude=evlo, depth=evdp, origin_time=origin_time,
+        evid=evid)
+
+
+def _add_hypocenter(trace, hypo=None):
+    """Add hypocenter information to trace."""
     if hypo is None:
         # Try to get hypocenter information from the SAC header
         try:
-            evla = trace.stats.sac.evla
-            evlo = trace.stats.sac.evlo
-            evdp = trace.stats.sac.evdp
-            begin = trace.stats.sac.b
-        except AttributeError:
-            return
-
-        try:
-            tori = trace.stats.sac.o
-            origin_time = trace.stats.starttime + tori - begin
-        except AttributeError:
-            origin_time = None
-
-        if origin_time is not None:
-            # make a copy of origin_time and round it to the nearest second
-            _second = origin_time.second
-            if origin_time.microsecond >= 500000:
-                _second += 1
-            _microsecond = 0
-            _evid_time = origin_time.replace(
-                second=_second, microsecond=_microsecond)
-        else:
-            # make a copy of starttime and round it to the nearest minute
-            _starttime = trace.stats.starttime
-            _minute = _starttime.minute
-            if _starttime.second >= 30:
-                _minute += 1
-            _second = 0
-            _microsecond = 0
-            _evid_time = _starttime.replace(
-                minute=_minute, second=_second, microsecond=_microsecond)
-
-        hypo = AttribDict()
-        hypo.origin_time = origin_time
-        try:
-            kevnm = trace.stats.sac.kevnm
-            # if string is empty, raise Exception
-            if not kevnm:
-                raise Exception
-            # if string has spaces, then kevnm is not a code,
-            # so raise Exception
-            if ' ' in kevnm:
-                raise Exception
-            hypo.evid = kevnm
+            hypo = _get_hypo_from_SAC(trace)
         except Exception:
-            hypo.evid = _evid_time.strftime('%Y%m%d_%H%M%S')
-        hypo.latitude = evla
-        hypo.longitude = evlo
-        hypo.depth = evdp
+            return
     trace.stats.hypo = hypo
 
 
