@@ -298,16 +298,15 @@ def _get_picks_from_SAC(trace):
         ) from e
     trace_picks = []
     pick_fields = (
-        'a', 't0', 't1', 't2', 't3', 't4',
-        't5', 't6', 't7', 't8', 't9')
+        'a', 't0', 't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9')
     for field in pick_fields:
         try:
             time = sac_hdr[field]
+            begin = sac_hdr['b']
         except KeyError:
             continue
         pick = Pick()
         pick.station = trace.stats.station
-        begin = sac_hdr['b']
         pick.time = trace.stats.starttime + time - begin
         # now look at labels (ka, kt0, ...)
         try:
@@ -317,12 +316,8 @@ def _get_picks_from_SAC(trace):
             pick.polarity = label[2]
             pick.quality = label[3]
         except Exception:
-            if field == 'a':
-                pick.phase = 'P'
-            elif field == 't0':
-                pick.phase = 'S'
-            else:
-                pick.phase = 'X'
+            default_phases = {'a': 'P', 't0': 'S'}
+            pick.phase = default_phases.get(field, 'X')
         trace_picks.append(pick)
     return trace_picks
 
