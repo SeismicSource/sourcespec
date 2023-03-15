@@ -25,10 +25,11 @@ class InitialValues():
 
     def __str__(self):
         """String representation."""
-        s = 'Mw_0: %s; ' % round(self.Mw_0, 4)
-        s += 'fc_0: %s; ' % round(self.fc_0, 4)
-        s += 't_star_0: %s' % round(self.t_star_0, 4)
-        return s
+        return (
+            f'Mw_0: {round(self.Mw_0, 4)}; '
+            f'fc_0: {round(self.fc_0, 4)}; '
+            f't_star_0: {round(self.t_star_0, 4)}'
+        )
 
     def get_params0(self):
         return (self.Mw_0, self.fc_0, self.t_star_0)
@@ -72,26 +73,23 @@ class Bounds(object):
             self.fc_min, self.fc_max = config.fc_min_max
         if self.fc_min > fc_0:
             logger.warning(
-                '{} {}: fc_min ({}) larger than fc_0 ({}). '
-                'Using fc_0 instead.'.format(
-                    self.spec.id, self.spec.stats.instrtype,
-                    self.fc_min, round(fc_0, 4))
+                f'{self.spec.id} {self.spec.stats.instrtype}: '
+                f'fc_min ({self.fc_min}) larger than '
+                f'fc_0 ({round(fc_0, 4)}). '
+                'Using fc_0 instead.'
             )
             self.fc_min = fc_0
         if self.fc_max < fc_0:
             logger.warning(
-                '{} {}: fc_max ({}) smaller than fc_0 ({}). '
-                'Using fc_0 instead.'.format(
-                    self.spec.id, self.spec.stats.instrtype,
-                    self.fc_max, round(fc_0, 4))
+                f'{self.spec.id} {self.spec.stats.instrtype}: '
+                f'fc_max ({self.fc_max}) smaller than '
+                f'fc_0 ({round(fc_0, 4)}). '
+                'Using fc_0 instead.'
             )
             self.fc_max = fc_0
 
     def _check_minmax(self, minmax):
-        if minmax is None:
-            return (None, None)
-        else:
-            return minmax
+        return (None, None) if minmax is None else minmax
 
     def _Qo_to_t_star(self):
         phase = self.config.wave_type[0]
@@ -108,10 +106,9 @@ class Bounds(object):
             return
         t_star_0 = (self.t_star_max + self.t_star_min) / 2.
         logger.warning(
-            '{} {}: initial t_star value ({}) outside '
-            'bounds. Using bound average ({})'.format(
-                self.spec.id, self.spec.stats.instrtype,
-                self.ini_values.t_star_0, round(t_star_0, 4))
+            f'{self.spec.id} {self.spec.stats.instrtype}: '
+            f'initial t_star value ({self.ini_values.t_star_0}) '
+            f'outside bounds. Using bound average ({round(t_star_0, 4)})'
         )
         self.ini_values.t_star_0 = t_star_0
 
@@ -217,9 +214,9 @@ class StationParameters(OrderedAttribDict):
         self.hypo_dist_in_km = hypo_dist_in_km
         self.epi_dist_in_km = epi_dist_in_km
         self.azimuth = azimuth
-        self._params = dict()
-        self._params_err = dict()
-        self._is_outlier = dict()
+        self._params = {}
+        self._params_err = {}
+        self._is_outlier = {}
 
     def __setattr__(self, attr, value):
         if isinstance(value, SpectralParameter):
@@ -340,12 +337,13 @@ class SourceSpecOutput(OrderedAttribDict):
         return errs
 
     def outlier_array(self, key):
-        outliers = np.array([
-            # if we cannot find the given key, we assume outlier=True
-            x._is_outlier.get(key, True)
-            for x in self.station_parameters.values()
-        ])
-        return outliers
+        return np.array(
+            [
+                # if we cannot find the given key, we assume outlier=True
+                x._is_outlier.get(key, True)
+                for x in self.station_parameters.values()
+            ]
+        )
 
     def find_outliers(self, key, n):
         """
@@ -364,7 +362,7 @@ class SourceSpecOutput(OrderedAttribDict):
         ``Nan`` and ``inf`` values are also marked as outliers.
         """
         values = self.value_array(key)
-        station_ids = np.array([id for id in self.station_parameters.keys()])
+        station_ids = np.array(list(self.station_parameters.keys()))
         naninf = np.logical_or(np.isnan(values), np.isinf(values))
         _values = values[~naninf]
         if n is not None and len(_values) > 0:
@@ -437,32 +435,32 @@ class SourceSpecOutput(OrderedAttribDict):
         """Return a dictionary of reference values."""
         try:
             ref_stat = self.summary_spectral_parameters.reference_statistics
-        except KeyError:
-            raise ValueError('No reference statistics defined')
+        except KeyError as e:
+            raise ValueError('No reference statistics defined') from e
         if ref_stat == 'mean':
             return self.mean_values()
-        elif ref_stat == 'weighted_mean':
-            return self.weighted_mean_values()
         elif ref_stat == 'percentiles':
             return self.percentiles_values()
+        elif ref_stat == 'weighted_mean':
+            return self.weighted_mean_values()
         else:
-            msg = 'Invalid reference statistics: {}'.format(ref_stat)
+            msg = f'Invalid reference statistics: {ref_stat}'
             raise ValueError(msg)
 
     def reference_uncertainties(self):
         """Return a dictionary of reference uncertainties."""
         try:
             ref_stat = self.summary_spectral_parameters.reference_statistics
-        except KeyError:
-            raise ValueError('No reference statistics defined')
+        except KeyError as e:
+            raise ValueError('No reference statistics defined') from e
         if ref_stat == 'mean':
             return self.mean_uncertainties()
-        elif ref_stat == 'weighted_mean':
-            return self.weighted_mean_uncertainties()
         elif ref_stat == 'percentiles':
             return self.percentiles_uncertainties()
+        elif ref_stat == 'weighted_mean':
+            return self.weighted_mean_uncertainties()
         else:
-            msg = 'Invalid reference statistics: {}'.format(ref_stat)
+            msg = f'Invalid reference statistics: {ref_stat}'
             raise ValueError(msg)
 
     def reference_summary_parameters(self):
@@ -472,8 +470,8 @@ class SourceSpecOutput(OrderedAttribDict):
         """
         try:
             ref_stat = self.summary_spectral_parameters.reference_statistics
-        except KeyError:
-            raise ValueError('No reference statistics defined')
+        except KeyError as e:
+            raise ValueError('No reference statistics defined') from e
         return {
             parname: par[ref_stat]
             for parname, par in self.summary_spectral_parameters.items()
