@@ -25,7 +25,7 @@ def make_synth(config, spec_st, trace_spec=None):
     fmin = config.options.fmin
     fmax = config.options.fmax + fdelta
 
-    residuals = list()
+    residuals = []
     n = 0
     for fc, mag, Mo, t_star, alpha in zip(
             config.options.fc, config.options.mag, config.options.Mo,
@@ -79,10 +79,7 @@ def main():
     from sourcespec.ssp_parse_arguments import parse_args
     options = parse_args(progname='source_model')
     from sourcespec.ssp_setup import configure, ssp_exit
-    if options.plot:
-        plot_show = True
-    else:
-        plot_show = False
+    plot_show = bool(options.plot)
     conf_overrides = dict(
         plot_show=plot_show, plot_save=False, html_report=False)
     config = configure(
