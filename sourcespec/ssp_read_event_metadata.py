@@ -39,8 +39,10 @@ class Pick():
 
 
 def parse_qml(qml_file, evid=None):
+    hypo = None
+    picks = []
     if qml_file is None:
-        return None, None
+        return hypo, picks
     hypo = Hypo()
     try:
         cat = read_events(qml_file)
@@ -73,8 +75,6 @@ def parse_qml(qml_file, evid=None):
         logger.info('Found focal mechanism in QuakeML file')
     except Exception:
         pass
-
-    picks = []
     for pck in ev.picks:
         pick = Pick()
         pick.station = pck.waveform_id.station_code
@@ -99,7 +99,6 @@ def parse_qml(qml_file, evid=None):
             pick.polarity = 'D'
         pick.time = pck.time
         picks.append(pick)
-
     return hypo, picks
 
 
@@ -214,7 +213,7 @@ def _parse_hypo2000_station_line(line, oldpick, origin_time):
 
 def _parse_hypo2000_file(hypo_file):
     hypo = Hypo()
-    picks = list()
+    picks = []
     hypo_line = False
     station_line = False
     oldpick = None
@@ -248,23 +247,23 @@ def _parse_hypo2000_file(hypo_file):
 
 
 def parse_hypo_file(hypo_file):
-    picks = None
+    picks = []
     err_msgs = []
     try:
         hypo = _parse_hypo71_hypocenter(hypo_file)
         return hypo, picks
     except Exception as err:
-        msg = '{}: Not a hypo71 hypocenter file'.format(hypo_file)
+        msg = f'{hypo_file}: Not a hypo71 hypocenter file'
         err_msgs.append(msg)
-        msg = 'Parsing error: ' + str(err)
+        msg = f'Parsing error: {err}'
         err_msgs.append(msg)
     try:
         hypo, picks = _parse_hypo2000_file(hypo_file)
         return hypo, picks
     except Exception as err:
-        msg = '{}: Not a hypo2000 hypocenter file'.format(hypo_file)
+        msg = f'{hypo_file}: Not a hypo2000 hypocenter file'
         err_msgs.append(msg)
-        msg = 'Parsing error: ' + str(err)
+        msg = f'Parsing error: {err}'
         err_msgs.append(msg)
     # If we arrive here, the file was not recognized as valid
     for msg in err_msgs:
@@ -278,7 +277,7 @@ def _is_hypo71_picks(pick_file):
         line = line.replace('\n', '')
         # skip separator and empty lines
         stripped_line = line.strip()
-        if stripped_line == '10' or stripped_line == '':
+        if stripped_line in ['10', '']:
             continue
         # Check if it is a pick line
         # 6th character should be alpha (phase name: P or S)
@@ -286,8 +285,8 @@ def _is_hypo71_picks(pick_file):
         if not (line[5].isalpha() and
                 line[9].isdigit() and
                 line[20].isdigit()):
-            msg = '{}: Not a hypo71 phase file'.format(pick_file)
-            raise Exception(msg)
+            msg = f'{pick_file}: Not a hypo71 phase file'
+            raise TypeError(msg)
 
 
 def _correct_station_name(station):
@@ -319,16 +318,15 @@ def parse_hypo71_picks(config):
 
     :return: list of Pick objects
     """
+    picks = []
     pick_file = config.options.pick_file
     if pick_file is None:
-        return None
-
+        return picks
     try:
         _is_hypo71_picks(pick_file)
     except Exception as err:
         logger.error(err)
         ssp_exit(1)
-    picks = []
     for line in open(pick_file):
         # remove newline
         line = line.replace('\n', '')

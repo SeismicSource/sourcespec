@@ -322,15 +322,16 @@ def _get_picks_from_SAC(trace):
     return trace_picks
 
 
-def _add_picks(trace, picks):
+def _add_picks(trace, picks=None):
     """Add picks to trace."""
+    if picks is None:
+        picks = []
     trace_picks = []
     with contextlib.suppress(Exception):
         trace_picks = _get_picks_from_SAC(trace)
-    if picks is not None:
-        for pick in picks:
-            if pick.station == trace.stats.station:
-                trace_picks.append(pick)
+    for pick in picks:
+        if pick.station == trace.stats.station:
+            trace_picks.append(pick)
     trace.stats.picks = trace_picks
     # Create empty dicts for arrivals, travel_times and takeoff angles.
     # They will be used later.
@@ -397,7 +398,8 @@ def read_traces(config):
     # read station metadata into an ObsPy ``Inventory`` object
     inventory = read_station_metadata(config.station_metadata)
 
-    hypo = picks = None
+    hypo = None
+    picks = []
     # parse hypocenter file
     if config.options.hypo_file is not None:
         hypo, picks = parse_hypo_file(config.options.hypo_file)
