@@ -398,8 +398,8 @@ def read_traces(config):
     # read station metadata into an ObsPy ``Inventory`` object
     inventory = read_station_metadata(config.station_metadata)
 
-    hypo = None
     picks = []
+    hypo = None
     # parse hypocenter file
     if config.options.hypo_file is not None:
         hypo, picks = parse_hypo_file(config.options.hypo_file)
@@ -434,14 +434,16 @@ def read_traces(config):
         try:
             tmpst = read(filename, fsize=False)
         except Exception:
-            logger.warning('%s: Unable to read file as a trace: '
-                           'skipping' % filename)
+            logger.warning(
+                f'{filename}: Unable to read file as a trace: skipping')
             continue
         for trace in tmpst.traces:
             orientation = trace.stats.channel[-1]
             if orientation not in orientation_codes:
-                logger.warning('%s: Unknown channel orientation: "%s": '
-                               'skipping trace' % (trace.id, orientation))
+                logger.warning(
+                    f'{trace.id}: Unknown channel orientation: '
+                    f'"{orientation}": skipping trace'
+                )
                 continue
             # only use the station specified by the command line option
             # "--station", if any
