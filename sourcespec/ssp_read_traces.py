@@ -366,9 +366,7 @@ def _complete_picks(st):
 def _hypo_vel(hypo, config):
     hypo.vp = get_vel(hypo.longitude, hypo.latitude, hypo.depth, 'P', config)
     hypo.vs = get_vel(hypo.longitude, hypo.latitude, hypo.depth, 'S', config)
-    msg = 'Vp_hypo: {:.2f} km/s, Vs_hypo: {:.2f} km/s'.format(
-        hypo.vp, hypo.vs)
-    logger.info(msg)
+    logger.info(f'Vp_hypo: {hypo.vp:.2f} km/s, Vs_hypo: {hypo.vs:.2f} km/s')
 
 
 def _build_filelist(path, filelist, tmpdir):
