@@ -125,14 +125,12 @@ def _get_picks_from_event(ev):
 def _parse_hypo71_hypocenter(hypo_file):
     with open(hypo_file) as fp:
         line = fp.readline()
-        # Skip the first line if it contains
-        # characters in the first 10 digits:
-        if any(c.isalpha() for c in line[0:10]):
+        # Skip the first line if it contain characters in the first 10 digits:
+        if any(c.isalpha() for c in line[:10]):
             line = fp.readline()
     hypo = Hypo()
-    timestr = line[0:17]
-    # There are two possible formats for the timestring.
-    # We try both of them
+    timestr = line[:17]
+    # There are two possible formats for the timestring. We try both of them
     try:
         dt = datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
     except Exception:
@@ -154,7 +152,7 @@ def _parse_hypo71_hypocenter(hypo_file):
 def _parse_hypo2000_hypo_line(line):
     word = line.split()
     hypo = Hypo()
-    timestr = ' '.join(word[0:3])
+    timestr = ' '.join(word[:3])
     hypo.origin_time = UTCDateTime(timestr)
     n = 3
     if word[n].isnumeric():
@@ -172,9 +170,8 @@ def _parse_hypo2000_hypo_line(line):
         # Otherwise latitude should be in float format
         try:
             latitude = float(word[n])
-        except Exception:
-            msg = 'cannot read latitude: {}'.format(word[n])
-            raise Exception(msg)
+        except Exception as e:
+            raise ValueError(f'cannot read latitude: {word[n]}') from e
         n += 1
     hypo.latitude = latitude
     if word[n].isnumeric():
@@ -192,9 +189,8 @@ def _parse_hypo2000_hypo_line(line):
         # Otherwise longitude should be in float format
         try:
             longitude = float(word[n])
-        except Exception:
-            msg = 'cannot read longitude: {}'.format(word[n])
-            raise Exception(msg)
+        except Exception as e:
+            raise ValueError(f'cannot read longitude: {word[n]}') from e
         n += 1
     hypo.longitude = longitude
     # depth is in km, according to the hypo2000 manual
@@ -208,18 +204,18 @@ def _parse_hypo2000_station_line(line, oldpick, origin_time):
         oldnetwork = oldpick.network
         oldchannel = oldpick.channel
     else:
-        oldstation = ""
-        oldnetwork = ""
-        oldchannel = ""
+        oldstation = ''
+        oldnetwork = ''
+        oldchannel = ''
     pick = Pick()
     station = line[1:5].strip()
-    pick.station = station if station else oldstation
+    pick.station = station or oldstation
     oldstation = pick.station
     network = line[6:8].strip()
-    pick.network = network if network else oldnetwork
+    pick.network = network or oldnetwork
     oldnetwork = pick.network
     channel = line[9:12].strip()
-    pick.channel = channel if channel else oldchannel
+    pick.channel = channel or oldchannel
     oldchannel = pick.channel
     # pick.flag = line[4:5]
     pick.phase = line[31:34].strip()
