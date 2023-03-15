@@ -17,7 +17,6 @@ import numpy as np
 from urllib.parse import urlparse
 from sourcespec._version import get_versions
 from sourcespec.ssp_data_types import SpectralParameter
-from sourcespec.ssp_setup import ssp_exit
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -82,9 +81,9 @@ def _agency_logo_path(config):
     if not parsed_url.scheme:
         # check if it is a file
         if not os.path.exists(agency_logo_path):
-            logger.error('Cannot find the agency logo file: {}'.format(
-                agency_logo_path))
-            ssp_exit(1)
+            logger.warning(
+                f'Cannot find the agency logo file: {agency_logo_path}')
+            return None
         bname = os.path.basename(agency_logo_path)
         dest = os.path.join(config.options.outdir, bname)
         if not os.path.exists(dest):
@@ -97,34 +96,31 @@ def _agency_logo(config):
     agency_logo_path = _agency_logo_path(config)
     if agency_logo_path is None:
         return ""
-    agency_logo_img = '<img class="logo" src="{}"/>'.format(agency_logo_path)
+    agency_logo_img = f'<img class="logo" src="{agency_logo_path}"/>'
     indent5 = 5*'  '
     indent6 = 6*'  '
     if config.agency_url is not None:
-        agency_logo_html =\
-            '{}<a href="{}" target="_blank">\n{}{}\n{}</a>'.format(
-                indent5, config.agency_url,
-                indent6, agency_logo_img,
-                indent5
-            )
+        agency_logo_html = (
+            f'{indent5}<a href="{config.agency_url}" target="_blank">\n'
+            f'{indent6}{agency_logo_img}\n'
+            f'{indent5}</a>'
+        )
     else:
         agency_logo_html = indent5 + agency_logo_img
-    agency_logo_html = agency_logo_html +\
-        '\n{}<hr class="solid">'.format(indent5)
+    agency_logo_html = f'{agency_logo_html}\n{indent5}<hr class="solid">'
     return agency_logo_html
 
 
 def _logo_file_url():
     cdn_baseurl = 'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec@1.6'
-    logo_file = cdn_baseurl + '/imgs/SourceSpec_logo.svg'
-    return logo_file
+    return f'{cdn_baseurl}/imgs/SourceSpec_logo.svg'
 
 
 def _version_and_run_completed(config):
     ssp_version = get_versions()['version']
-    run_completed = '{} {}'.format(
-        config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
-        config.end_of_run_tz
+    run_completed = (
+        f'{config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")}'
+        f'{config.end_of_run_tz}'
     )
     return ssp_version, run_completed
 
@@ -136,23 +132,22 @@ def _author_html(config):
     elif config.author_email is not None:
         author = config.author_email
     if config.author_email is not None:
-        author = '<a href="mailto:{}">{}</a>'.format(
-            config.author_email, author)
+        author = f'<a href="mailto:{config.author_email}">{author}</a>'
     return author
+
 
 def _agency_html(config):
     agency = ''
     if config.agency_full_name is not None:
         agency = config.agency_full_name
         if config.agency_short_name is not None:
-            agency += ' ({})'.format(config.agency_short_name)
+            agency += f' ({config.agency_short_name})'
     elif config.agency_short_name is not None:
         agency = config.agency_short_name
     elif config.agency_url is not None:
         agency = config.agency_url
     if config.agency_url is not None:
-        agency = '<a href="{}" target="_blank">{}</a>'.format(
-            config.agency_url, agency)
+        agency = f'<a href="{config.agency_url}" target="_blank">{agency}</a>'
     return agency
 
 
@@ -160,52 +155,49 @@ def _author_and_agency(config):
     author = _author_html(config)
     agency = _agency_html(config)
     if author != '':
-        author = '<br/><br/>' + author
+        author = f'<br/><br/>{author}'
     if author == '' and agency != '':
-        agency = '<br/><br/>' + agency
+        agency = f'<br/><br/>{agency}'
     if author != '' and agency != '':
-        agency = '<br/>' + agency
+        agency = f'<br/>{agency}'
     return author, agency
 
 
 def _page_footer(config):
-    agency_logo_path = _agency_logo_path(config)
     footer_html = ''
     indent3 = 3*'  '
     indent4 = 4*'  '
-    footer_html +=\
-        '{}<div class="text_footer">\n'.format(indent3)
+    footer_html += f'{indent3}<div class="text_footer">\n'
     author = _author_html(config)
     agency = _agency_html(config)
     auth_agen_text = ''
-    if author != '' and agency != '':
-        auth_agen_text += '{}{}\n{}-\n{}{}\n'.format(
-            indent4, author, indent4, indent4, agency)
-    if author != '' and agency == '':
-        auth_agen_text += '{}{}\n'.format(indent4, author)
+    if author != '':
+        if agency != '':
+            auth_agen_text +=\
+                f'{indent4}{author}\n{indent4}-\n{indent4}{agency}\n'
+        if agency == '':
+            auth_agen_text += f'{indent4}{author}\n'
     if author == '' and agency != '':
-        auth_agen_text += '{}{}\n'.format(indent4, agency)
+        auth_agen_text += f'{indent4}{agency}\n'
     run_completed = config.end_of_run.strftime('%Y-%m-%d')
-    if auth_agen_text == '':
-        footer_html += '{}{}\n'.format(indent4, run_completed)
-    else:
-        footer_html += '{}\n{}-\n{}{}\n'.format(
-            auth_agen_text, indent4, indent4, run_completed)
-    footer_html += '{}</div>\n'.format(indent3)
+    footer_html += (
+        f'{auth_agen_text}\n{indent4}-\n{indent4}{run_completed}\n'
+        if auth_agen_text
+        else f'{indent4}{run_completed}\n'
+    )
+    footer_html += f'{indent3}</div>\n'
+    agency_logo_path = _agency_logo_path(config)
     if agency_logo_path is not None:
         if config.agency_url is not None:
-            a_agency = '<a href="{}" target="_blank">'.format(
-                config.agency_url)
+            a_agency = f'<a href="{config.agency_url}" target="_blank">'
             a_agency_close = '</a>'
         else:
             a_agency = a_agency_close = ''
-        footer_html +=\
-            '{}<div class="logo_footer">\n{}{}<img src="{}"/>{}\n{}</div>\n'.\
-            format(
-                indent3, indent4,
-                a_agency, agency_logo_path, a_agency_close,
-                indent3
-            )
+        footer_html += (
+            f'{indent3}<div class="logo_footer">\n{indent4}{a_agency}'
+            f'<img src="{agency_logo_path}"/>{a_agency_close}\n'
+            f'{indent3}</div>\n'
+        )
     return footer_html
 
 
@@ -214,16 +206,17 @@ def _format_exponent(value, reference):
     # get the exponent of reference value
     xp = np.int(np.floor(np.log10(np.abs(reference))))
     # format value to print it with the same exponent of reference value
-    return '{:5.3f}e{:+03d}'.format(value/10**xp, xp)
+    base = 10**xp
+    return f'{value/base:5.3f}e{xp:+03d}'
 
 
 def _summary_value_and_err_text(value, error, fmt):
     """Format summary value and error text."""
     if error[0] == error[1]:
-        text = fmt + '<br>&#177;' + fmt
+        text = f'{fmt}<br>&#177;{fmt}'
         text = text.format(value, error[0])
     else:
-        text = fmt + '<br>-' + fmt + '<br>+' + fmt
+        text = f'{fmt}<br>-{fmt}<br>+{fmt}'
         text = text.format(value, error[0], error[1])
     return text
 
@@ -240,22 +233,21 @@ def _station_value_and_err_text(par, key, fmt):
     else:
         value = _par
         outlier = False
-    value_text = '<nobr>{}</nobr>'.format(fmt.format(value))
+    value_text = f'<nobr>{fmt.format(value)}</nobr>'
     err_text = None
     if isinstance(_par, SpectralParameter):
         if _par.uncertainty is not None:
             # use HTML code for ±, for compatibility with Edge
-            err_text = '<nobr>&#177;{}</nobr>'.format(
-                fmt.format(_par.uncertainty))
+            err_text = f'<nobr>&#177;{fmt.format(_par.uncertainty)}</nobr>'
         elif _par.lower_uncertainty is not None:
-            err_text = '<nobr>-{}</nobr><br/><nobr>+{}</nobr>'.format(
-                fmt.format(_par.lower_uncertainty),
-                fmt.format(_par.upper_uncertainty)
+            err_text = (
+                f'<nobr>-{fmt.format(_par.lower_uncertainty)}</nobr><br/>'
+                f'<nobr>+{fmt.format(_par.upper_uncertainty)}</nobr>'
             )
     if outlier:
-        value_text = '<span style="color:#979A9A">' + value_text + '</span>'
+        value_text = f'<span style="color:#979A9A">{value_text}</span>'
         if err_text is not None:
-            err_text = '<span style="color:#979A9A">' + err_text + '</span>'
+            err_text = f'<span style="color:#979A9A">{err_text}</span>'
     return value_text, err_text
 
 
@@ -382,9 +374,9 @@ def html_report(config, sspec_output):
     hypo = config.hypo
     evid = hypo.evid
     run_id = config.options.run_id
-    config_file = '{}.ssp.conf'.format(evid)
-    yaml_file = '{}.ssp.yaml'.format(evid)
-    log_file = '{}.ssp.log'.format(evid)
+    config_file = f'{evid}.ssp.conf'
+    yaml_file = f'{evid}.ssp.yaml'
+    log_file = f'{evid}.ssp.log'
     station_maps = config.figures['station_maps']
     map_mag = [mapfile for mapfile in station_maps if 'map_mag' in mapfile][0]
     map_mag = os.path.basename(map_mag)
@@ -403,9 +395,10 @@ def html_report(config, sspec_output):
     n_traces_plot_files = len(traces_plot_files)
     for n, traces_plot_file in enumerate(sorted(traces_plot_files)):
         if n_traces_plot_files > 1:
-            traces_plot_counter =\
-                '<span class="print_inline">&nbsp;({} of {})</span>'.format(
-                    n+1, n_traces_plot_files)
+            traces_plot_counter = (
+                f'<span class="print_inline">&nbsp;({n+1} of '
+                f'{n_traces_plot_files})</span>'
+            )
         else:
             traces_plot_counter = ''
         traces_plot_file = os.path.basename(traces_plot_file)
@@ -423,9 +416,10 @@ def html_report(config, sspec_output):
     n_spectra_plot_files = len(spectra_plot_files)
     for n, spectra_plot_file in enumerate(sorted(spectra_plot_files)):
         if n_spectra_plot_files > 1:
-            spectra_plot_counter =\
-                '<span class="print_inline">&nbsp;({} of {})</span>'.format(
-                    n+1, n_spectra_plot_files)
+            spectra_plot_counter = (
+                f'<span class="print_inline">&nbsp;({n+1} of '
+                f'{n_spectra_plot_files})</span>'
+            )
         else:
             spectra_plot_counter = ''
         spectra_plot_file = os.path.basename(spectra_plot_file)
@@ -503,10 +497,10 @@ def html_report(config, sspec_output):
         '{PAGE_FOOTER}': page_footer,
         '{EVENTID}': evid,
         '{RUNID}': run_id,
-        '{EVENT_LONGITUDE}': '{:8.3f}'.format(hypo.longitude),
-        '{EVENT_LATITUDE}': '{:7.3f}'.format(hypo.latitude),
-        '{EVENT_DEPTH}': '{:5.1f}'.format(hypo.depth),
-        '{ORIGIN_TIME}': '{}'.format(hypo.origin_time),
+        '{EVENT_LONGITUDE}': f'{hypo.longitude:8.3f}',
+        '{EVENT_LATITUDE}': f'{hypo.latitude:7.3f}',
+        '{EVENT_DEPTH}': f'{hypo.depth:5.1f}',
+        '{ORIGIN_TIME}': f'{hypo.origin_time}',
     }
     # Link to event page, if defined
     event_url = config.event_url
@@ -515,7 +509,7 @@ def html_report(config, sspec_output):
         parsed_url = urlparse(event_url)
         if not parsed_url.scheme:
             logger.warning(
-                '{} is not a valid URL and will not be used'.format(event_url))
+                f'{event_url} is not a valid URL and will not be used')
             event_url = None
     if event_url is not None:
         event_url_comment_begin = ''
@@ -562,21 +556,25 @@ def html_report(config, sspec_output):
     try:
         Mw_summary_error_minus, Mw_summary_error_plus =\
             summary_uncertainties['Mw']
-        Mw_summary_str = '{:.2f} [- {:.2f}, + {:.2f}]'.format(
-            Mw_summary, Mw_summary_error_minus, Mw_summary_error_plus)
+        Mw_summary_str = (
+            f'{Mw_summary:.2f} '
+            f'[- {Mw_summary_error_minus:.2f}, + {Mw_summary_error_plus:.2f}]'
+        )
     except TypeError:
         Mw_summary_error = summary_uncertainties['Mw']
-        Mw_summary_str = '{:.2f} ± {:.2f}'.format(Mw_summary, Mw_summary_error)
+        Mw_summary_str = f'{Mw_summary:.2f} ± {Mw_summary_error:.2f}'
     replacements.update({'{MW_SUMMARY}': Mw_summary_str})
     fc_summary = summary_values['fc']
     try:
         fc_summary_error_minus, fc_summary_error_plus =\
             summary_uncertainties['fc']
-        fc_summary_str = '{:.3f} [- {:.3f}, + {:.3f}]'.format(
-            fc_summary, fc_summary_error_minus, fc_summary_error_plus)
+        fc_summary_str = (
+            f'{fc_summary:.3f} '
+            f'[- {fc_summary_error_minus:.3f}, + {fc_summary_error_plus:.3f}]'
+        )
     except TypeError:
         fc_summary_error = summary_uncertainties['fc']
-        fc_summary_str = '{:.3f} ± {:.3f}'.format(fc_summary, fc_summary_error)
+        fc_summary_str = f'{fc_summary:.3f} ± {fc_summary_error:.3f}'
     replacements.update({'{FC_SUMMARY}': fc_summary_str})
 
     means = sspec_output.mean_values()
@@ -588,13 +586,13 @@ def html_report(config, sspec_output):
 
     n_sigma = config.n_sigma
     n_sigma = int(n_sigma) if n_sigma.is_integer() else n_sigma
-    n_sigma = '{} sigma'.format(n_sigma)
+    n_sigma = f'{n_sigma} sigma'
     mid_pct, lower_pct, upper_pct =\
         config.mid_percentage, config.lower_percentage, config.upper_percentage
     mid_pct = int(mid_pct) if mid_pct.is_integer() else mid_pct
     lower_pct = int(lower_pct) if lower_pct.is_integer() else lower_pct
     upper_pct = int(upper_pct) if upper_pct.is_integer() else upper_pct
-    percentages = '{}%, [{}%, {}%]'.format(mid_pct, lower_pct, upper_pct)
+    percentages = f'{mid_pct}%, [{lower_pct}%, {upper_pct}%]'
     replacements.update({
         '{N_SIGMA}': n_sigma,
         '{PERCENTAGES}': percentages
