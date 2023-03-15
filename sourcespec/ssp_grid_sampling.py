@@ -36,10 +36,7 @@ def peak_width(x, peak_idx, rel_height, negative=False):
     if rel_height < 0 or rel_height > 1:
         msg = 'rel_height must be between 0 and 1'
         raise ValueError(msg)
-    if negative:
-        sign = -1
-    else:
-        sign = 1
+    sign = -1 if negative else 1
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', category=PeakPropertyWarning)
         _, width_height, idx_left, idx_right = peak_widths(
@@ -263,13 +260,10 @@ class GridSampling():
             w = self.conditional_peak_widths[dim]
             ax[dim].plot((w[1], w[2]), (w[0], w[0]), color='red', ls='dashed')
             ax[dim].axvline(popt, color='red')
-            text = '  {:.3f}  '.format(popt)
+            text = f'  {popt:.3f}  '
             # set horizontal alignment based on whether we are
             # on the left or right part of the plot
-            if popt < np.nanmean(v):
-                ha = 'left'
-            else:
-                ha = 'right'
+            ha = 'left' if popt < np.nanmean(v) else 'right'
             ax[dim].text(
                 popt, 0.9, text, color='red', ha=ha, va='top',
                 transform=ax[dim].get_xaxis_transform())
@@ -278,7 +272,7 @@ class GridSampling():
             xlabel = self.params_name[dim]
             unit = self.params_unit[dim]
             if unit:
-                xlabel += ' ({})'.format(unit)
+                xlabel += f' ({unit})'
             ax[dim].set_xlabel(xlabel)
             ax[dim].set_ylabel('misfit')
         ax[0].set_title(label)
@@ -288,7 +282,7 @@ class GridSampling():
             os.makedirs(outdir)
         evid = config.hypo.evid
         figfile_base = os.path.join(outdir, evid)
-        figfile_base += '.cond_misfit_{}.'.format(label.replace(' ', '_'))
+        figfile_base += f".cond_misfit_{label.replace(' ', '_')}."
         fmt = config.plot_save_format
         if fmt == 'pdf_multipage':
             fmt = 'pdf'
@@ -300,8 +294,7 @@ class GridSampling():
             if not config.plot_show:
                 plt.close(fig)
             logger.info(
-                '{}: conditional misfit plot saved to: {}'.format(
-                    label, figfile))
+                f'{label}: conditional misfit plot saved to: {figfile}')
             config.figures['misfit_1d'].append(figfile)
 
     def plot_misfit_2d(self, config, plot_par_idx, label):
@@ -386,7 +379,7 @@ class GridSampling():
         xlabel = params_name[0]
         unit = params_unit[0]
         if unit:
-            xlabel += ' ({})'.format(unit)
+            xlabel += f' ({unit})'
         if sampling_mode[0] == 'log':
             # the grid is plotted by imshow() in linear scale,
             # so we create a fake xaxis with logscale
@@ -402,7 +395,7 @@ class GridSampling():
         ylabel = params_name[1]
         unit = params_unit[1]
         if unit:
-            ylabel += ' ({})'.format(unit)
+            ylabel += f' ({unit})'
         if sampling_mode[1] == 'log':
             # the grid is plotted by imshow() in linear scale,
             # so we create a fake yaxis with logscale
@@ -422,9 +415,8 @@ class GridSampling():
             os.makedirs(outdir)
         evid = config.hypo.evid
         figfile_base = os.path.join(outdir, evid)
-        params_string = '{}-{}'.format(*params_name)
-        figfile_base += '.misfit_{}_{}.'.format(
-            params_string, label.replace(' ', '_'))
+        params_string = f'{params_name[0]}-{params_name[1]}'
+        figfile_base += f".misfit_{params_string}_{label.replace(' ', '_')}."
         fmt = config.plot_save_format
         if fmt == 'pdf_multipage':
             fmt = 'pdf'
@@ -435,7 +427,5 @@ class GridSampling():
             savefig(fig, figfile, fmt, bbox_inches='tight')
             if not config.plot_show:
                 plt.close(fig)
-            logger.info(
-                '{}: conditional misfit map saved to: {}'.format(
-                    label, figfile))
-            config.figures['misfit_' + params_string].append(figfile)
+            logger.info(f'{label}: conditional misfit map saved to: {figfile}')
+            config.figures[f'misfit_{params_string}'].append(figfile)
