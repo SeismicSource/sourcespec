@@ -58,7 +58,7 @@ def _time_integrate(config, trace):
     nint = _get_nint(config, trace)
     trace.detrend(type='constant')
     trace.detrend(type='linear')
-    for i in range(0, nint):
+    for _ in range(nint):
         trace.data = cumtrapz(trace.data) * trace.stats.delta
         trace.stats.npts -= 1
         filter_trace(config, trace)
@@ -66,7 +66,7 @@ def _time_integrate(config, trace):
 
 def _frequency_integrate(config, spec):
     nint = _get_nint(config, spec)
-    for i in range(0, nint):
+    for _ in range(nint):
         spec.data /= (2 * math.pi * spec.get_freq())
 
 
@@ -74,26 +74,29 @@ def _cut_spectrum(config, spec):
     # see if there is a station-specific frequency range
     station = spec.stats.station
     try:
-        freq1 = float(config['freq1_' + station])
-        freq2 = float(config['freq2_' + station])
+        freq1 = float(config[f'freq1_{station}'])
+        freq2 = float(config[f'freq2_{station}'])
     except KeyError:
         try:
             instrtype = spec.stats.instrtype
-            freq1 = float(config['freq1_' + instrtype])
-            freq2 = float(config['freq2_' + instrtype])
-        except KeyError:
-            msg = '{}: Unknown instrument type: {}: skipping spectrum'
-            msg = msg.format(spec.id, instrtype)
-            raise RuntimeError(msg)
+            freq1 = float(config[f'freq1_{instrtype}'])
+            freq2 = float(config[f'freq2_{instrtype}'])
+        except KeyError as e:
+            raise RuntimeError(
+                f'{spec.id}: Unknown instrument type: {instrtype}: '
+                'skipping spectrum'
+            ) from e
     return spec.slice(freq1, freq2)
 
 
-def _compute_h(spec_st, code, vertical_channel_codes=['Z'], wave_type='S'):
+def _compute_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
     """
     Compute the component 'H' from geometric mean of the stream components.
 
     (which can also be all three components)
     """
+    if vertical_channel_codes is None:
+        vertical_channel_codes = ['Z']
     spec_h = None
     for spec in spec_st.traces:
         # this avoids taking a component from co-located station:
@@ -118,7 +121,7 @@ def _compute_h(spec_st, code, vertical_channel_codes=['Z'], wave_type='S'):
             spec_h = spec.copy()
             spec_h.data = np.power(spec_h.data, 2)
             spec_h.data_log = np.power(spec_h.data_log, 2)
-            spec_h.stats.channel = code + 'H'
+            spec_h.stats.channel = f'{code}H'
         else:
             spec_h.data += np.power(spec.data, 2)
             spec_h.data_log += np.power(spec.data_log, 2)
@@ -140,14 +143,14 @@ def _check_data_len(config, trace):
     trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     npts = len(trace_cut.data)
     if npts == 0:
-        msg = '{}: No data for the selected cut interval: skipping trace'
-        msg = msg.format(traceId)
-        raise RuntimeError(msg)
+        raise RuntimeError(
+            f'{traceId}: No data for the selected cut interval: '
+            'skipping trace')
     nzeros = len(np.where(trace_cut.data == 0)[0])
     if nzeros > npts/4:
-        msg = '{}: Signal window is zero for more than 25%: skipping trace'
-        msg = msg.format(traceId)
-        raise RuntimeError(msg)
+        raise RuntimeError(
+            f'{traceId}: Signal window is zero for more than 25%: '
+            'skipping trace')
 
 
 def _cut_signal_noise(config, trace):
@@ -184,11 +187,12 @@ def _cut_signal_noise(config, trace):
         # truncate noise to signal length
         trace_noise.data = trace_noise.data[:npts]
     else:
+        tr_noise_id = trace_noise.get_id()[:-1]
         if config.weighting == 'noise':
-            msg = '{}: Truncating signal window to noise length!'
+            msg = f'{tr_noise_id}: Truncating signal window to noise length!'
             trace_signal.data = trace_signal.data[:npts]
         else:
-            msg = '{}: Zero-padding noise window to signal length'
+            msg = f'{tr_noise_id}: Zero-padding noise window to signal length'
             # Notes:
             # 1. no risk of ringing, as noise has been tapered
             # 2. we use np.pad instead of obspy trim method
@@ -198,7 +202,6 @@ def _cut_signal_noise(config, trace):
             #    symmetric padding (tested)
             pad_len = len(trace_signal) - len(trace_noise)
             trace_noise.data = np.pad(trace_noise.data, (0, pad_len))
-        msg = msg.format(trace_noise.get_id()[0:-1])
         logger.warning(msg)
 
     # ...and zero pad to spectral_win_length
@@ -227,17 +230,15 @@ def _check_noise_level(trace_signal, trace_noise, config):
     trace_noise_rms = ((trace_noise.data**2 * scale_factor).sum())**0.5
     if trace_noise_rms/trace_signal_rms < 1e-6 and config.weighting == 'noise':
         # Skip trace if noise level is too low and if noise weighting is used
-        msg =\
-            '{}: Noise level is too low or zero: station will be skipped'
-        msg = msg.format(traceId)
-        raise RuntimeError(msg)
+        raise RuntimeError(
+            f'{traceId}: Noise level is too low or zero: '
+            'station will be skipped')
 
 
 def _geom_spread_r_power_n(hypo_dist_in_km, exponent):
     """rⁿ geometrical spreading coefficient."""
     dist = hypo_dist_in_km * 1e3
-    coeff = dist**exponent
-    return coeff
+    return dist**exponent
 
 
 def _geom_spread_boatwright(hypo_dist_in_km, cutoff_dist_in_km, freqs):
@@ -285,10 +286,10 @@ def _displacement_to_moment(stats, config):
     From Aki&Richards,1980
     """
     phase = config.wave_type[0]
-    if phase == 'S':
-        v_hypo = config.hypo.vs
-    elif phase == 'P':
+    if phase == 'P':
         v_hypo = config.hypo.vp
+    elif phase == 'S':
+        v_hypo = config.hypo.vs
     v_station = get_vel(
         stats.coords.longitude, stats.coords.latitude, -stats.coords.elevation,
         phase, config)
@@ -304,8 +305,7 @@ def _displacement_to_moment(stats, config):
     v_station *= 1000.
     v3 = v_hypo**(5./2) * v_station**(1./2)
     rp = get_radiation_pattern_coefficient(stats, config)
-    coeff = 4 * math.pi * v3 * config.rho / (2 * rp)
-    return coeff
+    return 4 * math.pi * v3 * config.rho / (2 * rp)
 
 
 def _smooth_spectrum(spec, smooth_width_decades=0.2):
@@ -396,9 +396,10 @@ def _build_weight_from_frequency(config, spec):
 def _build_weight_from_noise(config, spec, specnoise):
     weight = spec.copy()
     if specnoise is None or np.all(specnoise.data == 0):
-        msg = '{}: No available noise window: a uniform weight will be applied'
-        msg = msg.format(weight.get_id()[0:-1])
-        logger.warning(msg)
+        weight_id = weight.get_id()[:-1]
+        logger.warning(
+            f'{weight_id}: No available noise window: '
+            'a uniform weight will be applied')
         weight.data = np.ones(len(spec.data))
         weight.data_raw = np.ones(len(spec.data))
     else:
@@ -428,11 +429,11 @@ def _build_weight_from_noise(config, spec, specnoise):
 def _build_weight_st(config, spec_st, specnoise_st):
     """Build the weight spectrum."""
     weight_st = Stream()
-    spec_ids = set(sp.id[:-1] for sp in spec_st if not sp.stats.ignore)
+    spec_ids = {sp.id[:-1] for sp in spec_st if not sp.stats.ignore}
     for specid in spec_ids:
         try:
-            spec_h = _select_spectra(spec_st, specid + 'H')[0]
-            specnoise_h = _select_spectra(specnoise_st, specid + 'H')[0]
+            spec_h = _select_spectra(spec_st, f'{specid}H')[0]
+            specnoise_h = _select_spectra(specnoise_st, f'{specid}H')[0]
         except Exception:
             continue
         if config.weighting == 'noise':
@@ -455,19 +456,21 @@ def _select_spectra(spec_st, specid):
     return spec_st_sel
 
 
-def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=['Z'],
+def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
              wave_type='S'):
     """
     Add to spec_st and specnoise_st the "H" component.
 
     H component is obtained from the modulus of all the available components.
     """
-    spec_ids = set(sp.id[:-1] for sp in spec_st if not sp.stats.ignore)
+    if vertical_channel_codes is None:
+        vertical_channel_codes = ['Z']
+    spec_ids = {sp.id[:-1] for sp in spec_st if not sp.stats.ignore}
     for specid in spec_ids:
         spec_st_sel = _select_spectra(spec_st, specid)
         specnoise_st_sel = _select_spectra(specnoise_st, specid)
         # 'code' is band+instrument code
-        for code in set(x.stats.channel[:-1] for x in spec_st_sel):
+        for code in {x.stats.channel[:-1] for x in spec_st_sel}:
             spec_h = _compute_h(
                 spec_st_sel, code, vertical_channel_codes, wave_type)
             if spec_h is not None:
@@ -489,15 +492,15 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
     spectral_snratio =\
         weight.data_raw[idx].sum()/len(weight.data_raw[idx])
     spec.stats.spectral_snratio = spectral_snratio
+    spec_id = spec.get_id()
     logger.info(
-        '{}: spectral S/N: {:.2f}'.format(
-            spec.get_id(), spectral_snratio))
+        f'{spec_id}: spectral S/N: {spectral_snratio:.2f}')
     if config.spectral_sn_min:
         ssnmin = config.spectral_sn_min
         if spectral_snratio < ssnmin:
-            msg = '{}: spectral S/N smaller than {:.2f}: '
-            msg += 'ignoring spectrum'
-            msg = msg.format(spec.get_id(), ssnmin)
+            msg = (
+                f'{spec_id}: spectral S/N smaller than {ssnmin:.2f}: '
+                'ignoring spectrum')
             reason = 'low spectral S/N'
             raise SpectrumIgnored(msg, reason)
 
