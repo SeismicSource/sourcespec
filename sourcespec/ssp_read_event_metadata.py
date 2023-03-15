@@ -146,7 +146,9 @@ def _parse_hypo71_hypocenter(hypo_file):
     evid = os.path.basename(hypo_file)
     evid = evid.replace('.phs', '').replace('.h', '').replace('.hyp', '')
     hypo.evid = evid
-    return hypo
+    # empty picks list, for consistency with other parsers
+    picks = []
+    return hypo, picks
 
 
 def _parse_hypo2000_hypo_line(line):
@@ -263,24 +265,21 @@ def _parse_hypo2000_file(hypo_file):
 
 
 def parse_hypo_file(hypo_file):
-    picks = []
+    """Parse a hypo71 or hypo2000 hypocenter file."""
     err_msgs = []
-    try:
-        hypo = _parse_hypo71_hypocenter(hypo_file)
-        return hypo, picks
-    except Exception as err:
-        msg = f'{hypo_file}: Not a hypo71 hypocenter file'
-        err_msgs.append(msg)
-        msg = f'Parsing error: {err}'
-        err_msgs.append(msg)
-    try:
-        hypo, picks = _parse_hypo2000_file(hypo_file)
-        return hypo, picks
-    except Exception as err:
-        msg = f'{hypo_file}: Not a hypo2000 hypocenter file'
-        err_msgs.append(msg)
-        msg = f'Parsing error: {err}'
-        err_msgs.append(msg)
+    parsers = {
+        'hypo71': _parse_hypo71_hypocenter,
+        'hypo2000': _parse_hypo2000_file,
+    }
+    for format, parser in parsers.items():
+        try:
+            hypo, picks = parser(hypo_file)
+            return hypo, picks
+        except Exception as err:
+            msg = f'{hypo_file}: Not a {format} hypocenter file'
+            err_msgs.append(msg)
+            msg = f'Parsing error: {err}'
+            err_msgs.append(msg)
     # If we arrive here, the file was not recognized as valid
     for msg in err_msgs:
         logger.error(msg)
