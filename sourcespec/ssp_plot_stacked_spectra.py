@@ -10,6 +10,7 @@ Plot stacked spectra, along with summary inverted spectrum.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import contextlib
 import logging
 import numpy as np
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
@@ -25,36 +26,34 @@ mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
 
 
+def _spectral_model_moment(freq, Mw, fc, t_star):
+    return mag_to_moment(spectral_model(freq, Mw=Mw, fc=fc, t_star=t_star))
+
+
 def _summary_synth_spec(sspec_output, fmin, fmax):
     npts = 100
     freq = np.logspace(np.log10(fmin), np.log10(fmax), npts)
     summary_values = sspec_output.reference_values()
-    params_name = ('Mw', 'fc', 't_star')
-    summary_params = {p: summary_values[p] for p in params_name}
-    synth_model_mag = spectral_model(freq, **summary_params)
-    synth_model = mag_to_moment(synth_model_mag)
-    summary_params_no_att = summary_params.copy()
-    summary_params_no_att['t_star'] = 0
-    synth_model_mag_no_att = spectral_model(freq, **summary_params_no_att)
-    synth_model_no_att = mag_to_moment(synth_model_mag_no_att)
-    summary_params_no_fc = summary_params.copy()
-    summary_params_no_fc['fc'] = 1e999
-    synth_model_mag_no_fc = spectral_model(freq, **summary_params_no_fc)
-    synth_model_no_fc = mag_to_moment(synth_model_mag_no_fc)
+    Mw = summary_values['Mw']
+    fc = summary_values['fc']
+    t_star = summary_values['t_star']
+    synth_model = _spectral_model_moment(freq, Mw, fc, t_star)
+    synth_model_no_att = _spectral_model_moment(freq, Mw, fc, 0)
+    synth_model_no_fc = _spectral_model_moment(freq, Mw, 1e999, t_star)
     return freq, synth_model, synth_model_no_att, synth_model_no_fc
 
 
 def _make_fig(config):
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
     figsize = (7, 7)
-    if config.plot_save_format in ['pdf', 'pdf_multipage', 'svg']:
-        dpi = 72
-    else:
-        dpi = 200
+    dpi = (
+        72 if config.plot_save_format in ['pdf', 'pdf_multipage', 'svg']
+        else 200
+    )
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
     ax.grid(True, which='both', linestyle='solid', color='#DDDDDD', zorder=0)
     ax.set_xlabel('Frequency (Hz)')
-    ax.set_ylabel('Seismic moment (Nm)')
+    ax.set_ylabel('Seismic moment (N·m)')
     return fig, ax
 
 
@@ -91,11 +90,11 @@ def _make_ax2(ax):
 
 def _nspectra_text(spec_list):
     nspectra = len(spec_list)
-    if nspectra == 1:
-        text = 'Inverted spectrum'
-    else:
-        text = 'Inverted spectra ({})'.format(nspectra)
-    return text
+    return (
+        'Inverted spectrum'
+        if nspectra == 1
+        else f'Inverted spectra ({nspectra})'
+    )
 
 
 def _summary_params_text(sspec_output, ax):
@@ -104,7 +103,7 @@ def _summary_params_text(sspec_output, ax):
     params_name = ('Mo', 'Mw', 'fc', 't_star')
     summary_params = {p: summary_values[p] for p in params_name}
     summary_errors = {p: summary_uncertainties[p] for p in params_name}
-    Mo_text = 'Mo: {:.1e} [- {:.1e}, + {:.1e}] Nm'.format(
+    Mo_text = 'Mo: {:.1e} [- {:.1e}, + {:.1e}] N·m'.format(
         summary_params['Mo'], *summary_errors['Mo'])
     Mw_text = 'Mw: {:.2f} [- {:.2f}, + {:.2f}]'.format(
         summary_params['Mw'], *summary_errors['Mw'])
@@ -112,9 +111,9 @@ def _summary_params_text(sspec_output, ax):
         summary_params['fc'], *summary_errors['fc'])
     t_star_text = 't*: {:.2f} [- {:.2f}, + {:.2f}] s'.format(
         summary_params['t_star'], *summary_errors['t_star'])
-    params_text = 'Summary parameters:\n'
-    params_text += '{}\n{}\n{}\n{}'.format(
-        Mo_text, Mw_text, fc_text, t_star_text)
+    params_text = (
+        f'Summary parameters:\n{Mo_text}\n{Mw_text}\n{fc_text}\n{t_star_text}'
+    )
     color = 'black'
     # Path effect to contour text in white
     path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
@@ -136,21 +135,20 @@ def _add_title(config, ax):
     textstr = 'evid: {}\nlon: {:.3f} lat: {:.3f} depth: {:.1f} km'
     textstr = textstr.format(
         hypo.evid, hypo.longitude, hypo.latitude, hypo.depth)
-    try:
-        textstr += '\ntime: {}'.format(
-            hypo.origin_time.format_iris_web_service())
-    except AttributeError:
-        pass
-    ax.text(0., 1.15, textstr, fontsize=10, linespacing=1.5,
-            ha='left', va='top', transform=ax.transAxes)
+    with contextlib.suppress(AttributeError):
+        textstr += f'\ntime: {hypo.origin_time.format_iris_web_service()}'
+    ax.text(
+        0., 1.15, textstr, fontsize=10, linespacing=1.5,
+        ha='left', va='top', transform=ax.transAxes)
 
 
 def _add_code_author(config, ax):
-    # Add code and author information at the figure bottom
-    textstr = 'SourceSpec v{} '.format(get_versions()['version'])
-    textstr += '– {} {} '.format(
-        config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
-        config.end_of_run_tz)
+    # Add code and author information to the figure bottom
+    textstr = (
+        f'SourceSpec v{get_versions()["version"]} '
+        f'- {config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")} '
+        f'{config.end_of_run_tz} '
+    )
     textstr2 = ''
     if config.author_name is not None:
         textstr2 += config.author_name
@@ -165,10 +163,11 @@ def _add_code_author(config, ax):
             textstr2 += ' - '
         textstr2 += config.agency_full_name
     if textstr2 != '':
-        textstr = '{}\n{} '.format(textstr, textstr2)
+        textstr = f'{textstr}\n{textstr2} '
     ypos = -0.15
-    ax.text(1., ypos, textstr, fontsize=8, linespacing=1.5,
-            ha='right', va='top', transform=ax.transAxes)
+    ax.text(
+        1., ypos, textstr, fontsize=8, linespacing=1.5,
+        ha='right', va='top', transform=ax.transAxes)
 
 
 def _savefig(config, fig):
@@ -184,7 +183,7 @@ def _savefig(config, fig):
     if config.plot_save:
         savefig(fig, figfile, fmt, bbox_inches='tight')
         config.figures['stacked_spectra'].append(figfile)
-        logger.info('Stacked spectra plot saved to: ' + figfile)
+        logger.info(f'Stacked spectra plot saved to: {figfile}')
 
 
 def plot_stacked_spectra(config, spec_st, sspec_output):
@@ -203,8 +202,8 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
     color = 'red'
     alpha = 0.5
     linewidth = 2
-    fmins = list()
-    fmaxs = list()
+    fmins = []
+    fmaxs = []
     for spec in selected_specs:
         freqs = spec.get_freq()
         spec_handle, = ax.loglog(
