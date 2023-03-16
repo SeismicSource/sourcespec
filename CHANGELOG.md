@@ -18,6 +18,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
   stations
 - Command line option `--station_metadata` for overriding the config file
   parameter with the same name (see pull request [#16])
+- Removed command line option `--no-response` for avoiding removing instrument
+  response (use the config option `correct_instrumental_response` instead)
 - Logscale for boxplots, if parameters span a large interval
   (see pull request [#15])
 
@@ -36,6 +38,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
     algorithm and the other `clipping_*` parameters to adjust the results.
   - The algorithms can also be called from the command line, e.g. for debug
     purposes, using the shell command `clipping_detection`.
+- Use modern ObsPy `trace.remove_response()` routine for instrument correction
+  (see [#27])
 - Magnitude limits for inversion are now autoset between 90% of the minimum
   of the spectral plateau and 110% of its maximum (see [#22])
 - Relax noise window requirements if noise weighting is not used.
@@ -78,6 +82,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 ### Config file
 
+- Removed `sensitivity_only` option from `correct_instrumental_response`
 - Removed config parameter: `Mw_0_variability`
 - Removed config parameter: `clip_max_percent`
 - New config parameter: `remove_baseline`
@@ -93,6 +98,10 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - New config parameter: `n_sigma`
 - New config parameters for percentiles calculation: `lower_percentage`,
   `mid_percentage` and `upper_percentage`
+- New config parameters for filtering and spectral windowing of displacement
+  signals:
+  - `bp_freqmin_disp`, `bp_freqmax_disp`
+  - `freq1_disp`, `freq2_disp`
 
 ### Bugfixes
 
@@ -467,3 +476,4 @@ Initial Python port.
 [#23]: https://github.com/SeismicSource/sourcespec/issues/23
 [#24]: https://github.com/SeismicSource/sourcespec/issues/24
 [#25]: https://github.com/SeismicSource/sourcespec/issues/25
+[#27]: https://github.com/SeismicSource/sourcespec/issues/27

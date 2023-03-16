@@ -22,6 +22,8 @@ import shutil
 import logging
 import signal
 import uuid
+import json
+import contextlib
 from datetime import datetime
 from collections import defaultdict
 from sourcespec.configobj import ConfigObj
@@ -45,6 +47,11 @@ OS = os.name
 oldlogfile = None
 logger = None
 ssp_exit_called = False
+traceid_map = None
+# SEED standard instrument codes:
+# https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
+instr_codes_vel = ['H', 'L']
+instr_codes_acc = ['N', ]
 OBSPY_VERSION = None
 OBSPY_VERSION_STR = None
 NUMPY_VERSION_STR = None
@@ -64,13 +71,11 @@ def _check_obspy_version():
     # special case for "rc" versions:
     OBSPY_VERSION[2] = OBSPY_VERSION[2].split('rc')[0]
     OBSPY_VERSION = tuple(map(int, OBSPY_VERSION))
-    try:
+    with contextlib.suppress(IndexError):
         # add half version number for development versions
         # check if there is a fourth field in version string:
         OBSPY_VERSION_STR.split('.')[3]
         OBSPY_VERSION = OBSPY_VERSION[:2] + (OBSPY_VERSION[2] + 0.5,)
-    except IndexError:
-        pass
     if OBSPY_VERSION < MIN_OBSPY_VERSION:
         msg = 'ERROR: ObsPy >= %s.%s.%s is required.' % MIN_OBSPY_VERSION
         msg += ' You have version: %s\n' % OBSPY_VERSION_STR
@@ -88,7 +93,7 @@ def _check_cartopy_version():
         cartopy_ver = tuple(map(int, cartopy.__version__.split('.')[:3]))
         if cartopy_ver < cartopy_min_ver:
             raise ImportError
-    except ImportError:
+    except ImportError as e:
         msg = (
             '\nPlease install cartopy >= {}.{}.{} to plot maps.\n'
             'How to install: '
@@ -98,10 +103,8 @@ def _check_cartopy_version():
             .format(*cartopy_min_ver)
         )
         if cartopy_ver is not None:
-            msg += (
-                'Installed cartopy version: {}.\n'.format(CARTOPY_VERSION_STR)
-            )
-        raise ImportError(msg)
+            msg += f'Installed cartopy version: {CARTOPY_VERSION_STR}.\n'
+        raise ImportError(msg) from e
 
 
 def _check_pyproj_version():
@@ -431,6 +434,47 @@ def _check_mandatory_config_params(config_obj):
         ssp_exit(1)
 
 
+def _init_instrument_codes(config):
+    """
+    Initialize instrument codes from config file.
+    """
+    global instr_codes_vel
+    global instr_codes_acc
+    # User-defined instrument codes:
+    instr_code_acc_user = config.instrument_code_acceleration
+    instr_code_vel_user = config.instrument_code_velocity
+    # Remove user-defined instrument codes if they conflict
+    # with another instrument
+    with contextlib.suppress(ValueError):
+        instr_codes_vel.remove(instr_code_acc_user)
+    with contextlib.suppress(ValueError):
+        instr_codes_acc.remove(instr_code_vel_user)
+    # Add user-defined instrument codes
+    if instr_code_vel_user is not None:
+        instr_codes_vel.append(instr_code_vel_user)
+    if instr_code_acc_user is not None:
+        instr_codes_acc.append(instr_code_acc_user)
+
+
+def _init_traceid_map(traceid_map_file):
+    """
+    Initialize trace ID map from file.
+    """
+    global traceid_map
+    if traceid_map_file is None:
+        return
+    try:
+        with open(traceid_map_file, 'r') as fp:
+            traceid_map = json.loads(fp.read())
+    except Exception:
+        msg = (
+            f'traceid mapping file "{traceid_map_file}" not found '
+            'or not in json format'
+        )
+        sys.stderr.write(msg + '\n')
+        ssp_exit(1)
+
+
 def configure(options, progname, config_overrides=None):
     """
     Parse command line arguments and read config file.
@@ -552,6 +596,8 @@ def configure(options, progname, config_overrides=None):
             sys.stderr.write(str(err))
             sys.exit(1)
 
+    _init_instrument_codes(config)
+    _init_traceid_map(config.traceid_mapping_file)
     _init_plotting(config.plot_show)
     # Create a dict to store figure paths
     config.figures = defaultdict(list)

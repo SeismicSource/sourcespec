@@ -12,7 +12,6 @@ Utility functions for sourcespec.
 import os
 from glob import glob
 import logging
-import warnings
 import math
 import numpy as np
 from obspy.signal.invsim import cosine_taper as _cos_taper
@@ -209,8 +208,7 @@ def smooth(x, window_len=11, window='hanning'):
     return yy
 
 
-def remove_instr_response(trace, correct='True',
-                          pre_filt=(0.5, 0.6, 40., 45.)):
+def remove_instr_response(trace, pre_filt=(0.5, 0.6, 40., 45.)):
     """
     Remove instrument response from a trace.
 
@@ -220,51 +218,32 @@ def remove_instr_response(trace, correct='True',
 
     :param trace: Trace to be corrected.
     :type trace: :class:`~obspy.core.trace.Trace`
-    :param correct: If ``True``, the instrument response will be corrected.
-        If ``False``, the instrument response will not be corrected.
-        If ``sensitivity_only``, the instrument response will be corrected
-        using only the sensitivity.
-    :type correct: bool or str
     :param pre_filt: Pre-filter frequencies (``None`` means no pre-filtering).
     :type pre_filt: tuple of four floats
-    :returns: Corrected trace.
-    :rtype: :class:`~obspy.core.trace.Trace`
     """
-    if correct == 'False':
-        return trace
     traceId = trace.get_id()
-    paz = trace.stats.paz
-    if paz is None:
-        logger.warning('{}: no poles and zeros for trace'.format(traceId))
-        return None
-
+    inventory = trace.stats.inventory
+    if not inventory:
+        # empty inventory
+        raise RuntimeError(
+            f'{traceId}: no instrument response for trace')
     # remove the mean...
     trace.detrend(type='constant')
     # ...and the linear trend
     trace.detrend(type='linear')
-
-    # Finally remove instrument response
-    # If we don't have any pole or zero defined,
-    # then be smart and just use the sensitivity ;)
-    if len(paz.poles) == 0 and len(paz.zeros) == 0:
-        correct = 'sensitivity_only'
-    if correct == 'sensitivity_only':
-        trace.data /= paz.sensitivity
-    # Otherwise we need to call trace.simulate(), which is quite slow...
-    else:
-        with warnings.catch_warnings(record=True) as w:
-            # N.B. using "sacsim=True" makes this two times slower!
-            # (because of "c_sac_taper()")
-            # TODO: fill up a bug on obspy.org
-            trace.simulate(paz_remove=paz, paz_simulate=None,
-                           remove_sensitivity=True, simulate_sensitivity=None,
-                           pre_filt=pre_filt, sacsim=False)
-            if len(w) > 0:
-                logger.warning(
-                    '{}: remove_instr_response: {}'.format(
-                        trace.stats.station, w[-1].message)
-                )
-    return trace
+    # Define output units based on nominal units in inventory
+    # Note: ObsPy >= 1.3.0 supports the 'DEF' output unit, which will make
+    #       this step unnecessary
+    if trace.stats.units.lower() == 'm':
+        output = 'DISP'
+    if trace.stats.units.lower() == 'm/s':
+        output = 'VEL'
+    if trace.stats.units.lower() == 'm/s**2':
+        output = 'ACC'
+    # Finally remove instrument response,
+    # trace is converted to the sensor units
+    trace.remove_response(
+        inventory=inventory, output=output, pre_filt=pre_filt)
 # -----------------------------------------------------------------------------
 
 

@@ -136,11 +136,6 @@ def _init_parser(description, epilog, nargs):
         action='store', default=None,
         help='only use this station', metavar='STATION'
     )
-    parser.add_argument(
-        '-N', '--no-response', dest='no_response',
-        action='store_true', default=False,
-        help='do not remove instrument response'
-    )
     return parser
 
 

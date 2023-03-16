@@ -193,14 +193,15 @@ def _process_trace(config, trace):
     # check if trace is clipped
     _check_clipping(config, trace_process)
     # Remove instrument response
-    if not config.options.no_response:
-        correct = config.correct_instrumental_response
-        bp_freqmin, bp_freqmax = _get_bandpass_frequencies(config, trace)
-        pre_filt = (bp_freqmin, bp_freqmin*1.1, bp_freqmax*0.9, bp_freqmax)
-        if remove_instr_response(trace_process, correct, pre_filt) is None:
+    bp_freqmin, bp_freqmax = _get_bandpass_frequencies(config, trace)
+    if config.correct_instrumental_response:
+        try:
+            pre_filt = (bp_freqmin, bp_freqmin*1.1, bp_freqmax*0.9, bp_freqmax)
+            remove_instr_response(trace_process, pre_filt)
+        except Exception as e:
             raise RuntimeError(
                 f'{trace.stats.info}: Unable to remove instrument response: '
-                'skipping trace')
+                'skipping trace') from e
     _remove_baseline(config, trace_process)
     filter_trace(config, trace_process)
     # Check if the trace has significant signal to noise ratio
