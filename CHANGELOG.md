@@ -38,6 +38,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
     algorithm and the other `clipping_*` parameters to adjust the results.
   - The algorithms can also be called from the command line, e.g. for debug
     purposes, using the shell command `clipping_detection`.
+- Use modern ObsPy `trace.remove_response()` routine for instrument correction
+  (see [#27])
 - Magnitude limits for inversion are now autoset between 90% of the minimum
   of the spectral plateau and 110% of its maximum (see [#22])
 - Relax noise window requirements if noise weighting is not used.
@@ -474,3 +476,4 @@ Initial Python port.
 [#23]: https://github.com/SeismicSource/sourcespec/issues/23
 [#24]: https://github.com/SeismicSource/sourcespec/issues/24
 [#25]: https://github.com/SeismicSource/sourcespec/issues/25
+[#27]: https://github.com/SeismicSource/sourcespec/issues/27
