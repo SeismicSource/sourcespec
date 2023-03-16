@@ -10,6 +10,7 @@ Plot parameter statistics.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import contextlib
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -93,29 +94,28 @@ def box_plots(config, sspec_output):
             line.set_linewidth(2)
             line.set_path_effects(path_effect)
         if plot_param.unit is None:
-            ax.set_xlabel('{}'.format(plot_param.name))
+            ax.set_xlabel(f'{plot_param.name}')
         else:
-            ax.set_xlabel('{} ({})'.format(plot_param.name, plot_param.unit))
+            ax.set_xlabel(f'{plot_param.name} ({plot_param.unit})')
         ax.tick_params(left=False, labelleft=False)
         ax.minorticks_on()
 
     # Add event information as a title
     hypo = config.hypo
-    textstr = 'evid: {}\nlon: {:.3f} lat: {:.3f} depth: {:.1f} km'
-    textstr = textstr.format(
-        hypo.evid, hypo.longitude, hypo.latitude, hypo.depth)
-    try:
-        textstr += ' time: {}'.format(
-            hypo.origin_time.format_iris_web_service())
-    except AttributeError:
-        pass
-    ax0.text(0., 1.08, textstr, fontsize=10, linespacing=1.5,
-             ha='left', va='top', transform=ax0.transAxes)
-    # Add code and author information at the figure bottom
-    textstr = 'SourceSpec v{} '.format(get_versions()['version'])
-    textstr += '– {} {} '.format(
-        config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
-        config.end_of_run_tz)
+    textstr = (
+        f'evid: {hypo.evid}\nlon: {hypo.longitude:.3f} '
+        f'lat: {hypo.latitude:.3f} depth: {hypo.depth:.1f} km'
+    )
+    with contextlib.suppress(AttributeError):
+        textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
+    ax0.text(
+        0., 1.08, textstr, fontsize=10, linespacing=1.5,
+        ha='left', va='top', transform=ax0.transAxes)
+    textstr = (
+        f'SourceSpec v{get_versions()["version"]} '
+        f'– {config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")} '
+        f'{config.end_of_run_tz} '
+    )
     textstr2 = ''
     if config.author_name is not None:
         textstr2 += config.author_name
@@ -130,24 +130,25 @@ def box_plots(config, sspec_output):
             textstr2 += ' - '
         textstr2 += config.agency_full_name
     if textstr2 != '':
-        textstr = '{}\n{} '.format(textstr, textstr2)
-    if not axes[-1].get_visible():
-        ypos = 0.04
-    else:
-        ypos = -0.08
-    ax0.text(1., ypos, textstr, fontsize=8, linespacing=1.5,
-             ha='right', va='top', transform=ax0.transAxes)
+        textstr = f'{textstr}\n{textstr2} '
+    ypos = -0.08 if axes[-1].get_visible() else 0.04
+    ax0.text(
+        1., ypos, textstr, fontsize=8, linespacing=1.5,
+        ha='right', va='top', transform=ax0.transAxes)
 
-    evid = config.hypo.evid
-    figfile_base = os.path.join(config.options.outdir, evid)
-    figfile_base += '.boxplot.'
-    fmt = config.plot_save_format
-    if fmt == 'pdf_multipage':
-        fmt = 'pdf'
-    figfile = figfile_base + fmt
     if config.plot_show:
         plt.show()
     if config.plot_save:
-        savefig(fig, figfile, fmt, bbox_inches='tight')
-        config.figures['boxplots'].append(figfile)
-        logger.info('Parameters box plot saved to: ' + figfile)
+        _savefig(config, fig)
+
+
+def _savefig(config, fig):
+    evid = config.hypo.evid
+    figfile_base = os.path.join(config.options.outdir, f'{evid}.boxplot.')
+    fmt = config.plot_save_format
+    if fmt == 'pdf_multipage':
+        fmt = 'pdf'
+    figfile = f'{figfile_base}{fmt}'
+    savefig(fig, figfile, fmt, bbox_inches='tight')
+    config.figures['boxplots'].append(figfile)
+    logger.info(f'Parameters box plot saved to: {figfile}')
