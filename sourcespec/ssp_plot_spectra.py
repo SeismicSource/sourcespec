@@ -18,6 +18,7 @@ import os
 import math
 import logging
 import warnings
+import contextlib
 from collections import defaultdict
 from obspy import Stream
 from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
@@ -43,100 +44,87 @@ synth_colors = [
 
 
 class PlotParams():
-    def __init__(self):
-        self.plot_type = None
-        self.stack_plots = False
-        self.nlines = 0
-        self.ncols = 0
-        self.freq_minmax = None
-        self.moment_minmax = None
-        self.mag_minmax = None
-        self.plotn = 0
-        self.figures = list()
-        self.axes = None
-        self.ax0 = None
-
-
-def _set_plot_params(config, spec_st, specnoise_st, ncols, plot_params):
-    """Determine the number of plots and axes min and max."""
-    nplots = 0
-    moment_minmax = None
+    plot_type = None
+    stack_plots = False
+    nlines = 0
+    ncols = 0
     freq_minmax = None
-    if not config.plot_spectra_ignored:
-        _spec_st = Stream(sp for sp in spec_st if not sp.stats.ignore)
-    else:
-        _spec_st = spec_st
-    specids = set('.'.join(sp.id.split('.')[:-1]) for sp in _spec_st)
-    for specid in specids:
-        network, station, location = specid.split('.')
-        spec_st_sel = _spec_st.select(
-            network=network, station=station, location=location)
-        if specnoise_st:
-            specnoise_sel = specnoise_st.select(
+    moment_minmax = None
+    mag_minmax = None
+    plotn = 0
+    figures = []
+    axes = None
+    ax0 = None
+
+    def set_plot_params(self, config, spec_st, specnoise_st):
+        """Determine the number of plots and axes min and max."""
+        nplots = 0
+        moment_minmax = None
+        freq_minmax = None
+        _spec_st = (
+            spec_st
+            if config.plot_spectra_ignored
+            else Stream(sp for sp in spec_st if not sp.stats.ignore)
+        )
+        specids = {'.'.join(sp.id.split('.')[:-1]) for sp in _spec_st}
+        for specid in specids:
+            network, station, location = specid.split('.')
+            spec_st_sel = _spec_st.select(
                 network=network, station=station, location=location)
-            if not specnoise_sel[0].data.sum() == 0:
-                spec_st_sel += specnoise_sel
-        for spec in spec_st_sel:
-            moment_minmax, freq_minmax =\
-                spec_minmax(spec.data, spec.get_freq(),
-                            moment_minmax, freq_minmax)
-        # 'code' is band+instrument code
-        for code in set(x.stats.channel[:-1] for x in spec_st_sel):
-            nplots += 1
-    nlines = int(math.ceil(nplots/ncols))
-    maxlines = config.plot_spectra_maxrows
-    if nlines > maxlines:
-        nlines = maxlines
-    if plot_params.plot_type != 'weight':
-        moment_minmax[1] *= 10
-        mag_minmax = moment_to_mag(moment_minmax)
-    else:
-        mag_minmax = None
-    plot_params.nlines = nlines
-    plot_params.ncols = ncols
-    plot_params.freq_minmax = freq_minmax
-    plot_params.moment_minmax = moment_minmax
-    plot_params.mag_minmax = mag_minmax
+            if specnoise_st:
+                specnoise_sel = specnoise_st.select(
+                    network=network, station=station, location=location)
+                if specnoise_sel[0].data.sum() != 0:
+                    spec_st_sel += specnoise_sel
+            for spec in spec_st_sel:
+                moment_minmax, freq_minmax = spec_minmax(
+                    spec.data, spec.get_freq(), moment_minmax, freq_minmax)
+            # increment the number of plots,
+            # based on the number of uniqs band+instrument codes
+            nplots += len({x.stats.channel[:-1] for x in spec_st_sel})
+        nlines = int(math.ceil(nplots/self.ncols))
+        maxlines = config.plot_spectra_maxrows
+        self.nlines = min(nlines, maxlines)
+        if self.plot_type != 'weight':
+            moment_minmax[1] *= 10
+            self.mag_minmax = moment_to_mag(moment_minmax)
+        self.freq_minmax = freq_minmax
+        self.moment_minmax = moment_minmax
 
 
 def _make_fig(config, plot_params):
     nlines = plot_params.nlines
     ncols = plot_params.ncols
     stack_plots = plot_params.stack_plots
-    if nlines <= 3 or stack_plots:
-        figsize = (16, 9)
-    else:
-        figsize = (16, 18)
-    if config.plot_show:
-        dpi = 100
-    else:
-        dpi = 300
+    figsize = (16, 9) if nlines <= 3 or stack_plots else (16, 18)
+    dpi = 100 if config.plot_show else 300
     fig = plt.figure(figsize=figsize, dpi=dpi)
     # Create an invisible axis and use it for title and footer
     ax0 = fig.add_subplot(111, label='ax0')
     ax0.set_axis_off()
     # Add event information as a title
     hypo = config.hypo
-    textstr = 'evid: {} lon: {:.3f} lat: {:.3f} depth: {:.1f} km'
-    textstr = textstr.format(
-        hypo.evid, hypo.longitude, hypo.latitude, hypo.depth)
-    try:
-        textstr += ' time: {}'.format(
-            hypo.origin_time.format_iris_web_service())
-    except AttributeError:
-        pass
-    ax0.text(0., 1.06, textstr, fontsize=12,
-             ha='left', va='top', transform=ax0.transAxes)
+    textstr = (
+        f'evid: {hypo.evid} lon: {hypo.longitude:.3f} '
+        f'lat: {hypo.latitude:.3f} depth: {hypo.depth:.1f} km'
+    )
+    with contextlib.suppress(AttributeError):
+        textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
+    ax0.text(
+        0., 1.06, textstr, fontsize=12,
+        ha='left', va='top', transform=ax0.transAxes)
     if config.options.evname is not None:
         textstr = config.options.evname
-        ax0.text(0., 1.1, textstr, fontsize=14,
-                 ha='left', va='top', transform=ax0.transAxes)
+        ax0.text(
+            0., 1.1, textstr, fontsize=14,
+            ha='left', va='top', transform=ax0.transAxes)
     # Add code and author information at the figure bottom
-    textstr = 'SourceSpec v{} '.format(get_versions()['version'])
+    textstr = f'SourceSpec v{get_versions()["version"]} '
     if not stack_plots:
-        textstr += '– {} {} '.format(
-            config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
-            config.end_of_run_tz)
+        textstr += (
+            f'- {config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")} '
+            f'{config.end_of_run_tz} '
+        )
     textstr2 = ''
     if config.author_name is not None:
         textstr2 += config.author_name
@@ -151,23 +139,24 @@ def _make_fig(config, plot_params):
             textstr2 += ' - '
         textstr2 += config.agency_full_name
     if textstr2 != '':
-        textstr = '{}\n{} '.format(textstr, textstr2)
-    ax0.text(1., -0.1, textstr, fontsize=10, linespacing=1.5,
-             ha='right', va='top', transform=ax0.transAxes)
+        textstr = f'{textstr}\n{textstr2} '
+    ax0.text(
+        1., -0.1, textstr, fontsize=10, linespacing=1.5,
+        ha='right', va='top', transform=ax0.transAxes)
     axes = []
     for n in range(nlines*ncols):
         plotn = n+1
         # ax1 has moment units (or weight)
         if plotn == 1:
-            if stack_plots:
-                ax = fig.add_subplot(1, 1, 1, label='ax')
-            else:
-                ax = fig.add_subplot(nlines, ncols, plotn)
-        else:
-            if not stack_plots:
-                ax = fig.add_subplot(
-                    nlines, ncols, plotn,
-                    sharex=axes[0][0], sharey=axes[0][0])
+            ax = (
+                fig.add_subplot(1, 1, 1, label='ax')
+                if stack_plots
+                else fig.add_subplot(nlines, ncols, plotn)
+            )
+        elif not stack_plots:
+            ax = fig.add_subplot(
+                nlines, ncols, plotn,
+                sharex=axes[0][0], sharey=axes[0][0])
         ax.set_xlim(plot_params.freq_minmax)
         with warnings.catch_warnings():
             # ignore warnings when ymin == ymax (ex., no weighting)
@@ -179,15 +168,14 @@ def _make_fig(config, plot_params):
         ax.xaxis.set_tick_params(which='both', labelbottom=False)
         ax.yaxis.set_tick_params(which='both', labelleft=False)
         ax.tick_params(width=2)  # FIXME: ticks are below grid lines!
-        # ax2 has magnitude units
-        if plot_params.plot_type != 'weight':
-            if ((stack_plots and plotn == 1) or not stack_plots):
-                ax2 = ax.twinx()
-                ax2.set_ylim(plot_params.mag_minmax)
-                ax2.yaxis.set_tick_params(
-                    which='both', labelright=False, width=0)
-        else:
+        if plot_params.plot_type == 'weight':
             ax2 = None
+        elif ((stack_plots and plotn == 1) or not stack_plots):
+            ax2 = ax.twinx()
+            # ax2 has magnitude units
+            ax2.set_ylim(plot_params.mag_minmax)
+            ax2.yaxis.set_tick_params(
+                which='both', labelright=False, width=0)
         ax.has_station_text = False
         axes.append((ax, ax2))
     fig.subplots_adjust(hspace=.025, wspace=.03)
@@ -213,16 +201,13 @@ def _savefig(config, plottype, figures):
     nfigures = len(figures)
     if nfigures == 1 or fmt == 'pdf_multipage':
         if fmt == 'pdf_multipage':
-            figfile = figfile_base + 'pdf'
+            figfile = f'{figfile_base}pdf'
             pdf = PdfPages(figfile)
         else:
             figfile = figfile_base + fmt
         figfiles = [figfile, ]
     else:
-        figfiles = [
-            figfile_base + '{:02d}.{}'.format(n, fmt)
-            for n in range(nfigures)
-        ]
+        figfiles = [f'{figfile_base}{n:02d}.{fmt}' for n in range(nfigures)]
     for n in range(nfigures):
         if fmt == 'pdf_multipage':
             pdf.savefig(figures[n], bbox_inches=bbox)
@@ -231,8 +216,8 @@ def _savefig(config, plottype, figures):
         if not config.plot_show:
             plt.close(figures[n])
     for figfile in figfiles:
-        logger.info(message + ' plots saved to: ' + figfile)
-    config.figures['spectra_' + plottype] += figfiles
+        logger.info(f'{message} plots saved to: {figfile}')
+    config.figures[f'spectra_{plottype}'] += figfiles
     if fmt == 'pdf_multipage':
         pdf.close()
 
@@ -248,7 +233,7 @@ def _add_labels(plot_params):
     plot_type = plot_params.plot_type
     axes = plot_params.axes
     # A row has "ncols" plots: the last row is from `plotn-ncols` to `plotn`
-    n0 = plotn-ncols if plotn-ncols > 0 else 0
+    n0 = max(plotn-ncols, 0)
     for ax, ax2 in axes[n0:plotn]:
         ax.xaxis.set_tick_params(which='both', labelbottom=True)
         ax.set_xlabel('Frequency (Hz)')
@@ -297,25 +282,26 @@ def _color_lines(config, orientation, plotn, stack_plots):
         color = 'red'
         linestyle = 'solid'
         linewidth = 2
-    if orientation == 'h':
+    elif orientation == 'S':
+        # synthetic spectrum
+        color = (
+            synth_colors[(plotn-1) % len(synth_colors)]
+            if stack_plots
+            else 'black'
+        )
+        linestyle = 'solid'
+        linewidth = 2
+    elif orientation == 'h':
         # root sum of squares spectrum, uncorrected
         color = 'chocolate'
         linestyle = 'solid'
         linewidth = 1
-    if orientation == 'S':
-        # synthetic spectrum
-        if stack_plots:
-            color = synth_colors[(plotn-1) % len(synth_colors)]
-        else:
-            color = 'black'
-        linestyle = 'solid'
-        linewidth = 2
-    if orientation == 's':
+    elif orientation == 's':
         # synthetic spectrum, no attenuation
         color = 'gray'
         linestyle = 'solid'
         linewidth = 1
-    if orientation == 't':
+    elif orientation == 't':
         # synthetic spectrum, no corner frequency
         color = 'gray'
         linestyle = 'dashed'
@@ -328,7 +314,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
     plot_type = plot_params.plot_type
     ax0 = plot_params.ax0
     # check the available channel codes
-    channel_codes = set(s.stats.channel[-1] for s in spec_st)
+    channel_codes = {s.stats.channel[-1] for s in spec_st}
     ncol0 = 0
     handles0 = []
     if 'H' in channel_codes:
@@ -358,7 +344,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
         handles0.append(_h)
     Z_codes = sorted(
         c for c in channel_codes if c in config.vertical_channel_codes)
-    if Z_codes:
+    if len(Z_codes) > 0:
         ncol0 += 1
         orientation = Z_codes[0]
         color, linestyle, linewidth =\
@@ -370,7 +356,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
         handles0.append(_h)
     H1_codes = sorted(
         c for c in channel_codes if c in config.horizontal_channel_codes_1)
-    if H1_codes:
+    if len(H1_codes) > 0:
         ncol0 += 1
         orientation = H1_codes[0]
         color, linestyle, linewidth =\
@@ -382,7 +368,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
         handles0.append(_h)
     H2_codes = sorted(
         c for c in channel_codes if c in config.horizontal_channel_codes_2)
-    if H2_codes:
+    if len(H2_codes) > 0:
         ncol0 += 1
         orientation = H2_codes[0]
         color, linestyle, linewidth =\
@@ -437,10 +423,8 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
                        color=color, label=label)
         handles1.append(_h)
     # Put the two legends on the two axes
-    legend0_y = legend1_y = -0.127
-    if handles0 and handles1:
-        legend0_y = -0.111
-        legend1_y = -0.147
+    legend0_y = -0.111 if handles0 and handles1 else -0.127
+    legend1_y = -0.147 if handles0 and handles1 else -0.127
     if handles0:
         ax0.legend(handles=handles0, bbox_to_anchor=(0, legend0_y),
                    loc='lower left', borderaxespad=0, ncol=ncol0)
@@ -464,11 +448,11 @@ def _snratio_text(spec, ax, color, path_effects):
 
 def _station_text(spec, ax, color, path_effects, stack_plots):
     global station_text_ypos
-    station_text = '{} {}'.format(spec.id[:-1], spec.stats.instrtype)
+    station_text = f'{spec.id[:-1]} {spec.stats.instrtype}'
     if not stack_plots:
         color = 'black'
-    station_text += '\n{:.1f} km ({:.1f} km)'.format(
-        spec.stats.hypo_dist, spec.stats.epi_dist)
+    station_text += (
+        f'\n{spec.stats.hypo_dist:.1f} km ({spec.stats.epi_dist:.1f} km)')
     if not ax.has_station_text or stack_plots:
         ax.text(
             0.05, station_text_ypos, station_text,
@@ -501,33 +485,32 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
         fc_err_left = fc_err_right = 0.
         Mw_err_left = Mw_err_right = 0.
         t_star_err_left = t_star_err_right = 0.
-    Mo_text = 'Mo: {:.2g}'.format(Mo)
-    Mw_text = 'Mw: {:.2f}'.format(Mw)
-    if round(Mw_err_left, 2) == round(Mw_err_right, 2):
-        Mw_text += '±{:.2f}'.format(Mw_err_left)
-    else:
-        Mw_text += '[-{:.2f},+{:.2f}]'.format(
-            Mw_err_left, Mw_err_right)
-    fc_text = 'fc: {:.2f}'.format(fc)
-    if round(fc_err_left, 2) == round(fc_err_right, 2):
-        fc_text += '±{:.2f}Hz'.format(fc_err_left)
-    else:
-        fc_text += '[-{:.2f},+{:.2f}]Hz'.format(
-            fc_err_left, fc_err_right)
-    t_star_text = 't*: {:.2f}'.format(t_star)
-    if round(t_star_err_left, 2) == round(t_star_err_right, 2):
-        t_star_text += '±{:.2f}s'.format(t_star_err_left)
-    else:
-        t_star_text += '[-{:.2f},+{:.2f}]s'.format(
-            t_star_err_left, t_star_err_right)
+    Mo_text = f'Mo: {Mo:.2g}N.m'
+    Mw_err_text = (
+        f'±{Mw_err_left:.2f}'
+        if round(Mw_err_left, 2) == round(Mw_err_right, 2)
+        else f'[-{Mw_err_left:.2f},+{Mw_err_right:.2f}]'
+    )
+    Mw_text = f'Mw: {Mw:.2f}{Mw_err_text}'
+    fc_err_text = (
+        f'±{fc_err_left:.2f}Hz'
+        if round(fc_err_left, 2) == round(fc_err_right, 2)
+        else f'[-{fc_err_left:.2f},+{fc_err_right:.2f}]Hz'
+    )
+    fc_text = f'fc: {fc:.2f}{fc_err_text}'
+    t_star_err_text = (
+        f'±{t_star_err_left:.2f}s'
+        if round(t_star_err_left, 2) == round(t_star_err_right, 2)
+        else f'[-{t_star_err_left:.2f},+{t_star_err_right:.2f}]s'
+    )
+    t_star_text = f't*: {t_star:.2f}{t_star_err_text}'
     if len(fc_text+t_star_text) > 38:
         sep = '\n'
         params_text_ypos -= 0.01
         station_text_ypos += 0.06
     else:
         sep = ' '
-    params_text = '{} {}\n{}{}{}'.format(
-        Mo_text, Mw_text, fc_text, sep, t_star_text)
+    params_text = f'{Mo_text} {Mw_text}\n{fc_text}{sep}{t_star_text}'
     ax.text(
         0.05, params_text_ypos, params_text,
         horizontalalignment='left',
@@ -564,22 +547,19 @@ def _plot_spec(config, plot_params, spec, spec_noise):
     axes = plot_params.axes
     ax, ax2 = axes[plotn-1]
     orientation = spec.stats.channel[-1]
-    special_orientations = ['S', 's', 't', 'H', 'h']
     # Path effect to contour text in white
     path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
     color, linestyle, linewidth =\
         _color_lines(config, orientation, plotn, stack_plots)
     # dim out ignored spectra
-    if spec.stats.ignore:
-        alpha = 0.3
-    else:
-        alpha = 1.0
+    alpha = 0.3 if spec.stats.ignore else 1.0
     if plot_type == 'regular':
         zorder = defaultdict(lambda: 20, {'S': 21, 'H': 22})
         ax.loglog(
             spec.freq_log, spec.data_log, color=color, alpha=alpha,
             linestyle=linestyle, linewidth=linewidth,
             zorder=zorder[orientation])
+        special_orientations = ['S', 's', 't', 'H', 'h']
         # Write spectral S/N for regular Z,N,E components
         if orientation not in special_orientations:
             _snratio_text(spec, ax, color, path_effects)
@@ -591,7 +571,7 @@ def _plot_spec(config, plot_params, spec, spec_noise):
             spec.get_freq(), spec.data, color=color, alpha=alpha,
             zorder=20)
     else:
-        raise ValueError('Unknown plot type: {}'.format(plot_type))
+        raise ValueError(f'Unknown plot type: {plot_type}')
 
     if spec_noise:
         ax.loglog(
@@ -654,10 +634,8 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
         spec_noise = None
         if orientation not in ['S', 's', 't', 'h']:
             specid = spec.get_id()
-            try:
+            with contextlib.suppress(Exception):
                 spec_noise = specnoise_st.select(id=specid)[0]
-            except Exception:
-                pass
         _plot_spec(config, plot_params, spec, spec_noise)
 
 
@@ -675,25 +653,25 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
 
     if ncols is None:
-        nspec = len(set(s.id[:-1] for s in spec_st))
+        nspec = len({s.id[:-1] for s in spec_st})
         ncols = 4 if nspec > 6 else 3
 
     plot_params = PlotParams()
     plot_params.plot_type = plot_type
     plot_params.stack_plots = stack_plots
-    _set_plot_params(config, spec_st, specnoise_st, ncols, plot_params)
+    plot_params.ncols = ncols
+    plot_params.set_plot_params(config, spec_st, specnoise_st)
     _make_fig(config, plot_params)
 
     # Plot!
     if config.plot_spectra_ignored:
-        stalist = sorted(set(
-            (sp.stats.hypo_dist, sp.id[:-1]) for sp in spec_st
-        ))
+        stalist = sorted({(sp.stats.hypo_dist, sp.id[:-1]) for sp in spec_st})
     else:
-        stalist = sorted(set(
-            (sp.stats.hypo_dist, sp.id[:-1]) for sp in spec_st
+        stalist = sorted({
+            (sp.stats.hypo_dist, sp.id[:-1])
+            for sp in spec_st
             if not sp.stats.ignore
-        ))
+        })
     for _, specid in stalist:
         _plot_specid(config, plot_params, specid, spec_st, specnoise_st)
 
