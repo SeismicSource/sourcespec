@@ -46,7 +46,7 @@ def box_plots(config, sspec_output):
         'radius': PlotParam('Source Radius', 'm', '#FAAC64'),
         'bsd': PlotParam('Brune Stress Drop', 'MPa', '#D4ADD2'),
         'Qo': PlotParam('Quality Factor', None, '#C07131'),
-        'Er': PlotParam('Radiated Energy', 'N.m', '#00E3E9'),
+        'Er': PlotParam('Radiated Energy', 'N·m', '#00E3E9'),
         'Ml': PlotParam('Ml', None, '#FC8384')
     }
     npars = len(plot_params)

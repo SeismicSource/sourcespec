@@ -251,7 +251,7 @@ def _add_labels(plot_params):
         ax.yaxis.set_tick_params(which='both', labelleft=True)
         ax.set_ylabel('Weight')
         if plot_type != 'weight':
-            ax.set_ylabel('Seismic moment (Nm)')
+            ax.set_ylabel('Seismic moment (N·m)')
             if ax2:
                 ax2.yaxis.set_tick_params(
                     which='both', labelright=True, pad=0, width=2)
@@ -485,7 +485,7 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
         fc_err_left = fc_err_right = 0.
         Mw_err_left = Mw_err_right = 0.
         t_star_err_left = t_star_err_right = 0.
-    Mo_text = f'Mo: {Mo:.2g}N.m'
+    Mo_text = f'Mo: {Mo:.2g}N·m'
     Mw_err_text = (
         f'±{Mw_err_left:.2f}'
         if round(Mw_err_left, 2) == round(Mw_err_right, 2)

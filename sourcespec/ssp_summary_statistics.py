@@ -166,11 +166,11 @@ def compute_summary_statistics(config, sspec_output):
             logarithmic=False
         )
 
-    # Mo (N.m)
+    # Mo (N·m)
     sspec_output.summary_spectral_parameters.Mo =\
         _param_summary_statistics(
             config, sspec_output,
-            id='Mo', name='seismic moment', units='N.m', format='{:.3e}',
+            id='Mo', name='seismic moment', units='N·m', format='{:.3e}',
             logarithmic=True
         )
 
@@ -214,11 +214,11 @@ def compute_summary_statistics(config, sspec_output):
             logarithmic=False
         )
 
-    # Er (N.m)
+    # Er (N·m)
     sspec_output.summary_spectral_parameters.Er =\
         _param_summary_statistics(
             config, sspec_output,
-            id='Er', name='radiated energy', units='N.m', format='{:.3e}',
+            id='Er', name='radiated energy', units='N·m', format='{:.3e}',
             logarithmic=True
         )
 

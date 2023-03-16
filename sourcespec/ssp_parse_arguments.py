@@ -199,7 +199,7 @@ def _update_parser_for_source_model(parser):
     parser.add_argument(
         '-M', '--moment', dest='Mo', action='store',
         default='NaN',
-        help='(list of) seismic moment (N.m, default undefined)',
+        help='(list of) seismic moment (N·m, default undefined)',
         metavar='Mo'
     )
     parser.add_argument(

@@ -220,11 +220,11 @@ def _write_parfile(config, sspec_output):
     Mo_mean = means['Mo']
     Mo_error = errors['Mo']
     s = _value_error_str(Mo_mean, Mo_error, '{:.3e}')
-    parfile.write(f'Mo: {s} N.m\n')
+    parfile.write(f'Mo: {s} N·m\n')
     Mo_mean_weight = means_weight['Mo']
     Mo_error_weight = errors_weight['Mo']
     s = _value_error_str(Mo_mean_weight, Mo_error_weight, '{:.3e}')
-    parfile.write(f'Mo (weighted): {s} N.m\n')
+    parfile.write(f'Mo (weighted): {s} N·m\n')
 
     fc_mean = means['fc']
     fc_error = errors['fc']
@@ -285,7 +285,7 @@ def _write_parfile(config, sspec_output):
     Er_mean = means['Er']
     Er_error = errors['Er']
     s = _value_error_str(Er_mean, Er_error, '{:.3e}')
-    parfile.write(f'Er: {s} N.m\n')
+    parfile.write(f'Er: {s} N·m\n')
 
     parfile.write(f'\n*** SourceSpec: {get_versions()["version"]}')
     parfile.write(

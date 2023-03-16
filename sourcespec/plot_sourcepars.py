@@ -72,7 +72,7 @@ def stress_drop_curve_Er_mw(delta_sigma, vs, rho, mw):
     mu = (vs*1000)**2. * rho
     Mo = mag_to_moment(mw)
     delta_sigma *= 1e6
-    # return Er in N.m
+    # return Er in N·m
     return 0.2331 * delta_sigma * Mo / mu
 
 
@@ -278,7 +278,7 @@ class Params(object):
         ax = ax_Mo.twiny()
         ax.set_xlim(xlim_mag)
         ax.set_xlabel('Mw')
-        ax_Mo.set_xlabel('Mo (N.m)')
+        ax_Mo.set_xlabel('Mo (N·m)')
         return fig, ax, ax_Mo
 
     def _add_grid(self, ax):
@@ -601,7 +601,7 @@ class Params(object):
             'fc': ('Corner Frequency', 'Hz', 'log'),
             'bsd': ('Brune Stress Drop', 'MPa', 'log'),
             'ra': ('Source Radius', 'm', 'lin'),
-            'Mo': ('Seismic Moment', 'N.m', 'log'),
+            'Mo': ('Seismic Moment', 'N·m', 'log'),
             't_star': ('T star', 's', 'lin'),
             'Qo': ('Qo', None, 'lin'),
             'Er': ('Radiated Energy', 'J', 'log'),
