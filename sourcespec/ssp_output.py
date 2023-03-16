@@ -15,6 +15,7 @@ Output functions for source_spec.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import contextlib
 import logging
 import numpy as np
 from collections.abc import Mapping
@@ -30,36 +31,36 @@ logger = logging.getLogger(__name__.split('.')[-1])
 def _write_author_and_agency_to_parfile(config, parfile):
     author_str = empty_author_str = '\n*** Author:'
     if config.author_name is not None:
-        author_str += ' {}'.format(config.author_name)
+        author_str += f' {config.author_name}'
     if config.author_email is not None:
         if author_str != empty_author_str:
-            author_str += ' <{}>'.format(config.author_email)
+            author_str += f' <{config.author_email}>'
         else:
-            author_str += ' {}'.format(config.author_email)
+            author_str += f' {config.author_email}'
     if author_str != empty_author_str:
         parfile.write(author_str)
     agency_str = empty_agency_str = '\n*** Agency:'
     if config.agency_full_name is not None:
-        agency_str += ' {}'.format(config.agency_full_name)
+        agency_str += f' {config.agency_full_name}'
     if config.agency_short_name is not None:
         if agency_str != empty_agency_str:
-            agency_str += ' ({})'.format(config.agency_short_name)
+            agency_str += f' ({config.agency_short_name})'
         else:
-            agency_str += ' {}'.format(config.agency_short_name)
+            agency_str += f' {config.agency_short_name}'
     if config.agency_url is not None:
         if agency_str != empty_agency_str:
             agency_str += ' -'
-        agency_str += ' {}'.format(config.agency_url)
+        agency_str += f' {config.agency_url}'
     if agency_str != empty_agency_str:
         parfile.write(agency_str)
 
 
 def _value_error_str(value, error, fmt):
     if error[0] == error[1]:
-        s = fmt + ' +/- ' + fmt
+        s = f'{fmt} +/- {fmt}'
         s = s.format(value, error[0])
     else:
-        s = fmt + ' /- ' + fmt + ' /+ ' + fmt
+        s = f'{fmt} /- {fmt} /+ {fmt}'
         s = s.format(value, error[0], error[1])
     return s
 
@@ -75,7 +76,7 @@ def _write_parfile(config, sspec_output):
         os.makedirs(config.options.outdir)
     evid = config.hypo.evid
     parfilename = os.path.join(
-        config.options.outdir, '{}.ssp.out'.format(evid))
+        config.options.outdir, f'{evid}.ssp.out')
     parfile = open(parfilename, 'w')
     parfile.write(
         '*** Note: this file is deprecated and might not contain all the '
@@ -87,10 +88,8 @@ def _write_parfile(config, sspec_output):
 
     hypo = config.hypo
     parfile.write(
-        '{} lon {:8.3f} lat {:7.3f} depth {:5.1f} km '
-        'orig_time {}\n\n'.format(
-            hypo.evid, hypo.longitude, hypo.latitude, hypo.depth,
-            hypo.origin_time))
+        f'{hypo.evid} lon {hypo.longitude:8.3f} lat {hypo.latitude:7.3f} '
+        f'depth {hypo.depth:5.1f} km orig_time {hypo.origin_time}\n\n')
     parfile.write('*** Station source parameters ***\n')
     parfile.write(
         '*** Note: outliers are prepended by a star (*) symbol ***\n')
@@ -127,7 +126,7 @@ def _write_parfile(config, sspec_output):
     stationpar = sspec_output.station_parameters
     for statId in sorted(stationpar.keys()):
         par = stationpar[statId]
-        parfile.write('{:>15} {:>6}\t'.format(statId, par.instrument_type))
+        parfile.write(f'{statId:>15} {par.instrument_type:>6}\t')
         for key in parkeys:
             if key == 'ra':
                 _pkey = 'radius'
@@ -146,13 +145,13 @@ def _write_parfile(config, sspec_output):
                 space = ' *'
             else:
                 space = '  '
-            parfile.write('{}{} '.format(space, key))
+            parfile.write(f'{space}{key} ')
             if val is not None and ~np.isnan(val):
                 parfile.write(formats[key].format(val))
             else:
                 parfile.write(formats_none[key].format('nan'))
         parfile.write('\n')
-        parfile.write('{:>22}\t'.format('--- errmin'))
+        parfile.write(f'{"--- errmin":>22}\t')
         for key in parkeys:
             if key == 'ra':
                 _pkey = 'radius'
@@ -170,13 +169,13 @@ def _write_parfile(config, sspec_output):
                 space = ' *'
             else:
                 space = '  '
-            parfile.write('{}{} '.format(space, key))
+            parfile.write(f'{space}{key} ')
             if err is not None:
                 parfile.write(formats[key].format(err))
             else:
                 parfile.write(formats_none[key].format('nan'))
         parfile.write('\n')
-        parfile.write('{:>22}\t'.format('--- errmax'))
+        parfile.write(f'{"--- errmax":>22}\t')
         for key in parkeys:
             if key == 'ra':
                 _pkey = 'radius'
@@ -194,7 +193,7 @@ def _write_parfile(config, sspec_output):
                 space = ' *'
             else:
                 space = '  '
-            parfile.write('{}{} '.format(space, key))
+            parfile.write(f'{space}{key} ')
             if err is not None:
                 parfile.write(formats[key].format(err))
             else:
@@ -212,43 +211,43 @@ def _write_parfile(config, sspec_output):
     Mw_mean = means['Mw']
     Mw_error = errors['Mw']
     s = _value_error_str(Mw_mean, Mw_error, '{:.2f}')
-    parfile.write('Mw: {}\n'.format(s))
+    parfile.write(f'Mw: {s}\n')
     Mw_mean_weight = means_weight['Mw']
     Mw_error_weight = errors_weight['Mw']
     s = _value_error_str(Mw_mean_weight, Mw_error_weight, '{:.2f}')
-    parfile.write('Mw (weighted): {}\n'.format(s))
+    parfile.write(f'Mw (weighted): {s}\n')
 
     Mo_mean = means['Mo']
     Mo_error = errors['Mo']
     s = _value_error_str(Mo_mean, Mo_error, '{:.3e}')
-    parfile.write('Mo: {} N.m\n'.format(s))
+    parfile.write(f'Mo: {s} N.m\n')
     Mo_mean_weight = means_weight['Mo']
     Mo_error_weight = errors_weight['Mo']
     s = _value_error_str(Mo_mean_weight, Mo_error_weight, '{:.3e}')
-    parfile.write('Mo (weighted): {} N.m\n'.format(s))
+    parfile.write(f'Mo (weighted): {s} N.m\n')
 
     fc_mean = means['fc']
     fc_error = errors['fc']
     s = _value_error_str(fc_mean, fc_error, '{:.3f}')
-    parfile.write('fc: {} Hz\n'.format(s))
+    parfile.write(f'fc: {s} Hz\n')
     fc_mean_weight = means_weight['fc']
     fc_error_weight = errors_weight['fc']
     s = _value_error_str(fc_mean_weight, fc_error_weight, '{:.3f}')
-    parfile.write('fc (weighted): {} Hz\n'.format(s))
+    parfile.write(f'fc (weighted): {s} Hz\n')
 
     t_star_mean = means['t_star']
     t_star_error = errors['t_star']
     s = _value_error_str(t_star_mean, t_star_error, '{:.3f}')
-    parfile.write('t_star: {} s\n'.format(s))
+    parfile.write(f't_star: {s} s\n')
     t_star_mean_weight = means_weight['t_star']
     t_star_error_weight = errors_weight['t_star']
     s = _value_error_str(t_star_mean_weight, t_star_error_weight, '{:.3f}')
-    parfile.write('t_star (weighted): {} s\n'.format(s))
+    parfile.write(f't_star (weighted): {s} s\n')
 
     Qo_mean = means['Qo']
     Qo_error = errors['Qo']
     s = _value_error_str(Qo_mean, Qo_error, '{:.1f}')
-    parfile.write('Qo: {}\n'.format(s))
+    parfile.write(f'Qo: {s}\n')
     try:
         Qo_mean_weight = means_weight['Qo']
         Qo_error_weight = errors_weight['Qo']
@@ -257,53 +256,55 @@ def _write_parfile(config, sspec_output):
         Qo_mean_weight = np.nan
         Qo_error_weight = [np.nan, np.nan]
     s = _value_error_str(Qo_mean_weight, Qo_error_weight, '{:.1f}')
-    parfile.write('Qo (weighted): {}\n'.format(s))
+    parfile.write(f'Qo (weighted): {s}\n')
 
     ra_mean = means['radius']
     ra_error = errors['radius']
     s = _value_error_str(ra_mean, ra_error, '{:.3f}')
-    parfile.write('Source radius: {} m\n'.format(s))
+    parfile.write(f'Source radius: {s} m\n')
     ra_mean_weight = means_weight['radius']
     ra_error_weight = errors_weight['radius']
     s = _value_error_str(ra_mean_weight, ra_error_weight, '{:.3f}')
-    parfile.write('Source radius (weighted): {} m\n'.format(s))
+    parfile.write(f'Source radius (weighted): {s} m\n')
 
     bsd_mean = means['bsd']
     bsd_error = errors['bsd']
     s = _value_error_str(bsd_mean, bsd_error, '{:.3e}')
-    parfile.write('Brune stress drop: {} MPa\n'.format(s))
+    parfile.write(f'Brune stress drop: {s} MPa\n')
     bsd_mean_weight = means_weight['bsd']
     bsd_error_weight = errors_weight['bsd']
     s = _value_error_str(bsd_mean_weight, bsd_error_weight, '{:.3e}')
-    parfile.write('Brune stress drop (weighted): {} MPa\n'.format(s))
+    parfile.write(f'Brune stress drop (weighted): {s} MPa\n')
 
     Ml_mean = means.get('Ml', None)
     Ml_error = errors.get('Ml', None)
     if Ml_mean is not None:
         s = _value_error_str(Ml_mean, Ml_error, '{:.3f}')
-        parfile.write('Ml: {}\n'.format(s))
+        parfile.write(f'Ml: {s}\n')
 
     Er_mean = means['Er']
     Er_error = errors['Er']
     s = _value_error_str(Er_mean, Er_error, '{:.3e}')
-    parfile.write('Er: {} N.m\n'.format(s))
+    parfile.write(f'Er: {s} N.m\n')
 
-    parfile.write('\n*** SourceSpec: {}'.format(get_versions()['version']))
-    parfile.write('\n*** Run completed on: {} {}'.format(
-        config.end_of_run, config.end_of_run_tz))
+    parfile.write(f'\n*** SourceSpec: {get_versions()["version"]}')
+    parfile.write(
+        f'\n*** Run completed on: {config.end_of_run} {config.end_of_run_tz}')
     if config.options.run_id:
-        parfile.write('\n*** Run ID: {}'.format(config.options.run_id))
+        parfile.write(f'\n*** Run ID: {config.options.run_id}')
     _write_author_and_agency_to_parfile(config, parfile)
 
     parfile.close()
 
-    logger.info('Output written to file: ' + parfilename)
+    logger.info(f'Output written to file: {parfilename}')
 
 
-def _dict2yaml(dict_like, level=0, comments={}):
+def _dict2yaml(dict_like, level=0, comments=None):
     """Serialize a dict-like object into YAML format."""
     if not isinstance(dict_like, Mapping):
-        return
+        raise TypeError('dict_like must be a dict-like object')
+    if comments is None:
+        comments = {}
     fmt = dict_like.get('_format', None)
     value_uncertainty_keys = (
         'value', 'uncertainty', 'lower_uncertainty', 'upper_uncertainty')
@@ -318,27 +319,22 @@ def _dict2yaml(dict_like, level=0, comments={}):
     # use oneliners for dict-like objects containing value and uncertainty keys
     if set(target_dict.keys()).intersection(set(value_uncertainty_keys)):
         oneliner = str(target_dict).replace("'", "")
-        lines = indent + oneliner + '\n'
-        return lines
+        return f'{indent}{oneliner}\n'
     lines = ''
     for key, value in target_dict.items():
-        if key.startswith('_'):
-            continue
-        if value is None:
+        if key.startswith('_') or value is None:
             continue
         if isinstance(value, Mapping):
             if level == 0:
                 lines += '\n'
-            try:
+            with contextlib.suppress(KeyError):
                 comment = comments[key]
                 for line in comment.split('\n'):
-                    lines += '# {}\n'.format(line)
-            except KeyError:
-                pass
-            lines += '{}{}:\n'.format(indent, key)
+                    lines += f'# {line}\n'
+            lines += f'{indent}{key}:\n'
             lines += _dict2yaml(value, level+1, comments)
         else:
-            lines += '{}{}: {}\n'.format(indent, key, value)
+            lines += f'{indent}{key}: {value}\n'
     return lines
 
 
@@ -347,15 +343,14 @@ def _write_yaml(config, sspec_output):
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
     evid = config.hypo.evid
-    yamlfilename = os.path.join(
-        config.options.outdir, '{}.ssp.yaml'.format(evid))
+    yamlfilename = os.path.join(config.options.outdir, f'{evid}.ssp.yaml')
     lines = _dict2yaml(sspec_output, comments=sspec_out_comments)
     with open(yamlfilename, 'w') as fp:
         comment = sspec_out_comments['begin']
         for line in comment.split('\n'):
-            fp.write('# {}\n'.format(line))
+            fp.write(f'# {line}\n')
         fp.write(lines)
-    logger.info('Output written to file: ' + yamlfilename)
+    logger.info(f'Output written to file: {yamlfilename}')
 
 
 def _write_hypo(config, sspec_output):
@@ -370,10 +365,10 @@ def _write_hypo(config, sspec_output):
         line = list(line)
 
     summary_values = sspec_output.reference_values()
-    mw_str = '{:03.2f}'.format(summary_values['Mw'])
+    mw_str = f'{summary_values["Mw"]:03.2f}'
     Ml = summary_values.get('Ml', None)
     if Ml is not None and ~np.isnan(Ml):
-        ml_str = '{:03.2f}'.format(Ml)
+        ml_str = f'{Ml:03.2f}'
     else:
         ml_str = ' '*4
     for i in range(0, 4):
@@ -382,15 +377,12 @@ def _write_hypo(config, sspec_output):
         line[69+i] = ml_str[0+i]
     outline = ''.join(line)
     evid = config.hypo.evid
-    hypo_file_out = os.path.join(
-        config.options.outdir, '{}.ssp.h'.format(evid))
+    hypo_file_out = os.path.join(config.options.outdir, f'{evid}.ssp.h')
     with open(hypo_file_out, 'w') as fp:
-        try:
+        with contextlib.suppress(Exception):
             fp.write(line1)
-        except Exception:
-            pass
         fp.write(outline)
-    logger.info('Hypo file written to: ' + hypo_file_out)
+    logger.info(f'Hypo file written to: {hypo_file_out}')
 
 
 def write_output(config, sspec_output):
@@ -401,8 +393,7 @@ def write_output(config, sspec_output):
     config.end_of_run = datetime.now()
     tz = get_localzone()
     config.end_of_run_tz = tz.tzname(config.end_of_run)
-    run_info.run_completed = '{} {}'.format(
-        config.end_of_run, config.end_of_run_tz)
+    run_info.run_completed = f'{config.end_of_run} {config.end_of_run_tz}'
     if config.options.run_id:
         run_info.run_id = config.options.run_id
     run_info.author_name = config.author_name
