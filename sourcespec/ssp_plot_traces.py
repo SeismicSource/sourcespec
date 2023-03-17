@@ -194,8 +194,7 @@ def _freq_string(freq):
         )
 
 
-def _plot_trace(config, trace, ntraces, tmax,
-                ax, ax_text, trans, trans3, path_effects):
+def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
     # Origin and height to draw vertical patches for noise and signal windows
     rectangle_patch_origin = 0
     rectangle_patch_height = 1
@@ -220,8 +219,9 @@ def _plot_trace(config, trace, ntraces, tmax,
     # dim out ignored traces
     alpha = 0.3 if trace.stats.ignore else 1.0
     if config.plot_save_format == 'png':
-        ax.plot(trace.times(), trace, linewidth=1, color=color,
-                alpha=alpha, zorder=20, rasterized=True)
+        ax.plot(
+            trace.times(), trace, linewidth=1, color=color,
+            alpha=alpha, zorder=20, rasterized=True)
     else:
         # reduce the number of points to plot for vector formats
         _plot_min_max(
@@ -265,32 +265,36 @@ def _plot_trace(config, trace, ntraces, tmax,
         transform=trans, color='yellow',
         alpha=0.5, zorder=-1)
     ax.add_patch(rect)
-    if not ax_text:
-        text_y = 0.01
-        color = 'black'
-        id_no_channel = '.'.join(trace.id.split('.')[:-1])
-        fmin_str = _freq_string(trace.stats.filter.freqmin)
-        fmax_str = _freq_string(trace.stats.filter.freqmax)
-        ax_text = (
-            f'{id_no_channel} {trace.stats.instrtype} '
-            f'{trace.stats.hypo_dist:.1f} km ({trace.stats.epi_dist:.1f} km)\n'
-            f'filter: {fmin_str} - {fmax_str} Hz'
-        )
-        ax.text(0.05, text_y, ax_text,
-                fontsize=8,
-                horizontalalignment='left',
-                verticalalignment='bottom',
-                color=color,
-                transform=ax.transAxes,
-                zorder=50,
-                path_effects=path_effects)
-        ax_text = True
     # Reason why trace is ignored
     if trace.stats.ignore:
         _text = trace.stats.ignore_reason
-        ax.text(0.5, trace.data.mean(), _text, ha='center',
-                fontsize=8, color=color, transform=trans3, zorder=22,
-                path_effects=path_effects)
+        color = 'black'
+        ax.text(
+            0.5, trace.data.mean(), _text, ha='center',
+            fontsize=8, color=color, transform=trans3, zorder=22,
+            path_effects=path_effects)
+    _add_station_info_text(trace, ax, path_effects)
+
+
+def _add_station_info_text(trace, ax, path_effects):
+    with contextlib.suppress(AttributeError):
+        if ax.has_station_info_text:
+            return
+    text_y = 0.01
+    color = 'black'
+    id_no_channel = '.'.join(trace.id.split('.')[:-1])
+    fmin_str = _freq_string(trace.stats.filter.freqmin)
+    fmax_str = _freq_string(trace.stats.filter.freqmax)
+    station_info_text = (
+        f'{id_no_channel} {trace.stats.instrtype} '
+        f'{trace.stats.hypo_dist:.1f} km ({trace.stats.epi_dist:.1f} km)\n'
+        f'filter: {fmin_str} - {fmax_str} Hz'
+    )
+    ax.text(
+        0.05, text_y, station_info_text, fontsize=8,
+        horizontalalignment='left', verticalalignment='bottom', color=color,
+        transform=ax.transAxes, zorder=50, path_effects=path_effects)
+    ax.has_station_info_text = True
 
 
 def _add_labels(axes, plotn, ncols):
@@ -351,7 +355,6 @@ def plot_traces(config, st, ncols=None, block=True):
                 if not tr.stats.ignore
             }
         )
-    ax_text = False
     for t in stalist:
         plotn += 1
         _, traceid = t
@@ -395,8 +398,7 @@ def plot_traces(config, st, ncols=None, block=True):
             if not config.plot_traces_ignored and trace.stats.ignore:
                 continue
             _plot_trace(
-                config, trace, ntraces, tmax, ax, ax_text,
-                trans, trans3, path_effects)
+                config, trace, ntraces, tmax, ax, trans, trans3, path_effects)
 
     _set_ylim(axes)
     # Add labels for the last figure
