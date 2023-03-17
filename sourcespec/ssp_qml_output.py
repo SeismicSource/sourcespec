@@ -26,7 +26,7 @@ def _to_camel_case(snake_str):
     components = snake_str.split('_')
     # We capitalize the first letter of each component except the first one
     # with the 'title' method and join them together.
-    return components[0] + "".join(x.title() for x in components[1:])
+    return components[0] + ''.join(x.title() for x in components[1:])
 
 
 class SSPExtra(AttribDict):
@@ -69,8 +69,9 @@ def write_qml(config, sspec_output):
     try:
         ev = [e for e in cat if evid in str(e.resource_id)][0]
     except Exception:
-        logging.warning('Unable to find evid "{}" in QuakeML file. '
-                        'QuakeML output will not be written.'.format(evid))
+        logging.warning(
+            f'Unable to find evid "{evid}" in QuakeML file. '
+            'QuakeML output will not be written.')
 
     origin = ev.preferred_origin()
     if origin is None:
@@ -82,7 +83,7 @@ def write_qml(config, sspec_output):
 
     # Common parameters
     ssp_version = get_versions()['version']
-    method_id = config.smi_base + '/sourcespec/' + ssp_version
+    method_id = f'{config.smi_base}/sourcespec/{ssp_version}'
     cr_info = CreationInfo()
     if config.agency_short_name is not None:
         cr_info.agency_id = config.agency_short_name
@@ -111,7 +112,7 @@ def write_qml(config, sspec_output):
         mag_err.upper_uncertainty = Mw_summary.upper_uncertainty
     mag_err.confidence_level = Mw_summary.confidence_level
     mag.mag_errors = mag_err
-    mag.station_count = len([_s for _s in stationpar.keys()])
+    mag.station_count = len(list(stationpar.keys()))
     mag.evaluation_mode = 'automatic'
     mag.creation_info = cr_info
 
@@ -172,52 +173,29 @@ def write_qml(config, sspec_output):
     ev.magnitudes.append(mag)
 
     # Write other summary parameters as custom tags
-    fc_summary = summary_parameters['fc']
     ev.extra = SSPExtra()
-    ev.extra.corner_frequency = SSPContainerTag()
-    ev.extra.corner_frequency.value.value = SSPTag(fc_summary.value)
-    ev.extra.corner_frequency.value.lower_uncertainty =\
-        SSPTag(fc_summary.lower_uncertainty)
-    ev.extra.corner_frequency.value.upper_uncertainty =\
-        SSPTag(fc_summary.upper_uncertainty)
-    ev.extra.corner_frequency.value.confidence_level =\
-        SSPTag(fc_summary.confidence_level)
-    t_star_summary = summary_parameters['t_star']
-    ev.extra.t_star = SSPContainerTag()
-    ev.extra.t_star.value.value = SSPTag(t_star_summary.value)
-    if t_star_summary.uncertainty is not None:
-        ev.extra.t_star.value.uncertainty =\
-            SSPTag(t_star_summary.uncertainty)
-    elif t_star_summary.lower_uncertainty is not None:
-        ev.extra.t_star.value.lower_uncertainty =\
-            SSPTag(t_star_summary.lower_uncertainty)
-        ev.extra.t_star.value.upper_uncertainty =\
-            SSPTag(t_star_summary.upper_uncertainty)
-    ev.extra.t_star.value.confidence_level =\
-        SSPTag(t_star_summary.confidence_level)
-    radius_summary = summary_parameters['radius']
-    ev.extra.source_radius = SSPContainerTag()
-    ev.extra.source_radius.value.value = SSPTag(radius_summary.value)
-    ev.extra.source_radius.value.lower_uncertainty =\
-        SSPTag(radius_summary.lower_uncertainty)
-    ev.extra.source_radius.value.upper_uncertainty =\
-        SSPTag(radius_summary.upper_uncertainty)
-    ev.extra.source_radius.value.confidence_level =\
-        SSPTag(radius_summary.confidence_level)
-    bsd_summary = summary_parameters['bsd']
-    ev.extra.stress_drop = SSPContainerTag()
-    ev.extra.stress_drop.value.value = SSPTag(bsd_summary.value)
-    ev.extra.stress_drop.value.lower_uncertainty =\
-        SSPTag(bsd_summary.lower_uncertainty)
-    ev.extra.stress_drop.value.upper_uncertainty =\
-        SSPTag(bsd_summary.upper_uncertainty)
-    ev.extra.stress_drop.value.confidence_level =\
-        SSPTag(bsd_summary.confidence_level)
-
+    ev.extra.corner_frequency = _summary_parameter_tag(
+        summary_parameters['fc'])
+    ev.extra.t_star = _summary_parameter_tag(summary_parameters['t_star'])
+    ev.extra.source_radius = _summary_parameter_tag(
+        summary_parameters['radius'])
+    ev.extra.stress_drop = _summary_parameter_tag(summary_parameters['bsd'])
     if config.set_preferred_magnitude:
         ev.preferred_magnitude_id = mag.resource_id.id
 
-    qml_file_out = os.path.join(config.options.outdir, evid + '.xml')
+    qml_file_out = os.path.join(config.options.outdir, f'{evid}.xml')
     ev.write(qml_file_out, format='QUAKEML')
-    logging.info('QuakeML file written to: ' + qml_file_out)
+    logging.info(f'QuakeML file written to: {qml_file_out}')
     config.qml_file_out = qml_file_out
+
+
+def _summary_parameter_tag(param):
+    tag = SSPContainerTag()
+    tag.value.value = SSPTag(param.value)
+    if param.uncertainty is not None:
+        tag.value.uncertainty = SSPTag(param.uncertainty)
+    elif param.lower_uncertainty is not None:
+        tag.value.lower_uncertainty = SSPTag(param.lower_uncertainty)
+        tag.value.upper_uncertainty = SSPTag(param.upper_uncertainty)
+    tag.value.confidence_level = SSPTag(param.confidence_level)
+    return tag
