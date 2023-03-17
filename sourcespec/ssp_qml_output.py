@@ -72,6 +72,8 @@ def write_qml(config, sspec_output):
         logging.warning(
             f'Unable to find evid "{evid}" in QuakeML file. '
             'QuakeML output will not be written.')
+        config.qml_file_out = None
+        return
 
     origin = ev.preferred_origin()
     if origin is None:
