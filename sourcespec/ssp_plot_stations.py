@@ -11,6 +11,7 @@ Station plotting routine.
 """
 import os
 import logging
+import contextlib
 import numpy as np
 import warnings
 import cartopy.crs as ccrs
@@ -99,8 +100,7 @@ def _shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shifted'):
         cdict['blue'].append((si, b, b))
         cdict['alpha'].append((si, a, a))
 
-    newcmap = colors.LinearSegmentedColormap(name, cdict)
-    return newcmap
+    return colors.LinearSegmentedColormap(name, cdict)
 
 
 def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
@@ -116,21 +116,24 @@ def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
     for dist in np.arange(step, maxdist+step, step):
         azimuths = np.arange(0, 360, 1)
         circle = np.array(
-            [g.fwd(evlon, evlat, az, dist*1e3)[0:2] for az in azimuths]
+            [g.fwd(evlon, evlat, az, dist*1e3)[:2] for az in azimuths]
         )
         p0 = circle[np.argmax(circle[:, 1])]
-        ax.plot(circle[:, 0], circle[:, 1],
-                color='#777777', linestyle='--',
-                transform=geodetic_transform)
-        if maxdist < 1:
-            dist_text = '{} m'.format(int(dist*1000))
-        else:
-            dist_text = '{} km'.format(int(dist))
-        t = ax.text(p0[0], p0[1], dist_text, size=8, weight='bold',
-                    verticalalignment='center',
-                    horizontalalignment='center',
-                    clip_on=True,
-                    transform=geodetic_transform, zorder=10)
+        ax.plot(
+            circle[:, 0], circle[:, 1],
+            color='#777777', linestyle='--',
+            transform=geodetic_transform)
+        dist_text = (
+            f'{int(dist * 1000)} m' if maxdist < 1
+            else
+            f'{int(dist)} km'
+        )
+        t = ax.text(
+            p0[0], p0[1], dist_text, size=8, weight='bold',
+            verticalalignment='center',
+            horizontalalignment='center',
+            clip_on=True,
+            transform=geodetic_transform, zorder=10)
         t.set_path_effects([
             PathEffects.Stroke(linewidth=0.8, foreground='white'),
             PathEffects.Normal()
@@ -187,26 +190,22 @@ def _make_basemap(config, maxdist):
     fig = plt.figure(figsize=figsize, dpi=dpi)
     ax = fig.add_subplot(111, projection=stamen_terrain.crs)
     # Add event information as a title
-    textstr = 'evid: {} \nlon: {:.3f} lat: {:.3f} depth: {:.1f} km'
-    textstr = textstr.format(
-        hypo.evid, hypo.longitude, hypo.latitude, hypo.depth)
-    try:
-        textstr += ' time: {}'.format(
-            hypo.origin_time.format_iris_web_service())
-    except AttributeError:
-        pass
-    ax.text(0., 1.15, textstr, fontsize=10,
-            ha='left', va='top', linespacing=1.5, transform=ax.transAxes)
+    textstr = (
+        f'evid: {hypo.evid} \nlon: {hypo.longitude:.3f} '
+        f'lat: {hypo.latitude:.3f} depth: {hypo.depth:.1f} km'
+    )
+    with contextlib.suppress(AttributeError):
+        textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
+    ax.text(
+        0., 1.15, textstr, fontsize=10,
+        ha='left', va='top', linespacing=1.5, transform=ax.transAxes)
     trans = ccrs.Geodetic()
     ax.set_extent([lonmin, lonmax, latmin, latmax], crs=trans)
     if config.plot_map_tiles_zoom_level:
         tile_zoom_level = config.plot_map_tiles_zoom_level
     else:
-        if maxdiagonal <= 100:
-            tile_zoom_level = 12
-        else:
-            tile_zoom_level = 8
-        logger.info('Map zoom level autoset to: {}'.format(tile_zoom_level))
+        tile_zoom_level = 12 if maxdiagonal <= 100 else 8
+        logger.info(f'Map zoom level autoset to: {tile_zoom_level}')
     # Add the image twice, so that the CachedTiler has time to cache
     # (avoids white tiles on map)
     ax.add_image(stamen_terrain, tile_zoom_level)
@@ -224,13 +223,10 @@ def _make_basemap(config, maxdist):
     if config.plot_coastline_resolution:
         coastline_resolution = res_map[config.plot_coastline_resolution]
     else:
-        if maxdiagonal <= 100:
-            coastline_resolution = 'h'
-        else:
-            coastline_resolution = 'i'
+        coastline_resolution = 'h' if maxdiagonal <= 100 else 'i'
         logger.info(
-            'Coastline resolution autoset to: {}'.format(
-                inv_res_map[coastline_resolution])
+            'Coastline resolution autoset to: '
+            f'{inv_res_map[coastline_resolution]}'
         )
     shpfile = shpreader.gshhs(coastline_resolution)
     shp = shpreader.Reader(shpfile)
@@ -256,36 +252,30 @@ def _contrast_color(color):
     R, G, B = [
         c/12.92 if c <= 0.03928 else ((c+0.055)/1.055)**2.4 for c in color[:3]]
     L = 0.2126*R + 0.7152*G + 0.0722*B  # luminance
-    if L > 0.179:
-        return 'black'
-    else:
-        return 'white'
+    return 'black' if L > 0.179 else 'white'
 
 
 def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     maxdist = np.max(lonlat_dist[:, 2])
     ax, circle_texts = _make_basemap(config, maxdist)
 
-    if config.options.evname is not None:
-        textstr = '{} — '.format(config.options.evname)
-    else:
-        textstr = ''
-    if vname == 'mag':
+    textstr = f'{config.options.evname} — ' if config.options.evname else ''
+    if vname == 'fc':
+        verr_minus, verr_plus = verr
+        textstr += f'fc {vmean:.3f} [- {verr_minus:.3f}, + {verr_plus:.3f}] Hz'
+    elif vname == 'mag':
         try:
             # asymmetrical error
             verr_minus, verr_plus = verr
-            textstr += 'Mw {:.2f} [- {:.2f}, + {:.2f}]'.format(
-                vmean, verr_minus, verr_plus)
+            textstr += (
+                f'Mw {vmean:.2f} [- {verr_minus:.2f}, + {verr_plus:.2f}]')
         except TypeError:
             # symmetrical error
             verr_minus = verr_plus = verr
-            textstr += 'Mw {:.2f} ± {:.2f}'.format(vmean, verr)
-    elif vname == 'fc':
-        verr_minus, verr_plus = verr
-        textstr += 'fc {:.3f} [- {:.3f}, + {:.3f}] Hz'.format(
-            vmean, verr_minus, verr_plus)
-    ax.text(0., 1.22, textstr, fontsize=14,
-            ha='left', va='top', transform=ax.transAxes)
+            textstr += f'Mw {vmean:.2f} ± {verr:.2f}'
+    ax.text(
+        0., 1.22, textstr, fontsize=14,
+        ha='left', va='top', transform=ax.transAxes)
 
     if vname == 'mag':
         vmax = np.max(np.abs(values-vmean))
@@ -307,10 +297,7 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
             cbar_extend = 'max'
         if vmin < vmean-3*verr_minus:
             vmin = vmean-3*verr_minus
-            if cbar_extend == 'max':
-                cbar_extend = 'both'
-            else:
-                cbar_extend = 'min'
+            cbar_extend = 'both' if cbar_extend == 'max' else 'min'
         if vmax == vmin:
             vmax = vmean+1
             vmin = vmean-1
@@ -332,12 +319,13 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
         zorder=99, transform=trans)
     if config.plot_station_names_on_map:
         texts = []
-        for ll, id in zip(lonlat, st_ids):
-            id = '.'.join(id.split('.')[:2])
-            id = '  ' + id
+        for _lonlat, _statid in zip(lonlat, st_ids):
+            _statid = '.'.join(_statid.split('.')[:2])
+            _statid = f'  {_statid}'
             station_text_size = config.plot_station_text_size
             t = ax.text(
-                ll[0], ll[1], id, size=station_text_size, weight='bold',
+                _lonlat[0], _lonlat[1], _statid,
+                size=station_text_size, weight='bold',
                 va='center', zorder=999, transform=trans)
             t.set_path_effects([
                 PathEffects.Stroke(linewidth=0.8, foreground='white'),
@@ -363,16 +351,17 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     color = _contrast_color(cmap(norm(vmean+verr_plus)))
     cax.axhline(
         vmean+verr_plus, lw=linewidth, linestyle=linestyle, color=color)
-    if vname == 'mag':
-        cm_label = 'Magnitude'
-    elif vname == 'fc':
+    if vname == 'fc':
         cm_label = 'Corner Frequency (Hz)'
+    elif vname == 'mag':
+        cm_label = 'Magnitude'
     cax.set_ylabel(cm_label)
     # Add code and author information at the figure bottom
-    textstr = 'SourceSpec v{} '.format(get_versions()['version'])
-    textstr += '– {} {} '.format(
-        config.end_of_run.strftime('%Y-%m-%d %H:%M:%S'),
-        config.end_of_run_tz)
+    textstr = (
+        f'SourceSpec v{get_versions()["version"]} '
+        f'- {config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")} '
+        f'{config.end_of_run_tz} '
+    )
     textstr2 = ''
     if config.author_name is not None:
         textstr2 += config.author_name
@@ -387,9 +376,10 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
             textstr2 += ' - '
         textstr2 += config.agency_full_name
     if textstr2 != '':
-        textstr = '{}\n{} '.format(textstr, textstr2)
-    cax.text(1., -0.1, textstr, fontsize=8, linespacing=1.5,
-             ha='right', va='top', transform=cax.transAxes)
+        textstr = f'{textstr}\n{textstr2} '
+    cax.text(
+        1., -0.1, textstr, fontsize=8, linespacing=1.5,
+        ha='right', va='top', transform=cax.transAxes)
 
     if config.plot_station_names_on_map:
         # first adjust text labels relatively to each other
@@ -399,7 +389,7 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
 
     evid = config.hypo.evid
     figfile_base = os.path.join(config.options.outdir, evid)
-    figfile_base += '.map_{}.'.format(vname)
+    figfile_base += f'.map_{vname}.'
     fmt = config.plot_save_format
     if fmt == 'pdf_multipage':
         fmt = 'pdf'
@@ -409,9 +399,9 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     if config.plot_save:
         savefig(fig, figfile, fmt, quantize_colors=False, bbox_inches='tight')
         if vname == 'mag':
-            logger.info('Station-magnitude map saved to: ' + figfile)
+            logger.info(f'Station-magnitude map saved to: {figfile}')
         elif vname == 'fc':
-            logger.info('Station-corner_freq map saved to: ' + figfile)
+            logger.info(f'Station-corner_freq map saved to: {figfile}')
         config.figures['station_maps'].append(figfile)
 
 
