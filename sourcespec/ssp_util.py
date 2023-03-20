@@ -53,35 +53,37 @@ def select_trace(stream, traceid, instrtype):
 
 def _get_vel_from_config(wave, where, config):
     if wave not in ['P', 'S']:
-        msg = 'Invalid wave type: {}'.format(wave)
+        msg = f'Invalid wave type: {wave}'
         raise ValueError(msg)
     if where not in ['source', 'stations']:
-        msg = 'Invalid location type: {}'.format(where)
+        msg = f'Invalid location type: {wave}'
         raise ValueError(msg)
-    if wave == 'P' and where == 'source':
-        vel = config.vp_source
-    if wave == 'P' and where == 'stations':
-        vel = config.vp_stations
-        if vel is None:
+    if wave == 'P':
+        if where == 'source':
             vel = config.vp_source
-    if wave == 'S' and where == 'source':
-        vel = config.vs_source
-    if wave == 'S' and where == 'stations':
-        vel = config.vs_stations
-        if vel is None:
+        elif where == 'stations':
+            vel = (
+                config.vp_stations if config.vp_stations is not None
+                else config.vp_source)
+    elif wave == 'S':
+        if where == 'source':
             vel = config.vs_source
+        elif where == 'stations':
+            vel = (
+                config.vs_stations if config.vs_stations is not None
+                else config.vs_source)
     return vel
 
 
 def _get_vel_from_NLL(lon, lat, depth_in_km, wave, config):
     # Lazy-import here, since nllgrid is not an installation requirement
     from nllgrid import NLLGrid
-    grdfile = '*.{}.mod.hdr'.format(wave)
+    grdfile = f'*.{wave}.mod.hdr'
     grdfile = os.path.join(config.NLL_model_dir, grdfile)
     try:
         grdfile = glob(grdfile)[0]
-    except IndexError:
-        raise FileNotFoundError('Unable to find model file {}'.format(grdfile))
+    except IndexError as e:
+        raise FileNotFoundError(f'Unable to find model file {grdfile}') from e
     grd = NLLGrid(grdfile)
     x, y = grd.project(lon, lat)
     value = grd.get_value(x, y, depth_in_km)
@@ -100,9 +102,8 @@ def _get_vel_from_NLL(lon, lat, depth_in_km, wave, config):
     elif grd.type == 'SLOW2_METERS':
         vel = (1./(value**0.5))/1e3
     else:
-        raise ValueError('Unsupported grid type: {}'.format(grd.type))
-    logger.info(
-        'Using {} velocity from NLL model'.format(wave))
+        raise ValueError(f'Unsupported grid type: {grd.type}')
+    logger.info(f'Using {wave} velocity from NLL model')
     return vel
 
 
@@ -122,15 +123,13 @@ def get_vel(lon, lat, depth_in_km, wave, config):
     if vel is None and config.NLL_model_dir is None:
         vel = _get_vel_from_taup(depth_in_km, wave)
         logger.info(
-            'Using {} velocity from global velocity model (iasp91)'
-            .format(wave))
+            f'Using {wave} velocity from global velocity model (iasp91)')
     if config.NLL_model_dir is not None:
         try:
             vel = _get_vel_from_NLL(lon, lat, depth_in_km, wave, config)
         except Exception as msg:
             logger.warning(msg)
-            msg = 'Using {} velocity from config'.format(wave)
-            logger.warning(msg)
+            logger.warning(f'Using {wave} velocity from config')
     return vel
 # -----------------------------------------------------------------------------
 
@@ -166,9 +165,7 @@ def bsd(Mo_in_N_m, ra_in_m):
 
 def quality_factor(travel_time_in_s, t_star_in_s):
     """Compute quality factor from travel time and t_star."""
-    if t_star_in_s == 0:
-        return np.inf
-    return travel_time_in_s/t_star_in_s
+    return np.inf if t_star_in_s == 0 else travel_time_in_s/t_star_in_s
 # -----------------------------------------------------------------------------
 
 
@@ -179,7 +176,7 @@ def cosine_taper(signal, width, left_taper=False):
     p = 2 * width
     tap = _cos_taper(npts, p)
     if left_taper:
-        tap[int(npts/2):] = 1.
+        tap[npts // 2:] = 1.
     signal *= tap
 
 
@@ -198,9 +195,8 @@ def smooth(x, window_len=11, window='hanning'):
     if window == 'flat':  # moving average
         w = np.ones(window_len, 'd')
     else:
-        w = eval('np.'+window+'(window_len)')
+        w = eval(f'np.{window}(window_len)')
     y = np.convolve(w/w.sum(), s, mode='same')
-
     yy = y[window_len:-window_len+1]
     # check if there are NaN values
     nanindexes = np.where(np.isnan(yy))
@@ -225,8 +221,7 @@ def remove_instr_response(trace, pre_filt=(0.5, 0.6, 40., 45.)):
     inventory = trace.stats.inventory
     if not inventory:
         # empty inventory
-        raise RuntimeError(
-            f'{traceId}: no instrument response for trace')
+        raise RuntimeError(f'{traceId}: no instrument response for trace')
     # remove the mean...
     trace.detrend(type='constant')
     # ...and the linear trend
@@ -249,13 +244,11 @@ def remove_instr_response(trace, pre_filt=(0.5, 0.6, 40., 45.)):
 
 # GEODETICS AND COORDINATES ---------------------------------------------------
 def toRad(degrees):
-    radians = math.pi * degrees / 180
-    return radians
+    return math.pi * degrees / 180
 
 
 def toDeg(radians):
-    degrees = 180 * radians / math.pi
-    return degrees
+    return 180 * radians / math.pi
 
 
 def hypo_dist(trace):
