@@ -174,8 +174,14 @@ def _check_instrtype(trace):
     inv = trace.stats.inventory
     instrtype = trace.stats.instrtype
     new_instrtype = None
-    units = inv.get_response(trace.id, trace.stats.starttime).\
-        instrument_sensitivity.input_units
+    try:
+        units = inv.get_response(trace.id, trace.stats.starttime).\
+            instrument_sensitivity.input_units
+    except Exception as e:
+        raise RuntimeError(
+            f'{trace.id}: cannot get units from inventory: '
+            f'{e.__class__.__name__}: {e} Skipping trace'
+        ) from e
     trace.stats.units = units
     if units.lower() == 'm' and trace.stats.instrtype != 'disp':
         new_instrtype = 'disp'
