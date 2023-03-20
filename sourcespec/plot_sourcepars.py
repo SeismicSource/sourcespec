@@ -491,14 +491,13 @@ class Params(object):
         delta_sigma /= 1e6
         print('delta_sigma', delta_sigma)
         fc_test = stress_drop_curve_fc_mw(delta_sigma, vs, mw_test, b)
-        # ax.plot(mw_test, fc_test, color='red', zorder=10,
-        #         label='r2: %.2f\nr2err: %.2f' % (r2, r2_err))
-        ax.plot(mw_test, fc_test, color='red', zorder=10,
-                label='r2: %.2f' % r2)
+        ax.plot(
+            mw_test, fc_test, color='red', zorder=10, label=f'r2: {r2:.2f}')
         ax.legend()
         if not slope:
-            ax.text(mw_test[-1], fc_test[-1], '%.1f MPa' % delta_sigma,
-                    color='red', backgroundcolor='white', zorder=50)
+            ax.text(
+                mw_test[-1], fc_test[-1], f'{delta_sigma:.1f} MPa',
+                color='red', backgroundcolor='white', zorder=50)
 
     def plot_fc_mw(self, hist=False, fit=False, slope=False, nbins=None):
         """
@@ -658,19 +657,7 @@ def run():
     params = Params(args.sqlite_file, args.runid, args.statistics)
 
     if os.path.exists('problems.txt'):
-        evid_skip = np.loadtxt('problems.txt', usecols=(0,), dtype=str)
-        # case in which there is only one evid:
-        if not evid_skip.shape:
-            evid_skip = evid_skip[None]
-        skip_idx = []
-        for evid in evid_skip:
-            try:
-                skip_idx.append(np.where(params.evids == evid)[0][0])
-            except Exception:
-                pass
-        print('Skipping events: %s' % ' '.join(params.evids[skip_idx]))
-        params.skip_events(skip_idx)
-
+        _skip_events(params)
     params.filter(
         stamin=args.stamin, stamax=args.stamax,
         magmin=args.magmin, magmax=args.magmax,
@@ -685,6 +672,20 @@ def run():
         params.plot_bsd_mw(args.hist, args.fit, args.slope, args.nbins)
     elif args.plot_type in valid_plot_types:
         params.plot_hist(args.plot_type, args.nbins)
+
+
+def _skip_events(params):
+    evid_skip = np.loadtxt('problems.txt', usecols=(0,), dtype=str)
+    # case in which there is only one evid:
+    if not evid_skip.shape:
+        evid_skip = evid_skip[None]
+    skip_idx = []
+    for evid in evid_skip:
+        with contextlib.suppress(Exception):
+            skip_idx.append(np.where(params.evids == evid)[0][0])
+    skipped_evid_str = ' '.join(params.evids[skip_idx])
+    print(f'Skipping events: {skipped_evid_str}')
+    params.skip_events(skip_idx)
 
 
 def main():
