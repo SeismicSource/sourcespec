@@ -18,14 +18,10 @@ logger = logging.getLogger(__name__.split('.')[-1])
 
 
 def _log_db_write_error(db_err, db_file):
-    msg = 'Unable to insert values: {}'.format(db_err)
-    logger.error(msg)
-    msg = 'Maybe your sqlite database has an old format.'
-    logger.info(msg)
-    msg = 'Try to remove or rename your database file.'
-    logger.info(msg)
-    msg = '(Current database file: {})'.format(db_file)
-    logger.info(msg)
+    logger.error(f'Unable to insert values: {db_err}')
+    logger.info('Maybe your sqlite database has an old format.')
+    logger.info('Try to remove or rename your database file.')
+    logger.info(f'(Current database file: {db_file})')
     ssp_exit(1)
 
 
@@ -53,9 +49,7 @@ def write_sqlite(config, sspec_output):
     except Exception as msg:
         logger.error(msg)
         logger.info(
-            'Please check whether "{}" is a valid SQLite file.'.format(
-                database_file)
-        )
+            f'Please check whether "{database_file}" is a valid SQLite file.')
         ssp_exit(1)
     c = conn.cursor()
 
@@ -63,13 +57,14 @@ def write_sqlite(config, sspec_output):
         # Get current DB version
         db_version = c.execute('PRAGMA user_version').fetchone()[0]
         if db_version < DB_VERSION:
-            msg = '"{}" has an old database version: "{}". '.format(
-                database_file, db_version)
-            msg += 'Current supported version is "{}".'.format(DB_VERSION)
-            logger.error(msg)
-            msg = 'Remove or rename your old database file, '
-            msg += 'so that a new one can be created.'
-            logger.info(msg)
+            logger.error(
+                f'"{database_file}" has an old database version: '
+                f'"{db_version}" Current supported version is "{DB_VERSION}".'
+            )
+            logger.info(
+                'Remove or rename your old database file, '
+                'so that a new one can be created.'
+            )
             ssp_exit(1)
     else:
         # Set the DB version
@@ -109,15 +104,15 @@ def write_sqlite(config, sspec_output):
     # Write station source parameters to database
     nobs = 0
     stationpar = sspec_output.station_parameters
+    sql_delete_from_stations =\
+        'DELETE FROM Stations WHERE stid=? AND evid=? AND runid=?;'
     for statId in sorted(stationpar.keys()):
         nobs += 1
         par = stationpar[statId]
         # Remove existing line, if present
         t = (statId, evid, runid)
-        sql_delete_from_sations =\
-            'DELETE FROM Stations WHERE stid=? AND evid=? AND runid=?;'
         try:
-            c.execute(sql_delete_from_sations, t)
+            c.execute(sql_delete_from_stations, t)
         except Exception as msg:
             _log_db_write_error(msg, database_file)
             ssp_exit(1)
@@ -137,8 +132,7 @@ def write_sqlite(config, sspec_output):
         )
         # Create a string like ?,?,?,?
         values = ','.join('?'*len(t))
-        sql_insert_into_stations =\
-            'INSERT INTO Stations VALUES({});'.format(values)
+        sql_insert_into_stations = f'INSERT INTO Stations VALUES({values});'
         try:
             c.execute(sql_insert_into_stations, t)
         except Exception as msg:
@@ -262,7 +256,7 @@ def write_sqlite(config, sspec_output):
     wmean_errors = sspec_output.weighted_mean_uncertainties()
     percentiles = sspec_output.percentiles_values()
     percentile_errors = sspec_output.percentiles_uncertainties()
-    run_completed = '{} {}'.format(config.end_of_run, config.end_of_run_tz)
+    run_completed = f'{config.end_of_run} {config.end_of_run_tz}'
     ssp_version = get_versions()['version']
     # Remove event from Event table, if present
     t = (evid, runid)
@@ -356,7 +350,7 @@ def write_sqlite(config, sspec_output):
     )
     # Create a string like ?,?,?,?
     values = ','.join('?'*len(t))
-    sql_insert_into_events = 'INSERT INTO Events VALUES({});'.format(values)
+    sql_insert_into_events = f'INSERT INTO Events VALUES({values});'
     try:
         c.execute(sql_insert_into_events, t)
     except Exception as msg:
@@ -365,4 +359,4 @@ def write_sqlite(config, sspec_output):
     # Commit changes and close database
     conn.commit()
     conn.close()
-    logger.info('Output written to SQLite database: ' + database_file)
+    logger.info(f'Output written to SQLite database: {database_file}')
