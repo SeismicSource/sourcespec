@@ -34,27 +34,7 @@ def _avg_and_std(values, errors=None, logarithmic=False):
         return average, np.array((std, std))
     if np.all(np.isnan(values)):
         return average, np.array((std, std))
-    if errors is None:
-        weights = None
-    else:
-        # negative errors should not happen
-        errors[errors < 0] = 0
-        values_minus = values - errors[:, 0]
-        values_plus = values + errors[:, 1]
-        if logarithmic:
-            # compute the width of the error bar in log10 units
-            # replace negative left values with 1/10 of the central value
-            values_minus[values_minus <= 0] = values[values_minus <= 0]/10
-            values_log_minus = np.log10(values_minus)
-            values_log_plus = np.log10(values_plus)
-            errors_width = values_log_plus - values_log_minus
-        else:
-            # compute the width of the error bar in linear units
-            errors_width = values_plus - values_minus
-        # fix for infinite weight (zero error width)
-        errors_width[errors_width == 0] =\
-            np.nanmin(errors_width[errors_width > 0])
-        weights = 1./(errors_width**2.)
+    weights = _weights(values, errors, logarithmic)
     if logarithmic:
         values = np.log10(values)
     notnan = ~np.isnan(values)
@@ -65,13 +45,36 @@ def _avg_and_std(values, errors=None, logarithmic=False):
     average = np.average(values, weights=weights)
     variance = np.average((values-average)**2, weights=weights)
     std = np.sqrt(variance)
-    if logarithmic:
-        log_average = 10.**average
-        minus = log_average - 10.**(average-std)
-        plus = 10.**(average+std) - log_average
-        return log_average, np.array((minus, plus))
-    else:
+    if not logarithmic:
         return average, np.array((std, std))
+    log_average = 10.**average
+    minus = log_average - 10.**(average-std)
+    plus = 10.**(average+std) - log_average
+    return log_average, np.array((minus, plus))
+
+
+def _weights(values, errors=None, logarithmic=False):
+    """Compute weights for weighted statistics."""
+    if errors is None:
+        return None
+    # negative errors should not happen
+    errors[errors < 0] = 0
+    values_minus = values - errors[:, 0]
+    values_plus = values + errors[:, 1]
+    if logarithmic:
+        # compute the width of the error bar in log10 units
+        # replace negative left values with 1/10 of the central value
+        values_minus[values_minus <= 0] = values[values_minus <= 0]/10
+        values_log_minus = np.log10(values_minus)
+        values_log_plus = np.log10(values_plus)
+        errors_width = values_log_plus - values_log_minus
+    else:
+        # compute the width of the error bar in linear units
+        errors_width = values_plus - values_minus
+    # fix for infinite weight (zero error width)
+    errors_width[errors_width == 0] =\
+        np.nanmin(errors_width[errors_width > 0])
+    return 1./(errors_width**2.)
 
 
 def _normal_confidence_level(n_sigma):
@@ -234,10 +237,10 @@ def compute_summary_statistics(config, sspec_output):
     params_name = ('Mw', 'fc', 't_star')
     means = sspec_output.mean_values()
     sourcepar_mean = {par: means[par] for par in params_name}
-    logger.info('params_mean: {}'.format(sourcepar_mean))
+    logger.info(f'params_mean: {sourcepar_mean}')
     means_weight = sspec_output.weighted_mean_values()
     sourcepar_mean_weight = {par: means_weight[par] for par in params_name}
-    logger.info('params_mean_weighted: {}'.format(sourcepar_mean_weight))
+    logger.info(f'params_mean_weighted: {sourcepar_mean_weight}')
     percentiles = sspec_output.percentiles_values()
     sourcepar_percentiles = {par: percentiles[par] for par in params_name}
-    logger.info('params_percentiles: {}'.format(sourcepar_percentiles))
+    logger.info(f'params_percentiles: {sourcepar_percentiles}')
