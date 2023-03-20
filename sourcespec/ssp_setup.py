@@ -77,9 +77,10 @@ def _check_obspy_version():
         OBSPY_VERSION_STR.split('.')[3]
         OBSPY_VERSION = OBSPY_VERSION[:2] + (OBSPY_VERSION[2] + 0.5,)
     if OBSPY_VERSION < MIN_OBSPY_VERSION:
-        msg = 'ERROR: ObsPy >= %s.%s.%s is required.' % MIN_OBSPY_VERSION
-        msg += ' You have version: %s\n' % OBSPY_VERSION_STR
-        sys.stderr.write(msg)
+        MIN_OBSPY_VERSION_STR = '.'.join(map(str, MIN_OBSPY_VERSION))
+        sys.stderr.write(
+            f'ERROR: ObsPy >= {MIN_OBSPY_VERSION_STR} is required. '
+            f'You have version: {OBSPY_VERSION_STR}\n')
         sys.exit(1)
 
 
@@ -94,13 +95,13 @@ def _check_cartopy_version():
         if cartopy_ver < cartopy_min_ver:
             raise ImportError
     except ImportError as e:
+        cartopy_min_ver_str = '.'.join(map(str, cartopy_min_ver))
         msg = (
-            '\nPlease install cartopy >= {}.{}.{} to plot maps.\n'
-            'How to install: '
+            f'\nPlease install cartopy >= {cartopy_min_ver_str} to plot maps.'
+            '\nHow to install: '
             'https://scitools.org.uk/cartopy/docs/latest/installing.html\n\n'
             'Alternatively, set "plot_station_map" and "html_report" to '
             '"False" in config file.\n'
-            .format(*cartopy_min_ver)
         )
         if cartopy_ver is not None:
             msg += f'Installed cartopy version: {CARTOPY_VERSION_STR}.\n'
@@ -128,10 +129,11 @@ def _check_nllgrid_version():
         if nllgrid_ver < nllgrid_min_ver:
             raise ImportError
     except ImportError as e:
+        nllgrid_min_ver_str = '.'.join(map(str, nllgrid_min_ver))
         msg = (
-            '\nPlease install nllgrid >= {}.{}.{} to use NonLinLoc grids.\n'
+            f'\nPlease install nllgrid >= {nllgrid_min_ver_str} to use '
+            'NonLinLoc grids.\n'
             'How to install: https://github.com/claudiodsf/nllgrid\n'
-            .format(*nllgrid_min_ver)
         )
         if nllgrid_ver is not None:
             msg += f'Installed nllgrid version: {nllgrid.__version__}\n'
@@ -143,7 +145,7 @@ def _check_library_versions():
     global NUMPY_VERSION_STR
     global SCIPY_VERSION_STR
     global MATPLOTLIB_VERSION_STR
-    PYTHON_VERSION_STR = '{}.{}.{}'.format(*sys.version_info[:3])
+    PYTHON_VERSION_STR = '.'.join(map(str, sys.version_info[:3]))
     import numpy
     NUMPY_VERSION_STR = numpy.__version__
     import scipy
@@ -154,10 +156,13 @@ def _check_library_versions():
     MATPLOTLIB_VERSION = tuple(map(int, MATPLOTLIB_VERSION))
     MAX_MATPLOTLIB_VERSION = (3, 9, 0)
     if MATPLOTLIB_VERSION >= MAX_MATPLOTLIB_VERSION:
-        msg = 'ERROR: Matplotlib >= %s.%s.%s ' % MAX_MATPLOTLIB_VERSION
-        msg += 'is not yet supported. Please use a less recent version'
-        msg += ' You have version: %s\n' % MATPLOTLIB_VERSION_STR
-        sys.stderr.write(msg)
+        MAX_MATPLOTLIB_VERSION_STR = '.'.join(
+            map(str, MAX_MATPLOTLIB_VERSION))
+        sys.stderr.write(
+            f'ERROR: Matplotlib >= {MAX_MATPLOTLIB_VERSION_STR}'
+            'is not yet supported. Please use a less recent version'
+            f' You have version: {MATPLOTLIB_VERSION_STR}\n'
+        )
         sys.exit(1)
 
 
@@ -508,8 +513,8 @@ def configure(options, progname, config_overrides=None):
     if isinstance(test, dict):
         for entry in test:
             if not test[entry]:
-                sys.stderr.write('Invalid value for "%s": "%s"\n' %
-                                 (entry, config_obj[entry]))
+                sys.stderr.write(
+                    f'Invalid value for "{entry}": "{config_obj[entry]}"\n')
         sys.exit(1)
     if not test:
         sys.stderr.write('No configuration value present!\n')
@@ -663,7 +668,7 @@ def _color_handler_emit(fn):
         else:
             color = '\x1b[0m'  # no color
         # Color-code the message
-        args[0].msg = "{0}{1}\x1b[0m".format(color, args[0].msg)
+        args[0].msg = f'{color}{args[0].msg}\x1b[0m'
         return fn(*args)
     return new
 
