@@ -15,7 +15,6 @@ Read traces in multiple formats of data and metadata.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-
 import sys
 import os
 import re
