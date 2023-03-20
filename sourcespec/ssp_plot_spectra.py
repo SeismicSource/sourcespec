@@ -438,7 +438,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
 
 def _snratio_text(spec, ax, color, path_effects):
     global snratio_text_ypos
-    snratio_text = 'S/N: {:.1f}'.format(spec.stats.spectral_snratio)
+    snratio_text = f'S/N: {spec.stats.spectral_snratio:.1f}'
     ax.text(
         0.95, snratio_text_ypos, snratio_text, ha='right', va='top',
         fontsize=8, color=color, path_effects=path_effects,

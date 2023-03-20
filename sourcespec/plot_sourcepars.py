@@ -39,7 +39,7 @@ class Annot():
         label = np.take(self.labels, ind)
         for Mw, yvalue, evid in zip(x, y, label):
             ystring = self.yformat.format(yvalue)
-            print('{} Mw {:.1f} {}'.format(evid, Mw, ystring))
+            print(f'{evid} Mw {Mw:.1f} {ystring}')
 
 
 def mag_to_moment(mag):
@@ -480,9 +480,9 @@ class Params(object):
         except Exception:
             a, = popt
             b = -0.5
-        print('a: {:.1f} b {:.1f}:'.format(a, b))
+        print(f'a: {a:.1f} b {b:.1f}:')
         slope = (3/2)/b
-        print('slope: {:.1f}'.format(slope))
+        print(f'slope: {slope:.1f}')
         r2 = calc_r2(self.mw, y, np.ones_like(y), a, b, f)
         # r2_err = calc_r2(mw, y, yerr, a, b, f)
         print('r2:', r2)
@@ -629,10 +629,10 @@ class Params(object):
         fig, ax = plt.subplots()
         ax.hist(values, bins=bins)
         ax.axvline(values_mean, color='red')
-        if log:
-            txt = '  mean: {:.1f}'.format(values_mean)
-        else:
-            txt = '  mean: {:.4f}'.format(values_mean)
+        txt = (
+            f'  mean: {values_mean:.1f}' if log
+            else
+            f'  mean: {values_mean:.4f}')
         if unit is not None:
             txt += f' {unit}'
         ax.text(

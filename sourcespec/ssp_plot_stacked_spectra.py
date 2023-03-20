@@ -100,17 +100,23 @@ def _nspectra_text(spec_list):
 def _summary_params_text(sspec_output, ax):
     summary_values = sspec_output.reference_values()
     summary_uncertainties = sspec_output.reference_uncertainties()
-    params_name = ('Mo', 'Mw', 'fc', 't_star')
-    summary_params = {p: summary_values[p] for p in params_name}
-    summary_errors = {p: summary_uncertainties[p] for p in params_name}
-    Mo_text = 'Mo: {:.1e} [- {:.1e}, + {:.1e}] N·m'.format(
-        summary_params['Mo'], *summary_errors['Mo'])
-    Mw_text = 'Mw: {:.2f} [- {:.2f}, + {:.2f}]'.format(
-        summary_params['Mw'], *summary_errors['Mw'])
-    fc_text = 'fc: {:.2f} [- {:.2f}, + {:.2f}] Hz'.format(
-        summary_params['fc'], *summary_errors['fc'])
-    t_star_text = 't*: {:.2f} [- {:.2f}, + {:.2f}] s'.format(
-        summary_params['t_star'], *summary_errors['t_star'])
+    Mo_value = summary_values['Mo']
+    Mo_err_left, Mo_err_right = summary_uncertainties['Mo']
+    Mo_text = (
+        f'Mo: {Mo_value:.1e} [- {Mo_err_left:.1e}, + {Mo_err_right:.1e}] N·m')
+    Mw_value = summary_values['Mw']
+    Mw_err_left, Mw_err_right = summary_uncertainties['Mw']
+    Mw_text = (
+        f'Mw: {Mw_value:.2f} [- {Mw_err_left:.2f}, + {Mw_err_right:.2f}]')
+    fc_value = summary_values['fc']
+    fc_err_left, fc_err_right = summary_uncertainties['fc']
+    fc_text = (
+        f'fc: {fc_value:.2f} [- {fc_err_left:.2f}, + {fc_err_right:.2f}] Hz')
+    t_star_value = summary_values['t_star']
+    t_star_err_left, t_star_err_right = summary_uncertainties['t_star']
+    t_star_text = (
+        f't*: {t_star_value:.2f} '
+        f'[- {t_star_err_left:.2f}, + {t_star_err_right:.2f}] s')
     params_text = (
         f'Summary parameters:\n{Mo_text}\n{Mw_text}\n{fc_text}\n{t_star_text}'
     )
@@ -132,9 +138,9 @@ def _summary_params_text(sspec_output, ax):
 def _add_title(config, ax):
     # Add event information as a title
     hypo = config.hypo
-    textstr = 'evid: {}\nlon: {:.3f} lat: {:.3f} depth: {:.1f} km'
-    textstr = textstr.format(
-        hypo.evid, hypo.longitude, hypo.latitude, hypo.depth)
+    textstr = (
+        f'evid: {hypo.evid}\nlon: {hypo.longitude:.3f} '
+        f'lat: {hypo.latitude:.3f} depth: {hypo.depth:.1f} km')
     with contextlib.suppress(AttributeError):
         textstr += f'\ntime: {hypo.origin_time.format_iris_web_service()}'
     ax.text(

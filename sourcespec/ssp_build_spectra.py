@@ -251,17 +251,20 @@ def _geom_spread_boatwright(hypo_dist_in_km, cutoff_dist_in_km, freqs):
     dist = hypo_dist_in_km * 1e3
     cutoff_dist = cutoff_dist_in_km * 1e3
     if dist <= cutoff_dist:
-        coeff = dist
+        return dist
     else:
-        exponent = np.ones_like(freqs)
-        low_freq = freqs <= 0.2
-        mid_freq = np.logical_and(freqs > 0.2, freqs <= 0.25)
-        high_freq = freqs >= 0.25
-        exponent[low_freq] = 0.5
-        exponent[mid_freq] = 0.5 + 2*np.log(5*freqs[mid_freq])
-        exponent[high_freq] = 0.7
-        coeff = cutoff_dist * (dist/cutoff_dist)**exponent
-    return coeff
+        return _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist)
+
+
+def _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist):
+    exponent = np.ones_like(freqs)
+    low_freq = freqs <= 0.2
+    mid_freq = np.logical_and(freqs > 0.2, freqs <= 0.25)
+    high_freq = freqs >= 0.25
+    exponent[low_freq] = 0.5
+    exponent[mid_freq] = 0.5 + 2*np.log(5*freqs[mid_freq])
+    exponent[high_freq] = 0.7
+    return cutoff_dist * (dist/cutoff_dist)**exponent
 
 
 def _geometrical_spreading_coefficient(config, spec):
@@ -295,8 +298,9 @@ def _displacement_to_moment(stats, config):
         phase, config)
     specid = '.'.join((
         stats.network, stats.station, stats.location, stats.channel))
-    msg = '{}: V{}_hypo: {:.2f} km/s, V{}_station: {:.2f} km/s'.format(
-            specid, phase.lower(), v_hypo, phase.lower(), v_station)
+    msg = (
+        f'{specid}: V{phase.lower()}_hypo: {v_hypo:.2f} km/s, '
+        f'V{phase.lower()}_station: {v_station:.2f} km/s')
     global velocity_log_messages
     if msg not in velocity_log_messages:
         logger.info(msg)
@@ -373,7 +377,7 @@ def _build_spectrum(config, trace):
     return spec
 
 
-def _build_uniform_weight(config, spec):
+def _build_uniform_weight(spec):
     weight = spec.copy()
     weight.data = np.ones_like(weight.data)
     weight.data_log = np.ones_like(weight.data_log)
@@ -393,30 +397,35 @@ def _build_weight_from_frequency(config, spec):
     return weight
 
 
-def _build_weight_from_noise(config, spec, specnoise):
+def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
     weight = spec.copy()
+    weight.data /= specnoise.data
+    # save data to raw_data
+    weight.data_raw = weight.data.copy()
+    # The inversion is done in magnitude units,
+    # so let's take log10 of weight
+    weight.data = np.log10(weight.data)
+    # Weight spectrum is smoothed once more
+    _smooth_spectrum(weight, smooth_width_decades)
+    weight.data /= np.max(weight.data)
+    # slightly taper weight at low frequencies, to avoid overestimating
+    # weight at low frequencies, in cases where noise is underestimated
+    cosine_taper(weight.data, weight.stats.delta/4, left_taper=True)
+    # Make sure weight is positive
+    weight.data[weight.data <= 0] = 0.001
+    return weight
+
+
+def _build_weight_from_noise(config, spec, specnoise):
     if specnoise is None or np.all(specnoise.data == 0):
-        weight_id = weight.get_id()[:-1]
+        spec_id = spec.get_id()[:-1]
         logger.warning(
-            f'{weight_id}: No available noise window: '
+            f'{spec_id}: No available noise window: '
             'a uniform weight will be applied')
-        weight.data = np.ones(len(spec.data))
-        weight.data_raw = np.ones(len(spec.data))
+        weight = _build_uniform_weight(spec)
     else:
-        weight.data /= specnoise.data
-        # save data to raw_data
-        weight.data_raw = weight.data.copy()
-        # The inversion is done in magnitude units,
-        # so let's take log10 of weight
-        weight.data = np.log10(weight.data)
-        # Weight spectrum is smoothed once more
-        _smooth_spectrum(weight, config.spectral_smooth_width_decades)
-        weight.data /= np.max(weight.data)
-        # slightly taper weight at low frequencies, to avoid overestimating
-        # weight at low frequencies, in cases where noise is underestimated
-        cosine_taper(weight.data, spec.stats.delta/4, left_taper=True)
-        # Make sure weight is positive
-        weight.data[weight.data <= 0] = 0.001
+        weight = _build_weight_from_ratio(
+            spec, specnoise, config.spectral_smooth_width_decades)
     # interpolate to log-frequencies
     f = interp1d(weight.get_freq(), weight.data, fill_value='extrapolate')
     weight.data_log = f(weight.freq_log)
@@ -441,7 +450,7 @@ def _build_weight_st(config, spec_st, specnoise_st):
         elif config.weighting == 'frequency':
             weight = _build_weight_from_frequency(config, spec_h)
         elif config.weighting == 'no_weight':
-            weight = _build_uniform_weight(config, spec_h)
+            weight = _build_uniform_weight(spec_h)
         weight_st.append(weight)
     return weight_st
 
@@ -505,6 +514,17 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
             raise SpectrumIgnored(msg, reason)
 
 
+def _ignore_spectrum(msg, trace, spec, specnoise):
+    """Ignore spectrum. Set ignore flag and reason."""
+    logger.warning(msg)
+    trace.stats.ignore = True
+    trace.stats.ignore_reason = msg.reason
+    spec.stats.ignore = True
+    spec.stats.ignore_reason = msg.reason
+    specnoise.stats.ignore = True
+    specnoise.stats.ignore_reason = msg.reason
+
+
 def build_spectra(config, st):
     """
     Build spectra and the ``spec_st`` object.
@@ -531,14 +551,8 @@ def build_spectra(config, st):
             # RuntimeError is for skipped spectra
             logger.warning(msg)
             continue
-        except SpectrumIgnored as ex:
-            logger.warning(ex)
-            trace.stats.ignore = True
-            trace.stats.ignore_reason = ex.reason
-            spec.stats.ignore = True
-            spec.stats.ignore_reason = ex.reason
-            specnoise.stats.ignore = True
-            specnoise.stats.ignore_reason = ex.reason
+        except SpectrumIgnored as msg:
+            _ignore_spectrum(msg, trace, spec, specnoise)
         spec_st.append(spec)
         specnoise_st.append(specnoise)
 

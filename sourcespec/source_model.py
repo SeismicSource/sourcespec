@@ -43,7 +43,7 @@ def make_synth(config, spec_st, trace_spec=None):
         else:
             mag = moment_to_mag(Mo)
 
-        spec.stats.station = 'S{:02d}'.format(n)
+        spec.stats.station = f'S{n:02d}'
         n += 1
         spec.stats.instrtype = 'Synth'
         spec.stats.channel = spec.stats.channel[:-1] + 'S'
