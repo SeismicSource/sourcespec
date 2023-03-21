@@ -12,6 +12,7 @@ QuakeML output for source_spec.
 """
 import os
 import logging
+import warnings
 from obspy import read_events, UTCDateTime
 from obspy.core import AttribDict
 from obspy.core.event import (CreationInfo, FocalMechanism, Magnitude,
@@ -19,6 +20,7 @@ from obspy.core.event import (CreationInfo, FocalMechanism, Magnitude,
                               StationMagnitude, StationMagnitudeContribution,
                               WaveformStreamID)
 from sourcespec._version import get_versions
+logger = logging.getLogger(__name__.split('.')[-1])
 
 
 def _to_camel_case(snake_str):
@@ -69,7 +71,7 @@ def write_qml(config, sspec_output):
     try:
         ev = [e for e in cat if evid in str(e.resource_id)][0]
     except Exception:
-        logging.warning(
+        logger.warning(
             f'Unable to find evid "{evid}" in QuakeML file. '
             'QuakeML output will not be written.')
         config.qml_file_out = None
@@ -186,8 +188,15 @@ def write_qml(config, sspec_output):
         ev.preferred_magnitude_id = mag.resource_id.id
 
     qml_file_out = os.path.join(config.options.outdir, f'{evid}.xml')
-    ev.write(qml_file_out, format='QUAKEML')
-    logging.info(f'QuakeML file written to: {qml_file_out}')
+    with warnings.catch_warnings(record=True) as warns:
+        ev.write(qml_file_out, format='QUAKEML')
+        for w in warns:
+            message = str(w.message)
+            # Ignore a couple of harmless warnings
+            if 'trimmed mean' in message or 'ITAPER' in message:
+                continue
+            logger.warning(f'Warning while writing QuakeML: {message}')
+    logger.info(f'QuakeML file written to: {qml_file_out}')
     config.qml_file_out = qml_file_out
 
 
