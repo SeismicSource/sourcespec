@@ -12,12 +12,16 @@ Save Matplotlib figure. Optimize PNG format using PIL.
 import io
 import PIL
 import logging
+import warnings
 # Reduce logging level for PIL to avoid DEBUG messages
 pil_logger = logging.getLogger('PIL')
 pil_logger.setLevel(logging.WARNING)
 # Reduce logging level for fontTools to avoid DEBUG messages
 mpl_logger = logging.getLogger('fontTools')
 mpl_logger.setLevel(logging.WARNING)
+# Silence PIL warnings about transparency needing RGBA, since we remove the
+# alpha channel anyway (see below)
+warnings.filterwarnings('ignore', message='Palette images with Transparency')
 
 
 def savefig(fig, figfile, fmt, quantize_colors=True, **kwargs):
