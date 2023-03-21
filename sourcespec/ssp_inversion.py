@@ -417,6 +417,16 @@ def spectral_inversion(config, spec_st, weight_st):
     spectra = [sp for sta in stations for sp in spec_st.select(station=sta)]
 
     sspec_output = SourceSpecOutput()
+    sspec_output.inversion_info.algorithm = config.inv_algorithm
+    sspec_output.inversion_info.weighting = config.weighting
+    sspec_output.inversion_info.t_star_0 = config.t_star_0
+    sspec_output.inversion_info.invert_t_star_0 = config.invert_t_star_0
+    sspec_output.inversion_info.t_star_0_variability =\
+        config.t_star_0_variability
+    sspec_output.inversion_info.t_star_min_max =\
+        config.t_star_min_max or 'null'
+    sspec_output.inversion_info.fc_min_max = config.fc_min_max or 'null'
+    sspec_output.inversion_info.Qo_min_max = config.Qo_min_max or 'null'
     hypo = config.hypo
     sspec_output.event_info.event_id = hypo.evid
     sspec_output.event_info.longitude = hypo.longitude

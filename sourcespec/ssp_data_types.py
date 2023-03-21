@@ -313,8 +313,21 @@ class SourceSpecOutput(OrderedAttribDict):
     def __init__(self):
         self.run_info = OrderedAttribDict()
         self.event_info = OrderedAttribDict()
+        self.inversion_info = OrderedAttribDict()
         self.summary_spectral_parameters = OrderedAttribDict()
         self.station_parameters = OrderedAttribDict()
+        self._comments = {
+            'begin': 'SourceSpec output in YAML format',
+            'run_info': 'Information on the SourceSpec run',
+            'event_info': 'Information on the event',
+            'inversion_info': 'Information on the inversion procedure',
+            'summary_spectral_parameters':
+                'Summary spectral parameters, computed using different '
+                'statistics',
+            'station_parameters':
+                'Parameters describing each station and spectral '
+                'measurements\nperformed at that station'
+        }
 
     def value_array(self, key, filter_outliers=False):
         vals = np.array([
@@ -478,15 +491,3 @@ class SourceSpecOutput(OrderedAttribDict):
             if isinstance(par, SummarySpectralParameter)
             and ref_stat in par
         }
-
-
-sspec_out_comments = {
-    'begin': 'SourceSpec output in YAML format',
-    'run_info': 'Information on the SourceSpec run',
-    'event_info': 'Information on the event',
-    'summary_spectral_parameters':
-        'Summary spectral parameters, computed using different statistics',
-    'station_parameters':
-        'Parameters describing each station and spectral measurements\n'
-        'performed at that station'
-}

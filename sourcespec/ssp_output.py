@@ -21,7 +21,6 @@ import numpy as np
 from collections.abc import Mapping
 from datetime import datetime
 from tzlocal import get_localzone
-from sourcespec.ssp_data_types import sspec_out_comments
 from sourcespec.ssp_qml_output import write_qml
 from sourcespec.ssp_sqlite_output import write_sqlite
 from sourcespec._version import get_versions
@@ -299,12 +298,11 @@ def _write_parfile(config, sspec_output):
     logger.info(f'Output written to file: {parfilename}')
 
 
-def _dict2yaml(dict_like, level=0, comments=None):
+def _dict2yaml(dict_like, level=0):
     """Serialize a dict-like object into YAML format."""
     if not isinstance(dict_like, Mapping):
         raise TypeError('dict_like must be a dict-like object')
-    if comments is None:
-        comments = {}
+    comments = dict_like.get('_comments', {})
     fmt = dict_like.get('_format', None)
     value_uncertainty_keys = (
         'value', 'uncertainty', 'lower_uncertainty', 'upper_uncertainty')
@@ -332,7 +330,7 @@ def _dict2yaml(dict_like, level=0, comments=None):
                 for line in comment.split('\n'):
                     lines += f'# {line}\n'
             lines += f'{indent}{key}:\n'
-            lines += _dict2yaml(value, level+1, comments)
+            lines += _dict2yaml(value, level+1)
         else:
             lines += f'{indent}{key}: {value}\n'
     return lines
@@ -344,9 +342,9 @@ def _write_yaml(config, sspec_output):
         os.makedirs(config.options.outdir)
     evid = config.hypo.evid
     yamlfilename = os.path.join(config.options.outdir, f'{evid}.ssp.yaml')
-    lines = _dict2yaml(sspec_output, comments=sspec_out_comments)
+    lines = _dict2yaml(sspec_output)
     with open(yamlfilename, 'w') as fp:
-        comment = sspec_out_comments['begin']
+        comment = sspec_output._comments['begin']
         for line in comment.split('\n'):
             fp.write(f'# {line}\n')
         fp.write(lines)
