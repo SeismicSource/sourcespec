@@ -217,11 +217,11 @@ def remove_instr_response(trace, pre_filt=(0.5, 0.6, 40., 45.)):
     :param pre_filt: Pre-filter frequencies (``None`` means no pre-filtering).
     :type pre_filt: tuple of four floats
     """
-    traceId = trace.get_id()
+    trace_info = trace.stats.info
     inventory = trace.stats.inventory
     if not inventory:
         # empty inventory
-        raise RuntimeError(f'{traceId}: no instrument response for trace')
+        raise RuntimeError(f'{trace_info}: no instrument response for trace')
     # remove the mean...
     trace.detrend(type='constant')
     # ...and the linear trend
@@ -239,6 +239,10 @@ def remove_instr_response(trace, pre_filt=(0.5, 0.6, 40., 45.)):
     # trace is converted to the sensor units
     trace.remove_response(
         inventory=inventory, output=output, pre_filt=pre_filt)
+    if any(np.isnan(trace.data)):
+        raise RuntimeError(
+            f'{trace_info}: NaN values in trace after '
+            'instrument response removal')
 # -----------------------------------------------------------------------------
 
 

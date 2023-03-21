@@ -151,12 +151,12 @@ def _check_sn_ratio(config, trace):
 
 def _get_detrended_trace_copy(trace):
     # noise time window for s/n ratio
-    result = trace.copy()
+    tr_copy = trace.copy()
     # remove the mean...
-    result.detrend(type='constant')
+    tr_copy.detrend(type='constant')
     # ...and the linear trend...
-    result.detrend(type='linear')
-    return result
+    tr_copy.detrend(type='linear')
+    return tr_copy
 
 
 def _remove_baseline(config, trace):
@@ -200,6 +200,7 @@ def _process_trace(config, trace):
             remove_instr_response(trace_process, pre_filt)
         except Exception as e:
             raise RuntimeError(
+                f'{e}\n'
                 f'{trace.stats.info}: Unable to remove instrument response: '
                 'skipping trace') from e
     _remove_baseline(config, trace_process)
