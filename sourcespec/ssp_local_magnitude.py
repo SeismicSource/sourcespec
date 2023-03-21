@@ -28,6 +28,23 @@ from sourcespec.ssp_util import remove_instr_response
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
+def _check_nyquist(freqmax, trace):
+    """Check if freqmax is smaller than Nyquist frequency."""
+    nyquist = 1./(2. * trace.stats.delta)
+    if freqmax >= nyquist:
+        freqmax = nyquist * 0.999
+        msg = (
+            f'{trace.id}: maximum frequency for bandpass filtering in '
+            'local magnitude computation is larger than or equal '
+            f'to Nyquist. Setting it to {freqmax} Hz'
+        )
+        if msg not in _check_nyquist.messages:
+            _check_nyquist.messages.append(msg)
+            logger.warning(msg)
+    return freqmax
+_check_nyquist.messages = []  # noqa
+
+
 def _get_cut_times(config, tr):
     """Get trace cut times between P arrival and end of envelope coda."""
     tr_env = tr.copy()
@@ -37,15 +54,7 @@ def _get_cut_times(config, tr):
     tr_env.detrend(type='linear')
     # ...filter
     freqmin = 1.
-    freqmax = 20.
-    nyquist = 1./(2. * tr.stats.delta)
-    if freqmax >= nyquist:
-        freqmax = nyquist * 0.999
-        logger.warning(
-            f'{tr.id}: maximum frequency for bandpass filtering in '
-            'local magnitude computation is larger than or equal '
-            f'to Nyquist. Setting it to {freqmax} Hz'
-        )
+    freqmax = _check_nyquist(freqmax=20, trace=tr)
     cosine_taper(tr_env.data, width=config.taper_halfwidth)
     tr_env.filter(type='bandpass', freqmin=freqmin, freqmax=freqmax)
     tr_env.data = envelope(tr_env.data)
@@ -109,7 +118,7 @@ def _process_trace(config, tr, t0, t1):
     # ...and the linear trend...
     tr_process.detrend(type='linear')
     freqmin = config.ml_bp_freqmin
-    freqmax = config.ml_bp_freqmax
+    freqmax = _check_nyquist(freqmax=config.ml_bp_freqmax, trace=tr)
     # ...remove response...
     pre_filt = (freqmin, freqmin*1.1, freqmax*0.9, freqmax)
     if config.correct_instrumental_response:
