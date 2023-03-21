@@ -68,6 +68,13 @@
             </a>
           </li>
           <li>
+            <a href="#inversion_info">
+              <i class="fas fa-table"></i>
+              &nbsp;&nbsp;
+              Inversion Information
+            </a>
+          </li>
+          <li>
             <a href="#summary_spectral_parameters">
               <i class="fas fa-table"></i>
               &nbsp;&nbsp;
@@ -198,11 +205,68 @@
         </div>
       </div> <!-- page -->
 
-        <div class="line" id="traces"></div>
+      <div class="line" id="traces"></div>
 {TRACES_PLOTS}
 
-        <div class="line" id="spectra"></div>
+      <div class="line" id="spectra"></div>
 {SPECTRA_PLOTS}
+
+      <div class="page">
+        <div class="line" id="inversion_info"></div>
+        <h2>Inversion Information</h2>
+        <table class="table">
+          <tbody>
+            <tr>
+              <th scope="row">Algorithm:</th>
+              <td>
+{INVERSION_ALGORITHM}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Weighting:</th>
+              <td>
+{INVERSION_WEIGHTING}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">t-star-0:</th>
+              <td>
+{INVERSION_T_STAR_0}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Invert t-star-0:</th>
+              <td>
+{INVERSION_INVERT_T_STAR_0}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">t-star-0 variability:</th>
+              <td>
+{INVERSION_T_STAR_0_VARIABILITY}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">t-star min, max:</th>
+              <td>
+{INVERSION_T_STAR_MIN_MAX}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">fc min, max:</th>
+              <td>
+{INVERSION_FC_MIN_MAX}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Qo min, max:</th>
+              <td>
+{INVERSION_Q0_MIN_MAX}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div> <!-- page -->
 
       <div class="page">
         <div class="line" id="summary_spectral_parameters"></div>

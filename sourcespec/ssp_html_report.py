@@ -535,6 +535,53 @@ def html_report(config, sspec_output):
         '{RUNID_COMMENT_END}': run_id_comment_end
     })
 
+    # Inversion information
+    inversion_algorithms = {
+        'TNC': 'Truncated Newton',
+        'LM': 'Levenberg-Marquardt',
+        'BH': 'Basin-hopping',
+        'GS': 'Grid search',
+        'IS': 'K-d tree importance sampling',
+    }
+    weightings = {
+        'noise': 'Noise weighting',
+        'frequency': 'Frequency weighting',
+        'no_weight': 'No weighting',
+    }
+    inversion_algorithm = inversion_algorithms[
+        sspec_output.inversion_info.algorithm]
+    inversion_weighting = weightings[sspec_output.inversion_info.weighting]
+    inversion_t_star_0 = f'{sspec_output.inversion_info.t_star_0} s'
+    inversion_invert_t_star_0 =\
+        str(sspec_output.inversion_info.invert_t_star_0)
+    inversion_t_star_0_variability =\
+        f'{sspec_output.inversion_info.t_star_0_variability * 100:.1f} %'
+    if sspec_output.inversion_info.t_star_min_max == 'null':
+        inversion_t_star_min_max = '-'
+    else:
+        inversion_t_star_min_max =\
+            f'{sspec_output.inversion_info.t_star_min_max} s'
+    if sspec_output.inversion_info.fc_min_max == 'null':
+        inversion_fc_min_max = '-'
+    else:
+        inversion_fc_min_max =\
+            f'{sspec_output.inversion_info.fc_min_max} Hz'
+    if sspec_output.inversion_info.Qo_min_max == 'null':
+        inversion_Qo_min_max = '-'
+    else:
+        inversion_Qo_min_max =\
+            str(sspec_output.inversion_info.Qo_min_max)
+    replacements.update({
+        '{INVERSION_ALGORITHM}': inversion_algorithm,
+        '{INVERSION_WEIGHTING}': inversion_weighting,
+        '{INVERSION_T_STAR_0}': inversion_t_star_0,
+        '{INVERSION_INVERT_T_STAR_0}': inversion_invert_t_star_0,
+        '{INVERSION_T_STAR_0_VARIABILITY}': inversion_t_star_0_variability,
+        '{INVERSION_T_STAR_MIN_MAX}': inversion_t_star_min_max,
+        '{INVERSION_FC_MIN_MAX}': inversion_fc_min_max,
+        '{INVERSION_Q0_MIN_MAX}': inversion_Qo_min_max,
+    })
+
     # Summary spectral parameters
     ref_stat = sspec_output.summary_spectral_parameters.reference_statistics
     col_mean_highlighted = col_wmean_highlighted = col_perc_highlighted = ''
