@@ -235,9 +235,12 @@ def _parse_hypo2000_file(hypo_file):
     hypo_line = False
     station_line = False
     oldpick = None
-    for n, line in enumerate(open(hypo_file)):
+    for n, line in enumerate(open(hypo_file), start=1):
         word = line.split()
         if not word:
+            continue
+        # skip short lines, which are probably comments
+        if len(line) < 50:
             continue
         if hypo_line:
             hypo = _parse_hypo2000_hypo_line(line)
