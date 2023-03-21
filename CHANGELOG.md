@@ -22,6 +22,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
   response (use the config option `correct_instrumental_response` instead)
 - Logscale for boxplots, if parameters span a large interval
   (see pull request [#15])
+- Information on the inversion procedure in YAML and HTML output
 
 ### Processing
 
