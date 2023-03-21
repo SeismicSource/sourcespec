@@ -18,6 +18,7 @@ import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
 import cartopy.io.shapereader as shpreader
 import cartopy.feature as cfeature
+from shapely.errors import ShapelyDeprecationWarning
 from obspy.imaging.beachball import beach
 from sourcespec.adjustText import adjust_text
 from pyproj import Geod
@@ -35,6 +36,8 @@ matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
+# Ignore Shapely deprecation warnings, since they depend on Cartopy
+warnings.filterwarnings('ignore', category=ShapelyDeprecationWarning)
 
 
 # TODO:
