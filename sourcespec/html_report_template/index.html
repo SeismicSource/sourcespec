@@ -38,35 +38,35 @@
               &nbsp;&nbsp;
               Event Summary
             </a>
-          </li>
+          </li>{MAP_MAG_COMMENT_BEGIN}
           <li>
             <a href="#moment_magnitude">
               <i class="fas fa-image"></i>
               &nbsp;&nbsp;
               Moment Magnitude
             </a>
-          </li>
+          </li>{MAP_MAG_COMMENT_END}{MAP_FC_COMMENT_BEGIN}
           <li>
             <a href="#corner_frequency">
               <i class="fas fa-image"></i>
               &nbsp;&nbsp;
               Corner Frequency
             </a>
-          </li>
+          </li>{MAP_FC_COMMENT_END}{TRACES_PLOTS_COMMENT_BEGIN}
           <li>
             <a href="#traces">
               <i class="fas fa-image"></i>
               &nbsp;&nbsp;
               Traces
             </a>
-          </li>
+          </li>{TRACES_PLOTS_COMMENT_END}{SPECTRA_PLOTS_COMMENT_BEGIN}
           <li>
             <a href="#spectra">
               <i class="fas fa-image"></i>
               &nbsp;&nbsp;
               Spectra
             </a>
-          </li>
+          </li>{SPECTRA_PLOTS_COMMENT_END}
           <li>
             <a href="#inversion_info">
               <i class="fas fa-table"></i>
@@ -80,37 +80,35 @@
               &nbsp;&nbsp;
               Summary Spectral Parameters
             </a>
-          </li>
+          </li>{BOX_PLOTS_COMMENT_BEGIN}
           <li>
             <a href="#box_plots">
               <i class="fas fa-image"></i>
               &nbsp;&nbsp;
               Spectral Parameter<br>Box Plots
             </a>
-          </li>
+          </li>{BOX_PLOTS_COMMENT_END}{STACKED_SPECTRA_COMMENT_BEGIN}
           <li>
             <a href="#stacked_spectra">
               <i class="fas fa-image"></i>
               &nbsp;&nbsp;
               Stacked Spectra
             </a>
-          </li>
+          </li>{STACKED_SPECTRA_COMMENT_END}
           <li>
             <a href="#station_parameters">
               <i class="fas fa-table"></i>
               &nbsp;&nbsp;
               Station Parameters
             </a>
-          </li>
-{MISFIT_PLOT_COMMENT_BEGIN}
+          </li>{MISFIT_PLOT_COMMENT_BEGIN}
           <li>
             <a href="#misfit_plots">
               <i class="fas fa-image"></i>
               &nbsp;&nbsp;
               Misfit Plots
             </a>
-          </li>
-{MISFIT_PLOT_COMMENT_END}
+          </li>{MISFIT_PLOT_COMMENT_END}
           <li>
             <a href="#files">
               <i class="fas fa-file"></i>
@@ -144,23 +142,17 @@
           <tbody>
             <tr>
               <th scope="row">Event ID:</th>
-              <td>
-{EVENT_URL_COMMENT_BEGIN}
-                <a href="{EVENT_URL}" title="Go to event page" target="_new">
-{EVENT_URL_COMMENT_END}
-                  {EVENTID}
-{EVENT_URL_COMMENT_BEGIN}
+              <td>{EVENT_URL_COMMENT_BEGIN}
+                <a href="{EVENT_URL}" title="Go to event page" target="_new">{EVENT_URL_COMMENT_END}
+                  {EVENTID}{EVENT_URL_COMMENT_BEGIN}
                   &nbsp;<i class="fas fa-external-link-alt"></i>
-                </a>
-{EVENT_URL_COMMENT_END}
+                </a>{EVENT_URL_COMMENT_END}
               </td>
-            </tr>
-{RUNID_COMMENT_BEGIN}
+            </tr>{RUNID_COMMENT_BEGIN}
             <tr>
               <th scope="row">Run ID:</th>
               <td>{RUNID}</td>
-            </tr>
-{RUNID_COMMENT_END}
+            </tr>{RUNID_COMMENT_END}
             <tr>
               <th scope="row">Longitude:</th>
               <td>{EVENT_LONGITUDE} °E</td>
@@ -189,27 +181,35 @@
         </table>
       </div> <!-- page -->
 
+{MAP_MAG_COMMENT_BEGIN}
       <div class="page">
         <div class="line" id="moment_magnitude"></div>
         <h2>Moment Magnitude</h2>
         <div class="item" data-src="{MAP_MAG}">
           <img class="station_map" src="{MAP_MAG}"/>
         </div>
-      </div> <!-- page -->
+      </div>
+{MAP_MAG_COMMENT_END}
 
+{MAP_FC_COMMENT_BEGIN}
       <div class="page">
         <div class="line" id="corner_frequency"></div>
         <h2>Corner Frequency</h2>
         <div class="item" data-src="{MAP_FC}">
           <img class="station_map" src="{MAP_FC}"/>
         </div>
-      </div> <!-- page -->
+      </div>
+{MAP_FC_COMMENT_END}
 
+{TRACES_PLOTS_COMMENT_BEGIN}
       <div class="line" id="traces"></div>
 {TRACES_PLOTS}
+{TRACES_PLOTS_COMMENT_END}
 
+{SPECTRA_PLOTS_COMMENT_BEGIN}
       <div class="line" id="spectra"></div>
 {SPECTRA_PLOTS}
+{SPECTRA_PLOTS_COMMENT_END}
 
       <div class="page">
         <div class="line" id="inversion_info"></div>
@@ -219,49 +219,49 @@
             <tr>
               <th scope="row">Algorithm:</th>
               <td>
-{INVERSION_ALGORITHM}
+                {INVERSION_ALGORITHM}
               </td>
             </tr>
             <tr>
               <th scope="row">Weighting:</th>
               <td>
-{INVERSION_WEIGHTING}
+                {INVERSION_WEIGHTING}
               </td>
             </tr>
             <tr>
               <th scope="row">t-star-0:</th>
               <td>
-{INVERSION_T_STAR_0}
+                {INVERSION_T_STAR_0}
               </td>
             </tr>
             <tr>
               <th scope="row">Invert t-star-0:</th>
               <td>
-{INVERSION_INVERT_T_STAR_0}
+                {INVERSION_INVERT_T_STAR_0}
               </td>
             </tr>
             <tr>
               <th scope="row">t-star-0 variability:</th>
               <td>
-{INVERSION_T_STAR_0_VARIABILITY}
+                {INVERSION_T_STAR_0_VARIABILITY}
               </td>
             </tr>
             <tr>
               <th scope="row">t-star min, max:</th>
               <td>
-{INVERSION_T_STAR_MIN_MAX}
+                {INVERSION_T_STAR_MIN_MAX}
               </td>
             </tr>
             <tr>
               <th scope="row">fc min, max:</th>
               <td>
-{INVERSION_FC_MIN_MAX}
+                {INVERSION_FC_MIN_MAX}
               </td>
             </tr>
             <tr>
               <th scope="row">Qo min, max:</th>
               <td>
-{INVERSION_Q0_MIN_MAX}
+                {INVERSION_Q0_MIN_MAX}
               </td>
             </tr>
           </tbody>
@@ -339,34 +339,36 @@
               <td>{ER_MEAN_AND_ERR}</td>
               <td></td>
               <td>{ER_PERC_AND_ERR}</td>
-            </tr>
-{ML_COMMENT_BEGIN}
+            </tr>{ML_COMMENT_BEGIN}
             <tr>
               <th scope="row">Ml</th>
               <td>{ML_MEAN_AND_ERR}</td>
               <td></td>
               <td>{ML_PERC_AND_ERR}</td>
-            </tr>
-{ML_COMMENT_END}
+            </tr>{ML_COMMENT_END}
           </tbody>
         </table>
       </div> <!-- page -->
 
+{BOX_PLOTS_COMMENT_BEGIN}
       <div class="page">
         <div class="line" id="box_plots"></div>
         <h2>Spectral Parameter Box Plots</h2>
         <div class="item" data-src="{BOX_PLOTS}">
           <img class="box_plot" src="{BOX_PLOTS}"/>
         </div>
-      </div> <!-- page -->
+      </div>
+{BOX_PLOTS_COMMENT_END}
 
+{STACKED_SPECTRA_COMMENT_BEGIN}
       <div class="page">
         <div class="line" id="stacked_spectra"></div>
         <h2>Stacked Spectra</h2>
         <div class="item" data-src="{STACKED_SPECTRA}">
           <img class="stacked_spectra" src="{STACKED_SPECTRA}"/>
         </div>
-      </div> <!-- page -->
+      </div>
+{STACKED_SPECTRA_COMMENT_END}
 
       <div class="page">
         <div class="line" id="station_parameters"></div>
@@ -417,12 +419,10 @@
                 </th>
                 <th onclick="sortTable(11, numeric=true)" scope="col">
                   <nobr><i class="fas fa-sort dontprint_inline"></i>&nbsp;Azimuth</nobr><br/>(°)
-                </th>
-{ML_COMMENT_BEGIN}
+                </th>{ML_COMMENT_BEGIN}
                 <th onclick="sortTable(12, numeric=true)" scope="col">
                   <nobr><i class="fas fa-sort"></i>&nbsp;Ml</nobr>
-                </th>
-{ML_COMMENT_END}
+                </th>{ML_COMMENT_END}
               </tr>
             </thead>
             <tbody>
