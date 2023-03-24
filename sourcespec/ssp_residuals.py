@@ -32,7 +32,7 @@ def spectral_residuals(config, spec_st, sspec_output):
     params_name = ('Mw', 'fc', 't_star')
     sourcepar_summary = {p: summary_values[p] for p in params_name}
     residuals = Stream()
-    for station in set(x.stats.station for x in spec_st.traces):
+    for station in {x.stats.station for x in spec_st.traces}:
         spec_st_sel = spec_st.select(station=station)
         for spec in spec_st_sel.traces:
             if spec.stats.channel[-1] != 'H':
@@ -48,7 +48,7 @@ def spectral_residuals(config, spec_st, sspec_output):
 
     # Save residuals as pickle file
     evid = config.hypo.evid
-    res_file = os.path.join(config.options.outdir, evid + '-residuals.pickle')
-    logger.info('Spectral residuals saved to: %s' % res_file)
+    res_file = os.path.join(config.options.outdir, f'{evid}-residuals.pickle')
     with open(res_file, 'wb') as fp:
         pickle.dump(residuals, fp)
+    logger.info(f'Spectral residuals saved to: {res_file}')

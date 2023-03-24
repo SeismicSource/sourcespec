@@ -10,6 +10,7 @@ Trace plotting routine.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import contextlib
 import numpy as np
 import logging
 from sourcespec.savefig import savefig
@@ -40,43 +41,34 @@ def _nplots(config, st, maxlines, ncols):
     """Determine the number of lines and columns of the plot."""
     # Remove the channel letter to determine the number of plots
     if config.plot_traces_ignored:
-        nplots = len(set(tr.id[:-1] for tr in st))
+        nplots = len({tr.id[:-1] for tr in st})
     else:
-        nplots = len(set(tr.id[:-1] for tr in st if not tr.stats.ignore))
-    nplots = len(set(tr.id[:-1] for tr in st))
+        nplots = len({tr.id[:-1] for tr in st if not tr.stats.ignore})
+    nplots = len({tr.id[:-1] for tr in st})
     nlines = int(np.ceil(nplots/ncols))
-    if nlines > maxlines:
-        nlines = maxlines
+    nlines = min(nlines, maxlines)
     if nplots < ncols:
         ncols = 1
     return nlines, ncols
 
 
 def _make_fig(config, nlines, ncols):
-    if nlines <= 3:
-        figsize = (16, 9)
-    else:
-        figsize = (16, 18)
+    figsize = (16, 9) if nlines <= 3 else (16, 18)
     # high dpi needed to rasterize png
-    if config.plot_save_format == 'png':
-        dpi = 300
     # vector formats (pdf, svg) do not have rasters
-    else:
-        dpi = 72
+    dpi = 300 if config.plot_save_format == 'png' else 72
     fig = plt.figure(figsize=figsize, dpi=dpi)
     # Create an invisible axis and use it for title and footer
     ax0 = fig.add_subplot(111, label='ax0')
     ax0.set_axis_off()
     # Add event information as a title
     hypo = config.hypo
-    textstr = 'evid: {} lon: {:.3f} lat: {:.3f} depth: {:.1f} km'
-    textstr = textstr.format(
-        hypo.evid, hypo.longitude, hypo.latitude, hypo.depth)
-    try:
-        textstr += ' time: {}'.format(
-            hypo.origin_time.format_iris_web_service())
-    except AttributeError:
-        pass
+    textstr = (
+        f'evid: {hypo.evid} lon: {hypo.longitude:.3f} '
+        f'lat: {hypo.latitude:.3f} depth: {hypo.depth:.1f} km'
+    )
+    with contextlib.suppress(AttributeError):
+        textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
     ax0.text(0., 1.06, textstr, fontsize=12,
              ha='left', va='top', transform=ax0.transAxes)
     if config.options.evname is not None:
@@ -84,7 +76,7 @@ def _make_fig(config, nlines, ncols):
         ax0.text(0., 1.1, textstr, fontsize=14,
                  ha='left', va='top', transform=ax0.transAxes)
     # Add code and author information at the figure bottom
-    textstr = 'SourceSpec v{} '.format(get_versions()['version'])
+    textstr = f'SourceSpec v{get_versions()["version"]} '
     textstr2 = ''
     if config.author_name is not None:
         textstr2 += config.author_name
@@ -99,7 +91,7 @@ def _make_fig(config, nlines, ncols):
             textstr2 += ' - '
         textstr2 += config.agency_full_name
     if textstr2 != '':
-        textstr = '{}\n{} '.format(textstr, textstr2)
+        textstr = f'{textstr}\n{textstr2} '
     ax0.text(1., -0.1, textstr, fontsize=10, linespacing=1.5,
              ha='right', va='top', transform=ax0.transAxes)
     axes = []
@@ -127,7 +119,7 @@ def _make_fig(config, nlines, ncols):
 
 def _savefig(config, figures):
     evid = config.hypo.evid
-    figfile_base = os.path.join(config.options.outdir, evid + '.traces.')
+    figfile_base = os.path.join(config.options.outdir, f'{evid}.traces.')
     fmt = config.plot_save_format
     pad_inches = matplotlib.rcParams['savefig.pad_inches']
     bbox = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
@@ -135,16 +127,13 @@ def _savefig(config, figures):
     nfigures = len(figures)
     if nfigures == 1 or fmt == 'pdf_multipage':
         if fmt == 'pdf_multipage':
-            figfile = figfile_base + 'pdf'
+            figfile = f'{figfile_base}pdf'
             pdf = PdfPages(figfile)
         else:
             figfile = figfile_base + fmt
         figfiles = [figfile, ]
     else:
-        figfiles = [
-            figfile_base + '{:02d}.{}'.format(n, fmt)
-            for n in range(nfigures)
-        ]
+        figfiles = [f'{figfile_base}{n:02d}.{fmt}' for n in range(nfigures)]
     for n in range(nfigures):
         if fmt == 'pdf_multipage':
             pdf.savefig(figures[n], bbox_inches=bbox)
@@ -153,7 +142,7 @@ def _savefig(config, figures):
         if not config.plot_show:
             plt.close(figures[n])
     for figfile in figfiles:
-        logger.info('Trace plots saved to: ' + figfile)
+        logger.info(f'Trace plots saved to: {figfile}')
     config.figures['traces'] += figfiles
     if fmt == 'pdf_multipage':
         pdf.close()
@@ -165,7 +154,7 @@ def _plot_min_max(ax, x_vals, y_vals, linewidth, color, alpha, zorder):
     nsamples = len(x_vals)
     samples_per_pixel = int(np.ceil(nsamples/ax_width_in_pixels))
     # find the closest multiple of samples_per_pixel (rounded down)
-    nsamples = nsamples - nsamples % samples_per_pixel
+    nsamples -= nsamples % samples_per_pixel
     # resample x_vals
     x_vals = x_vals[:nsamples:samples_per_pixel]
     # reshape y_vals so that each row has a number of elements equal to
@@ -187,25 +176,25 @@ def _plot_min_max(ax, x_vals, y_vals, linewidth, color, alpha, zorder):
 def _freq_string(freq):
     """Return a string representing the rounded frequency."""
     if 1e-2 <= freq <= 1e2:
+        # int or float notation for frequencies between 0.01 and 100
         int_freq = int(round(freq))
-        if np.abs(int_freq - freq) < 1e-1:
-            freq_str = '{}'.format(int_freq)
-        else:
-            freq_str = '{:.1f}'.format(freq)
+        return (
+            f'{int_freq}' if np.abs(int_freq - freq) < 1e-1
+            else f'{freq:.1f}'
+        )
     else:
-        freq_str = '{:.1e}'.format(freq)
+        # scientific notation for frequencies outside of 0.01 and 100
+        freq_str = f'{freq:.1e}'
         m, n = map(float, freq_str.split('e'))
         n = int(n)
         int_m = int(round(m))
-        if np.abs(int_m - m) < 1e-1:
-            freq_str = '{}e{}'.format(int_m, n)
-        else:
-            freq_str = '{:.1f}e{}'.format(m, n)
-    return freq_str
+        return (
+            f'{int_m}e{n}' if np.abs(int_m - m) < 1e-1
+            else f'{m:.1f}e{n}'
+        )
 
 
-def _plot_trace(config, trace, ntraces, tmax,
-                ax, ax_text, trans, trans3, path_effects):
+def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
     # Origin and height to draw vertical patches for noise and signal windows
     rectangle_patch_origin = 0
     rectangle_patch_height = 1
@@ -228,13 +217,11 @@ def _plot_trace(config, trace, ntraces, tmax,
             rectangle_patch_origin = 2./3
             rectangle_patch_height = 1./3
     # dim out ignored traces
-    if trace.stats.ignore:
-        alpha = 0.3
-    else:
-        alpha = 1.0
+    alpha = 0.3 if trace.stats.ignore else 1.0
     if config.plot_save_format == 'png':
-        ax.plot(trace.times(), trace, linewidth=1, color=color,
-                alpha=alpha, zorder=20, rasterized=True)
+        ax.plot(
+            trace.times(), trace, linewidth=1, color=color,
+            alpha=alpha, zorder=20, rasterized=True)
     else:
         # reduce the number of points to plot for vector formats
         _plot_min_max(
@@ -243,7 +230,7 @@ def _plot_trace(config, trace, ntraces, tmax,
     ax.text(0.05, trace.data.mean(), trace.stats.channel,
             fontsize=8, color=color, transform=trans3, zorder=22,
             path_effects=path_effects)
-    _text = 'S/N: {:.1f}'.format(trace.stats.sn_ratio)
+    _text = f'S/N: {trace.stats.sn_ratio:.1f}'
     ax.text(0.95, trace.data.mean(), _text, ha='right',
             fontsize=8, color=color, transform=trans3, zorder=22,
             path_effects=path_effects)
@@ -256,7 +243,7 @@ def _plot_trace(config, trace, ntraces, tmax,
                 fontsize=8, transform=trans,
                 zorder=22, path_effects=path_effects)
     # Noise window
-    try:
+    with contextlib.suppress(KeyError):
         N1 = trace.stats.arrivals['N1'][1] - trace.stats.starttime
         N2 = trace.stats.arrivals['N2'][1] - trace.stats.starttime
         rect = patches.Rectangle(
@@ -265,8 +252,6 @@ def _plot_trace(config, trace, ntraces, tmax,
             transform=trans, color='#eeeeee',
             zorder=-1)
         ax.add_patch(rect)
-    except KeyError:
-        pass
     # Signal window
     if config.wave_type[0] == 'S':
         t1 = trace.stats.arrivals['S1'][1] - trace.stats.starttime
@@ -280,37 +265,42 @@ def _plot_trace(config, trace, ntraces, tmax,
         transform=trans, color='yellow',
         alpha=0.5, zorder=-1)
     ax.add_patch(rect)
-    if not ax_text:
-        text_y = 0.01
-        color = 'black'
-        id_no_channel = '.'.join(trace.id.split('.')[:-1])
-        ax_text = '{} {} {:.1f} km ({:.1f} km)'.format(
-            id_no_channel, trace.stats.instrtype,
-            trace.stats.hypo_dist, trace.stats.epi_dist)
-        fmin_str = _freq_string(trace.stats.filter.freqmin)
-        fmax_str = _freq_string(trace.stats.filter.freqmax)
-        ax_text += '\nfilter: {} - {} Hz'.format(fmin_str, fmax_str)
-        ax.text(0.05, text_y, ax_text,
-                fontsize=8,
-                horizontalalignment='left',
-                verticalalignment='bottom',
-                color=color,
-                transform=ax.transAxes,
-                zorder=50,
-                path_effects=path_effects)
-        ax_text = True
     # Reason why trace is ignored
     if trace.stats.ignore:
         _text = trace.stats.ignore_reason
-        ax.text(0.5, trace.data.mean(), _text, ha='center',
-                fontsize=8, color=color, transform=trans3, zorder=22,
-                path_effects=path_effects)
+        color = 'black'
+        ax.text(
+            0.5, trace.data.mean(), _text, ha='center',
+            fontsize=8, color=color, transform=trans3, zorder=22,
+            path_effects=path_effects)
+    _add_station_info_text(trace, ax, path_effects)
+
+
+def _add_station_info_text(trace, ax, path_effects):
+    with contextlib.suppress(AttributeError):
+        if ax.has_station_info_text:
+            return
+    text_y = 0.01
+    color = 'black'
+    id_no_channel = '.'.join(trace.id.split('.')[:-1])
+    fmin_str = _freq_string(trace.stats.filter.freqmin)
+    fmax_str = _freq_string(trace.stats.filter.freqmax)
+    station_info_text = (
+        f'{id_no_channel} {trace.stats.instrtype} '
+        f'{trace.stats.hypo_dist:.1f} km ({trace.stats.epi_dist:.1f} km)\n'
+        f'filter: {fmin_str} - {fmax_str} Hz'
+    )
+    ax.text(
+        0.05, text_y, station_info_text, fontsize=8,
+        horizontalalignment='left', verticalalignment='bottom', color=color,
+        transform=ax.transAxes, zorder=50, path_effects=path_effects)
+    ax.has_station_info_text = True
 
 
 def _add_labels(axes, plotn, ncols):
     """Add xlabels to the last row of plots."""
     # A row has "ncols" plots: the last row is from `plotn-ncols` to `plotn`
-    n0 = plotn-ncols if plotn-ncols > 0 else 0
+    n0 = max(plotn-ncols, 0)
     for ax in axes[n0:plotn]:
         ax.xaxis.set_tick_params(which='both', labelbottom=True)
         ax.set_xlabel('Time (s)', fontsize=8)
@@ -344,26 +334,27 @@ def plot_traces(config, st, ncols=None, block=True):
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
 
     if ncols is None:
-        ntr = len(set(t.id[:-1] for t in st))
+        ntr = len({t.id[:-1] for t in st})
         ncols = 4 if ntr > 6 else 3
 
     nlines, ncols = _nplots(config, st, config.plot_traces_maxrows, ncols)
-    figures = []
     fig, axes = _make_fig(config, nlines, ncols)
-    figures.append(fig)
-
+    figures = [fig]
     # Path effect to contour text in white
-    path_effects = [PathEffects.withStroke(linewidth=3, foreground="white")]
+    path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
 
     # Plot!
     plotn = 0
     if config.plot_traces_ignored:
-        stalist = sorted(set((tr.stats.hypo_dist, tr.id[:-1]) for tr in st))
+        stalist = sorted({(tr.stats.hypo_dist, tr.id[:-1]) for tr in st})
     else:
-        stalist = sorted(set(
-            (tr.stats.hypo_dist, tr.id[:-1]) for tr in st
-            if not tr.stats.ignore
-        ))
+        stalist = sorted(
+            {
+                (tr.stats.hypo_dist, tr.id[:-1])
+                for tr in st
+                if not tr.stats.ignore
+            }
+        )
     for t in stalist:
         plotn += 1
         _, traceid = t
@@ -376,7 +367,6 @@ def plot_traces(config, st, ncols=None, block=True):
             fig, axes = _make_fig(config, nlines, ncols)
             figures.append(fig)
             plotn = 1
-        ax_text = False
         ax = axes[plotn-1]
         if config.trace_units == 'auto':
             instrtype = [t.stats.instrtype for t in st_sel.traces
@@ -408,8 +398,7 @@ def plot_traces(config, st, ncols=None, block=True):
             if not config.plot_traces_ignored and trace.stats.ignore:
                 continue
             _plot_trace(
-                config, trace, ntraces, tmax, ax, ax_text,
-                trans, trans3, path_effects)
+                config, trace, ntraces, tmax, ax, trans, trans3, path_effects)
 
     _set_ylim(axes)
     # Add labels for the last figure

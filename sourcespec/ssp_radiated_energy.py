@@ -37,8 +37,7 @@ def _spectral_integral(spec, t_star, fmax):
     # Compute the energy integral, up to fmax:
     if fmax is not None:
         data[freq > fmax] = 0.
-    integral = np.sum((data**2) * deltaf)
-    return integral
+    return np.sum((data**2) * deltaf)
 
 
 def _radiated_energy_coefficient(rho, vel):
@@ -57,8 +56,7 @@ def _radiated_energy_coefficient(rho, vel):
     # averaging between measurements at different stations, instead of
     # precise measurements at a single station.
     # S is the free-surface amplification factor, which we put = 2
-    coeff = 8 * np.pi * (1./2.)**2 * rho * vel
-    return coeff
+    return 8 * np.pi * (1./2.)**2 * rho * vel
 
 
 def _finite_bandwidth_correction(spec, fc, fmax):
@@ -70,8 +68,7 @@ def _finite_bandwidth_correction(spec, fc, fmax):
     """
     if fmax is None:
         fmax = spec.get_freq()[-1]
-    R = 2./np.pi * (np.arctan2(fmax, fc) - (fmax/fc)/(1+(fmax/fc)**2.))
-    return R
+    return 2./np.pi * (np.arctan2(fmax, fc) - (fmax/fc)/(1+(fmax/fc)**2.))
 
 
 def radiated_energy(config, spec_st, specnoise_st, sspec_output):
@@ -118,10 +115,9 @@ def radiated_energy(config, spec_st, specnoise_st, sspec_output):
         coeff = _radiated_energy_coefficient(rho, vel)
         Er = coeff * (signal_integral - noise_integral)
         if Er < 0:
-            msg = '{} {}: noise energy is larger than signal energy: '.format(
-                spec_id, spec.stats.instrtype)
-            msg += 'skipping spectrum.'
-            logger.warning(msg)
+            logger.warning(
+                f'{spec_id} {spec.stats.instrtype}: noise energy is larger '
+                'than signal energy: skipping spectrum.')
             continue
 
         R = _finite_bandwidth_correction(spec, fc, fmax)

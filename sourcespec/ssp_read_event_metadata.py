@@ -11,6 +11,7 @@ Read event metadata in QuakeML, HYPO71 or HYPOINVERSE format.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import contextlib
 import logging
 from datetime import datetime
 from obspy import UTCDateTime
@@ -39,41 +40,60 @@ class Pick():
 
 
 def parse_qml(qml_file, evid=None):
+    """Parse event metadata and picks from a QuakeML file."""
+    hypo = None
+    picks = []
     if qml_file is None:
-        return None, None
-    hypo = Hypo()
+        return hypo, picks
     try:
-        cat = read_events(qml_file)
+        ev = _get_event_from_qml(qml_file, evid)
+        hypo = _get_hypo_from_event(ev)
+        picks = _get_picks_from_event(ev)
     except Exception as err:
         logger.error(err)
         ssp_exit(1)
-    if evid is not None:
-        ev = [e for e in cat if evid in str(e.resource_id)][0]
-    else:
-        # just take the first event
-        ev = cat[0]
+    # See if there is a focal mechanism with nodal planes
+    with contextlib.suppress(Exception):
+        _get_focal_mechanism_from_event(ev, hypo)
+        logger.info('Found focal mechanism in QuakeML file')
+    return hypo, picks
+
+
+def _get_event_from_qml(qml_file, evid=None):
+    cat = read_events(qml_file)
+    # If evid is None, return the first event in the catalog
+    # otherwise return the event with the given evid
+    return (
+        [e for e in cat if evid in str(e.resource_id)][0]
+        if evid is not None
+        else cat[0]
+    )
+
+
+def _get_hypo_from_event(ev):
     # See if there is a preferred origin...
     origin = ev.preferred_origin()
     # ...or just use the first one
     if origin is None:
         origin = ev.origins[0]
-    hypo.origin_time = origin.time
+    hypo = Hypo()
     hypo.latitude = origin.latitude
     hypo.longitude = origin.longitude
     hypo.depth = origin.depth/1000.
+    hypo.origin_time = origin.time
     hypo.evid = ev.resource_id.id.split('/')[-1].split('=')[-1]
+    return hypo
 
-    # See if there is a focal mechanism with nodal planes
-    try:
-        fm = ev.focal_mechanisms[0]
-        nodal_plane = fm.nodal_planes.nodal_plane_1
-        hypo.strike = nodal_plane.strike
-        hypo.dip = nodal_plane.dip
-        hypo.rake = nodal_plane.rake
-        logger.info('Found focal mechanism in QuakeML file')
-    except Exception:
-        pass
 
+def _get_focal_mechanism_from_event(ev, hypo):
+    fm = ev.focal_mechanisms[0]
+    nodal_plane = fm.nodal_planes.nodal_plane_1
+    hypo.strike = nodal_plane.strike
+    hypo.dip = nodal_plane.dip
+    hypo.rake = nodal_plane.rake
+
+
+def _get_picks_from_event(ev):
     picks = []
     for pck in ev.picks:
         pick = Pick()
@@ -89,31 +109,28 @@ def parse_qml(qml_file, evid=None):
         elif pck.onset == 'impulsive':
             pick.flag = 'I'
         try:
-            pick.phase = pck.phase_hint[0:1]
+            pick.phase = pck.phase_hint[:1]
         except Exception:
             # ignore picks with no phase hint
             continue
-        if pck.polarity == 'positive':
-            pick.polarity = 'U'
-        elif pck.polarity == 'negative':
+        if pck.polarity == 'negative':
             pick.polarity = 'D'
+        elif pck.polarity == 'positive':
+            pick.polarity = 'U'
         pick.time = pck.time
         picks.append(pick)
-
-    return hypo, picks
+    return picks
 
 
 def _parse_hypo71_hypocenter(hypo_file):
     with open(hypo_file) as fp:
         line = fp.readline()
-        # Skip the first line if it contains
-        # characters in the first 10 digits:
-        if any(c.isalpha() for c in line[0:10]):
+        # Skip the first line if it contain characters in the first 10 digits:
+        if any(c.isalpha() for c in line[:10]):
             line = fp.readline()
     hypo = Hypo()
-    timestr = line[0:17]
-    # There are two possible formats for the timestring.
-    # We try both of them
+    timestr = line[:17]
+    # There are two possible formats for the timestring. We try both of them
     try:
         dt = datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
     except Exception:
@@ -129,13 +146,15 @@ def _parse_hypo71_hypocenter(hypo_file):
     evid = os.path.basename(hypo_file)
     evid = evid.replace('.phs', '').replace('.h', '').replace('.hyp', '')
     hypo.evid = evid
-    return hypo
+    # empty picks list, for consistency with other parsers
+    picks = []
+    return hypo, picks
 
 
 def _parse_hypo2000_hypo_line(line):
     word = line.split()
     hypo = Hypo()
-    timestr = ' '.join(word[0:3])
+    timestr = ' '.join(word[:3])
     hypo.origin_time = UTCDateTime(timestr)
     n = 3
     if word[n].isnumeric():
@@ -153,9 +172,8 @@ def _parse_hypo2000_hypo_line(line):
         # Otherwise latitude should be in float format
         try:
             latitude = float(word[n])
-        except Exception:
-            msg = 'cannot read latitude: {}'.format(word[n])
-            raise Exception(msg)
+        except Exception as e:
+            raise ValueError(f'cannot read latitude: {word[n]}') from e
         n += 1
     hypo.latitude = latitude
     if word[n].isnumeric():
@@ -173,9 +191,8 @@ def _parse_hypo2000_hypo_line(line):
         # Otherwise longitude should be in float format
         try:
             longitude = float(word[n])
-        except Exception:
-            msg = 'cannot read longitude: {}'.format(word[n])
-            raise Exception(msg)
+        except Exception as e:
+            raise ValueError(f'cannot read longitude: {word[n]}') from e
         n += 1
     hypo.longitude = longitude
     # depth is in km, according to the hypo2000 manual
@@ -189,18 +206,18 @@ def _parse_hypo2000_station_line(line, oldpick, origin_time):
         oldnetwork = oldpick.network
         oldchannel = oldpick.channel
     else:
-        oldstation = ""
-        oldnetwork = ""
-        oldchannel = ""
+        oldstation = ''
+        oldnetwork = ''
+        oldchannel = ''
     pick = Pick()
     station = line[1:5].strip()
-    pick.station = station if station else oldstation
+    pick.station = station or oldstation
     oldstation = pick.station
     network = line[6:8].strip()
-    pick.network = network if network else oldnetwork
+    pick.network = network or oldnetwork
     oldnetwork = pick.network
     channel = line[9:12].strip()
-    pick.channel = channel if channel else oldchannel
+    pick.channel = channel or oldchannel
     oldchannel = pick.channel
     # pick.flag = line[4:5]
     pick.phase = line[31:34].strip()
@@ -214,7 +231,7 @@ def _parse_hypo2000_station_line(line, oldpick, origin_time):
 
 def _parse_hypo2000_file(hypo_file):
     hypo = Hypo()
-    picks = list()
+    picks = []
     hypo_line = False
     station_line = False
     oldpick = None
@@ -248,24 +265,21 @@ def _parse_hypo2000_file(hypo_file):
 
 
 def parse_hypo_file(hypo_file):
-    picks = None
+    """Parse a hypo71 or hypo2000 hypocenter file."""
     err_msgs = []
-    try:
-        hypo = _parse_hypo71_hypocenter(hypo_file)
-        return hypo, picks
-    except Exception as err:
-        msg = '{}: Not a hypo71 hypocenter file'.format(hypo_file)
-        err_msgs.append(msg)
-        msg = 'Parsing error: ' + str(err)
-        err_msgs.append(msg)
-    try:
-        hypo, picks = _parse_hypo2000_file(hypo_file)
-        return hypo, picks
-    except Exception as err:
-        msg = '{}: Not a hypo2000 hypocenter file'.format(hypo_file)
-        err_msgs.append(msg)
-        msg = 'Parsing error: ' + str(err)
-        err_msgs.append(msg)
+    parsers = {
+        'hypo71': _parse_hypo71_hypocenter,
+        'hypo2000': _parse_hypo2000_file,
+    }
+    for format, parser in parsers.items():
+        try:
+            hypo, picks = parser(hypo_file)
+            return hypo, picks
+        except Exception as err:
+            msg = f'{hypo_file}: Not a {format} hypocenter file'
+            err_msgs.append(msg)
+            msg = f'Parsing error: {err}'
+            err_msgs.append(msg)
     # If we arrive here, the file was not recognized as valid
     for msg in err_msgs:
         logger.error(msg)
@@ -278,7 +292,7 @@ def _is_hypo71_picks(pick_file):
         line = line.replace('\n', '')
         # skip separator and empty lines
         stripped_line = line.strip()
-        if stripped_line == '10' or stripped_line == '':
+        if stripped_line in ['10', '']:
             continue
         # Check if it is a pick line
         # 6th character should be alpha (phase name: P or S)
@@ -286,8 +300,8 @@ def _is_hypo71_picks(pick_file):
         if not (line[5].isalpha() and
                 line[9].isdigit() and
                 line[20].isdigit()):
-            msg = '{}: Not a hypo71 phase file'.format(pick_file)
-            raise Exception(msg)
+            msg = f'{pick_file}: Not a hypo71 phase file'
+            raise TypeError(msg)
 
 
 def _correct_station_name(station):
@@ -319,16 +333,15 @@ def parse_hypo71_picks(config):
 
     :return: list of Pick objects
     """
+    picks = []
     pick_file = config.options.pick_file
     if pick_file is None:
-        return None
-
+        return picks
     try:
         _is_hypo71_picks(pick_file)
     except Exception as err:
         logger.error(err)
         ssp_exit(1)
-    picks = []
     for line in open(pick_file):
         # remove newline
         line = line.replace('\n', '')

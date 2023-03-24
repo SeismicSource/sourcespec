@@ -112,21 +112,11 @@ def _check_clipping(config, trace):
 
 
 def _check_sn_ratio(config, trace):
-    # noise time window for s/n ratio
-    trace_noise = trace.copy()
-    # remove the mean...
-    trace_noise.detrend(type='constant')
-    # ...and the linear trend...
-    trace_noise.detrend(type='linear')
+    trace_noise = _get_detrended_trace_copy(trace)
     t1 = trace_noise.stats.arrivals['N1'][1]
     t2 = trace_noise.stats.arrivals['N2'][1]
     trace_noise.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
-    # signal window for s/n ratio
-    trace_signal = trace.copy()
-    # remove the mean...
-    trace_signal.detrend(type='constant')
-    # ...and the linear trend...
-    trace_signal.detrend(type='linear')
+    trace_signal = _get_detrended_trace_copy(trace)
     if config.wave_type[0] == 'S':
         t1 = trace_signal.stats.arrivals['S1'][1]
         t2 = trace_signal.stats.arrivals['S2'][1]
@@ -157,6 +147,16 @@ def _check_sn_ratio(config, trace):
             'skipping trace')
         trace.stats.ignore = True
         trace.stats.ignore_reason = 'low S/N'
+
+
+def _get_detrended_trace_copy(trace):
+    # noise time window for s/n ratio
+    result = trace.copy()
+    # remove the mean...
+    result.detrend(type='constant')
+    # ...and the linear trend...
+    result.detrend(type='linear')
+    return result
 
 
 def _remove_baseline(config, trace):

@@ -12,6 +12,7 @@ plot_sourcepars.py
     (http://www.cecill.info/licences.en.html)
 """
 import argparse
+import contextlib
 import sys
 import os
 import numpy as np
@@ -38,7 +39,7 @@ class Annot():
         label = np.take(self.labels, ind)
         for Mw, yvalue, evid in zip(x, y, label):
             ystring = self.yformat.format(yvalue)
-            print('{} Mw {:.1f} {}'.format(evid, Mw, ystring))
+            print(f'{evid} Mw {Mw:.1f} {ystring}')
 
 
 def mag_to_moment(mag):
@@ -56,8 +57,8 @@ def stress_drop_curve_fc_mw(delta_sigma, vs, mw, b=-0.5):
     delta_sigma *= 1e6  # stress drop in Pa
     # b is the slope of stress-drop curve: b!=-0.5 means no self-similarity
     power10 = 10**(-(-3*b*mw + 9.1)-0.935)
-    fc = vs * (delta_sigma * power10)**(1./3)
-    return fc
+    # return fc in Hz
+    return vs * (delta_sigma * power10)**(1./3)
 
 
 def stress_drop_curve_Er_mw(delta_sigma, vs, rho, mw):
@@ -71,8 +72,8 @@ def stress_drop_curve_Er_mw(delta_sigma, vs, rho, mw):
     mu = (vs*1000)**2. * rho
     Mo = mag_to_moment(mw)
     delta_sigma *= 1e6
-    Er = 0.2331 * delta_sigma * Mo / mu
-    return Er
+    # return Er in N·m
+    return 0.2331 * delta_sigma * Mo / mu
 
 
 def fc_mw_function(mw, a, b):
@@ -96,11 +97,11 @@ def parse_args():
     valid_plot_types_str = str(valid_plot_types)[1:-1].replace("'", "\"")
     parser.add_argument(
         '-p', '--plot_type', default='fc_mw',
-        help='Plot type. One of: {}. '
+        help=f'Plot type. One of: {valid_plot_types_str}. '
              '1D plots are histograms. '
              '2D plots are scatter plots or 2D histograms, '
              'depending on the -H option. '
-             'Default is "fc_mw"'.format(valid_plot_types_str)
+             'Default is "fc_mw"'
     )
     parser.add_argument(
         '-r', '--runid', default=None,
@@ -141,7 +142,7 @@ def parse_args():
         help='Fit also the slope of the linear function (only for 2D plots)')
     args = parser.parse_args()
     if args.plot_type not in valid_plot_types:
-        msg = 'Plot type must be one of {}'.format(valid_plot_types_str)
+        msg = f'Plot type must be one of {valid_plot_types_str}'
         raise ValueError(msg)
     if args.statistics not in ['mean', 'wmean', 'pctl']:
         msg = 'Statistics must be "mean", "wmean" or "pctl"'
@@ -150,7 +151,7 @@ def parse_args():
 
 
 def query_event_params_into_numpy(cursor, param, param_type, query_condition):
-    query = 'select {} from Events {}'.format(param, query_condition)
+    query = f'select {param} from Events {query_condition}'
     cursor.execute(query)
     result = np.array(cursor.fetchall())
     if len(result) == 0:
@@ -167,60 +168,55 @@ class Params(object):
         self.runid = runid
         conn = sqlite3.connect(sqlite_file)
         cur = conn.cursor()
-        if runid is not None:
-            query_condition = 'where runid="{}"'.format(runid)
-        else:
-            query_condition = ''
+        query_condition = f'where runid="{runid}"' if runid is not None else ''
         self.evids = query_event_params_into_numpy(
             cur, 'evid', str, query_condition)
         self.nsta = query_event_params_into_numpy(
             cur, 'nobs', np.int32, query_condition)
         self.Mo = query_event_params_into_numpy(
-            cur, 'Mo_{}'.format(stat), np.float64, query_condition)
+            cur, f'Mo_{stat}', np.float64, query_condition)
         self.mw = query_event_params_into_numpy(
-            cur, 'Mw_{}'.format(stat), np.float64, query_condition)
+            cur, f'Mw_{stat}', np.float64, query_condition)
         self.mw_err_minus = query_event_params_into_numpy(
-            cur, 'Mw_{}_err_minus'.format(stat), np.float64, query_condition)
+            cur, f'Mw_{stat}_err_minus', np.float64, query_condition)
         self.mw_err_plus = query_event_params_into_numpy(
-            cur, 'Mw_{}_err_plus'.format(stat), np.float64, query_condition)
+            cur, f'Mw_{stat}_err_plus', np.float64, query_condition)
         self.fc = query_event_params_into_numpy(
-            cur, 'fc_{}'.format(stat), np.float64, query_condition)
+            cur, f'fc_{stat}', np.float64, query_condition)
         self.fc_err_minus = query_event_params_into_numpy(
-            cur, 'fc_{}_err_minus'.format(stat), np.float64, query_condition)
+            cur, f'fc_{stat}_err_minus', np.float64, query_condition)
         self.fc_err_plus = query_event_params_into_numpy(
-            cur, 'fc_{}_err_plus'.format(stat), np.float64, query_condition)
+            cur, f'fc_{stat}_err_plus', np.float64, query_condition)
         self.Er = query_event_params_into_numpy(
-            cur, 'Er_{}'.format(stat), np.float64, query_condition)
+            cur, f'Er_{stat}', np.float64, query_condition)
         self.Er_err_minus = query_event_params_into_numpy(
-            cur, 'Er_{}_err_minus'.format(stat), np.float64, query_condition)
+            cur, f'Er_{stat}_err_minus', np.float64, query_condition)
         self.Er_err_plus = query_event_params_into_numpy(
-            cur, 'Er_{}_err_plus'.format(stat), np.float64, query_condition)
+            cur, f'Er_{stat}_err_plus', np.float64, query_condition)
         self.bsd = query_event_params_into_numpy(
-            cur, 'bsd_{}'.format(stat), np.float64, query_condition)
+            cur, f'bsd_{stat}', np.float64, query_condition)
         self.bsd_err_minus = query_event_params_into_numpy(
-            cur, 'bsd_{}_err_minus'.format(stat), np.float64, query_condition)
+            cur, f'bsd_{stat}_err_minus', np.float64, query_condition)
         self.bsd_err_plus = query_event_params_into_numpy(
-            cur, 'bsd_{}_err_plus'.format(stat), np.float64, query_condition)
+            cur, f'bsd_{stat}_err_plus', np.float64, query_condition)
         self.ra = query_event_params_into_numpy(
-            cur, 'ra_{}'.format(stat), np.float64, query_condition)
+            cur, f'ra_{stat}', np.float64, query_condition)
         self.ra_err_minus = query_event_params_into_numpy(
-            cur, 'ra_{}_err_minus'.format(stat), np.float64, query_condition)
+            cur, f'ra_{stat}_err_minus', np.float64, query_condition)
         self.ra_err_plus = query_event_params_into_numpy(
-            cur, 'ra_{}_err_plus'.format(stat), np.float64, query_condition)
+            cur, f'ra_{stat}_err_plus', np.float64, query_condition)
         self.t_star = query_event_params_into_numpy(
-            cur, 't_star_{}'.format(stat), np.float64, query_condition)
+            cur, f't_star_{stat}', np.float64, query_condition)
         self.t_star_err_minus = query_event_params_into_numpy(
-            cur, 't_star_{}_err_minus'.format(stat), np.float64,
-            query_condition)
+            cur, f't_star_{stat}_err_minus', np.float64, query_condition)
         self.t_star_err_plus = query_event_params_into_numpy(
-            cur, 't_star_{}_err_plus'.format(stat), np.float64,
-            query_condition)
+            cur, f't_star_{stat}_err_plus', np.float64, query_condition)
         self.Qo = query_event_params_into_numpy(
-            cur, 'Qo_{}'.format(stat), np.float64, query_condition)
+            cur, f'Qo_{stat}', np.float64, query_condition)
         self.Qo_err_minus = query_event_params_into_numpy(
-            cur, 'Qo_{}_err_minus'.format(stat), np.float64, query_condition)
+            cur, f'Qo_{stat}_err_minus', np.float64, query_condition)
         self.Qo_err_plus = query_event_params_into_numpy(
-            cur, 'Qo_{}_err_plus'.format(stat), np.float64, query_condition)
+            cur, f'Qo_{stat}_err_plus', np.float64, query_condition)
         cur.close()
 
     def skip_events(self, idx):
@@ -282,7 +278,7 @@ class Params(object):
         ax = ax_Mo.twiny()
         ax.set_xlim(xlim_mag)
         ax.set_xlabel('Mw')
-        ax_Mo.set_xlabel('Mo (N.m)')
+        ax_Mo.set_xlabel('Mo (N·m)')
         return fig, ax, ax_Mo
 
     def _add_grid(self, ax):
@@ -302,14 +298,12 @@ class Params(object):
             'wmean': 'weighted mean',
             'pctl': 'percentiles',
         }
-        title = '{} events'.format(nevs)
-        try:
-            title += ', {}x{} bins'.format(self.nbins_x, self.nbins_y)
-        except AttributeError:
-            pass
-        title += ' - {}'.format(stat_descr[self.stat])
+        title = f'{nevs} events'
+        with contextlib.suppress(AttributeError):
+            title += f', {self.nbins_x}x{self.nbins_y} bins'
+        title += f' - {stat_descr[self.stat]}'
         if self.runid is not None:
-            title += ' - runid: {}'.format(self.runid)
+            title += f' - runid: {self.runid}'
         ax.set_title(title, y=0.92)
 
     def _stress_drop_curves_fc_mw(self, vs, ax):
@@ -328,8 +322,7 @@ class Params(object):
             ax.plot(mw_test, fc_test, color='#555555')
             label = str(delta_sigma)
             # Get rid of ".0" in floats
-            label = label[-2:] == '.0' and label[:-2] or label
-            label += ' MPa'
+            label = label.rstrip('.0') + ' MPa'
             ax.text(mw_test[-1], fc_test[-1], label)
         ax.set_ylim((fc_min*0.9, fc_max*1.1))
 
@@ -349,8 +342,7 @@ class Params(object):
             ax.plot(mw_test, Er_test, color='#555555')
             label = str(delta_sigma)
             # Get rid of ".0" in floats
-            label = label[-2:] == '.0' and label[:-2] or label
-            label += ' MPa'
+            label = label.rstrip('.0') + ' MPa'
             ax.text(mw_test[-1], Er_test[-1], label)
         ax.set_ylim((Er_min*0.5, Er_max*2))
 
@@ -488,9 +480,9 @@ class Params(object):
         except Exception:
             a, = popt
             b = -0.5
-        print('a: {:.1f} b {:.1f}:'.format(a, b))
+        print(f'a: {a:.1f} b {b:.1f}:')
         slope = (3/2)/b
-        print('slope: {:.1f}'.format(slope))
+        print(f'slope: {slope:.1f}')
         r2 = calc_r2(self.mw, y, np.ones_like(y), a, b, f)
         # r2_err = calc_r2(mw, y, yerr, a, b, f)
         print('r2:', r2)
@@ -499,14 +491,13 @@ class Params(object):
         delta_sigma /= 1e6
         print('delta_sigma', delta_sigma)
         fc_test = stress_drop_curve_fc_mw(delta_sigma, vs, mw_test, b)
-        # ax.plot(mw_test, fc_test, color='red', zorder=10,
-        #         label='r2: %.2f\nr2err: %.2f' % (r2, r2_err))
-        ax.plot(mw_test, fc_test, color='red', zorder=10,
-                label='r2: %.2f' % r2)
+        ax.plot(
+            mw_test, fc_test, color='red', zorder=10, label=f'r2: {r2:.2f}')
         ax.legend()
         if not slope:
-            ax.text(mw_test[-1], fc_test[-1], '%.1f MPa' % delta_sigma,
-                    color='red', backgroundcolor='white', zorder=50)
+            ax.text(
+                mw_test[-1], fc_test[-1], f'{delta_sigma:.1f} MPa',
+                color='red', backgroundcolor='white', zorder=50)
 
     def plot_fc_mw(self, hist=False, fit=False, slope=False, nbins=None):
         """
@@ -609,7 +600,7 @@ class Params(object):
             'fc': ('Corner Frequency', 'Hz', 'log'),
             'bsd': ('Brune Stress Drop', 'MPa', 'log'),
             'ra': ('Source Radius', 'm', 'lin'),
-            'Mo': ('Seismic Moment', 'N.m', 'log'),
+            'Mo': ('Seismic Moment', 'N·m', 'log'),
             't_star': ('T star', 's', 'lin'),
             'Qo': ('Qo', None, 'lin'),
             'Er': ('Radiated Energy', 'J', 'log'),
@@ -625,7 +616,7 @@ class Params(object):
             nbins = int(10**nbins_exp)
             # reduce the number of bins if there are too few values per bin
             if nvalues/nbins < 2:
-                nbins = int(nbins/2)
+                nbins //= 2
         if log:
             values_mean = 10**(np.mean(np.log10(values)))
             min_exp = np.floor(np.min(np.log10(values)))
@@ -633,31 +624,30 @@ class Params(object):
             bins = np.logspace(min_exp, max_exp, nbins+1)
         else:
             values_mean = np.mean(values)
-            max = np.max(np.abs(values))
-            bins = np.linspace(0, max, nbins)
+            maxval = np.max(np.abs(values))
+            bins = np.linspace(0, maxval, nbins)
         fig, ax = plt.subplots()
         ax.hist(values, bins=bins)
         ax.axvline(values_mean, color='red')
-        if log:
-            txt = '  mean: {:.1f}'.format(values_mean)
-        else:
-            txt = '  mean: {:.4f}'.format(values_mean)
+        txt = (
+            f'  mean: {values_mean:.1f}' if log
+            else
+            f'  mean: {values_mean:.4f}')
         if unit is not None:
-            txt += ' {}'.format(unit)
+            txt += f' {unit}'
         ax.text(
             values_mean, 0.95, txt, color='red',
             transform=ax.get_xaxis_transform())
         if log:
             ax.set_xscale('log')
         if unit is not None:
-            ax.set_xlabel('{} ({})'.format(description, unit))
+            ax.set_xlabel(f'{description} ({unit})')
         else:
-            ax.set_xlabel('{}'.format(description))
+            ax.set_xlabel(f'{description}')
         ax.set_ylabel('Counts')
-        title = '{} values, {} bins - {}'.format(
-            nvalues, nbins, self.stat)
+        title = f'{nvalues} values, {nbins} bins - {self.stat}'
         if self.runid is not None:
-            title += ' - runid {}'.format(self.runid)
+            title += f' - runid {self.runid}'
         ax.set_title(title)
         plt.show()
 
@@ -667,19 +657,7 @@ def run():
     params = Params(args.sqlite_file, args.runid, args.statistics)
 
     if os.path.exists('problems.txt'):
-        evid_skip = np.loadtxt('problems.txt', usecols=(0,), dtype=str)
-        # case in which there is only one evid:
-        if not evid_skip.shape:
-            evid_skip = evid_skip[None]
-        skip_idx = []
-        for evid in evid_skip:
-            try:
-                skip_idx.append(np.where(params.evids == evid)[0][0])
-            except Exception:
-                pass
-        print('Skipping events: %s' % ' '.join(params.evids[skip_idx]))
-        params.skip_events(skip_idx)
-
+        _skip_events(params)
     params.filter(
         stamin=args.stamin, stamax=args.stamax,
         magmin=args.magmin, magmax=args.magmax,
@@ -694,6 +672,20 @@ def run():
         params.plot_bsd_mw(args.hist, args.fit, args.slope, args.nbins)
     elif args.plot_type in valid_plot_types:
         params.plot_hist(args.plot_type, args.nbins)
+
+
+def _skip_events(params):
+    evid_skip = np.loadtxt('problems.txt', usecols=(0,), dtype=str)
+    # case in which there is only one evid:
+    if not evid_skip.shape:
+        evid_skip = evid_skip[None]
+    skip_idx = []
+    for evid in evid_skip:
+        with contextlib.suppress(Exception):
+            skip_idx.append(np.where(params.evids == evid)[0][0])
+    skipped_evid_str = ' '.join(params.evids[skip_idx])
+    print(f'Skipping events: {skipped_evid_str}')
+    params.skip_events(skip_idx)
 
 
 def main():

@@ -28,7 +28,7 @@ def do_fft(signal, delta):
 
     fft = np.fft.rfft(signal, n=npts) * delta
     fftfreq = np.fft.fftfreq(len(signal), d=delta)
-    fftfreq = fftfreq[0:fft.size]
+    fftfreq = fftfreq[:fft.size]
     return fft, fftfreq
 
 
@@ -57,7 +57,7 @@ class Spectrum(Trace):
     def get_freq(self):
         fdelta = self.stats.delta
         freq = np.arange(0, self.stats.npts*fdelta, fdelta)
-        freq = freq[0:self.stats.npts]
+        freq = freq[:self.stats.npts]
         freq += self.stats.begin
         return freq
 

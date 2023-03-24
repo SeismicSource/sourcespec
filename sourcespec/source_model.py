@@ -25,11 +25,10 @@ def make_synth(config, spec_st, trace_spec=None):
     fmin = config.options.fmin
     fmax = config.options.fmax + fdelta
 
-    residuals = list()
-    n = 0
-    for fc, mag, Mo, t_star, alpha in zip(
+    residuals = []
+    for n, (fc, mag, Mo, t_star, alpha) in enumerate(zip(
             config.options.fc, config.options.mag, config.options.Mo,
-            config.options.t_star, config.options.alpha):
+            config.options.t_star, config.options.alpha)):
         spec = Spectrum()
         if trace_spec:
             spec.stats = deepcopy(trace_spec.stats)
@@ -43,12 +42,11 @@ def make_synth(config, spec_st, trace_spec=None):
         else:
             mag = moment_to_mag(Mo)
 
-        spec.stats.station = 'S{:02d}'.format(n)
-        n += 1
+        spec.stats.station = f'S{n:02d}'
         spec.stats.instrtype = 'Synth'
-        spec.stats.channel = spec.stats.channel[:-1] + 'S'
-        spec.stats.par = {'Mw': mag, 'fc': fc, 't_star': t_star,
-                          'alpha': alpha}
+        spec.stats.channel = f'{spec.stats.channel[:-1]}S'
+        spec.stats.par = {
+            'Mw': mag, 'fc': fc, 't_star': t_star, 'alpha': alpha}
 
         freq = spec.get_freq()
         freq_log = trace_spec.freq_log
@@ -67,22 +65,13 @@ def make_synth(config, spec_st, trace_spec=None):
             residuals.append([Mo, mag, fc, t_star,
                              objective_func2((mag, fc, t_star, alpha))])
 
-    # figurefile = config.options.station+'-'+config.options.evid+'-res.pickle'
-    # fp = open(figurefile,'wb')
-    # pickle.dump(residuals,fp)
-    # fp.close()
-    # print 'residuals calculated. exit code'
-
 
 def main():
     # Lazy-import modules for speed
     from sourcespec.ssp_parse_arguments import parse_args
     options = parse_args(progname='source_model')
     from sourcespec.ssp_setup import configure, ssp_exit
-    if options.plot:
-        plot_show = True
-    else:
-        plot_show = False
+    plot_show = bool(options.plot)
     conf_overrides = dict(
         plot_show=plot_show, plot_save=False, html_report=False)
     config = configure(

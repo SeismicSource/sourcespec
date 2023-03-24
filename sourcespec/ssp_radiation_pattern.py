@@ -9,6 +9,7 @@ Compute radiation pattern.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
+import contextlib
 import logging
 from math import pi, sin, cos
 from obspy.taup import TauPyModel
@@ -42,105 +43,96 @@ def radiation_pattern(strike, dip, rake, takeoff_angle, azimuth, wave):
     elif wave == 'SH':
         R = _rad_patt_SH(phi, dip, rake, takeoff_angle)
     else:
-        raise ValueError('Unknown wave type: {}'.format(wave))
+        raise ValueError(f'Unknown wave type: {wave}')
     return R
 
 
 def _rad_patt_P(phi, dip, rake, takeoff):
-    R = cos(rake) * sin(dip) * sin(takeoff)**2 * sin(2*phi) -\
-        cos(rake) * cos(dip) * sin(2*takeoff) * cos(phi) +\
-        sin(rake) * sin(2*dip) *\
-        (cos(takeoff)**2 - sin(takeoff)**2 * sin(phi)**2) +\
+    return (
+        cos(rake) * sin(dip) * sin(takeoff)**2 * sin(2*phi) -
+        cos(rake) * cos(dip) * sin(2*takeoff) * cos(phi) +
+        sin(rake) * sin(2*dip) *
+        (cos(takeoff)**2 - sin(takeoff)**2 * sin(phi)**2) +
         sin(rake) * cos(2*dip) * sin(2*takeoff) * sin(phi)
-    return R
+    )
 
 
 def _rad_patt_S(phi, dip, rake, takeoff):
     RSV = _rad_patt_SV(phi, dip, rake, takeoff)
     RSH = _rad_patt_SH(phi, dip, rake, takeoff)
-    R = (RSV**2. + RSH**2.)**(1./2)
-    return R
+    return (RSV**2. + RSH**2.)**(1./2)
 
 
 def _rad_patt_SV(phi, dip, rake, takeoff):
-    R = sin(rake) * cos(2*dip) * cos(2*takeoff) * sin(phi) -\
-        cos(rake) * cos(dip) * cos(2*takeoff) * cos(phi) +\
-        0.5 * cos(rake) * sin(dip) * sin(2*takeoff) * sin(2*phi) -\
-        0.5 * sin(rake) * sin(2*dip) * sin(2*takeoff) *\
+    return (
+        sin(rake) * cos(2*dip) * cos(2*takeoff) * sin(phi) -
+        cos(rake) * cos(dip) * cos(2*takeoff) * cos(phi) +
+        0.5 * cos(rake) * sin(dip) * sin(2*takeoff) * sin(2*phi) -
+        0.5 * sin(rake) * sin(2*dip) * sin(2*takeoff) *
         (1 + sin(phi)**2)
-    return R
+    )
 
 
 def _rad_patt_SH(phi, dip, rake, takeoff):
-    R = cos(rake) * cos(dip) * cos(takeoff) * sin(phi) +\
-        cos(rake) * sin(dip) * sin(takeoff) * cos(2*phi) +\
-        sin(rake) * cos(2*dip) * cos(takeoff) * cos(phi) -\
+    return (
+        cos(rake) * cos(dip) * cos(takeoff) * sin(phi) +
+        cos(rake) * sin(dip) * sin(takeoff) * cos(2*phi) +
+        sin(rake) * cos(2*dip) * cos(takeoff) * cos(phi) -
         0.5 * sin(rake) * sin(2*dip) * sin(takeoff) * sin(2*phi)
-    return R
+    )
 
 
 # Cache radiation patterns
-rp_cache = dict()
+rp_cache = {}
 # Cache messages to avoid duplication
 rp_msg_cache = []
 
 
 def get_radiation_pattern_coefficient(stats, config):
+    global rp_cache
     global rp_msg_cache
+    wave_type = config.wave_type  # P, S, SV, SH
+    simple_wave_type = wave_type[0].lower()  # p or s
     if not config.rp_from_focal_mechanism:
-        if config.wave_type[0] == 'S':
-            return config.rps
-        elif config.wave_type[0] == 'P':
-            return config.rpp
+        return config[f'rp{simple_wave_type}']
     try:
         strike = stats.hypo.strike
         dip = stats.hypo.dip
         rake = stats.hypo.rake
     except Exception:
-        msg = 'Cannot find focal mechanism. Using "{}" value from config file'
-        if config.wave_type[0] == 'S':
-            msg = msg.format('rps')
-            rp = config.rps
-        elif config.wave_type[0] == 'P':
-            msg = msg.format('rpp')
-            rp = config.rpp
+        msg = (
+            f'Cannot find focal mechanism. Using "rp{simple_wave_type}" '
+            'value from config file'
+        )
         if msg not in rp_msg_cache:
             logger.warning(msg)
             rp_msg_cache.append(msg)
-        return rp
+        return config[f'rp{simple_wave_type}']
     traceid = '.'.join(
         (stats.network, stats.station, stats.location, stats.channel))
-    wave = config.wave_type
-    key = '{}_{}'.format(traceid, wave)
-    global rp_cache
+    key = f'{traceid}_{wave_type}'
+    # try to get radiation pattern from cache
+    with contextlib.suppress(KeyError):
+        return rp_cache[key]
     try:
-        rp = rp_cache[key]
-        return rp
-    except KeyError:
-        pass
-    try:
-        takeoff_angle = stats.takeoff_angles[config.wave_type[0]]
+        takeoff_angle = stats.takeoff_angles[simple_wave_type.upper()]
     except Exception:
-        msg = '{}: Cannot find takeoff angle. '
-        msg += 'Using "{}" value from config file'
-        if config.wave_type[0] == 'S':
-            msg = msg.format(traceid, 'rps')
-            rp = config.rps
-        elif config.wave_type[0] == 'P':
-            msg = msg.format(traceid, 'rpp')
-            rp = config.rpp
+        msg = (
+            f'{traceid}: Cannot find takeoff angle. '
+            f'Using "rp{simple_wave_type}" value from config file'
+        )
         if msg not in rp_msg_cache:
             logger.warning(msg)
             rp_msg_cache.append(msg)
-        return rp
+        return config[f'rp{simple_wave_type}']
     rp = radiation_pattern(
-        strike, dip, rake, takeoff_angle, stats.azimuth, wave)
+        strike, dip, rake, takeoff_angle, stats.azimuth, wave_type)
     # we are interested only in amplitude
     # (P, SV and SH radiation patterns have a sign)
     rp = abs(rp)
     logger.info(
-        '{}: {} radiation pattern from focal mechanism: {:.2f}'.format(
-            traceid, wave, rp
-        ))
+        f'{traceid}: {wave_type} radiation pattern from focal mechanism: '
+        f'{rp:.2f}'
+    )
     rp_cache[key] = rp
     return rp

@@ -47,21 +47,23 @@ def main():
     outdir = 'sspec_residuals'
 
     if not os.path.exists(resfiles_dir):
-        print('Error: directory "{}" does not exist.'.format(resfiles_dir))
+        print(f'Error: directory "{resfiles_dir}" does not exist.')
         sys.exit(1)
 
     resfiles = []
     for root, dirs, files in os.walk(resfiles_dir):
-        for file in files:
-            if file.endswith('residuals.pickle'):
-                resfiles.append(os.path.join(root, file))
+        resfiles.extend(
+            os.path.join(root, file)
+            for file in files
+            if file.endswith('residuals.pickle')
+        )
     if not resfiles:
-        print('No residual file found in directory: {}'.format(resfiles_dir))
+        print(f'No residual file found in directory: {resfiles_dir}')
         sys.exit()
 
     residual_dict = defaultdict(Stream)
     for resfile in resfiles:
-        print('Found residual file: {}'.format(resfile))
+        print(f'Found residual file: {resfile}')
         with open(resfile, 'rb') as fp:
             residual_st = pickle.load(fp)
         for spec in residual_st:
@@ -74,7 +76,7 @@ def main():
     for stat_id in sorted(residual_dict.keys()):
         if len(residual_dict[stat_id]) < min_spectra:
             continue
-        print('Processing station: {}'.format(stat_id))
+        print(f'Processing station: {stat_id}')
 
         res = residual_dict[stat_id]
 
@@ -106,23 +108,21 @@ def main():
 
         # plot traces
         if args.plot:
-            figurefile = os.path.join(outdir, '{}-res.png'.format(stat_id))
+            figurefile = os.path.join(outdir, f'{stat_id}-res.png')
             fig = plt.figure(dpi=160)
             for spec in res:
                 plt.semilogx(spec.get_freq(), spec.data_mag, 'b-')
             plt.semilogx(spec_mean.get_freq(), spec_mean.data_mag, 'r-')
             plt.xlabel('frequency (Hz)')
             plt.ylabel('residual amplitude (obs - synth) in magnitude units')
-            plt.title(
-                'residuals: {} – {} records'.format(stat_id, len(res))
-            )
+            plt.title(f'residuals: {stat_id} – {len(res)} records')
             fig.savefig(figurefile, bbox_inches='tight')
             plt.close()
-            print('Residual plot saved to: {}'.format(figurefile))
+            print(f'Residual plot saved to: {figurefile}')
 
     # writes the mean residuals (the stations corrections)
     res_mean_file = 'residual_mean.pickle'
     res_mean_file = os.path.join(outdir, res_mean_file)
     with open(res_mean_file, 'wb') as fp:
         pickle.dump(residual_mean, fp)
-    print('Mean station residuals saved to: {}'.format(res_mean_file))
+    print(f'Mean station residuals saved to: {res_mean_file}')

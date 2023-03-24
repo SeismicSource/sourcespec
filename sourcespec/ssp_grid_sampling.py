@@ -36,10 +36,7 @@ def peak_width(x, peak_idx, rel_height, negative=False):
     if rel_height < 0 or rel_height > 1:
         msg = 'rel_height must be between 0 and 1'
         raise ValueError(msg)
-    if negative:
-        sign = -1
-    else:
-        sign = 1
+    sign = -1 if negative else 1
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', category=PeakPropertyWarning)
         _, width_height, idx_left, idx_right = peak_widths(
@@ -263,32 +260,24 @@ class GridSampling():
             w = self.conditional_peak_widths[dim]
             ax[dim].plot((w[1], w[2]), (w[0], w[0]), color='red', ls='dashed')
             ax[dim].axvline(popt, color='red')
-            text = '  {:.3f}  '.format(popt)
+            text = f'  {popt:.3f}  '
             # set horizontal alignment based on whether we are
             # on the left or right part of the plot
-            if popt < np.nanmean(v):
-                ha = 'left'
-            else:
-                ha = 'right'
+            ha = 'left' if popt < np.nanmean(v) else 'right'
             ax[dim].text(
                 popt, 0.9, text, color='red', ha=ha, va='top',
                 transform=ax[dim].get_xaxis_transform())
             if self.sampling_mode[dim] == 'log':
                 ax[dim].set_xscale('log')
             xlabel = self.params_name[dim]
-            unit = self.params_unit[dim]
-            if unit:
-                xlabel += ' ({})'.format(unit)
+            if self.params_unit[dim]:
+                xlabel += f' ({self.params_unit[dim]})'
             ax[dim].set_xlabel(xlabel)
             ax[dim].set_ylabel('misfit')
         ax[0].set_title(label)
         plt.tight_layout()
-        outdir = os.path.join(config.options.outdir, 'misfit')
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
-        evid = config.hypo.evid
-        figfile_base = os.path.join(outdir, evid)
-        figfile_base += '.cond_misfit_{}.'.format(label.replace(' ', '_'))
+        figfile_base = self._get_figfile_base(config)
+        figfile_base += f".cond_misfit_{label.replace(' ', '_')}."
         fmt = config.plot_save_format
         if fmt == 'pdf_multipage':
             fmt = 'pdf'
@@ -300,8 +289,7 @@ class GridSampling():
             if not config.plot_show:
                 plt.close(fig)
             logger.info(
-                '{}: conditional misfit plot saved to: {}'.format(
-                    label, figfile))
+                f'{label}: conditional misfit plot saved to: {figfile}')
             config.figures['misfit_1d'].append(figfile)
 
     def plot_misfit_2d(self, config, plot_par_idx, label):
@@ -345,86 +333,28 @@ class GridSampling():
         ax.set_xlim(extent[0], extent[1])
         ax.set_ylim(extent[2], extent[3])
         if self.kdt is not None:
-            coords = np.array([cell.coords for cell in self.kdt.cells])
-            # -- The following lines are to extract only the coordinates that
-            # -- lay on the 2D plot plane
-            # parameter space dimension
-            dim = len(self.nsteps)
-            # find the complement to plot_par_idx
-            allidx = np.arange(dim)
-            ii = allidx[~np.isin(allidx, plot_par_idx)]
-            # find coordinates that will be discarded
-            cc = np.take(coords, ii, axis=1)
-            # find optimal parameters that will be discarded
-            pp = np.take(params_opt_all, ii)
-            # find discarded coordinates that are closer to
-            # discarded optimal parameters, i.e. the coordinates that
-            # lay on the 2D plot plane
-            dist = np.abs(cc - pp)
-            # init condition to False
-            cond = np.zeros_like(dist[:, 0]).astype(bool)
-            for d in dist.T:
-                _cond = np.isclose(d, d.min())
-                cond = np.logical_or(cond, _cond)
-            coords_2d = coords[cond]
-            # -- End of code to find coordinates that lay on the 2D plot plane
-            # now take coordinates that will be plotted
-            # we plot all coords in gray
-            coords = np.take(coords, plot_par_idx, axis=1)
-            ax.scatter(
-                coords[:, 0], coords[:, 1], s=2,
-                facecolor='gray', edgecolors='none'
-            )
-            # coords which lay on the plane are plot in black and larger symbol
-            coords_2d = np.take(coords_2d, plot_par_idx, axis=1)
-            ax.scatter(
-                coords_2d[:, 0], coords_2d[:, 1], s=8,
-                facecolor='k', edgecolors='none'
-            )
+            self._plot_kdtree_structure(ax, plot_par_idx, params_opt_all)
         ax.scatter(*params_opt, facecolors='none', edgecolors='w')
         ax.set_title(label)
         xlabel = params_name[0]
-        unit = params_unit[0]
-        if unit:
-            xlabel += ' ({})'.format(unit)
+        if params_unit[0]:
+            xlabel += f' ({params_unit[0]})'
         if sampling_mode[0] == 'log':
-            # the grid is plotted by imshow() in linear scale,
-            # so we create a fake xaxis with logscale
-            ax.xaxis.set_visible(False)
-            ax2 = ax.twiny()
-            ax2.xaxis.set_label_position('bottom')
-            ax2.xaxis.set_ticks_position('bottom')
-            ax2.set_xlim(10**extent[0], 10**extent[1])
-            ax2.set_xscale('log')
-            ax2.set_xlabel(xlabel)
+            self._set_xlogscale(ax, extent, xlabel)
         else:
             ax.set_xlabel(xlabel)
         ylabel = params_name[1]
-        unit = params_unit[1]
-        if unit:
-            ylabel += ' ({})'.format(unit)
+        if params_unit[1]:
+            ylabel += f' ({params_unit[1]})'
         if sampling_mode[1] == 'log':
-            # the grid is plotted by imshow() in linear scale,
-            # so we create a fake yaxis with logscale
-            ax.yaxis.set_visible(False)
-            ax2 = ax.twinx()
-            ax2.yaxis.set_label_position('left')
-            ax2.yaxis.set_ticks_position('left')
-            ax2.set_ylim(10**extent[2], 10**extent[3])
-            ax2.set_yscale('log')
-            ax2.set_ylabel(ylabel)
+            self._set_ylogscale(ax, extent, ylabel)
         else:
             ax.set_ylabel(ylabel)
         cbar = plt.colorbar(mmap, ax=ax, extend='max')
         cbar.set_label('misfit')
-        outdir = os.path.join(config.options.outdir, 'misfit')
-        if not os.path.exists(outdir):
-            os.makedirs(outdir)
-        evid = config.hypo.evid
-        figfile_base = os.path.join(outdir, evid)
-        params_string = '{}-{}'.format(*params_name)
-        figfile_base += '.misfit_{}_{}.'.format(
-            params_string, label.replace(' ', '_'))
+        figfile_base = self._get_figfile_base(config)
+        params_string = f'{params_name[0]}-{params_name[1]}'
+        figfile_base += f".misfit_{params_string}_{label.replace(' ', '_')}."
         fmt = config.plot_save_format
         if fmt == 'pdf_multipage':
             fmt = 'pdf'
@@ -435,7 +365,68 @@ class GridSampling():
             savefig(fig, figfile, fmt, bbox_inches='tight')
             if not config.plot_show:
                 plt.close(fig)
-            logger.info(
-                '{}: conditional misfit map saved to: {}'.format(
-                    label, figfile))
-            config.figures['misfit_' + params_string].append(figfile)
+            logger.info(f'{label}: conditional misfit map saved to: {figfile}')
+            config.figures[f'misfit_{params_string}'].append(figfile)
+
+    def _get_figfile_base(self, config):
+        outdir = os.path.join(config.options.outdir, 'misfit')
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+        evid = config.hypo.evid
+        return os.path.join(outdir, evid)
+
+    def _set_ylogscale(self, ax, extent, ylabel):
+        # the grid is plotted by imshow() in linear scale,
+        # so we create a fake yaxis with logscale
+        ax.yaxis.set_visible(False)
+        ax2 = ax.twinx()
+        ax2.yaxis.set_label_position('left')
+        ax2.yaxis.set_ticks_position('left')
+        ax2.set_ylim(10**extent[2], 10**extent[3])
+        ax2.set_yscale('log')
+        ax2.set_ylabel(ylabel)
+
+    def _set_xlogscale(self, ax, extent, xlabel):
+        # the grid is plotted by imshow() in linear scale,
+        # so we create a fake xaxis with logscale
+        ax.xaxis.set_visible(False)
+        ax2 = ax.twiny()
+        ax2.xaxis.set_label_position('bottom')
+        ax2.xaxis.set_ticks_position('bottom')
+        ax2.set_xlim(10**extent[0], 10**extent[1])
+        ax2.set_xscale('log')
+        ax2.set_xlabel(xlabel)
+
+    def _plot_kdtree_structure(self, ax, plot_par_idx, params_opt_all):
+        coords = np.array([cell.coords for cell in self.kdt.cells])
+        # find the complement to plot_par_idx
+        allidx = np.arange(len(self.nsteps))
+        ii = allidx[~np.isin(allidx, plot_par_idx)]
+        # find coordinates that will be discarded
+        cc = np.take(coords, ii, axis=1)
+        # find optimal parameters that will be discarded
+        pp = np.take(params_opt_all, ii)
+        # find discarded coordinates that are closer to
+        # discarded optimal parameters, i.e. the coordinates that
+        # lay on the 2D plot plane
+        dist = np.abs(cc - pp)
+        # init condition to False
+        cond = np.zeros_like(dist[:, 0]).astype(bool)
+        for d in dist.T:
+            _cond = np.isclose(d, d.min())
+            cond = np.logical_or(cond, _cond)
+        coords_2d = coords[cond]
+        # -- End of code to find coordinates that lay on the 2D plot plane
+        # now take coordinates that will be plotted
+        # we plot all coords in gray
+        coords = np.take(coords, plot_par_idx, axis=1)
+        ax.scatter(
+            coords[:, 0], coords[:, 1], s=2,
+            facecolor='gray', edgecolors='none'
+        )
+        # coords which lay on the plane are plot in black and larger symbol
+        coords_2d = np.take(coords_2d, plot_par_idx, axis=1)
+        ax.scatter(
+            coords_2d[:, 0], coords_2d[:, 1], s=8,
+            facecolor='k', edgecolors='none'
+        )

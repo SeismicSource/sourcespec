@@ -24,6 +24,6 @@ class Config(dict):
         try:
             return self.__getitem__(key)
         except KeyError as err:
-            raise AttributeError(err)
+            raise AttributeError(err) from err
 
     __setattr__ = __setitem__

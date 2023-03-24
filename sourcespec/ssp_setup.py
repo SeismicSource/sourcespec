@@ -77,9 +77,10 @@ def _check_obspy_version():
         OBSPY_VERSION_STR.split('.')[3]
         OBSPY_VERSION = OBSPY_VERSION[:2] + (OBSPY_VERSION[2] + 0.5,)
     if OBSPY_VERSION < MIN_OBSPY_VERSION:
-        msg = 'ERROR: ObsPy >= %s.%s.%s is required.' % MIN_OBSPY_VERSION
-        msg += ' You have version: %s\n' % OBSPY_VERSION_STR
-        sys.stderr.write(msg)
+        MIN_OBSPY_VERSION_STR = '.'.join(map(str, MIN_OBSPY_VERSION))
+        sys.stderr.write(
+            f'ERROR: ObsPy >= {MIN_OBSPY_VERSION_STR} is required. '
+            f'You have version: {OBSPY_VERSION_STR}\n')
         sys.exit(1)
 
 
@@ -94,13 +95,13 @@ def _check_cartopy_version():
         if cartopy_ver < cartopy_min_ver:
             raise ImportError
     except ImportError as e:
+        cartopy_min_ver_str = '.'.join(map(str, cartopy_min_ver))
         msg = (
-            '\nPlease install cartopy >= {}.{}.{} to plot maps.\n'
-            'How to install: '
+            f'\nPlease install cartopy >= {cartopy_min_ver_str} to plot maps.'
+            '\nHow to install: '
             'https://scitools.org.uk/cartopy/docs/latest/installing.html\n\n'
             'Alternatively, set "plot_station_map" and "html_report" to '
             '"False" in config file.\n'
-            .format(*cartopy_min_ver)
         )
         if cartopy_ver is not None:
             msg += f'Installed cartopy version: {CARTOPY_VERSION_STR}.\n'
@@ -110,9 +111,9 @@ def _check_cartopy_version():
 def _check_pyproj_version():
     try:
         import pyproj  #NOQA
-    except ImportError:
+    except ImportError as e:
         msg = '\nPlease install pyproj to plot maps.\n'
-        raise ImportError(msg)
+        raise ImportError(msg) from e
 
 
 def _check_nllgrid_version():
@@ -127,17 +128,16 @@ def _check_nllgrid_version():
             nllgrid_ver = (*nllgrid_ver, 0)
         if nllgrid_ver < nllgrid_min_ver:
             raise ImportError
-    except ImportError:
+    except ImportError as e:
+        nllgrid_min_ver_str = '.'.join(map(str, nllgrid_min_ver))
         msg = (
-            '\nPlease install nllgrid >= {}.{}.{} to use NonLinLoc grids.\n'
+            f'\nPlease install nllgrid >= {nllgrid_min_ver_str} to use '
+            'NonLinLoc grids.\n'
             'How to install: https://github.com/claudiodsf/nllgrid\n'
-            .format(*nllgrid_min_ver)
         )
         if nllgrid_ver is not None:
-            msg += (
-                'Installed nllgrid version: {}\n'.format(nllgrid.__version__)
-            )
-        raise ImportError(msg)
+            msg += f'Installed nllgrid version: {nllgrid.__version__}\n'
+        raise ImportError(msg) from e
 
 
 def _check_library_versions():
@@ -145,7 +145,7 @@ def _check_library_versions():
     global NUMPY_VERSION_STR
     global SCIPY_VERSION_STR
     global MATPLOTLIB_VERSION_STR
-    PYTHON_VERSION_STR = '{}.{}.{}'.format(*sys.version_info[0:3])
+    PYTHON_VERSION_STR = '.'.join(map(str, sys.version_info[:3]))
     import numpy
     NUMPY_VERSION_STR = numpy.__version__
     import scipy
@@ -156,10 +156,13 @@ def _check_library_versions():
     MATPLOTLIB_VERSION = tuple(map(int, MATPLOTLIB_VERSION))
     MAX_MATPLOTLIB_VERSION = (3, 9, 0)
     if MATPLOTLIB_VERSION >= MAX_MATPLOTLIB_VERSION:
-        msg = 'ERROR: Matplotlib >= %s.%s.%s ' % MAX_MATPLOTLIB_VERSION
-        msg += 'is not yet supported. Please use a less recent version'
-        msg += ' You have version: %s\n' % MATPLOTLIB_VERSION_STR
-        sys.stderr.write(msg)
+        MAX_MATPLOTLIB_VERSION_STR = '.'.join(
+            map(str, MAX_MATPLOTLIB_VERSION))
+        sys.stderr.write(
+            f'ERROR: Matplotlib >= {MAX_MATPLOTLIB_VERSION_STR}'
+            'is not yet supported. Please use a less recent version'
+            f' You have version: {MATPLOTLIB_VERSION_STR}\n'
+        )
         sys.exit(1)
 
 
@@ -172,10 +175,10 @@ def _read_config(config_file, configspec=None):
     try:
         config_obj = ConfigObj(config_file, **kwargs)
     except IOError as err:
-        sys.stderr.write('{}\n'.format(err))
+        sys.stderr.write(f'{err}\n')
         sys.exit(1)
     except Exception as err:
-        sys.stderr.write('Unable to read "{}": {}\n'.format(config_file, err))
+        sys.stderr.write(f'Unable to read "{config_file}": {err}\n')
         sys.exit(1)
     return config_obj
 
@@ -183,8 +186,7 @@ def _read_config(config_file, configspec=None):
 def _parse_configspec():
     configspec_file = os.path.join(
         os.path.dirname(__file__), 'configspec.conf')
-    configspec = _read_config(configspec_file)
-    return configspec
+    return _read_config(configspec_file)
 
 
 def _write_sample_config(configspec, progname):
@@ -195,20 +197,17 @@ def _write_sample_config(configspec, progname):
     c.initial_comment = configspec.initial_comment
     c.comments = configspec.comments
     c.final_comment = configspec.final_comment
-    configfile = progname + '.conf'
+    configfile = f'{progname}.conf'
     write_file = True
     if os.path.exists(configfile):
         ans = input(
-            '{} already exists. Do you want to overwrite it? [y/N] '.format(
-                configfile))
-        if ans in ['y', 'Y']:
-            write_file = True
-        else:
-            write_file = False
+            f'{configfile} already exists. Do you want to overwrite it? [y/N] '
+        )
+        write_file = ans in ['y', 'Y']
     if write_file:
         with open(configfile, 'wb') as fp:
             c.write(fp)
-        print('Sample config file written to: ' + configfile)
+        print(f'Sample config file written to: {configfile}')
         note = """
 Note that the default config parameters are suited for a M<5 earthquake
 recorded within ~100 km. Adjust `win_length`, `noise_pre_time`, and the
@@ -223,10 +222,11 @@ def _update_config_file(config_file, configspec):
     config_obj.validate(val)
     mod_time = datetime.fromtimestamp(os.path.getmtime(config_file))
     mod_time_str = mod_time.strftime('%Y%m%d_%H%M%S')
-    config_file_old = '{}.{}'.format(config_file, mod_time_str)
+    config_file_old = f'{config_file}.{mod_time_str}'
     ans = input(
-        'Ok to update {}? [y/N]\n(Old file will be saved as {}) '.format(
-            config_file, config_file_old))
+        f'Ok to update {config_file}? [y/N]\n'
+        f'(Old file will be saved as {config_file_old}) '
+    )
     if ans not in ['y', 'Y']:
         sys.exit(0)
     config_new = ConfigObj(configspec=configspec, default_encoding='utf8')
@@ -266,13 +266,13 @@ def _update_config_file(config_file, configspec):
     shutil.copyfile(config_file, config_file_old)
     with open(config_file, 'wb') as fp:
         config_new.write(fp)
-        print('{}: updated'.format(config_file))
+        print(f'{config_file}: updated')
 
 
 def _write_config(config_obj, progname, outdir):
     if progname != 'source_spec':
         return
-    configfile = progname + '.conf'
+    configfile = f'{progname}.conf'
     configfile = os.path.join(outdir, configfile)
     if not os.path.exists(outdir):
         os.makedirs(outdir)
@@ -281,7 +281,7 @@ def _write_config(config_obj, progname, outdir):
 
 
 def _check_deprecated_config_options(config_obj):
-    deprecation_msgs = list()
+    deprecation_msgs = []
     if 's_win_length' in config_obj or 'noise_win_length' in config_obj:
         deprecation_msgs.append(
             '> "s_win_length" and "noise_win_length" config parameters '
@@ -308,9 +308,8 @@ def _check_deprecated_config_options(config_obj):
         deprecation_msgs.append(
             '> "clip_nmax" config parameter has been renamed to '
             '"clip_max_percent".\n'
-            '   Note that the new default is 5% '
-            '(current value in your config file: {}%)\n'.format(
-                config_obj['clip_nmax'])
+            '   Note that the new default is 5% (current value in your config '
+            f'file: {config_obj["clip_nmax"]}%)\n'
         )
     if 'trace_format' in config_obj:
         deprecation_msgs.append(
@@ -351,8 +350,8 @@ def _check_deprecated_config_options(config_obj):
         )
     if 'rps_from_focal_mechanism' in config_obj:
         deprecation_msgs.append(
-            '> "rps_from_focal_mechanism" config parameter has been renamed to '
-            '"rp_from_focal_mechanism".\n'
+            '> "rps_from_focal_mechanism" config parameter has been renamed '
+            'to "rp_from_focal_mechanism".\n'
         )
     if 'paz' in config_obj:
         deprecation_msgs.append(
@@ -423,10 +422,10 @@ def _check_mandatory_config_params(config_obj):
         'plot_traces_maxrows',
         'plot_station_text_size'
     ]
-    messages = list()
+    messages = []
     for par in mandatory_params:
         if config_obj[par] is None:
-            msg = '"{}" is mandatory and cannot be None'.format(par)
+            msg = f'"{par}" is mandatory and cannot be None'
             messages.append(msg)
     if messages:
         msg = '\n'.join(messages)
@@ -467,11 +466,9 @@ def _init_traceid_map(traceid_map_file):
         with open(traceid_map_file, 'r') as fp:
             traceid_map = json.loads(fp.read())
     except Exception:
-        msg = (
+        sys.stderr.write(
             f'traceid mapping file "{traceid_map_file}" not found '
-            'or not in json format'
-        )
-        sys.stderr.write(msg + '\n')
+            'or not in json format.\n')
         ssp_exit(1)
 
 
@@ -503,8 +500,8 @@ def configure(options, progname, config_overrides=None):
         try:
             for key, value in config_overrides.items():
                 config_obj[key] = value
-        except AttributeError:
-            raise ValueError('"config_override" must be a dict-like.')
+        except AttributeError as e:
+            raise ValueError('"config_override" must be a dict-like.') from e
 
     # Set to None all the 'None' strings
     for key, value in config_obj.dict().items():
@@ -516,8 +513,8 @@ def configure(options, progname, config_overrides=None):
     if isinstance(test, dict):
         for entry in test:
             if not test[entry]:
-                sys.stderr.write('Invalid value for "%s": "%s"\n' %
-                                 (entry, config_obj[entry]))
+                sys.stderr.write(
+                    f'Invalid value for "{entry}": "{config_obj[entry]}"\n')
         sys.exit(1)
     if not test:
         sys.stderr.write('No configuration value present!\n')
@@ -529,11 +526,8 @@ def configure(options, progname, config_overrides=None):
     # Create a 'no_evid_' subdir into outdir.
     # The random hex string will make it sure that this name is unique
     # It will be then renamed once an evid is available
-    hex = uuid.uuid4().hex
-    options.outdir = os.path.join(
-        options.outdir,
-        'no_evid_{}'.format(hex)
-    )
+    hexstr = uuid.uuid4().hex
+    options.outdir = os.path.join(options.outdir, f'no_evid_{hexstr}')
     _write_config(config_obj, progname, options.outdir)
 
     # Create a Config object
@@ -557,7 +551,7 @@ def configure(options, progname, config_overrides=None):
         config.horizontal_channel_codes_2.append(msc[2])
 
     # A list of warnings to be issued when logger is set up
-    config.warnings = list()
+    config.warnings = []
 
     if config.html_report:
         if not config.plot_save:
@@ -609,12 +603,10 @@ def save_config(config):
     # Actually, it renames the file already existing.
     src = os.path.join(config.options.outdir, 'source_spec.conf')
     evid = config.hypo.evid
-    dst = os.path.join(config.options.outdir, '%s.ssp.conf' % evid)
+    dst = os.path.join(config.options.outdir, f'{evid}.ssp.conf')
     # On Windows, dst file must not exist
-    try:
+    with contextlib.suppress(Exception):
         os.remove(dst)
-    except Exception:
-        pass
     os.rename(src, dst)
 
 
@@ -629,7 +621,7 @@ def move_outdir(config):
     path = os.path.normpath(config.options.outdir).split(os.sep)
     dst = os.path.join(*path[:-1], str(evid))
     if run_id:
-        dst += '_' + run_id
+        dst += f'_{run_id}'
     # Create destination
     if not os.path.exists(dst):
         os.makedirs(dst)
@@ -676,7 +668,7 @@ def _color_handler_emit(fn):
         else:
             color = '\x1b[0m'  # no color
         # Color-code the message
-        args[0].msg = "{0}{1}\x1b[0m".format(color, args[0].msg)
+        args[0].msg = f'{color}{args[0].msg}\x1b[0m'
         return fn(*args)
     return new
 
@@ -703,11 +695,10 @@ def setup_logging(config, basename=None, progname='source_spec'):
         os.makedirs(config.options.outdir)
 
     if basename:
-        logfile = os.path.join(config.options.outdir, '%s.ssp.log' % basename)
+        logfile = os.path.join(config.options.outdir, f'{basename}.ssp.log')
     else:
         datestring = datetime.now().strftime('%Y%m%d_%H%M%S')
-        logfile = os.path.join(config.options.outdir,
-                               '%s.ssp.log' % datestring)
+        logfile = os.path.join(config.options.outdir, f'{datestring}.ssp.log')
 
     logger_root = logging.getLogger()
     if oldlogfile:
@@ -728,10 +719,8 @@ def setup_logging(config, basename=None, progname='source_spec'):
         filemode = 'w'
 
     # captureWarnings is not supported in old versions of python
-    try:
+    with contextlib.suppress(Exception):
         logging.captureWarnings(True)
-    except Exception:
-        pass
     logger_root.setLevel(logging.DEBUG)
     filehand = logging.FileHandler(filename=logfile, mode=filemode)
     filehand.setLevel(logging.DEBUG)
@@ -755,15 +744,15 @@ def setup_logging(config, basename=None, progname='source_spec'):
         logger.debug('source_spec START')
         logger.debug('SourceSpec version: ' + get_versions()['version'])
         uname = platform.uname()
-        uname_str = '{} {} {}'.format(uname[0], uname[2], uname[4])
-        logger.debug('Platform: ' + uname_str)
-        logger.debug('Python version: ' + PYTHON_VERSION_STR)
-        logger.debug('ObsPy version: ' + OBSPY_VERSION_STR)
-        logger.debug('NumPy version: ' + NUMPY_VERSION_STR)
-        logger.debug('SciPy version: ' + SCIPY_VERSION_STR)
-        logger.debug('Matplotlib version: ' + MATPLOTLIB_VERSION_STR)
+        uname_str = f'{uname[0]} {uname[2]} {uname[4]}'
+        logger.debug(f'Platform: {uname_str}')
+        logger.debug(f'Python version: {PYTHON_VERSION_STR}')
+        logger.debug(f'ObsPy version: {OBSPY_VERSION_STR}')
+        logger.debug(f'NumPy version: {NUMPY_VERSION_STR}')
+        logger.debug(f'SciPy version: {SCIPY_VERSION_STR}')
+        logger.debug(f'Matplotlib version: {MATPLOTLIB_VERSION_STR}')
         if CARTOPY_VERSION_STR is not None:
-            logger.debug('Cartopy version: ' + CARTOPY_VERSION_STR)
+            logger.debug(f'Cartopy version: {CARTOPY_VERSION_STR}')
         logger.debug('Running arguments:')
         logger.debug(' '.join(sys.argv))
     oldlogfile = logfile
@@ -784,9 +773,8 @@ def ssp_exit(retval=0, abort=False):
         print('\nAborting.')
         if logger is not None:
             logger.debug('source_spec ABORTED')
-    else:
-        if logger is not None:
-            logger.debug('source_spec END')
+    elif logger is not None:
+        logger.debug('source_spec END')
     logging.shutdown()
     sys.exit(retval)
 

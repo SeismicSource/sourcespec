@@ -15,7 +15,6 @@ Read traces in multiple formats of data and metadata.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-
 import sys
 import os
 import re
@@ -175,8 +174,14 @@ def _check_instrtype(trace):
     inv = trace.stats.inventory
     instrtype = trace.stats.instrtype
     new_instrtype = None
-    units = inv.get_response(trace.id, trace.stats.starttime).\
-        instrument_sensitivity.input_units
+    try:
+        units = inv.get_response(trace.id, trace.stats.starttime).\
+            instrument_sensitivity.input_units
+    except Exception as e:
+        raise RuntimeError(
+            f'{trace.id}: cannot get units from inventory: '
+            f'{e.__class__.__name__}: {e} Skipping trace'
+        ) from e
     trace.stats.units = units
     if units.lower() == 'm' and trace.stats.instrtype != 'disp':
         new_instrtype = 'disp'
@@ -232,142 +237,127 @@ def _add_coords(trace):
 _add_coords.skipped = []  #noqa
 
 
-def _add_hypocenter(trace, hypo):
+def _get_hypo_from_SAC(trace):
+    """Get hypocenter information from SAC header."""
+    try:
+        sac_hdr = trace.stats.sac
+    except AttributeError as e:
+        raise RuntimeError(
+            f'{trace.id}: not a SAC trace: cannot get hypocenter from header'
+        ) from e
+    evla = sac_hdr['evla']
+    evlo = sac_hdr['evlo']
+    evdp = sac_hdr['evdp']
+    begin = sac_hdr['b']
+    starttime = trace.stats.starttime
+    try:
+        tori = sac_hdr['o']
+        origin_time = starttime + tori - begin
+        # make a copy of origin_time and round it to the nearest second
+        second = origin_time.second
+        if origin_time.microsecond >= 500000:
+            second += 1
+        evid_time = origin_time.replace(second=second, microsecond=0)
+    except Exception:
+        origin_time = None
+        # make a copy of starttime and round it to the nearest minute
+        minute = starttime.minute
+        if starttime.second >= 30:
+            minute += 1
+        evid_time = starttime.replace(minute=minute, second=0, microsecond=0)
+    # create evid from origin time, it will be replaced by kevnm if available
+    evid = evid_time.strftime('%Y%m%d_%H%M%S')
+    kevnm = sac_hdr.get('kevnm', '').strip()
+    # Check if kevnm is not empty and does not contain spaces
+    # (if it has spaces, then kevnm is probably not an evid)
+    if kevnm and ' ' not in kevnm:
+        evid = kevnm
+    return AttribDict(
+        latitude=evla, longitude=evlo, depth=evdp, origin_time=origin_time,
+        evid=evid)
+
+
+def _add_hypocenter(trace, hypo=None):
+    """Add hypocenter information to trace."""
     if hypo is None:
         # Try to get hypocenter information from the SAC header
         try:
-            evla = trace.stats.sac.evla
-            evlo = trace.stats.sac.evlo
-            evdp = trace.stats.sac.evdp
-            begin = trace.stats.sac.b
-        except AttributeError:
-            return
-
-        try:
-            tori = trace.stats.sac.o
-            origin_time = trace.stats.starttime + tori - begin
-        except AttributeError:
-            origin_time = None
-
-        if origin_time is not None:
-            # make a copy of origin_time and round it to the nearest second
-            _second = origin_time.second
-            if origin_time.microsecond >= 500000:
-                _second += 1
-            _microsecond = 0
-            _evid_time = origin_time.replace(
-                second=_second, microsecond=_microsecond)
-        else:
-            # make a copy of starttime and round it to the nearest minute
-            _starttime = trace.stats.starttime
-            _minute = _starttime.minute
-            if _starttime.second >= 30:
-                _minute += 1
-            _second = 0
-            _microsecond = 0
-            _evid_time = _starttime.replace(
-                minute=_minute, second=_second, microsecond=_microsecond)
-
-        hypo = AttribDict()
-        hypo.origin_time = origin_time
-        try:
-            kevnm = trace.stats.sac.kevnm
-            # if string is empty, raise Exception
-            if not kevnm:
-                raise Exception
-            # if string has spaces, then kevnm is not a code,
-            # so raise Exception
-            if ' ' in kevnm:
-                raise Exception
-            hypo.evid = kevnm
+            hypo = _get_hypo_from_SAC(trace)
         except Exception:
-            hypo.evid = _evid_time.strftime('%Y%m%d_%H%M%S')
-        hypo.latitude = evla
-        hypo.longitude = evlo
-        hypo.depth = evdp
+            return
     trace.stats.hypo = hypo
 
 
 def _get_picks_from_SAC(trace):
+    """Get picks from SAC header."""
+    try:
+        sac_hdr = trace.stats.sac
+    except AttributeError as e:
+        raise RuntimeError(
+            f'{trace.id}: not a SAC trace: cannot get picks from header'
+        ) from e
     trace_picks = []
-    station = trace.stats.station
-    fields = ('a', 't0', 't1', 't2', 't3', 't4',
-              't5', 't6', 't7', 't8', 't9')
-    times = []
-    labels = []
-    for key in fields:
+    pick_fields = (
+        'a', 't0', 't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9')
+    for field in pick_fields:
         try:
-            times.append(trace.stats.sac[key])
+            time = sac_hdr[field]
+            begin = sac_hdr['b']
         except KeyError:
-            times.append(None)
-        # now look at labels (ka, kt0, ...)
-        key = 'k' + key
-        try:
-            labels.append(trace.stats.sac[key].strip())
-        except KeyError:
-            labels.append(None)
-    for time, label, field in zip(times, labels, fields):
-        if time is None:
             continue
         pick = Pick()
-        pick.station = station
-        begin = trace.stats.sac.b
+        pick.station = trace.stats.station
         pick.time = trace.stats.starttime + time - begin
-        if label is not None and len(label) == 4:
+        # now look at labels (ka, kt0, ...)
+        try:
+            label = sac_hdr[f'k{field}'].strip()
             pick.flag = label[0]
             pick.phase = label[1]
             pick.polarity = label[2]
             pick.quality = label[3]
-        else:
-            if field == 'a':
-                pick.phase = 'P'
-            elif field == 't0':
-                pick.phase = 'S'
-            else:
-                pick.phase = 'X'
+        except Exception:
+            default_phases = {'a': 'P', 't0': 'S'}
+            pick.phase = default_phases.get(field, 'X')
         trace_picks.append(pick)
     return trace_picks
 
 
-def _add_picks(trace, picks):
-    trace_picks = []
-    station = trace.stats.station
+def _add_picks(trace, picks=None):
+    """Add picks to trace."""
     if picks is None:
-        # try to get picks from SAC header
-        if trace.stats._format == 'SAC':
-            trace_picks = _get_picks_from_SAC(trace)
-    else:
-        for pick in picks:
-            if pick.station == station:
-                trace_picks.append(pick)
+        picks = []
+    trace_picks = []
+    with contextlib.suppress(Exception):
+        trace_picks = _get_picks_from_SAC(trace)
+    for pick in picks:
+        if pick.station == trace.stats.station:
+            trace_picks.append(pick)
     trace.stats.picks = trace_picks
     # Create empty dicts for arrivals, travel_times and takeoff angles.
     # They will be used later.
-    trace.stats.arrivals = dict()
-    trace.stats.travel_times = dict()
-    trace.stats.takeoff_angles = dict()
+    trace.stats.arrivals = {}
+    trace.stats.travel_times = {}
+    trace.stats.takeoff_angles = {}
 
 
 def _complete_picks(st):
     """Add component-specific picks to all components."""
-    for station in set(tr.stats.station for tr in st):
+    for station in {tr.stats.station for tr in st}:
         st_sel = st.select(station=station)
         # 'code' is band+instrument code
-        for code in set(tr.stats.channel[:-1] for tr in st_sel):
-            st_sel2 = st_sel.select(channel=code + '?')
-            # Select default P and S picks as the first in list
-            all_picks = [pick for tr in st_sel2 for pick in tr.stats.picks]
-            default_P_pick = [pick for pick in all_picks
-                              if pick.phase == 'P'][0:1]
-            default_S_pick = [pick for pick in all_picks
-                              if pick.phase == 'S'][0:1]
+        for code in {tr.stats.channel[:-1] for tr in st_sel}:
+            st_sel2 = st_sel.select(channel=f'{code}?')
+            all_picks = [p for tr in st_sel2 for p in tr.stats.picks]
+            all_P_picks = [p for p in all_picks if p.phase == 'P']
+            all_S_picks = [p for p in all_picks if p.phase == 'S']
+            # Select default P and S picks as the first in list (or empty list)
+            default_P_pick = all_P_picks[:1]
+            default_S_pick = all_S_picks[:1]
             for tr in st_sel2:
                 # Attribute default picks to components without picks
-                if len([pick for pick in tr.stats.picks
-                        if pick.phase == 'P']) == 0:
+                if not [p for p in tr.stats.picks if p.phase == 'P']:
                     tr.stats.picks += default_P_pick
-                if len([pick for pick in tr.stats.picks
-                        if pick.phase == 'S']) == 0:
+                if not [p for p in tr.stats.picks if p.phase == 'S']:
                     tr.stats.picks += default_S_pick
 # -----------------------------------------------------------------------------
 
@@ -376,9 +366,7 @@ def _complete_picks(st):
 def _hypo_vel(hypo, config):
     hypo.vp = get_vel(hypo.longitude, hypo.latitude, hypo.depth, 'P', config)
     hypo.vs = get_vel(hypo.longitude, hypo.latitude, hypo.depth, 'S', config)
-    msg = 'Vp_hypo: {:.2f} km/s, Vs_hypo: {:.2f} km/s'.format(
-        hypo.vp, hypo.vs)
-    logger.info(msg)
+    logger.info(f'Vp_hypo: {hypo.vp:.2f} km/s, Vs_hypo: {hypo.vs:.2f} km/s')
 
 
 def _build_filelist(path, filelist, tmpdir):
@@ -408,7 +396,8 @@ def read_traces(config):
     # read station metadata into an ObsPy ``Inventory`` object
     inventory = read_station_metadata(config.station_metadata)
 
-    hypo = picks = None
+    picks = []
+    hypo = None
     # parse hypocenter file
     if config.options.hypo_file is not None:
         hypo, picks = parse_hypo_file(config.options.hypo_file)
@@ -443,14 +432,16 @@ def read_traces(config):
         try:
             tmpst = read(filename, fsize=False)
         except Exception:
-            logger.warning('%s: Unable to read file as a trace: '
-                           'skipping' % filename)
+            logger.warning(
+                f'{filename}: Unable to read file as a trace: skipping')
             continue
         for trace in tmpst.traces:
             orientation = trace.stats.channel[-1]
             if orientation not in orientation_codes:
-                logger.warning('%s: Unknown channel orientation: "%s": '
-                               'skipping trace' % (trace.id, orientation))
+                logger.warning(
+                    f'{trace.id}: Unknown channel orientation: '
+                    f'"{orientation}": skipping trace'
+                )
                 continue
             # only use the station specified by the command line option
             # "--station", if any

@@ -14,6 +14,7 @@ Local magnitude calculation for sourcespec.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
+import contextlib
 import logging
 import numpy as np
 from copy import deepcopy
@@ -40,10 +41,11 @@ def _get_cut_times(config, tr):
     nyquist = 1./(2. * tr.stats.delta)
     if freqmax >= nyquist:
         freqmax = nyquist * 0.999
-        msg = '{}: maximum frequency for bandpass filtering '.format(tr.id)
-        msg += 'in local magnitude computation is larger than or equal '
-        msg += 'to Nyquist. Setting it to {} Hz'.format(freqmax)
-        logger.warning(msg)
+        logger.warning(
+            f'{tr.id}: maximum frequency for bandpass filtering in '
+            'local magnitude computation is larger than or equal '
+            f'to Nyquist. Setting it to {freqmax} Hz'
+        )
     cosine_taper(tr_env.data, width=config.taper_halfwidth)
     tr_env.filter(type='bandpass', freqmin=freqmin, freqmax=freqmax)
     tr_env.data = envelope(tr_env.data)
@@ -52,10 +54,10 @@ def _get_cut_times(config, tr):
     # Skip traces which do not have arrivals
     try:
         p_arrival_time = tr.stats.arrivals['P'][1]
-    except Exception:
-        logger.warning('{}: Trace has no P arrival: skipping trace'.format(
-            tr.id))
-        raise RuntimeError
+    except Exception as e:
+        raise RuntimeError(
+            f'{tr.id}: Trace has no P arrival: skipping trace'
+        )from e
     t1 = p_arrival_time - config.win_length
     t2 = p_arrival_time + config.win_length
 
@@ -68,17 +70,16 @@ def _get_cut_times(config, tr):
     ampmin = tr_noise.data.mean()
     ampmax = tr_signal.data.mean()
     if ampmax <= ampmin:
-        logger.warning(
-            '{}: Trace has too high noise before P arrival: '
-            'skipping trace'.format(tr.id))
-        raise RuntimeError
+        raise RuntimeError(
+            f'{tr.id}: Trace has too high noise before P arrival: '
+            'skipping trace'
+        )
 
-    trigger = trigger_onset(tr_env.data, ampmax, ampmin,
-                            max_len=9e99, max_len_delete=False)[0]
+    trigger = trigger_onset(
+        tr_env.data, ampmax, ampmin, max_len=9e99, max_len_delete=False)[0]
     t0 = p_arrival_time
     t1 = t0 + trigger[-1] * tr.stats.delta
-    if t1 > tr.stats.endtime:
-        t1 = tr.stats.endtime
+    t1 = min(t1, tr.stats.endtime)
     return t0, t1
 
 
@@ -90,14 +91,15 @@ def _process_trace(config, tr, t0, t1):
     tr_process.trim(starttime=t0, endtime=t1, pad=True, fill_value=0)
     npts = len(tr_process.data)
     if npts == 0:
-        logger.warning('{}: No data for the selected cut interval: '
-                       'skipping trace'.format(tr.id))
-        raise RuntimeError
+        raise RuntimeError(
+            f'{tr.id}: No data for the selected cut interval: skipping trace'
+        )
     nzeros = len(np.where(tr_process.data == 0)[0])
     if nzeros > npts/4:
-        logger.warning('{}: Too many gaps for the selected cut '
-                       'interval: skipping trace'.format(tr.id))
-        raise RuntimeError
+        raise RuntimeError(
+            f'{tr.id}: Too many gaps for the selected cut interval: '
+            'skipping trace'
+        )
 
     # If the check is ok, recover the full trace
     # (it will be cut later on)
@@ -135,23 +137,23 @@ def _compute_local_magnitude(config, amp, h_dist):
     a = config.a
     b = config.b
     c = config.c
-    ml = np.log10(amp) +\
-        a * np.log10(h_dist/100.) + b * (h_dist-100.) + c
-    return ml
+    return (
+        np.log10(amp) + a * np.log10(h_dist / 100.0) + b * (h_dist - 100.0) + c
+    )
 
 
 def local_magnitude(config, st, proc_st, sspec_output):
     """Compute local magnitude from max absolute W-A amplitude."""
     logger.info('Computing local magnitude...')
     # We only use traces selected for proc_st
-    trace_ids = set(tr.id for tr in proc_st)
+    trace_ids = {tr.id for tr in proc_st}
     station_parameters = sspec_output.station_parameters
     for tr_id in sorted(trace_ids):
         tr = st.select(id=tr_id)[0]
 
         # only analyze traces for which we have the other
         # source parameters defined
-        key = tr_id[:-1] + 'H'
+        key = f'{tr_id[:-1]}H'
         try:
             station_pars = station_parameters[key]
         except KeyError:
@@ -174,7 +176,8 @@ def local_magnitude(config, st, proc_st, sspec_output):
         try:
             t0, t1 = _get_cut_times(config, tr)
             tr_process = _process_trace(config, tr, t0, t1)
-        except RuntimeError:
+        except RuntimeError as msg:
+            logger.warning(msg)
             continue
 
         # Local magnitude
@@ -182,13 +185,11 @@ def local_magnitude(config, st, proc_st, sspec_output):
         amp = np.abs(tr_process.max())*1000.
         h_dist = tr_process.stats.hypo_dist
         ml = _compute_local_magnitude(config, amp, h_dist)
-        statId = '{} {}'.format(tr_id, tr.stats.instrtype)
-        logger.info('{}: Ml {:.1f}'.format(statId,  ml))
+        statId = f'{tr_id} {tr.stats.instrtype}'
+        logger.info(f'{statId}: Ml {ml:.1f}')
         # compute average with the other component, if available
-        try:
+        with contextlib.suppress(KeyError):
             old_ml = param_Ml.value
             if not np.isnan(old_ml):
                 ml = 0.5 * (ml + old_ml)
-        except KeyError:
-            pass
         param_Ml.value = ml

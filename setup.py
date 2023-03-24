@@ -7,7 +7,7 @@ import sys
 
 MIN_PYTHON_VERSION = (3, 6)
 MIN_PYTHON_VERSION_STR = '{}.{}'.format(*MIN_PYTHON_VERSION)
-PYTHON_VERSION_STR = '{}.{}.{}'.format(*sys.version_info[0:3])
+PYTHON_VERSION_STR = '{}.{}.{}'.format(*sys.version_info[:3])
 if sys.version_info < MIN_PYTHON_VERSION:
     msg = 'SourceSpec requires Python version >= {}'.format(
         MIN_PYTHON_VERSION_STR)
