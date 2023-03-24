@@ -103,6 +103,11 @@ Earthquake source parameters from P- or S-wave displacement spectra
   - `bp_freqmin_disp`, `bp_freqmax_disp`
   - `freq1_disp`, `freq2_disp`
 
+### Code improvements
+
+- Large refactoring of the whole codebase, to make the code more modern and
+  easier to maintain (see [#28])
+
 ### Bugfixes
 
 - Properly ignore vertical components when `ignore_vertical` is `True`
@@ -477,3 +482,4 @@ Initial Python port.
 [#24]: https://github.com/SeismicSource/sourcespec/issues/24
 [#25]: https://github.com/SeismicSource/sourcespec/issues/25
 [#27]: https://github.com/SeismicSource/sourcespec/issues/27
+[#28]: https://github.com/SeismicSource/sourcespec/issues/28
