@@ -13,11 +13,13 @@ import os
 import logging
 import shutil
 import re
+import contextlib
 import numpy as np
 from urllib.parse import urlparse
 from sourcespec._version import get_versions
 from sourcespec.ssp_data_types import SpectralParameter
 logger = logging.getLogger(__name__.split('.')[-1])
+VALID_FIGURE_FORMATS = ('.png', '.svg')
 
 
 def _multireplace(string, replacements, ignore_case=False):
@@ -335,159 +337,14 @@ def _misfit_page(config):
         fp.write(misfit)
 
 
-def html_report(config, sspec_output):
-    """Generate an HTML report."""
-    # Read template files
-    template_dir = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        'html_report_template'
-    )
-    style_css = os.path.join(template_dir, 'style.css')
-    index_html = os.path.join(template_dir, 'index.html')
-    index_html_out = os.path.join(config.options.outdir, 'index.html')
-    traces_plot_html = os.path.join(template_dir, 'traces_plot.html')
-    spectra_plot_html = os.path.join(template_dir, 'spectra_plot.html')
-    station_table_row_html = os.path.join(
-        template_dir, 'station_table_row.html')
-    quakeml_file_link_html = os.path.join(
-        template_dir, 'quakeml_file_link.html')
-
-    # Copy CSS to output dir
-    shutil.copy(style_css, config.options.outdir)
-
-    # Logo file
+def _add_run_info_to_html(config, replacements):
+    """Add run info to HTML report."""
     logo_file = _logo_file_url()
-
-    # HTML for agency logo
     agency_logo = _agency_logo(config)
-
-    # Version and run completed
     ssp_version, run_completed = _version_and_run_completed(config)
-
-    # Author and agency
     author, agency = _author_and_agency(config)
-
-    # Page footer
     page_footer = _page_footer(config)
-
-    # Output files and maps
-    hypo = config.hypo
-    evid = hypo.evid
-    run_id = config.options.run_id
-    config_file = f'{evid}.ssp.conf'
-    yaml_file = f'{evid}.ssp.yaml'
-    log_file = f'{evid}.ssp.log'
-    station_maps = config.figures['station_maps']
-    map_mag = [mapfile for mapfile in station_maps if 'map_mag' in mapfile][0]
-    map_mag = os.path.basename(map_mag)
-    map_fc = [mapfile for mapfile in station_maps if 'map_fc' in mapfile][0]
-    map_fc = os.path.basename(map_fc)
-    box_plots = config.figures['boxplots'][0]
-    box_plots = os.path.basename(box_plots)
-    stacked_spectra = config.figures['stacked_spectra'][0]
-    stacked_spectra = os.path.basename(stacked_spectra)
-
-    # Trace plot files
-    traces_plot = open(traces_plot_html).read()
-    traces_plot_files = config.figures['traces']
-    traces_plots = ''
-    traces_plot_class = ''
-    n_traces_plot_files = len(traces_plot_files)
-    for n, traces_plot_file in enumerate(sorted(traces_plot_files)):
-        if n_traces_plot_files > 1:
-            traces_plot_counter = (
-                f'<span class="print_inline">&nbsp;({n+1} of '
-                f'{n_traces_plot_files})</span>'
-            )
-        else:
-            traces_plot_counter = ''
-        traces_plot_file = os.path.basename(traces_plot_file)
-        traces_plots += traces_plot.\
-            replace('{TRACES_PLOT_CLASS}', traces_plot_class).\
-            replace('{TRACES_PLOT_COUNTER}', traces_plot_counter).\
-            replace('{TRACES_PLOT_FILE}', traces_plot_file)
-        traces_plot_class = ' class="print"'
-
-    # Spectral plot files
-    spectra_plot = open(spectra_plot_html).read()
-    spectra_plot_files = config.figures['spectra_regular']
-    spectra_plots = ''
-    spectra_plot_class = ''
-    n_spectra_plot_files = len(spectra_plot_files)
-    for n, spectra_plot_file in enumerate(sorted(spectra_plot_files)):
-        if n_spectra_plot_files > 1:
-            spectra_plot_counter = (
-                f'<span class="print_inline">&nbsp;({n+1} of '
-                f'{n_spectra_plot_files})</span>'
-            )
-        else:
-            spectra_plot_counter = ''
-        spectra_plot_file = os.path.basename(spectra_plot_file)
-        spectra_plots += spectra_plot.\
-            replace('{SPECTRA_PLOT_CLASS}', spectra_plot_class).\
-            replace('{SPECTRA_PLOT_COUNTER}', spectra_plot_counter).\
-            replace('{SPECTRA_PLOT_FILE}', spectra_plot_file)
-        spectra_plot_class = ' class="print"'
-
-    # Station table
-    station_table_row = open(station_table_row_html).read()
-    station_table_rows = ''
-    stationpar = sspec_output.station_parameters
-    for statId in sorted(stationpar.keys()):
-        par = stationpar[statId]
-        instrument_type = par.instrument_type
-        Mw_text, Mw_err_text = _station_value_and_err_text(par, 'Mw', '{:.3f}')
-        fc_text, fc_err_text = _station_value_and_err_text(par, 'fc', '{:.3f}')
-        t_star_text, t_star_err_text =\
-            _station_value_and_err_text(par, 't_star', '{:.3f}')
-        Qo_text, Qo_err_text = _station_value_and_err_text(par, 'Qo', '{:.1f}')
-        Mo_text, Mo_err_text = _station_value_and_err_text(par, 'Mo', '{:.3e}')
-        bsd_text, bsd_err_text =\
-            _station_value_and_err_text(par, 'bsd', '{:.3e}')
-        ra_text, ra_err_text =\
-            _station_value_and_err_text(par, 'radius', '{:.3f}')
-        Er_text, _ = _station_value_and_err_text(par, 'Er', '{:.3e}')
-        Ml_text, _ = _station_value_and_err_text(par, 'Ml', '{:.3f}')
-        hyp_dist_text, _ =\
-            _station_value_and_err_text(par, 'hypo_dist_in_km', '{:.3f}')
-        az_text, _ = _station_value_and_err_text(par, 'azimuth', '{:.3f}')
-        replacements = {
-            '{STATION_ID}': statId,
-            '{STATION_TYPE}': instrument_type,
-            '{STATION_MW}': Mw_text,
-            '{STATION_MW_ERR}': Mw_err_text,
-            '{STATION_FC}': fc_text,
-            '{STATION_FC_ERR}': fc_err_text,
-            '{STATION_TSTAR}': t_star_text,
-            '{STATION_TSTAR_ERR}': t_star_err_text,
-            '{STATION_Q0}': Qo_text,
-            '{STATION_Q0_ERR}': Qo_err_text,
-            '{STATION_M0}': Mo_text,
-            '{STATION_M0_ERR}': Mo_err_text,
-            '{STATION_BSD}': bsd_text,
-            '{STATION_BSD_ERR}': bsd_err_text,
-            '{STATION_RA}': ra_text,
-            '{STATION_RA_ERR}': ra_err_text,
-            '{STATION_ER}': Er_text,
-            '{STATION_ML}': Ml_text,
-            '{STATION_DIST}': hyp_dist_text,
-            '{STATION_AZ}': az_text,
-        }
-        # Local magnitude, if computed
-        if config.compute_local_magnitude:
-            Ml_comment_begin = ''
-            Ml_comment_end = ''
-        else:
-            Ml_comment_begin = '<!--'
-            Ml_comment_end = '-->'
-        replacements.update({
-            '{ML_COMMENT_BEGIN}': Ml_comment_begin,
-            '{ML_COMMENT_END}': Ml_comment_end
-        })
-        station_table_rows += _multireplace(station_table_row, replacements)
-
-    # Event and run info
-    replacements = {
+    replacements.update({
         '{AGENCY_LOGO}': agency_logo,
         '{LOGO_FILE}': logo_file,
         '{VERSION}': ssp_version,
@@ -495,13 +352,22 @@ def html_report(config, sspec_output):
         '{AUTHOR}': author,
         '{AGENCY}': agency,
         '{PAGE_FOOTER}': page_footer,
+    })
+
+
+def _add_event_info_to_html(config, replacements):
+    """Add event info to HTML report."""
+    hypo = config.hypo
+    evid = hypo.evid
+    run_id = config.options.run_id
+    replacements.update({
         '{EVENTID}': evid,
         '{RUNID}': run_id,
         '{EVENT_LONGITUDE}': f'{hypo.longitude:8.3f}',
         '{EVENT_LATITUDE}': f'{hypo.latitude:7.3f}',
         '{EVENT_DEPTH}': f'{hypo.depth:5.1f}',
         '{ORIGIN_TIME}': f'{hypo.origin_time}',
-    }
+    })
     # Link to event page, if defined
     event_url = config.event_url
     if event_url is not None:
@@ -525,8 +391,7 @@ def html_report(config, sspec_output):
     })
     # Only show Run ID if it is not empty
     if run_id:
-        run_id_comment_begin = ''
-        run_id_comment_end = ''
+        run_id_comment_begin = run_id_comment_end = ''
     else:
         run_id_comment_begin = '<!--'
         run_id_comment_end = '-->'
@@ -535,6 +400,119 @@ def html_report(config, sspec_output):
         '{RUNID_COMMENT_END}': run_id_comment_end
     })
 
+
+def _add_maps_to_html(config, replacements):
+    """Add maps to HTML report."""
+    global VALID_FIGURE_FORMATS
+    try:
+        station_maps = [
+            m for m in config.figures['station_maps']
+            if m.endswith(VALID_FIGURE_FORMATS)]
+    except KeyError:
+        station_maps = []
+    map_mag = ''
+    map_fc = ''
+    with contextlib.suppress(IndexError):
+        map_mag = [
+            mapfile for mapfile in station_maps if 'map_mag' in mapfile][0]
+        map_mag = os.path.basename(map_mag)
+    with contextlib.suppress(IndexError):
+        map_fc = [
+            mapfile for mapfile in station_maps if 'map_fc' in mapfile][0]
+        map_fc = os.path.basename(map_fc)
+    if map_mag:
+        map_mag_comment_begin = map_mag_comment_end = ''
+    else:
+        map_mag_comment_begin = '<!--'
+        map_mag_comment_end = '-->'
+    if map_fc:
+        map_fc_comment_begin = map_fc_comment_end = ''
+    else:
+        map_fc_comment_begin = '<!--'
+        map_fc_comment_end = '-->'
+    replacements.update({
+        '{MAP_MAG}': map_mag,
+        '{MAP_MAG_COMMENT_BEGIN}': map_mag_comment_begin,
+        '{MAP_MAG_COMMENT_END}': map_mag_comment_end,
+        '{MAP_FC}': map_fc,
+        '{MAP_FC_COMMENT_BEGIN}': map_fc_comment_begin,
+        '{MAP_FC_COMMENT_END}': map_fc_comment_end
+    })
+
+
+def _add_traces_plots_to_html(config, templates, replacements):
+    """Add trace plots to HTML report."""
+    global VALID_FIGURE_FORMATS
+    traces_plot = open(templates.traces_plot_html).read()
+    traces_plot_files = [
+        t for t in config.figures['traces']
+        if t.endswith(VALID_FIGURE_FORMATS)]
+    traces_plots = ''
+    traces_plot_class = ''
+    n_traces_plot_files = len(traces_plot_files)
+    for n, traces_plot_file in enumerate(sorted(traces_plot_files)):
+        if n_traces_plot_files > 1:
+            traces_plot_counter = (
+                f'<span class="print_inline">&nbsp;({n+1} of '
+                f'{n_traces_plot_files})</span>'
+            )
+        else:
+            traces_plot_counter = ''
+        traces_plot_file = os.path.basename(traces_plot_file)
+        traces_plots += traces_plot.\
+            replace('{TRACES_PLOT_CLASS}', traces_plot_class).\
+            replace('{TRACES_PLOT_COUNTER}', traces_plot_counter).\
+            replace('{TRACES_PLOT_FILE}', traces_plot_file)
+        traces_plot_class = ' class="print"'
+    if traces_plots:
+        traces_plots_comment_begin = traces_plots_comment_end = ''
+    else:
+        traces_plots_comment_begin = '<!--'
+        traces_plots_comment_end = '-->'
+    replacements.update({
+        '{TRACES_PLOTS}': traces_plots,
+        '{TRACES_PLOTS_COMMENT_BEGIN}': traces_plots_comment_begin,
+        '{TRACES_PLOTS_COMMENT_END}': traces_plots_comment_end
+    })
+
+
+def _add_spectra_plots_to_html(config, templates, replacements):
+    """Add spectra plots to HTML report."""
+    global VALID_FIGURE_FORMATS
+    spectra_plot = open(templates.spectra_plot_html).read()
+    spectra_plot_files = [
+        s for s in config.figures['spectra_regular']
+        if s.endswith(VALID_FIGURE_FORMATS)]
+    spectra_plots = ''
+    spectra_plot_class = ''
+    n_spectra_plot_files = len(spectra_plot_files)
+    for n, spectra_plot_file in enumerate(sorted(spectra_plot_files)):
+        if n_spectra_plot_files > 1:
+            spectra_plot_counter = (
+                f'<span class="print_inline">&nbsp;({n+1} of '
+                f'{n_spectra_plot_files})</span>'
+            )
+        else:
+            spectra_plot_counter = ''
+        spectra_plot_file = os.path.basename(spectra_plot_file)
+        spectra_plots += spectra_plot.\
+            replace('{SPECTRA_PLOT_CLASS}', spectra_plot_class).\
+            replace('{SPECTRA_PLOT_COUNTER}', spectra_plot_counter).\
+            replace('{SPECTRA_PLOT_FILE}', spectra_plot_file)
+        spectra_plot_class = ' class="print"'
+    if spectra_plots:
+        spectra_plots_comment_begin = spectra_plots_comment_end = ''
+    else:
+        spectra_plots_comment_begin = '<!--'
+        spectra_plots_comment_end = '-->'
+    replacements.update({
+        '{SPECTRA_PLOTS}': spectra_plots,
+        '{SPECTRA_PLOTS_COMMENT_BEGIN}': spectra_plots_comment_begin,
+        '{SPECTRA_PLOTS_COMMENT_END}': spectra_plots_comment_end
+    })
+
+
+def _add_inversion_info_to_html(sspec_output, replacements):
     # Inversion information
     inversion_algorithms = {
         'TNC': 'Truncated Newton',
@@ -582,7 +560,9 @@ def html_report(config, sspec_output):
         '{INVERSION_Q0_MIN_MAX}': inversion_Qo_min_max,
     })
 
-    # Summary spectral parameters
+
+def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
+    """Add summary spectral parameters to HTML report."""
     ref_stat = sspec_output.summary_spectral_parameters.reference_statistics
     col_mean_highlighted = col_wmean_highlighted = col_perc_highlighted = ''
     if ref_stat == 'mean':
@@ -775,23 +755,114 @@ def html_report(config, sspec_output):
         '{ML_COMMENT_END}': Ml_comment_end,
     })
 
-    # Output files and plots
+
+def _add_box_plots_to_html(config, replacements):
+    """Add box plots to HTML report."""
+    global VALID_FIGURE_FORMATS
+    box_plots = ''
+    with contextlib.suppress(KeyError, IndexError):
+        box_plots = [
+            b for b in config.figures['boxplots']
+            if b.endswith(VALID_FIGURE_FORMATS)][0]
+        box_plots = os.path.basename(box_plots)
+    if box_plots:
+        box_plots_comment_begin = box_plots_comment_end = ''
+    else:
+        box_plots_comment_begin = '<!--'
+        box_plots_comment_end = '-->'
     replacements.update({
-        '{CONF_FILE_BNAME}': config_file,
-        '{CONF_FILE}': config_file,
-        '{YAML_FILE_BNAME}': yaml_file,
-        '{YAML_FILE}': yaml_file,
-        '{LOG_FILE_BNAME}': log_file,
-        '{LOG_FILE}': log_file,
-        '{MAP_MAG}': map_mag,
-        '{MAP_FC}': map_fc,
-        '{TRACES_PLOTS}': traces_plots,
-        '{SPECTRA_PLOTS}': spectra_plots,
         '{BOX_PLOTS}': box_plots,
+        '{BOX_PLOTS_COMMENT_BEGIN}': box_plots_comment_begin,
+        '{BOX_PLOTS_COMMENT_END}': box_plots_comment_end,
+    })
+
+
+def _add_stacked_spectra_to_html(config, replacements):
+    """Add stacked spectra to HTML report."""
+    global VALID_FIGURE_FORMATS
+    stacked_spectra = ''
+    with contextlib.suppress(KeyError, IndexError):
+        stacked_spectra = [
+            s for s in config.figures['stacked_spectra']
+            if s.endswith(VALID_FIGURE_FORMATS)][0]
+        stacked_spectra = os.path.basename(stacked_spectra)
+    if stacked_spectra:
+        stacked_spectra_comment_begin = stacked_spectra_comment_end = ''
+    else:
+        stacked_spectra_comment_begin = '<!--'
+        stacked_spectra_comment_end = '-->'
+    replacements.update({
         '{STACKED_SPECTRA}': stacked_spectra,
+        '{STACKED_SPECTRA_COMMENT_BEGIN}': stacked_spectra_comment_begin,
+        '{STACKED_SPECTRA_COMMENT_END}': stacked_spectra_comment_end,
+    })
+
+
+def _add_station_table_to_html(config, sspec_output, templates, replacements):
+    """Add station table to HTML report."""
+    station_table_row = open(templates.station_table_row_html).read()
+    station_table_rows = ''
+    stationpar = sspec_output.station_parameters
+    for statId in sorted(stationpar.keys()):
+        par = stationpar[statId]
+        instrument_type = par.instrument_type
+        Mw_text, Mw_err_text = _station_value_and_err_text(par, 'Mw', '{:.3f}')
+        fc_text, fc_err_text = _station_value_and_err_text(par, 'fc', '{:.3f}')
+        t_star_text, t_star_err_text =\
+            _station_value_and_err_text(par, 't_star', '{:.3f}')
+        Qo_text, Qo_err_text = _station_value_and_err_text(par, 'Qo', '{:.1f}')
+        Mo_text, Mo_err_text = _station_value_and_err_text(par, 'Mo', '{:.3e}')
+        bsd_text, bsd_err_text =\
+            _station_value_and_err_text(par, 'bsd', '{:.3e}')
+        ra_text, ra_err_text =\
+            _station_value_and_err_text(par, 'radius', '{:.3f}')
+        Er_text, _ = _station_value_and_err_text(par, 'Er', '{:.3e}')
+        Ml_text, _ = _station_value_and_err_text(par, 'Ml', '{:.3f}')
+        hyp_dist_text, _ =\
+            _station_value_and_err_text(par, 'hypo_dist_in_km', '{:.3f}')
+        az_text, _ = _station_value_and_err_text(par, 'azimuth', '{:.3f}')
+        row_replacements = {
+            '{STATION_ID}': statId,
+            '{STATION_TYPE}': instrument_type,
+            '{STATION_MW}': Mw_text,
+            '{STATION_MW_ERR}': Mw_err_text,
+            '{STATION_FC}': fc_text,
+            '{STATION_FC_ERR}': fc_err_text,
+            '{STATION_TSTAR}': t_star_text,
+            '{STATION_TSTAR_ERR}': t_star_err_text,
+            '{STATION_Q0}': Qo_text,
+            '{STATION_Q0_ERR}': Qo_err_text,
+            '{STATION_M0}': Mo_text,
+            '{STATION_M0_ERR}': Mo_err_text,
+            '{STATION_BSD}': bsd_text,
+            '{STATION_BSD_ERR}': bsd_err_text,
+            '{STATION_RA}': ra_text,
+            '{STATION_RA_ERR}': ra_err_text,
+            '{STATION_ER}': Er_text,
+            '{STATION_ML}': Ml_text,
+            '{STATION_DIST}': hyp_dist_text,
+            '{STATION_AZ}': az_text,
+        }
+        # Local magnitude, if computed
+        if config.compute_local_magnitude:
+            Ml_comment_begin = ''
+            Ml_comment_end = ''
+        else:
+            Ml_comment_begin = '<!--'
+            Ml_comment_end = '-->'
+        row_replacements.update({
+            '{ML_COMMENT_BEGIN}': Ml_comment_begin,
+            '{ML_COMMENT_END}': Ml_comment_end
+        })
+        station_table_rows += _multireplace(
+            station_table_row, row_replacements)
+    replacements.update({
         '{STATION_TABLE_ROWS}': station_table_rows,
     })
-    # Misfit plots (when using grid search)
+
+
+def _add_misfit_plots_to_html(config, replacements):
+    """Add misfit plots to HTML report."""
     if 'misfit_1d' in config.figures:
         misfit_plot_comment_begin = ''
         misfit_plot_comment_end = ''
@@ -803,10 +874,27 @@ def html_report(config, sspec_output):
         '{MISFIT_PLOT_COMMENT_BEGIN}': misfit_plot_comment_begin,
         '{MISFIT_PLOT_COMMENT_END}': misfit_plot_comment_end
     })
+
+
+def _add_output_files_to_html(config, templates, replacements):
+    evid = config.hypo.evid
+    config_file = f'{evid}.ssp.conf'
+    yaml_file = f'{evid}.ssp.yaml'
+    log_file = f'{evid}.ssp.log'
+
+    replacements.update({
+        '{CONF_FILE_BNAME}': config_file,
+        '{CONF_FILE}': config_file,
+        '{YAML_FILE_BNAME}': yaml_file,
+        '{YAML_FILE}': yaml_file,
+        '{LOG_FILE_BNAME}': log_file,
+        '{LOG_FILE}': log_file,
+    })
+
     # QuakeML file (if produced)
     if config.qml_file_out is not None:
         quakeml_file = os.path.basename(config.qml_file_out)
-        quakeml_file_link = open(quakeml_file_link_html).read()
+        quakeml_file_link = open(templates.quakeml_file_link_html).read()
         quakeml_file_link = quakeml_file_link\
             .replace('{QUAKEML_FILE}', quakeml_file)\
             .replace('{QUAKEML_FILE_BNAME}', quakeml_file)
@@ -816,8 +904,59 @@ def html_report(config, sspec_output):
         '{QUAKEML_FILE_LINK}': quakeml_file_link
     })
 
-    index = open(index_html).read()
+
+class HTMLtemplates:
+    def __init__(self):
+        template_dir = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            'html_report_template'
+        )
+        self.style_css = os.path.join(template_dir, 'style.css')
+        self.index_html = os.path.join(template_dir, 'index.html')
+        self.traces_plot_html = os.path.join(
+            template_dir, 'traces_plot.html')
+        self.spectra_plot_html = os.path.join(
+            template_dir, 'spectra_plot.html')
+        self.station_table_row_html = os.path.join(
+            template_dir, 'station_table_row.html')
+        self.quakeml_file_link_html = os.path.join(
+            template_dir, 'quakeml_file_link.html')
+
+
+def _cleanup_html(text):
+    """Remove unnecessary comments and whitespace from HTML."""
+    # remove HTML-style comments
+    text = re.sub(r'<!--.*?-->', '', text, flags=re.DOTALL)
+    # strip spaces at the end of lines
+    text = re.sub(r' +$', '', text, flags=re.MULTILINE)
+    # replace multiple empty lines with a single empty line
+    text = re.sub(r'\n\s*\n', '\n\n', text)
+    return text
+
+
+def html_report(config, sspec_output):
+    """Generate an HTML report."""
+    templates = HTMLtemplates()
+
+    replacements = {}
+    _add_run_info_to_html(config, replacements)
+    _add_event_info_to_html(config, replacements)
+    _add_maps_to_html(config, replacements)
+    _add_traces_plots_to_html(config, templates, replacements)
+    _add_spectra_plots_to_html(config, templates, replacements)
+    _add_inversion_info_to_html(sspec_output, replacements)
+    _add_summary_spectral_params_to_html(config, sspec_output, replacements)
+    _add_box_plots_to_html(config, replacements)
+    _add_stacked_spectra_to_html(config, replacements)
+    _add_station_table_to_html(config, sspec_output, templates, replacements)
+    _add_misfit_plots_to_html(config, replacements)
+    _add_output_files_to_html(config, templates, replacements)
+
+    index = open(templates.index_html).read()
     index = _multireplace(index, replacements)
+    index = _cleanup_html(index)
+    shutil.copy(templates.style_css, config.options.outdir)
+    index_html_out = os.path.join(config.options.outdir, 'index.html')
     with open(index_html_out, 'w') as fp:
         fp.write(index)
     logger.info('HTML report written to file: ' + index_html_out)
