@@ -557,21 +557,13 @@ def configure(options, progname, config_overrides=None):
         if not config.plot_save:
             msg = (
                 'The "html_report" option is selected but "plot_save" '
-                'is "False". Setting "plot_save" to "True".')
+                'is "False". HTML report will have no plots.')
             config.warnings.append(msg)
-            config.plot_save = True
         if config.plot_save_format not in ['png', 'svg']:
             msg = (
                 'The "html_report" option is selected but "plot_save_format" '
-                'is not "png" or "svg". Setting "plot_save_format" to "png".')
+                'is not "png" or "svg". HTML report will have no plots.')
             config.warnings.append(msg)
-            config.plot_save_format = 'png'
-        if not config.plot_station_map:
-            msg = (
-                'The "html_report" option is selected but "plot_station_map" '
-                'is "False". Setting "plot_station_map" to "True".')
-            config.warnings.append(msg)
-            config.plot_station_map = True
 
     if config.plot_station_map:
         try:
