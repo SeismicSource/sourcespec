@@ -23,6 +23,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - Logscale for boxplots, if parameters span a large interval
   (see pull request [#15])
 - Information on the inversion procedure in YAML and HTML output
+- Possibility of generating HTML report without figures (see [#30])
 
 ### Processing
 
@@ -484,3 +485,4 @@ Initial Python port.
 [#25]: https://github.com/SeismicSource/sourcespec/issues/25
 [#27]: https://github.com/SeismicSource/sourcespec/issues/27
 [#28]: https://github.com/SeismicSource/sourcespec/issues/28
+[#30]: https://github.com/SeismicSource/sourcespec/issues/30
