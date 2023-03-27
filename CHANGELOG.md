@@ -117,6 +117,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - Fix for noise window not showing up in PNG trace plots in some cases
 - Fix reading velocities from NLL model (see [#20])
 - HTML report: better scrollbars for station table across all the browsers
+- Fix for cropped map for very large station-to-event distances (greater
+  than 500 km)
 - Fix `source_residuals`, which didn't work anymore
 
 ## v1.6 - 2022-08-02

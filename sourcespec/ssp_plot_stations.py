@@ -176,7 +176,10 @@ def _plot_hypo(ax, hypo):
 def _make_basemap(config, maxdist):
     g = Geod(ellps='WGS84')
     hypo = config.hypo
-    maxdiagonal = maxdist*(2**0.5)*1.10
+    # increase bounding box for large maxdist,
+    # to account for deformation in Mercator projection
+    mult = 1.1 if maxdist < 500 else 1.5
+    maxdiagonal = maxdist*(2**0.5)*mult
     lonmax, latmax, _ = g.fwd(
         hypo.longitude, hypo.latitude, 45, maxdiagonal*1000.)
     lonmin = 2*hypo.longitude - lonmax
