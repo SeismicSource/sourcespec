@@ -172,15 +172,26 @@ def _add_inventory(trace, inventory, config):
 def _check_instrtype(trace):
     """Check if instrument type is consistent with units in inventory."""
     inv = trace.stats.inventory
+    if not inv:
+        raise RuntimeError(
+            f'{trace.id}: cannot get instrtype from inventory: '
+            'inventory is empty: skipping trace')
     instrtype = trace.stats.instrtype
     new_instrtype = None
     try:
         units = inv.get_response(trace.id, trace.stats.starttime).\
             instrument_sensitivity.input_units
     except Exception as e:
+        # inventory attached to trace has only one channel
+        chan = inv[0][0][0]
+        start_date = chan.start_date
+        end_date = chan.end_date
         raise RuntimeError(
-            f'{trace.id}: cannot get units from inventory: '
-            f'{e.__class__.__name__}: {e} Skipping trace'
+            f'{trace.id}: cannot get units from inventory.\n'
+            f'> {e.__class__.__name__}: {e}\n'
+            f'> Channel start/end date: {start_date} {end_date}\n'
+            f'> Trace start time: {trace.stats.starttime}\n'
+            '> Skipping trace'
         ) from e
     trace.stats.units = units
     if units.lower() == 'm' and trace.stats.instrtype != 'disp':
@@ -457,9 +468,8 @@ def read_traces(config):
                 _add_hypocenter(trace, hypo)
                 _add_picks(trace, picks)
             except Exception as err:
-                # only warn if error message is not empty
-                if str(err):
-                    logger.warning(err)
+                for line in str(err).splitlines():
+                    logger.warning(line)
                 continue
             st.append(trace)
     shutil.rmtree(tmpdir)
