@@ -28,6 +28,13 @@ class Hypo():
     origin_time = None
     evid = None
 
+    def __str__(self):
+        return (
+            f'latitude: {self.latitude}, longitude: {self.longitude}, '
+            f'depth: {self.depth}, origin_time: {self.origin_time}, '
+            f'evid: {self.evid}'
+        )
+
 
 class Pick():
     """A pick object."""
@@ -37,6 +44,13 @@ class Pick():
     polarity = None
     quality = None
     time = None
+
+    def __str__(self):
+        return (
+            f'station: {self.station}, flag: {self.flag}, '
+            f'phase: {self.phase}, polarity: {self.polarity}, '
+            f'quality: {self.quality}, time: {self.time}'
+        )
 
 
 def parse_qml(qml_file, evid=None):
