@@ -10,6 +10,7 @@ Station plotting routine.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import time
 import logging
 import contextlib
 import numpy as np
@@ -219,6 +220,11 @@ def _make_basemap(config, maxdist):
             break
         ax.add_image(stamen_terrain, tile_zoom_level)
         try:
+            fig.canvas.draw()
+            # sleep to allow the tiles to be cached, then readd the tiles
+            time.sleep(1.)
+            ax.img_factories = []
+            ax.add_image(stamen_terrain, tile_zoom_level)
             fig.canvas.draw()
             break
         except ValueError:
