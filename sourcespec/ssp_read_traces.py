@@ -17,7 +17,6 @@ Read traces in multiple formats of data and metadata.
 """
 import sys
 import os
-import re
 import logging
 import shutil
 import tarfile
@@ -32,7 +31,11 @@ from sourcespec.ssp_util import get_vel
 from sourcespec.ssp_read_station_metadata import (
     read_station_metadata, PAZ)
 from sourcespec.ssp_read_event_metadata import (
-    parse_qml, parse_hypo_file, parse_hypo71_picks, Pick)
+    parse_qml, parse_hypo_file, parse_hypo71_picks)
+from sourcespec.ssp_read_sac_header import (
+    compute_sensitivity_from_SAC,
+    get_instrument_from_SAC, get_station_coordinates_from_SAC,
+    get_hypocenter_from_SAC, get_picks_from_SAC)
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -47,17 +50,6 @@ def _correct_traceid(trace):
         trace.stats.station = sta
         trace.stats.location = loc
         trace.stats.channel = chan
-
-
-# handpicked list of instruments, instrtypes and band/instr codes,
-# mainly for ISNet compatibility
-instruments = {
-    'CMG-5T': {'instrtype': 'acc', 'band_code': 'H', 'instr_code': 'N'},
-    'CMG-40T': {'instrtype': 'broadb', 'band_code': 'H', 'instr_code': 'H'},
-    'TRILLIUM': {'instrtype': 'broadb', 'band_code': 'H', 'instr_code': 'H'},
-    'S13J': {'instrtype': 'shortp', 'band_code': 'S', 'instr_code': 'H'},
-    'KS2000ED': {'instrtype': 'shortp', 'band_code': 'S', 'instr_code': 'H'},
-}
 
 
 def _add_instrtype(trace):
@@ -80,51 +72,14 @@ def _add_instrtype(trace):
             instrtype = 'broadb'
     if instr_code in instr_codes_acc:
         instrtype = 'acc'
-    # If, not possible, let's see if there is an instrument
-    # name in "kinst" (ISNet format).
-    # In this case, we define band and instrument codes a posteriori.
     if instrtype is None:
-        try:
-            codes = instruments[trace.stats.sac.kinst]
-            instrtype = codes['instrtype']
-            band_code = codes['band_code']
-            instr_code = codes['instr_code']
-        except AttributeError as e:
-            raise RuntimeError(
-                f'{trace.id}: cannot find instrtype for trace: '
-                'missing SAC header field "kinst": skipping trace'
-            ) from e
-        except KeyError as e:
-            raise RuntimeError(
-                f'{trace.id}: cannot find instrtype for trace: '
-                f'unknown instrument "{trace.stats.sac.kinst}": '
-                'skipping trace'
-            ) from e
+        # Let's see if there is an instrument name in SAC header (ISNet format)
+        # In this case, we define band and instrument codes a posteriori
+        instrtype, band_code, instr_code = get_instrument_from_SAC(trace)
         orientation = trace.stats.channel[-1]
         trace.stats.channel = ''.join((band_code, instr_code, orientation))
     trace.stats.instrtype = instrtype
     trace.stats.info = f'{trace.id} {trace.stats.instrtype}'
-
-
-def _compute_sensitivity(trace, config):
-    # Securize the string before calling eval()
-    # see https://stackoverflow.com/a/25437733/2021880
-    inp = re.sub(r'\.(?![0-9])', '', config.sensitivity)
-    # Check if string contains letters, meaning that
-    # it must contain SAC header fields and trace must be in SAC format
-    namespace = None
-    if re.search(r'[a-zA-Z]', inp):
-        try:
-            namespace = trace.stats.sac
-        except Exception as e:
-            raise TypeError(f'{trace.id}: trace must be in SAC format') from e
-    try:
-        sensitivity = eval(inp, {}, namespace)
-    except NameError as msg:
-        hdr_field = str(msg).split()[1]
-        logger.error(f'SAC header field {hdr_field} does not exist')
-        ssp_exit(1)
-    return sensitivity
 
 
 def _add_inventory(trace, inventory, config):
@@ -151,7 +106,7 @@ def _add_inventory(trace, inventory, config):
             coords = inv.get_coordinates(trace.id, trace.stats.starttime)
         paz = PAZ()
         paz.seedID = trace.id
-        paz.sensitivity = _compute_sensitivity(trace, config)
+        paz.sensitivity = compute_sensitivity_from_SAC(trace, config)
         paz.poles = []
         paz.zeros = []
         if inv:
@@ -223,21 +178,15 @@ def _add_coords(trace):
                 coords.longitude == 0 and coords.latitude == 0 and
                 coords.local_depth == 123456 and coords.elevation == 123456)
             else coords)
-    # If we still don't have trace coordinates,
-    # we try to get them from SAC header
     if coords is None:
-        try:
-            stla = trace.stats.sac.stla
-            stlo = trace.stats.sac.stlo
-            stel = trace.stats.sac.get('stel', 0.)
-            coords = AttribDict(latitude=stla, longitude=stlo, elevation=stel)
-            logger.info(
-                f'{trace.id}: station coordinates read from SAC header')
-        except Exception as e:
-            _add_coords.skipped.append(trace.id)
-            raise RuntimeError(
-                f'{trace.id}: could not find coords for trace: skipping trace'
-            ) from e
+        # If we still don't have trace coordinates,
+        # we try to get them from SAC header
+        coords = get_station_coordinates_from_SAC(trace)
+    if coords is None:
+        # Give up!
+        _add_coords.skipped.append(trace.id)
+        raise RuntimeError(
+            f'{trace.id}: could not find coords for trace: skipping trace')
     if coords.latitude == coords.longitude == 0:
         logger.warning(
             f'{trace.id}: trace has latitude and longitude equal to zero!')
@@ -248,89 +197,15 @@ def _add_coords(trace):
 _add_coords.skipped = []  #noqa
 
 
-def _get_hypo_from_SAC(trace):
-    """Get hypocenter information from SAC header."""
-    try:
-        sac_hdr = trace.stats.sac
-    except AttributeError as e:
-        raise RuntimeError(
-            f'{trace.id}: not a SAC trace: cannot get hypocenter from header'
-        ) from e
-    evla = sac_hdr['evla']
-    evlo = sac_hdr['evlo']
-    evdp = sac_hdr['evdp']
-    begin = sac_hdr['b']
-    starttime = trace.stats.starttime
-    try:
-        tori = sac_hdr['o']
-        origin_time = starttime + tori - begin
-        # make a copy of origin_time and round it to the nearest second
-        if origin_time.microsecond >= 500000:
-            evid_time = (origin_time + 1).replace(microsecond=0)
-        else:
-            evid_time = origin_time.replace(microsecond=0)
-    except Exception:
-        origin_time = None
-        # make a copy of starttime and round it to the nearest minute
-        if starttime.second >= 30:
-            evid_time = (starttime + 60).replace(second=0, microsecond=0)
-        else:
-            evid_time = starttime.replace(second=0, microsecond=0)
-    # create evid from origin time, it will be replaced by kevnm if available
-    evid = evid_time.strftime('%Y%m%d_%H%M%S')
-    kevnm = sac_hdr.get('kevnm', '').strip()
-    # Check if kevnm is not empty and does not contain spaces
-    # (if it has spaces, then kevnm is probably not an evid)
-    if kevnm and ' ' not in kevnm:
-        evid = kevnm
-    return AttribDict(
-        latitude=evla, longitude=evlo, depth=evdp, origin_time=origin_time,
-        evid=evid)
-
-
 def _add_hypocenter(trace, hypo=None):
     """Add hypocenter information to trace."""
     if hypo is None:
         # Try to get hypocenter information from the SAC header
         try:
-            hypo = _get_hypo_from_SAC(trace)
+            hypo = get_hypocenter_from_SAC(trace)
         except Exception:
             return
     trace.stats.hypo = hypo
-
-
-def _get_picks_from_SAC(trace):
-    """Get picks from SAC header."""
-    try:
-        sac_hdr = trace.stats.sac
-    except AttributeError as e:
-        raise RuntimeError(
-            f'{trace.id}: not a SAC trace: cannot get picks from header'
-        ) from e
-    trace_picks = []
-    pick_fields = (
-        'a', 't0', 't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9')
-    for field in pick_fields:
-        try:
-            time = sac_hdr[field]
-            begin = sac_hdr['b']
-        except KeyError:
-            continue
-        pick = Pick()
-        pick.station = trace.stats.station
-        pick.time = trace.stats.starttime + time - begin
-        # now look at labels (ka, kt0, ...)
-        try:
-            label = sac_hdr[f'k{field}'].strip()
-            pick.flag = label[0]
-            pick.phase = label[1]
-            pick.polarity = label[2]
-            pick.quality = label[3]
-        except Exception:
-            default_phases = {'a': 'P', 't0': 'S'}
-            pick.phase = default_phases.get(field, 'X')
-        trace_picks.append(pick)
-    return trace_picks
 
 
 def _add_picks(trace, picks=None):
@@ -339,7 +214,7 @@ def _add_picks(trace, picks=None):
         picks = []
     trace_picks = []
     with contextlib.suppress(Exception):
-        trace_picks = _get_picks_from_SAC(trace)
+        trace_picks = get_picks_from_SAC(trace)
     for pick in picks:
         if pick.station == trace.stats.station:
             trace_picks.append(pick)
