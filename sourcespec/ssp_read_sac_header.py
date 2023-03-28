@@ -146,13 +146,20 @@ def get_picks_from_SAC(trace):
         pick.station = trace.stats.station
         pick.time = trace.stats.starttime + time - begin
         # now look at labels (ka, kt0, ...)
-        try:
+        label = ''
+        with contextlib.suppress(Exception):
             label = sac_hdr[f'k{field}'].strip()
+        if len(label) == 4:
+            # label is something like 'IPU0' or 'ES 2'
             pick.flag = label[0]
             pick.phase = label[1]
             pick.polarity = label[2]
             pick.quality = label[3]
-        except Exception:
+        elif len(label) > 0:
+            # we assume that label starts with 'P' or 'S'
+            pick.phase = label[0]
+        else:
+            # no label, use default phase for field
             default_phases = {'a': 'P', 't0': 'S'}
             pick.phase = default_phases.get(field, 'X')
         trace_picks.append(pick)
