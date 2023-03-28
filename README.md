@@ -268,7 +268,9 @@ results**
 SourceSpec requires at least Python 3.6. All the required dependencies will be
 downloaded and installed during the setup process.
 
-### Using pip and PyPI (preferred method)
+### Installing the latest release
+
+#### Using pip and PyPI (preferred method)
 
 The latest release of SourceSpec is available on the
 [Python Package Index](https://pypi.org/project/sourcespec/).
@@ -277,7 +279,7 @@ You can install it easily through `pip`:
 
     pip install sourcespec
 
-### From SourceSpec GitHub releases
+#### From SourceSpec GitHub releases
 
 Download the latest release from the
 [releases page](https://github.com/SeismicSource/sourcespec/releases),
@@ -292,22 +294,45 @@ or
 Where, `X.Y` is the version number (e.g., `1.2`).
 You don't need to uncompress the release files yourself.
 
-### From SourceSpec GitHub repository
+### Installing a developer snapshot
 
 If you need a recent feature that is not in the latest release (see the
-`unreleased` section in [CHANGELOG](CHANGELOG.md)), you want to use the source
-code from the
+`unreleased` section in [CHANGELOG](CHANGELOG.md)), you want to use the more
+recent development snapshot from the
 [SourceSpec GitHub repository](https://github.com/SeismicSource/sourcespec).
 
-For that, clone the project:
+#### Using pip (preferred method)
+
+The easiest way to install the most recent development snapshot is to download
+and install it through `pip`, using its builtin `git` client:
+
+    pip install git+https://github.com/SeismicSource/sourcespec.git
+
+Run this command again, from times to times, to keep SourceSpec updated with
+the development version.
+
+### Cloning the SourceSpec GitHub repository
+
+If you want to take a look at the source code (and possibly modify it 😉),
+clone the project using `git`:
 
     git clone https://github.com/SeismicSource/sourcespec.git
 
-(avoid using the "Download ZIP" option from the green "Code" button, since
-version number is lost), then install the code from within the `sourcespec`
-main directory by running:
+or, using SSH:
 
-    pip install .
+    git clone git@github.com:SeismicSource/sourcespec.git
+
+(avoid using the "Download ZIP" option from the green "Code" button, since
+version number is lost).
+
+Then, go into the `sourcespec` main directory and install the code in "editable
+mode" by running:
+
+    pip install -e .
+
+You can keep your local SourceSpec repository updated by running `git pull`
+from times to times. Thanks to `pip`'s "editable mode", you don't need to
+reinstall SourceSpec after each update.
 
 ## Documentation
 
