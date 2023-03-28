@@ -213,10 +213,20 @@ def _make_basemap(config, maxdist):
     else:
         tile_zoom_level = 12 if maxdiagonal <= 100 else 8
         logger.info(f'Map zoom level autoset to: {tile_zoom_level}')
-    # Add the image twice, so that the CachedTiler has time to cache
-    # (avoids white tiles on map)
-    ax.add_image(stamen_terrain, tile_zoom_level)
-    ax.add_image(stamen_terrain, tile_zoom_level)
+    while True:
+        if tile_zoom_level == 0:
+            logger.warning('No map tiles found. Map will be blank.')
+            break
+        ax.add_image(stamen_terrain, tile_zoom_level)
+        try:
+            fig.canvas.draw()
+            break
+        except ValueError:
+            logger.warning(
+                f'No map tiles found for zoom level {tile_zoom_level}. '
+                f'Trying zoom level {tile_zoom_level-1}')
+            ax.img_factories = []
+            tile_zoom_level -= 1
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     # add coastlines from GSHHS
     res_map = {
