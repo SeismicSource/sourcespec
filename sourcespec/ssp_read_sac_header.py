@@ -113,13 +113,14 @@ def get_hypocenter_from_SAC(trace):
             evid_time = (starttime + 60).replace(second=0, microsecond=0)
         else:
             evid_time = starttime.replace(second=0, microsecond=0)
-    # create evid from origin time, it will be replaced by kevnm if available
-    evid = evid_time.strftime('%Y%m%d_%H%M%S')
-    kevnm = sac_hdr.get('kevnm', '').strip()
     # Check if kevnm is not empty and does not contain spaces
     # (if it has spaces, then kevnm is probably not an evid)
+    kevnm = sac_hdr.get('kevnm', '').strip()
     if kevnm and ' ' not in kevnm:
         evid = kevnm
+    else:
+        # create evid from origin time
+        evid = evid_time.strftime('%Y%m%d_%H%M%S')
     return AttribDict(
         latitude=evla, longitude=evlo, depth=evdp, origin_time=origin_time,
         evid=evid)
