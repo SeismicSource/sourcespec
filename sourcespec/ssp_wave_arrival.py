@@ -147,11 +147,16 @@ def _validate_pick(pick, theo_pick_time, tolerance, trace_id):
 
 
 def _get_theo_pick_time(trace, travel_time):
-    try:
-        theo_pick_time = trace.stats.hypo.origin_time + travel_time
-    except TypeError:
-        theo_pick_time = None
-    return theo_pick_time
+    if trace.stats.hypo.origin_time is None:
+        msg = (
+            f'{trace.id}: hypocenter origin time not set: '
+            'unable to compute theoretical pick time')
+        if msg not in _get_theo_pick_time.msg_cache:
+            _get_theo_pick_time.msg_cache.append(msg)
+            logger.warning(msg)
+        return None
+    return trace.stats.hypo.origin_time + travel_time
+_get_theo_pick_time.msg_cache = [] # noqa
 
 
 def _travel_time_from_pick(trace, pick_time):
@@ -196,20 +201,23 @@ def add_arrivals_to_trace(trace, config):
                 _wave_arrival(trace, phase, config)
             theo_pick_time = _get_theo_pick_time(trace, travel_time)
             pick_time = _find_picks(trace, phase, theo_pick_time, tolerance)
-        except RuntimeError:
+        except Exception as msg:
+            for line in str(msg).splitlines():
+                logger.warning(line)
             continue
         if pick_time is not None:
             logger.info(f'{trace.id}: found {phase} pick')
             travel_time = \
                 _travel_time_from_pick(trace, pick_time) or travel_time
             pick_phase = phase
-        elif theo_pick_time is not None:
+        else:
+            logger.info(f'{trace.id}: no {phase} pick found')
+            if theo_pick_time is None:
+                continue
             logger.info(
                 f'{trace.id}: using theoretical {phase} pick from {method}')
             pick_time = theo_pick_time
             pick_phase = f'{phase}theo'
-        else:
-            continue
         if config.rp_from_focal_mechanism:
             logger.info(
                 f'{trace.id}: {phase} takeoff angle: {takeoff_angle:.1f} '
