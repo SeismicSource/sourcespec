@@ -4,7 +4,6 @@
 # sphinx-quickstart on Fri Oct 25 17:47:32 2013.
 import sys
 import os
-from unittest.mock import MagicMock
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -13,10 +12,6 @@ sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.join(os.path.abspath('..'), 'sourcespec'))
 from sourcespec._version import get_versions #NOQA
 __version__ = get_versions()['version']
-
-from docs.mock_modules import MOCK_MODULES #NOQA
-# Mock modules which are not essential for the Sphinx environment
-sys.modules.update((mod_name, MagicMock()) for mod_name in MOCK_MODULES)
 
 # -- General configuration ----------------------------------------------------
 
@@ -39,6 +34,19 @@ extensions = [
     'sphinx_favicon',
     'sphinx_rtd_theme',
     'sphinxcontrib.bibtex',
+]
+autodoc_mock_imports = [
+    'matplotlib',
+    'mpl_toolkits',
+    'numpy',
+    'scipy',
+    'obspy',
+    'cartopy',
+    'pyproj',
+    'lxml',
+    'PIL',
+    'shapely',
+    'tzlocal'
 ]
 napoleon_use_param = True
 napoleon_preprocess_types = True

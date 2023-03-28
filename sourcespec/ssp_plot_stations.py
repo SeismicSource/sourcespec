@@ -32,12 +32,13 @@ import matplotlib.colors as colors
 import matplotlib.patheffects as PathEffects
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 logger = logging.getLogger(__name__.split('.')[-1])
-matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
-# Ignore Shapely deprecation warnings, since they depend on Cartopy
-warnings.filterwarnings('ignore', category=ShapelyDeprecationWarning)
+# The following code fails with Sphinx, so we need to ignore any exception
+with contextlib.suppress(Exception):
+    # Ignore Shapely deprecation warnings, since they depend on Cartopy
+    warnings.filterwarnings('ignore', category=ShapelyDeprecationWarning)
 
 
 # TODO:
@@ -433,6 +434,7 @@ def plot_stations(config, sspec_output):
     # Check config, if we need to plot at all
     if not config.plot_show and not config.plot_save:
         return
+    matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
     stationpar = sspec_output.station_parameters
     st_ids = sorted(stationpar.keys())
     lonlat_dist = np.array([

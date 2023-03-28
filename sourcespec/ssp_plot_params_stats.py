@@ -19,7 +19,6 @@ import logging
 
 from sourcespec._version import get_versions
 from sourcespec.savefig import savefig
-matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
 logger = logging.getLogger(__name__.split('.')[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')
@@ -38,6 +37,7 @@ def box_plots(config, sspec_output):
     # Check config, if we need to plot at all
     if not config.plot_show and not config.plot_save:
         return
+    matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
 
     plot_params = {
         'Mw': PlotParam('Mw', None, '#EE5835'),
