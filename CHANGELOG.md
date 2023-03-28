@@ -119,6 +119,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - HTML report: better scrollbars for station table across all the browsers
 - Fix for cropped map for very large station-to-event distances (greater
   than 500 km)
+- Fix a bug in generating evid form origin time when reading origin time from
+  SAC header and the number of seconds was 59
 - Fix `source_residuals`, which didn't work anymore
 
 ## v1.6 - 2022-08-02

@@ -265,17 +265,17 @@ def _get_hypo_from_SAC(trace):
         tori = sac_hdr['o']
         origin_time = starttime + tori - begin
         # make a copy of origin_time and round it to the nearest second
-        second = origin_time.second
         if origin_time.microsecond >= 500000:
-            second += 1
-        evid_time = origin_time.replace(second=second, microsecond=0)
+            evid_time = (origin_time + 1).replace(microsecond=0)
+        else:
+            evid_time = origin_time.replace(microsecond=0)
     except Exception:
         origin_time = None
         # make a copy of starttime and round it to the nearest minute
-        minute = starttime.minute
         if starttime.second >= 30:
-            minute += 1
-        evid_time = starttime.replace(minute=minute, second=0, microsecond=0)
+            evid_time = (starttime + 60).replace(second=0, microsecond=0)
+        else:
+            evid_time = starttime.replace(second=0, microsecond=0)
     # create evid from origin time, it will be replaced by kevnm if available
     evid = evid_time.strftime('%Y%m%d_%H%M%S')
     kevnm = sac_hdr.get('kevnm', '').strip()
