@@ -158,8 +158,7 @@ def _cut_signal_noise(config, trace):
     trace_noise = trace.copy()
 
     # Integrate in time domain, if required.
-    # (otherwise frequency-domain integration is
-    # performed later)
+    # (otherwise frequency-domain integration is performed later)
     if config.time_domain_int:
         _time_integrate(config, trace_signal)
         _time_integrate(config, trace_noise)
@@ -435,8 +434,9 @@ def _build_weight_from_noise(config, spec, specnoise):
     return weight
 
 
-def _build_weight_st(config, spec_st, specnoise_st):
-    """Build the weight spectrum."""
+def _build_weight_spectral_stream(config, spec_st, specnoise_st):
+    """Build a stream of weights from a stream of spectra and a stream of
+    noise spectra."""
     weight_st = Stream()
     spec_ids = {sp.id[:-1] for sp in spec_st if not sp.stats.ignore}
     for specid in spec_ids:
@@ -525,6 +525,61 @@ def _ignore_spectrum(msg, trace, spec, specnoise):
     specnoise.stats.ignore_reason = msg.reason
 
 
+def _build_signal_and_noise_streams(config, st):
+    """Build signal and noise streams."""
+    # remove traces with ignore flag
+    traces = Stream([tr for tr in st if not tr.stats.ignore])
+    signal_st = Stream()
+    noise_st = Stream()
+    for trace in sorted(traces, key=lambda tr: tr.id):
+        try:
+            _check_data_len(config, trace)
+            trace_signal, trace_noise = _cut_signal_noise(config, trace)
+            _check_noise_level(trace_signal, trace_noise, config)
+            signal_st.append(trace_signal)
+            noise_st.append(trace_noise)
+        except RuntimeError as msg:
+            # RuntimeError is for skipped traces
+            logger.warning(msg)
+            continue
+    return signal_st, noise_st
+
+
+def _build_signal_and_noise_spectral_streams(config, signal_st, noise_st):
+    """Build signal and noise spectral streams."""
+    spec_st = Stream()
+    specnoise_st = Stream()
+    for trace_signal in sorted(signal_st, key=lambda tr: tr.id):
+        trace_noise = noise_st.select(id=trace_signal.id)[0]
+        try:
+            spec = _build_spectrum(config, trace_signal)
+            specnoise = _build_spectrum(config, trace_noise)
+            _check_spectral_sn_ratio(config, spec, specnoise)
+        except RuntimeError as msg:
+            # RuntimeError is for skipped spectra
+            logger.warning(msg)
+            continue
+        except SpectrumIgnored as msg:
+            _ignore_spectrum(msg, trace_signal, spec, specnoise)
+        spec_st.append(spec)
+        specnoise_st.append(specnoise)
+    if not spec_st:
+        logger.error('No spectra left! Exiting.')
+        ssp_exit()
+    # build H component
+    _build_H(
+        spec_st, specnoise_st, config.vertical_channel_codes, config.wave_type)
+    # convert the spectral amplitudes to moment magnitude
+    for spec in spec_st:
+        spec.data_mag = moment_to_mag(spec.data)
+        spec.data_log_mag = moment_to_mag(spec.data_log)
+    for specnoise in specnoise_st:
+        specnoise.data_mag = moment_to_mag(specnoise.data)
+    # apply station correction if a residual file is specified in config
+    spec_st = station_correction(spec_st, config)
+    return spec_st, specnoise_st
+
+
 def build_spectra(config, st):
     """
     Build spectra and the ``spec_st`` object.
@@ -534,48 +589,9 @@ def build_spectra(config, st):
     corrected for instrumental constants, normalized by geometrical spreading.
     """
     logger.info('Building spectra...')
-    spec_st = Stream()
-    specnoise_st = Stream()
-
-    traces = [tr for tr in st if not tr.stats.ignore]
-    # sort by trace id
-    for trace in sorted(traces, key=lambda tr: tr.id):
-        try:
-            _check_data_len(config, trace)
-            trace_signal, trace_noise = _cut_signal_noise(config, trace)
-            _check_noise_level(trace_signal, trace_noise, config)
-            spec = _build_spectrum(config, trace_signal)
-            specnoise = _build_spectrum(config, trace_noise)
-            _check_spectral_sn_ratio(config, spec, specnoise)
-        except RuntimeError as msg:
-            # RuntimeError is for skipped spectra
-            logger.warning(msg)
-            continue
-        except SpectrumIgnored as msg:
-            _ignore_spectrum(msg, trace, spec, specnoise)
-        spec_st.append(spec)
-        specnoise_st.append(specnoise)
-
-    if not spec_st:
-        logger.error('No spectra left! Exiting.')
-        ssp_exit()
-
-    # build H component
-    _build_H(
-        spec_st, specnoise_st, config.vertical_channel_codes, config.wave_type)
-
-    # convert the spectral amplitudes to moment magnitude
-    for spec in spec_st:
-        spec.data_mag = moment_to_mag(spec.data)
-        spec.data_log_mag = moment_to_mag(spec.data_log)
-
-    # apply station correction if a residual file is specified in config
-    spec_st = station_correction(spec_st, config)
-
-    # build the weight spectrum
-    weight_st = _build_weight_st(config, spec_st, specnoise_st)
-
+    signal_st, noise_st = _build_signal_and_noise_streams(config, st)
+    spec_st, specnoise_st = \
+        _build_signal_and_noise_spectral_streams(config, signal_st, noise_st)
+    weight_st = _build_weight_spectral_stream(config, spec_st, specnoise_st)
     logger.info('Building spectra: done')
-    for specnoise in specnoise_st:
-        specnoise.data_mag = moment_to_mag(specnoise.data)
     return spec_st, specnoise_st, weight_st
