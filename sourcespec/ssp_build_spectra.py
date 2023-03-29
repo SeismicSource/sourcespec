@@ -192,6 +192,8 @@ def _cut_signal_noise(config, trace):
         if config.weighting == 'noise':
             msg = f'{tr_noise_id}: truncating signal window to noise length!'
             trace_signal.data = trace_signal.data[:npts]
+            # recompute signal window end time, so that it's plotted correctly
+            _recompute_time_window(trace, config.wave_type[0], npts)
         else:
             msg = f'{tr_noise_id}: zero-padding noise window to signal length'
             # Notes:
@@ -203,6 +205,9 @@ def _cut_signal_noise(config, trace):
             #    symmetric padding (tested)
             pad_len = len(trace_signal) - len(trace_noise)
             trace_noise.data = np.pad(trace_noise.data, (0, pad_len))
+            # recompute noise window start time, so that it's plotted correctly
+            _recompute_time_window(
+                trace, 'N', len(trace_signal), from_start=True)
         logger.warning(msg)
 
     # ...and zero pad to spectral_win_length
@@ -217,6 +222,20 @@ def _cut_signal_noise(config, trace):
                          fill_value=0)
 
     return trace_signal, trace_noise
+
+
+def _recompute_time_window(trace, wave_type, npts, from_start=False):
+    """Recompute start or end time of signal or noise window,
+    based on new number of points"""
+    length = npts * trace.stats.delta
+    if from_start:
+        label, _ = trace.stats.arrivals[f'{wave_type}1']
+        t1 = trace.stats.arrivals[f'{wave_type}2'][1] - length
+        trace.stats.arrivals[f'{wave_type}1'] = (label, t1)
+    else:
+        label, _ = trace.stats.arrivals[f'{wave_type}2']
+        t2 = trace.stats.arrivals[f'{wave_type}1'][1] + length
+        trace.stats.arrivals[f'{wave_type}2'] = (label, t2)
 
 
 def _check_noise_level(trace_signal, trace_noise, config):
@@ -559,6 +578,9 @@ def _build_signal_and_noise_streams(config, st):
                 tr.data = tr.data[:npts]
             elif tr.stats.type == 'noise':
                 tr.data = tr.data[-npts:]
+        for tr in st.select(id=f'{id}*'):
+            _recompute_time_window(tr, config.wave_type[0], npts)
+            _recompute_time_window(tr, 'N', npts, from_start=True)
     return signal_st, noise_st
 
 
