@@ -188,6 +188,25 @@ def _add_title(hypo, ax):
         ha='left', va='top', linespacing=1.5, transform=ax.transAxes)
 
 
+def _draw_tiles(ax):
+    """
+    Draw map tiles to check if they exist.
+
+    Raises a ValueError if tiles are not available.
+    """
+    fig = ax.get_figure()
+    fig.canvas.draw()
+    # the first time this function is executed, sleep to allow the tiles
+    # to be cached, then re-read the tiles
+    if not _draw_tiles.has_slept:
+        _draw_tiles.has_slept = True
+        time.sleep(1.)
+        stamen_terrain, tile_zoom_level, _ = ax.img_factories.pop()
+        ax.add_image(stamen_terrain, tile_zoom_level)
+        fig.canvas.draw()
+_draw_tiles.has_slept = False # noqa
+
+
 def _add_tiles(config, ax, stamen_terrain):
     """Add map tiles to basemap."""
     if config.plot_map_tiles_zoom_level:
@@ -195,19 +214,14 @@ def _add_tiles(config, ax, stamen_terrain):
     else:
         tile_zoom_level = 12 if ax.maxdiagonal <= 100 else 8
         logger.info(f'Map zoom level autoset to: {tile_zoom_level}')
-    fig = ax.get_figure()
     while True:
         if tile_zoom_level == 0:
             logger.warning('No map tiles found. Map will be blank.')
             break
         ax.add_image(stamen_terrain, tile_zoom_level)
         try:
-            fig.canvas.draw()
-            # sleep to allow the tiles to be cached, then readd the tiles
-            time.sleep(1.)
-            ax.img_factories = []
-            ax.add_image(stamen_terrain, tile_zoom_level)
-            fig.canvas.draw()
+            # draw tiles to check if they exist
+            _draw_tiles(ax)
             break
         except ValueError:
             logger.warning(
