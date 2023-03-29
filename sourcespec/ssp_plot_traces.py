@@ -13,6 +13,7 @@ import os
 import contextlib
 import numpy as np
 import logging
+from obspy.core import Stream
 from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
 import matplotlib
@@ -348,19 +349,22 @@ def plot_traces(config, st, ncols=None, block=True):
     if config.plot_traces_ignored:
         stalist = sorted({(tr.stats.hypo_dist, tr.id[:-1]) for tr in st})
     else:
-        stalist = sorted(
-            {
-                (tr.stats.hypo_dist, tr.id[:-1])
-                for tr in st
-                if not tr.stats.ignore
-            }
-        )
-    for t in stalist:
-        plotn += 1
-        _, traceid = t
-        # 'code' is band+instrument code
+        stalist = sorted({
+            (tr.stats.hypo_dist, tr.id[:-1])
+            for tr in st
+            if not tr.stats.ignore
+        })
+    for _, traceid in stalist:
+        # select traces with same band+instrument code
         network, station, location, code = traceid.split('.')
-        st_sel = st.select(network=network, station=station, location=location)
+        st_sel = st.select(
+            network=network, station=station, location=location,
+            channel=f'{code}*')
+        if not config.plot_traces_ignored:
+            st_sel = Stream(tr for tr in st_sel if not tr.stats.ignore)
+        if not st_sel:
+            continue
+        plotn += 1
         if plotn > nlines*ncols:
             _set_ylim(axes)
             _add_labels(axes, plotn-1, ncols)
@@ -369,11 +373,12 @@ def plot_traces(config, st, ncols=None, block=True):
             plotn = 1
         ax = axes[plotn-1]
         if config.trace_units == 'auto':
-            instrtype = [t.stats.instrtype for t in st_sel.traces
-                         if t.stats.channel[:-1] == code][0]
+            instrtype = [
+                t.stats.instrtype for t in st_sel.traces
+                if t.stats.channel[:-1] == code][0]
         else:
             instrtype = config.trace_units
-        if instrtype == 'acc':
+        if instrtype in ['acc']:
             ax.set_ylabel(u'Acceleration (m/s²)', fontsize=8, labelpad=0)
         elif instrtype in ['broadb', 'shortp', 'vel']:
             ax.set_ylabel('Velocity (m/s)', fontsize=8, labelpad=0)
@@ -381,22 +386,17 @@ def plot_traces(config, st, ncols=None, block=True):
             ax.set_ylabel('Displacement (m)', fontsize=8, labelpad=0)
         # Custom transformation for plotting phase labels:
         # x coords are data, y coords are axes
-        trans = transforms.blended_transform_factory(ax.transData,
-                                                     ax.transAxes)
-        trans2 = transforms.blended_transform_factory(ax.transAxes,
-                                                      ax.transData)
+        trans =\
+            transforms.blended_transform_factory(ax.transData, ax.transAxes)
+        trans2 =\
+            transforms.blended_transform_factory(ax.transAxes, ax.transData)
         trans3 = transforms.offset_copy(trans2, fig=fig, x=0, y=0.1)
 
         _trim_traces(config, st_sel)
-        maxes = [abs(t.max()) for t in st_sel.traces
-                 if t.stats.channel[:-1] == code]
-        ntraces = len(maxes)
-        tmax = max(maxes)
-        for trace in st_sel.traces:
-            if trace.stats.channel[:-1] != code:
-                continue
-            if not config.plot_traces_ignored and trace.stats.ignore:
-                continue
+        max_values = [abs(tr.max()) for tr in st_sel]
+        ntraces = len(max_values)
+        tmax = max(max_values)
+        for trace in st_sel:
             _plot_trace(
                 config, trace, ntraces, tmax, ax, trans, trans3, path_effects)
 
