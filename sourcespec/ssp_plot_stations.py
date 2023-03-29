@@ -175,7 +175,82 @@ def _plot_hypo(ax, hypo):
         )
 
 
+def _add_title(hypo, ax):
+    """Add event information as plot title."""
+    textstr = (
+        f'evid: {hypo.evid} \nlon: {hypo.longitude:.3f} '
+        f'lat: {hypo.latitude:.3f} depth: {hypo.depth:.1f} km'
+    )
+    with contextlib.suppress(AttributeError):
+        textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
+    ax.text(
+        0., 1.15, textstr, fontsize=10,
+        ha='left', va='top', linespacing=1.5, transform=ax.transAxes)
+
+
+def _add_tiles(config, ax, stamen_terrain):
+    """Add map tiles to basemap."""
+    if config.plot_map_tiles_zoom_level:
+        tile_zoom_level = config.plot_map_tiles_zoom_level
+    else:
+        tile_zoom_level = 12 if ax.maxdiagonal <= 100 else 8
+        logger.info(f'Map zoom level autoset to: {tile_zoom_level}')
+    fig = ax.get_figure()
+    while True:
+        if tile_zoom_level == 0:
+            logger.warning('No map tiles found. Map will be blank.')
+            break
+        ax.add_image(stamen_terrain, tile_zoom_level)
+        try:
+            fig.canvas.draw()
+            # sleep to allow the tiles to be cached, then readd the tiles
+            time.sleep(1.)
+            ax.img_factories = []
+            ax.add_image(stamen_terrain, tile_zoom_level)
+            fig.canvas.draw()
+            break
+        except ValueError:
+            logger.warning(
+                f'No map tiles found for zoom level {tile_zoom_level}. '
+                f'Trying zoom level {tile_zoom_level-1}')
+            ax.img_factories = []
+            tile_zoom_level -= 1
+
+
+def _add_coastlines(config, ax):
+    """Add coastlines and borders to basemap."""
+    # add coastlines from GSHHS
+    res_map = {
+        'full': 'f',
+        'high': 'h',
+        'intermediate': 'i',
+        'low': 'l',
+        'crude': 'c'
+    }
+    inv_res_map = {v: k for k, v in res_map.items()}
+    if config.plot_coastline_resolution:
+        coastline_resolution = res_map[config.plot_coastline_resolution]
+    else:
+        coastline_resolution = 'h' if ax.maxdiagonal <= 100 else 'i'
+        logger.info(
+            'Coastline resolution autoset to: '
+            f'{inv_res_map[coastline_resolution]}'
+        )
+    shpfile = shpreader.gshhs(coastline_resolution)
+    shp = shpreader.Reader(shpfile)
+    with warnings.catch_warnings():
+        # silent a warning on:
+        # "Shapefile shape has invalid polygon: no exterior rings found"
+        warnings.simplefilter('ignore')
+        ax.add_geometries(
+            shp.geometries(), ccrs.PlateCarree(),
+            edgecolor='black', facecolor='none')
+    ax.add_feature(cfeature.BORDERS, edgecolor='black', facecolor='none')
+
+
 def _make_basemap(config, maxdist):
+    """Create basemap with tiles, coastlines, hypocenter
+    and distance circles."""
     g = Geod(ellps='WGS84')
     hypo = config.hypo
     # increase bounding box for large maxdist,
@@ -197,70 +272,12 @@ def _make_basemap(config, maxdist):
         dpi = 200
     fig = plt.figure(figsize=figsize, dpi=dpi)
     ax = fig.add_subplot(111, projection=stamen_terrain.crs)
-    # Add event information as a title
-    textstr = (
-        f'evid: {hypo.evid} \nlon: {hypo.longitude:.3f} '
-        f'lat: {hypo.latitude:.3f} depth: {hypo.depth:.1f} km'
-    )
-    with contextlib.suppress(AttributeError):
-        textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
-    ax.text(
-        0., 1.15, textstr, fontsize=10,
-        ha='left', va='top', linespacing=1.5, transform=ax.transAxes)
-    trans = ccrs.Geodetic()
-    ax.set_extent([lonmin, lonmax, latmin, latmax], crs=trans)
-    if config.plot_map_tiles_zoom_level:
-        tile_zoom_level = config.plot_map_tiles_zoom_level
-    else:
-        tile_zoom_level = 12 if maxdiagonal <= 100 else 8
-        logger.info(f'Map zoom level autoset to: {tile_zoom_level}')
-    while True:
-        if tile_zoom_level == 0:
-            logger.warning('No map tiles found. Map will be blank.')
-            break
-        ax.add_image(stamen_terrain, tile_zoom_level)
-        try:
-            fig.canvas.draw()
-            # sleep to allow the tiles to be cached, then readd the tiles
-            time.sleep(1.)
-            ax.img_factories = []
-            ax.add_image(stamen_terrain, tile_zoom_level)
-            fig.canvas.draw()
-            break
-        except ValueError:
-            logger.warning(
-                f'No map tiles found for zoom level {tile_zoom_level}. '
-                f'Trying zoom level {tile_zoom_level-1}')
-            ax.img_factories = []
-            tile_zoom_level -= 1
+    ax.set_extent([lonmin, lonmax, latmin, latmax], crs=ccrs.Geodetic())
+    ax.maxdiagonal = maxdiagonal
+    _add_title(hypo, ax)
+    _add_tiles(config, ax, stamen_terrain)
+    _add_coastlines(config, ax)
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
-    # add coastlines from GSHHS
-    res_map = {
-        'full': 'f',
-        'high': 'h',
-        'intermediate': 'i',
-        'low': 'l',
-        'crude': 'c'
-    }
-    inv_res_map = {v: k for k, v in res_map.items()}
-    if config.plot_coastline_resolution:
-        coastline_resolution = res_map[config.plot_coastline_resolution]
-    else:
-        coastline_resolution = 'h' if maxdiagonal <= 100 else 'i'
-        logger.info(
-            'Coastline resolution autoset to: '
-            f'{inv_res_map[coastline_resolution]}'
-        )
-    shpfile = shpreader.gshhs(coastline_resolution)
-    shp = shpreader.Reader(shpfile)
-    with warnings.catch_warnings():
-        # silent a warning on:
-        # "Shapefile shape has invalid polygon: no exterior rings found"
-        warnings.simplefilter('ignore')
-        ax.add_geometries(
-            shp.geometries(), ccrs.PlateCarree(),
-            edgecolor='black', facecolor='none')
-    ax.add_feature(cfeature.BORDERS, edgecolor='black', facecolor='none')
     circle_texts = _plot_circles(ax, hypo.longitude, hypo.latitude, maxdist, 5)
     _plot_hypo(ax, hypo)
     return ax, circle_texts
