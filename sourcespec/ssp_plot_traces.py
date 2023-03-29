@@ -219,14 +219,15 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
             rectangle_patch_height = 1./3
     # dim out ignored traces
     alpha = 0.3 if trace.stats.ignore else 1.0
+    times = trace.times() + trace.stats.time_offset
     if config.plot_save_format == 'png':
         ax.plot(
-            trace.times(), trace, linewidth=1, color=color,
+            times, trace.data, linewidth=1, color=color,
             alpha=alpha, zorder=20, rasterized=True)
     else:
         # reduce the number of points to plot for vector formats
         _plot_min_max(
-            ax, trace.times(), trace.data, linewidth=1, color=color,
+            ax, times, trace.data, linewidth=1, color=color,
             alpha=alpha, zorder=20)
     ax.text(0.05, trace.data.mean(), trace.stats.channel,
             fontsize=8, color=color, transform=trans3, zorder=22,
@@ -235,8 +236,9 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
     ax.text(0.95, trace.data.mean(), _text, ha='right',
             fontsize=8, color=color, transform=trans3, zorder=22,
             path_effects=path_effects)
+    starttime = trace.stats.starttime - trace.stats.time_offset
     for phase in 'P', 'S':
-        a = trace.stats.arrivals[phase][1] - trace.stats.starttime
+        a = trace.stats.arrivals[phase][1] - starttime
         text = trace.stats.arrivals[phase][0]
         ax.axvline(a, linestyle='--',
                    color=phase_label_color[phase], zorder=21)
@@ -245,8 +247,8 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
                 zorder=22, path_effects=path_effects)
     # Noise window
     with contextlib.suppress(KeyError):
-        N1 = trace.stats.arrivals['N1'][1] - trace.stats.starttime
-        N2 = trace.stats.arrivals['N2'][1] - trace.stats.starttime
+        N1 = trace.stats.arrivals['N1'][1] - starttime
+        N2 = trace.stats.arrivals['N2'][1] - starttime
         rect = patches.Rectangle(
             (N1, rectangle_patch_origin),
             width=N2-N1, height=rectangle_patch_height,
@@ -255,11 +257,11 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
         ax.add_patch(rect)
     # Signal window
     if config.wave_type[0] == 'S':
-        t1 = trace.stats.arrivals['S1'][1] - trace.stats.starttime
-        t2 = trace.stats.arrivals['S2'][1] - trace.stats.starttime
+        t1 = trace.stats.arrivals['S1'][1] - starttime
+        t2 = trace.stats.arrivals['S2'][1] - starttime
     elif config.wave_type[0] == 'P':
-        t1 = trace.stats.arrivals['P1'][1] - trace.stats.starttime
-        t2 = trace.stats.arrivals['P2'][1] - trace.stats.starttime
+        t1 = trace.stats.arrivals['P1'][1] - starttime
+        t2 = trace.stats.arrivals['P2'][1] - starttime
     rect = patches.Rectangle(
         (t1, rectangle_patch_origin),
         width=t2-t1, height=rectangle_patch_height,
@@ -320,6 +322,10 @@ def _trim_traces(config, st):
         t1 = (trace.stats.arrivals['P'][1] - config.noise_pre_time)
         t2 = (trace.stats.arrivals['S'][1] + 3 * config.win_length)
         trace.trim(starttime=t1, endtime=t2)
+    # compute time offset for correctly aligning traces when plotting
+    min_starttime = min(tr.stats.starttime for tr in st)
+    for trace in st:
+        trace.stats.time_offset = trace.stats.starttime - min_starttime
 
 
 def plot_traces(config, st, ncols=None, block=True):
