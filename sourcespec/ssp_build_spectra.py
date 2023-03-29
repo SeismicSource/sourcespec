@@ -171,11 +171,13 @@ def _cut_signal_noise(config, trace):
         t1 = trace.stats.arrivals['P1'][1]
         t2 = trace.stats.arrivals['P2'][1]
     trace_signal.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
+    trace_signal.stats.type = 'signal'
     # Noise time window for weighting function:
     noise_t1 = trace.stats.arrivals['N1'][1]
     noise_t2 = trace.stats.arrivals['N2'][1]
-    trace_noise.trim(starttime=noise_t1, endtime=noise_t2, pad=True,
-                     fill_value=0)
+    trace_noise.trim(
+        starttime=noise_t1, endtime=noise_t2, pad=True, fill_value=0)
+    trace_noise.stats.type = 'noise'
     # ...taper...
     cosine_taper(trace_signal.data, width=config.taper_halfwidth)
     cosine_taper(trace_noise.data, width=config.taper_halfwidth)
@@ -188,10 +190,10 @@ def _cut_signal_noise(config, trace):
     else:
         tr_noise_id = trace_noise.get_id()[:-1]
         if config.weighting == 'noise':
-            msg = f'{tr_noise_id}: Truncating signal window to noise length!'
+            msg = f'{tr_noise_id}: truncating signal window to noise length!'
             trace_signal.data = trace_signal.data[:npts]
         else:
-            msg = f'{tr_noise_id}: Zero-padding noise window to signal length'
+            msg = f'{tr_noise_id}: zero-padding noise window to signal length'
             # Notes:
             # 1. no risk of ringing, as noise has been tapered
             # 2. we use np.pad instead of obspy trim method
@@ -542,6 +544,21 @@ def _build_signal_and_noise_streams(config, st):
             # RuntimeError is for skipped traces
             logger.warning(msg)
             continue
+    # trim components of the same instrument to the same number of samples
+    for id in sorted({tr.id[:-1] for tr in signal_st}):
+        st_sel = signal_st.select(id=f'{id}*') + noise_st.select(id=f'{id}*')
+        all_npts = {tr.stats.npts for tr in st_sel}
+        if len(all_npts) == 1:
+            continue
+        logger.warning(
+            f'{id}: components have different window lengths. '
+            'Trimming signal and noise windows to the shortest one')
+        npts = min(all_npts)
+        for tr in st_sel:
+            if tr.stats.type == 'signal':
+                tr.data = tr.data[:npts]
+            elif tr.stats.type == 'noise':
+                tr.data = tr.data[-npts:]
     return signal_st, noise_st
 
 
