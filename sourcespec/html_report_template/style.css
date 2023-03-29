@@ -448,6 +448,9 @@ a.article:hover {
   .box_plot {
     max-width: 60%;
   }
+  .stacked_spectra {
+    max-width: 60%;
+  }
   .text_footer {
     font-size: 0.8em;
     position: fixed;
