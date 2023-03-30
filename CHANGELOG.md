@@ -51,8 +51,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
   (see pull request [#18]):
   - Generate error if signal window is incomplete (P- or S-arrival
     before the start time of the trace)
-  - Generate error if noise window overlaps with P-window (instead
-    of S-window, as in previous versions)
+  - Warn if noise window overlaps with P-window (instead of S-window, as in
+    previous versions)
   - Constrain `signal_pre_time` for S-phase to half the S-P interval, if this
     interval is shorter than `signal_pre_time` (i.e., for short-distance
     records with short S-P interval)
