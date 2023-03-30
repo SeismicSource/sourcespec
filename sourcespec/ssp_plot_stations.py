@@ -200,7 +200,7 @@ def _draw_tiles(ax):
     # to be cached, then re-read the tiles
     if not _draw_tiles.has_slept:
         _draw_tiles.has_slept = True
-        time.sleep(1.)
+        time.sleep(3.)
         stamen_terrain, tile_zoom_level, _ = ax.img_factories.pop()
         ax.add_image(stamen_terrain, tile_zoom_level)
         fig.canvas.draw()
