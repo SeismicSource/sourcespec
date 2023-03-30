@@ -24,6 +24,7 @@ import signal
 import uuid
 import json
 import contextlib
+import warnings
 from datetime import datetime
 from collections import defaultdict
 from sourcespec.configobj import ConfigObj
@@ -84,6 +85,69 @@ def _check_obspy_version():
         sys.exit(1)
 
 
+def _cartopy_download_gshhs():
+    """
+    Download GSHHS data for cartopy.
+    """
+    from cartopy.io.shapereader import GSHHSShpDownloader as Downloader
+    from cartopy import config as cartopy_config
+    from pathlib import Path
+    gshhs_downloader = Downloader.from_config(('shapefiles', 'gshhs'))
+    format_dict = {'config': cartopy_config, 'scale': 'f', 'level': 1}
+    target_path = gshhs_downloader.target_path(format_dict)
+    if not os.path.exists(target_path):
+        sys.stdout.write(
+            'Downloading GSHHS data for cartopy.\n'
+            'This is needed only the first time you use cartopy and may take '
+            'a while...\n')
+        sys.stdout.flush()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            try:
+                path = gshhs_downloader.path(format_dict)
+            except Exception:
+                sys.stderr.write(
+                    '\nUnable to download data. '
+                    'Check your internet connection.\n')
+                sys.exit(1)
+        sys.stdout.write(f'Done! Data cached to {Path(path).parents[1]}\n\n')
+
+
+def _cartopy_download_borders():
+    """
+    Download borders data for cartopy.
+
+    Inspired from
+    https://github.com/SciTools/cartopy/blob/main/tools/cartopy_feature_download.py
+    """
+    from cartopy.io import Downloader
+    from cartopy import config as cartopy_config
+    from pathlib import Path
+    category = 'cultural'
+    name = 'admin_0_boundary_lines_land'
+    scale = '10m'
+    downloader = Downloader.from_config((
+        'shapefiles', 'natural_earth', category, name, scale))
+    format_dict = {
+        'config': cartopy_config, 'category': category, 'name': name,
+        'resolution': scale}
+    target_path = downloader.target_path(format_dict)
+    if not os.path.exists(target_path):
+        sys.stdout.write(
+            'Downloading border data for cartopy...\n')
+        sys.stdout.flush()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            try:
+                path = downloader.path(format_dict)
+            except Exception:
+                sys.stderr.write(
+                    '\nUnable to download data. '
+                    'Check your internet connection.\n')
+                sys.exit(1)
+        sys.stdout.write(f'Done! Data cached to {Path(path).parents[0]}\n\n')
+
+
 def _check_cartopy_version():
     cartopy_min_ver = (0, 18, 0)
     try:
@@ -94,6 +158,8 @@ def _check_cartopy_version():
         cartopy_ver = tuple(map(int, cartopy.__version__.split('.')[:3]))
         if cartopy_ver < cartopy_min_ver:
             raise ImportError
+        _cartopy_download_gshhs()
+        _cartopy_download_borders()
     except ImportError as e:
         cartopy_min_ver_str = '.'.join(map(str, cartopy_min_ver))
         msg = (
