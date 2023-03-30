@@ -312,7 +312,10 @@ Here is the default config file, generated through ``source_spec -S``::
             if '=' in line and line[0] != '#':
                 key, val = line.split(' = ')
                 val = val.split('default=')[1]
-                val = val.replace(')', '').replace("'", '')
+                # remove the word "list" from val
+                val = val.replace('list', '')
+                # remove single quotes and parentheses from val
+                val = val.replace("'", '').replace('(', '').replace(')', '')
                 line = f'{key} = {val}'
             fp.write(f'  {line}')
 

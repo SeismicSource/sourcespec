@@ -104,6 +104,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
   signals:
   - `bp_freqmin_disp`, `bp_freqmax_disp`
   - `freq1_disp`, `freq2_disp`
+- Default values for `t_star_min_max` (instead of `None`)
 
 ### Code improvements
 
