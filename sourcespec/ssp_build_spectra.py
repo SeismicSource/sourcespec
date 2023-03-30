@@ -516,6 +516,7 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
     weight = _build_weight_from_noise(config, spec, specnoise)
     # if no noise window is available, snratio is not computed
     if weight.snratio is None:
+        spec.stats.spectral_snratio = None
         return
     if config.spectral_sn_freq_range is not None:
         sn_fmin, sn_fmax = config.spectral_sn_freq_range
