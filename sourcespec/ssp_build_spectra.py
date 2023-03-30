@@ -399,6 +399,7 @@ def _build_spectrum(config, trace):
 
 def _build_uniform_weight(spec):
     weight = spec.copy()
+    weight.snratio = None
     weight.data = np.ones_like(weight.data)
     weight.data_log = np.ones_like(weight.data_log)
     return weight
@@ -420,8 +421,8 @@ def _build_weight_from_frequency(config, spec):
 def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
     weight = spec.copy()
     weight.data /= specnoise.data
-    # save data to raw_data
-    weight.data_raw = weight.data.copy()
+    # save signal-to-noise ratio before log10, smoothing, and normalization
+    weight.snratio = weight.data.copy()
     # The inversion is done in magnitude units,
     # so let's take log10 of weight
     weight.data = np.log10(weight.data)
@@ -513,14 +514,17 @@ def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
 
 def _check_spectral_sn_ratio(config, spec, specnoise):
     weight = _build_weight_from_noise(config, spec, specnoise)
+    # if no noise window is available, snratio is not computed
+    if weight.snratio is None:
+        return
     if config.spectral_sn_freq_range is not None:
         sn_fmin, sn_fmax = config.spectral_sn_freq_range
         freqs = weight.get_freq()
         idx = np.where((sn_fmin <= freqs)*(freqs <= sn_fmax))
     else:
-        idx = range(len(weight.data_raw))
+        idx = range(len(weight.snratio))
     spectral_snratio =\
-        weight.data_raw[idx].sum()/len(weight.data_raw[idx])
+        weight.snratio[idx].sum()/len(weight.snratio[idx])
     spec.stats.spectral_snratio = spectral_snratio
     spec_id = spec.get_id()
     logger.info(
