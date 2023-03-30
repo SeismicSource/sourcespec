@@ -304,9 +304,6 @@ Configuration file (default name: ``source_spec.conf``) is a plain text file
 with keys and values in the form ``key = value``.
 Comment lines start with ``#``.
 
-Some fields are comma-separated lists: even if only one element is specified,
-a comma is always required (e.g., ``ignore_stations = STA01,``).
-
 Here is the default config file, generated through ``source_spec -S``::
 
 ''')
