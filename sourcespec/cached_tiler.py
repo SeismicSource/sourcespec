@@ -15,6 +15,8 @@ import types
 import requests
 import PIL
 import logging
+import numpy as np
+from cartopy.io.img_tiles import _merge_tiles
 logger = logging.getLogger(__name__.split('.')[-1])
 logging.getLogger('PIL').setLevel(logging.WARNING)
 logging.getLogger('requests').setLevel(logging.WARNING)
@@ -38,6 +40,21 @@ class CachedTiler(object):
         if isinstance(attr, types.MethodType):
             attr = types.MethodType(attr.__func__, self)
         return attr
+
+    def image_for_domain(self, target_domain, target_z):
+        """A non-parallelized version of image_for_domain."""
+        tiles = []
+        for tile in self.tiler.find_images(target_domain, target_z):
+            try:
+                img, extent, origin = self.get_image(tile)
+            except IOError:
+                continue
+            img = np.array(img)
+            x = np.linspace(extent[0], extent[1], img.shape[1])
+            y = np.linspace(extent[2], extent[3], img.shape[0])
+            tiles.append([img, x, y, origin])
+        img, extent, origin = _merge_tiles(tiles)
+        return img, extent, origin
 
     def get_image(self, tile):
         """Only download a tile if it is not cached."""
