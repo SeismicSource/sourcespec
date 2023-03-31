@@ -1,5 +1,7 @@
 @import "https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700";
 
+html, body{ height:100% };
+
 body {
   font-family: 'Poppins', sans-serif;
   background: #fff;
@@ -441,6 +443,7 @@ a.article:hover {
     height: auto;
     overflow: visible;
     white-space: normal;
+    font-size: 0.8em;
   }
   .station_map {
     max-width: 70%;
