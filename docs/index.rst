@@ -6,6 +6,9 @@
 SourceSpec documentation
 ========================
 
+Earthquake source parameters from P- or S-wave displacement spectra
+
+:Copyright: 2011-2023 Claudio Satriano satriano@ipgp.fr
 :Release: |release|
 :Date:    |today|
 
