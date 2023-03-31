@@ -123,6 +123,8 @@ Earthquake source parameters from P- or S-wave displacement spectra
 - Fix a bug in generating evid form origin time when reading origin time from
   SAC header and the number of seconds was 59
 - Fix a crash when no map tiles were available at the selected zoom level
+- Fix for a corner case where the three components of the same instrument
+  have different trace length (see [#31])
 - Fix `source_residuals`, which didn't work anymore
 
 ## v1.6 - 2022-08-02
@@ -492,3 +494,4 @@ Initial Python port.
 [#27]: https://github.com/SeismicSource/sourcespec/issues/27
 [#28]: https://github.com/SeismicSource/sourcespec/issues/28
 [#30]: https://github.com/SeismicSource/sourcespec/issues/30
+[#31]: https://github.com/SeismicSource/sourcespec/issues/31
