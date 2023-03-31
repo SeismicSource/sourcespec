@@ -57,6 +57,7 @@ Contents:
    contributing
    citing
    api
+   changelog
    bibliography
 
 

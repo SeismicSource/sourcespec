@@ -1,4 +1,4 @@
-# SourceSpec
+# SourceSpec Changelog
 
 Earthquake source parameters from P- or S-wave displacement spectra
 
@@ -35,7 +35,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
     - `clipping_score`: compute a trace clipping score based on the shape of
       the kernel density estimation.
     - `clipping_peaks`: check if trace is clipped, based on the number of peaks
-    in the kernel density estimation;
+      in the kernel density estimation;
   - Use `clipping_detection_algorithm` in the config file to choose the
     algorithm and the other `clipping_*` parameters to adjust the results.
   - The algorithms can also be called from the command line, e.g. for debug

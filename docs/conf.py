@@ -34,6 +34,7 @@ extensions = [
     'sphinx_favicon',
     'sphinx_rtd_theme',
     'sphinxcontrib.bibtex',
+    'sphinx_mdinclude',
 ]
 autodoc_mock_imports = [
     'matplotlib',
