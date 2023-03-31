@@ -76,224 +76,211 @@ def _write_parfile(config, sspec_output):
     evid = config.hypo.evid
     parfilename = os.path.join(
         config.options.outdir, f'{evid}.ssp.out')
-    parfile = open(parfilename, 'w')
-    parfile.write(
-        '*** Note: this file is deprecated and might not contain all the '
-        'output information. ***\n')
-    parfile.write(
-        '*** It will be removed in future versions of SourceSpec. ***\n')
-    parfile.write(
-        '*** Please look at the YAML file in this directory. ***\n')
+    with open(parfilename, 'w') as parfile:
+        parfile.write(
+            '*** Note: this file is deprecated and might not contain all the '
+            'output information. ***\n')
+        parfile.write(
+            '*** It will be removed in future versions of SourceSpec. ***\n')
+        parfile.write(
+            '*** Please look at the YAML file in this directory. ***\n')
 
-    hypo = config.hypo
-    parfile.write(
-        f'{hypo.evid} lon {hypo.longitude:8.3f} lat {hypo.latitude:7.3f} '
-        f'depth {hypo.depth:5.1f} km orig_time {hypo.origin_time}\n\n')
-    parfile.write('*** Station source parameters ***\n')
-    parfile.write(
-        '*** Note: outliers are prepended by a star (*) symbol ***\n')
-    parkeys = (
-        'Mw', 'fc', 't_star', 'Qo', 'Mo',
-        'bsd', 'ra', 'hyp_dist', 'az', 'Er'
-    )
-    formats = dict(
-        Mo='{:.3e} ',
-        Er='{:.3e} ',
-        hyp_dist='{:7.3f} ',
-        az='{:7.3f} ',
-        Mw='{:6.3f} ',
-        fc='{:6.3f} ',
-        bsd='{:.3e} ',
-        ra='{:8.3f} ',
-        t_star='{:6.3f} ',
-        Qo='{:7.1f} ',
-        Ml='{:6.3f} '
-    )
-    formats_none = dict(
-        Mo='{:>9} ',
-        Er='{:>9} ',
-        hyp_dist='{:>7} ',
-        az='{:>7} ',
-        Mw='{:>6} ',
-        fc='{:>6} ',
-        bsd='{:>9} ',
-        ra='{:>8} ',
-        t_star='{:>6} ',
-        Qo='{:>7} ',
-        Ml='{:>6} '
-    )
-    stationpar = sspec_output.station_parameters
-    for statId in sorted(stationpar.keys()):
-        par = stationpar[statId]
-        parfile.write(f'{statId:>15} {par.instrument_type:>6}\t')
-        for key in parkeys:
-            if key == 'ra':
-                _pkey = 'radius'
-            else:
-                _pkey = key
-            if key == 'hyp_dist':
-                val = par['hypo_dist_in_km']
-                outl = False
-            elif key == 'az':
-                val = par['azimuth']
-                outl = False
-            else:
-                val = par[_pkey].value
-                outl = par[_pkey].outlier
-            if outl:
-                space = ' *'
-            else:
-                space = '  '
-            parfile.write(f'{space}{key} ')
-            if val is not None and ~np.isnan(val):
-                parfile.write(formats[key].format(val))
-            else:
-                parfile.write(formats_none[key].format('nan'))
-        parfile.write('\n')
-        parfile.write(f'{"--- errmin":>22}\t')
-        for key in parkeys:
-            if key == 'ra':
-                _pkey = 'radius'
-            else:
-                _pkey = key
-            if key in ['hyp_dist', 'az']:
-                outl = False
-                err = None
-            else:
-                outl = par[_pkey].outlier
-                err = par[_pkey].lower_uncertainty
-                if err is None:
-                    err = par[_pkey].uncertainty
-            if outl:
-                space = ' *'
-            else:
-                space = '  '
-            parfile.write(f'{space}{key} ')
-            if err is not None:
-                parfile.write(formats[key].format(err))
-            else:
-                parfile.write(formats_none[key].format('nan'))
-        parfile.write('\n')
-        parfile.write(f'{"--- errmax":>22}\t')
-        for key in parkeys:
-            if key == 'ra':
-                _pkey = 'radius'
-            else:
-                _pkey = key
-            if key in ['hyp_dist', 'az']:
-                outl = False
-                err = None
-            else:
-                outl = par[_pkey].outlier
-                err = par[_pkey].upper_uncertainty
-                if err is None:
-                    err = par[_pkey].uncertainty
-            if outl:
-                space = ' *'
-            else:
-                space = '  '
-            parfile.write(f'{space}{key} ')
-            if err is not None:
-                parfile.write(formats[key].format(err))
-            else:
-                parfile.write(formats_none[key].format('nan'))
-        parfile.write('\n')
+        hypo = config.hypo
+        parfile.write(
+            f'{hypo.evid} lon {hypo.longitude:8.3f} lat {hypo.latitude:7.3f} '
+            f'depth {hypo.depth:5.1f} km orig_time {hypo.origin_time}\n\n')
+        parfile.write('*** Station source parameters ***\n')
+        parfile.write(
+            '*** Note: outliers are prepended by a star (*) symbol ***\n')
+        parkeys = (
+            'Mw', 'fc', 't_star', 'Qo', 'Mo',
+            'bsd', 'ra', 'hyp_dist', 'az', 'Er'
+        )
+        formats = dict(
+            Mo='{:.3e} ',
+            Er='{:.3e} ',
+            hyp_dist='{:7.3f} ',
+            az='{:7.3f} ',
+            Mw='{:6.3f} ',
+            fc='{:6.3f} ',
+            bsd='{:.3e} ',
+            ra='{:8.3f} ',
+            t_star='{:6.3f} ',
+            Qo='{:7.1f} ',
+            Ml='{:6.3f} '
+        )
+        formats_none = dict(
+            Mo='{:>9} ',
+            Er='{:>9} ',
+            hyp_dist='{:>7} ',
+            az='{:>7} ',
+            Mw='{:>6} ',
+            fc='{:>6} ',
+            bsd='{:>9} ',
+            ra='{:>8} ',
+            t_star='{:>6} ',
+            Qo='{:>7} ',
+            Ml='{:>6} '
+        )
+        stationpar = sspec_output.station_parameters
+        for statId in sorted(stationpar.keys()):
+            par = stationpar[statId]
+            parfile.write(f'{statId:>15} {par.instrument_type:>6}\t')
+            for key in parkeys:
+                if key == 'az':
+                    _pkey = key
+                    val = par['azimuth']
+                    outl = False
+                elif key == 'hyp_dist':
+                    _pkey = key
+                    val = par['hypo_dist_in_km']
+                    outl = False
+                elif key == 'ra':
+                    _pkey = 'radius'
+                    val = par[_pkey].value
+                    outl = par[_pkey].outlier
+                else:
+                    _pkey = key
+                    val = par[_pkey].value
+                    outl = par[_pkey].outlier
+                space = ' *' if outl else '  '
+                parfile.write(f'{space}{key} ')
+                if val is not None and ~np.isnan(val):
+                    parfile.write(formats[key].format(val))
+                else:
+                    parfile.write(formats_none[key].format('nan'))
+            parfile.write('\n')
+            parfile.write(f'{"--- errmin":>22}\t')
+            for key in parkeys:
+                _pkey = 'radius' if key == 'ra' else key
+                if key in ['hyp_dist', 'az']:
+                    outl = False
+                    err = None
+                else:
+                    outl = par[_pkey].outlier
+                    err = par[_pkey].lower_uncertainty
+                    if err is None:
+                        err = par[_pkey].uncertainty
+                space = ' *' if outl else '  '
+                parfile.write(f'{space}{key} ')
+                if err is not None:
+                    parfile.write(formats[key].format(err))
+                else:
+                    parfile.write(formats_none[key].format('nan'))
+            parfile.write('\n')
+            parfile.write(f'{"--- errmax":>22}\t')
+            for key in parkeys:
+                _pkey = 'radius' if key == 'ra' else key
+                if key in ['hyp_dist', 'az']:
+                    outl = False
+                    err = None
+                else:
+                    outl = par[_pkey].outlier
+                    err = par[_pkey].upper_uncertainty
+                    if err is None:
+                        err = par[_pkey].uncertainty
+                space = ' *' if outl else '  '
+                parfile.write(f'{space}{key} ')
+                if err is not None:
+                    parfile.write(formats[key].format(err))
+                else:
+                    parfile.write(formats_none[key].format('nan'))
+            parfile.write('\n')
 
-    means = sspec_output.mean_values()
-    errors = sspec_output.mean_uncertainties()
-    means_weight = sspec_output.weighted_mean_values()
-    errors_weight = sspec_output.weighted_mean_uncertainties()
+        means = sspec_output.mean_values()
+        errors = sspec_output.mean_uncertainties()
+        means_weight = sspec_output.weighted_mean_values()
+        errors_weight = sspec_output.weighted_mean_uncertainties()
 
-    parfile.write('\n*** Average source parameters ***\n')
-    parfile.write('*** Note: averages computed after removing outliers ****\n')
+        parfile.write('\n*** Average source parameters ***\n')
+        parfile.write(
+            '*** Note: averages computed after removing outliers ****\n')
 
-    Mw_mean = means['Mw']
-    Mw_error = errors['Mw']
-    s = _value_error_str(Mw_mean, Mw_error, '{:.2f}')
-    parfile.write(f'Mw: {s}\n')
-    Mw_mean_weight = means_weight['Mw']
-    Mw_error_weight = errors_weight['Mw']
-    s = _value_error_str(Mw_mean_weight, Mw_error_weight, '{:.2f}')
-    parfile.write(f'Mw (weighted): {s}\n')
+        Mw_mean = means['Mw']
+        Mw_error = errors['Mw']
+        s = _value_error_str(Mw_mean, Mw_error, '{:.2f}')
+        parfile.write(f'Mw: {s}\n')
+        Mw_mean_weight = means_weight['Mw']
+        Mw_error_weight = errors_weight['Mw']
+        s = _value_error_str(Mw_mean_weight, Mw_error_weight, '{:.2f}')
+        parfile.write(f'Mw (weighted): {s}\n')
 
-    Mo_mean = means['Mo']
-    Mo_error = errors['Mo']
-    s = _value_error_str(Mo_mean, Mo_error, '{:.3e}')
-    parfile.write(f'Mo: {s} N·m\n')
-    Mo_mean_weight = means_weight['Mo']
-    Mo_error_weight = errors_weight['Mo']
-    s = _value_error_str(Mo_mean_weight, Mo_error_weight, '{:.3e}')
-    parfile.write(f'Mo (weighted): {s} N·m\n')
+        Mo_mean = means['Mo']
+        Mo_error = errors['Mo']
+        s = _value_error_str(Mo_mean, Mo_error, '{:.3e}')
+        parfile.write(f'Mo: {s} N·m\n')
+        Mo_mean_weight = means_weight['Mo']
+        Mo_error_weight = errors_weight['Mo']
+        s = _value_error_str(Mo_mean_weight, Mo_error_weight, '{:.3e}')
+        parfile.write(f'Mo (weighted): {s} N·m\n')
 
-    fc_mean = means['fc']
-    fc_error = errors['fc']
-    s = _value_error_str(fc_mean, fc_error, '{:.3f}')
-    parfile.write(f'fc: {s} Hz\n')
-    fc_mean_weight = means_weight['fc']
-    fc_error_weight = errors_weight['fc']
-    s = _value_error_str(fc_mean_weight, fc_error_weight, '{:.3f}')
-    parfile.write(f'fc (weighted): {s} Hz\n')
+        fc_mean = means['fc']
+        fc_error = errors['fc']
+        s = _value_error_str(fc_mean, fc_error, '{:.3f}')
+        parfile.write(f'fc: {s} Hz\n')
+        fc_mean_weight = means_weight['fc']
+        fc_error_weight = errors_weight['fc']
+        s = _value_error_str(fc_mean_weight, fc_error_weight, '{:.3f}')
+        parfile.write(f'fc (weighted): {s} Hz\n')
 
-    t_star_mean = means['t_star']
-    t_star_error = errors['t_star']
-    s = _value_error_str(t_star_mean, t_star_error, '{:.3f}')
-    parfile.write(f't_star: {s} s\n')
-    t_star_mean_weight = means_weight['t_star']
-    t_star_error_weight = errors_weight['t_star']
-    s = _value_error_str(t_star_mean_weight, t_star_error_weight, '{:.3f}')
-    parfile.write(f't_star (weighted): {s} s\n')
+        t_star_mean = means['t_star']
+        t_star_error = errors['t_star']
+        s = _value_error_str(t_star_mean, t_star_error, '{:.3f}')
+        parfile.write(f't_star: {s} s\n')
+        t_star_mean_weight = means_weight['t_star']
+        t_star_error_weight = errors_weight['t_star']
+        s = _value_error_str(t_star_mean_weight, t_star_error_weight, '{:.3f}')
+        parfile.write(f't_star (weighted): {s} s\n')
 
-    Qo_mean = means['Qo']
-    Qo_error = errors['Qo']
-    s = _value_error_str(Qo_mean, Qo_error, '{:.1f}')
-    parfile.write(f'Qo: {s}\n')
-    try:
-        Qo_mean_weight = means_weight['Qo']
-        Qo_error_weight = errors_weight['Qo']
-    except KeyError:
-        # weighted Qo might not be computed
-        Qo_mean_weight = np.nan
-        Qo_error_weight = [np.nan, np.nan]
-    s = _value_error_str(Qo_mean_weight, Qo_error_weight, '{:.1f}')
-    parfile.write(f'Qo (weighted): {s}\n')
+        Qo_mean = means['Qo']
+        Qo_error = errors['Qo']
+        s = _value_error_str(Qo_mean, Qo_error, '{:.1f}')
+        parfile.write(f'Qo: {s}\n')
+        try:
+            Qo_mean_weight = means_weight['Qo']
+            Qo_error_weight = errors_weight['Qo']
+        except KeyError:
+            # weighted Qo might not be computed
+            Qo_mean_weight = np.nan
+            Qo_error_weight = [np.nan, np.nan]
+        s = _value_error_str(Qo_mean_weight, Qo_error_weight, '{:.1f}')
+        parfile.write(f'Qo (weighted): {s}\n')
 
-    ra_mean = means['radius']
-    ra_error = errors['radius']
-    s = _value_error_str(ra_mean, ra_error, '{:.3f}')
-    parfile.write(f'Source radius: {s} m\n')
-    ra_mean_weight = means_weight['radius']
-    ra_error_weight = errors_weight['radius']
-    s = _value_error_str(ra_mean_weight, ra_error_weight, '{:.3f}')
-    parfile.write(f'Source radius (weighted): {s} m\n')
+        ra_mean = means['radius']
+        ra_error = errors['radius']
+        s = _value_error_str(ra_mean, ra_error, '{:.3f}')
+        parfile.write(f'Source radius: {s} m\n')
+        ra_mean_weight = means_weight['radius']
+        ra_error_weight = errors_weight['radius']
+        s = _value_error_str(ra_mean_weight, ra_error_weight, '{:.3f}')
+        parfile.write(f'Source radius (weighted): {s} m\n')
 
-    bsd_mean = means['bsd']
-    bsd_error = errors['bsd']
-    s = _value_error_str(bsd_mean, bsd_error, '{:.3e}')
-    parfile.write(f'Brune stress drop: {s} MPa\n')
-    bsd_mean_weight = means_weight['bsd']
-    bsd_error_weight = errors_weight['bsd']
-    s = _value_error_str(bsd_mean_weight, bsd_error_weight, '{:.3e}')
-    parfile.write(f'Brune stress drop (weighted): {s} MPa\n')
+        bsd_mean = means['bsd']
+        bsd_error = errors['bsd']
+        s = _value_error_str(bsd_mean, bsd_error, '{:.3e}')
+        parfile.write(f'Brune stress drop: {s} MPa\n')
+        bsd_mean_weight = means_weight['bsd']
+        bsd_error_weight = errors_weight['bsd']
+        s = _value_error_str(bsd_mean_weight, bsd_error_weight, '{:.3e}')
+        parfile.write(f'Brune stress drop (weighted): {s} MPa\n')
 
-    Ml_mean = means.get('Ml', None)
-    Ml_error = errors.get('Ml', None)
-    if Ml_mean is not None:
-        s = _value_error_str(Ml_mean, Ml_error, '{:.3f}')
-        parfile.write(f'Ml: {s}\n')
+        Ml_mean = means.get('Ml', None)
+        Ml_error = errors.get('Ml', None)
+        if Ml_mean is not None:
+            s = _value_error_str(Ml_mean, Ml_error, '{:.3f}')
+            parfile.write(f'Ml: {s}\n')
 
-    Er_mean = means['Er']
-    Er_error = errors['Er']
-    s = _value_error_str(Er_mean, Er_error, '{:.3e}')
-    parfile.write(f'Er: {s} N·m\n')
+        Er_mean = means['Er']
+        Er_error = errors['Er']
+        s = _value_error_str(Er_mean, Er_error, '{:.3e}')
+        parfile.write(f'Er: {s} N·m\n')
 
-    parfile.write(f'\n*** SourceSpec: {get_versions()["version"]}')
-    parfile.write(
-        f'\n*** Run completed on: {config.end_of_run} {config.end_of_run_tz}')
-    if config.options.run_id:
-        parfile.write(f'\n*** Run ID: {config.options.run_id}')
-    _write_author_and_agency_to_parfile(config, parfile)
-
-    parfile.close()
+        parfile.write(f'\n*** SourceSpec: {get_versions()["version"]}')
+        parfile.write(
+            f'\n*** Run completed on: {config.end_of_run} {config.end_of_run_tz}')
+        if config.options.run_id:
+            parfile.write(f'\n*** Run ID: {config.options.run_id}')
+        _write_author_and_agency_to_parfile(config, parfile)
 
     logger.info(f'Output written to file: {parfilename}')
 
@@ -357,7 +344,7 @@ def _write_hypo(config, sspec_output):
     with open(config.options.hypo_file, 'r') as fp:
         line = fp.readline()
         # Check if first 10 digits of the line contain characters
-        if any(c.isalpha() for c in line[0:10]):
+        if any(c.isalpha() for c in line[:10]):
             line1 = line
             line = fp.readline()
         line = list(line)
@@ -365,11 +352,8 @@ def _write_hypo(config, sspec_output):
     summary_values = sspec_output.reference_values()
     mw_str = f'{summary_values["Mw"]:03.2f}'
     Ml = summary_values.get('Ml', None)
-    if Ml is not None and ~np.isnan(Ml):
-        ml_str = f'{Ml:03.2f}'
-    else:
-        ml_str = ' '*4
-    for i in range(0, 4):
+    ml_str = f'{Ml:03.2f}' if Ml is not None and ~np.isnan(Ml) else ' '*4
+    for i in range(4):
         line[49+i] = mw_str[0+i]
         # line[45+i] = mw_str[0+i]
         line[69+i] = ml_str[0+i]

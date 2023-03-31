@@ -959,4 +959,4 @@ def html_report(config, sspec_output):
     index_html_out = os.path.join(config.options.outdir, 'index.html')
     with open(index_html_out, 'w') as fp:
         fp.write(index)
-    logger.info('HTML report written to file: ' + index_html_out)
+    logger.info(f'HTML report written to file: {index_html_out}')
