@@ -159,7 +159,7 @@ def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_log, statId):
 
 
 def _spec_inversion(config, spec, spec_weight):
-    """Invert one spectrum, return a Station() object."""
+    """Invert one spectrum, return a StationParameters() object."""
     # azimuth computation
     coords = spec.stats.coords
     hypo = spec.stats.hypo
