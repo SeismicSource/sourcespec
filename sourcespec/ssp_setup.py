@@ -125,27 +125,29 @@ def _cartopy_download_borders():
     from pathlib import Path
     category = 'cultural'
     name = 'admin_0_boundary_lines_land'
-    scale = '10m'
-    downloader = Downloader.from_config((
-        'shapefiles', 'natural_earth', category, name, scale))
-    format_dict = {
-        'config': cartopy_config, 'category': category, 'name': name,
-        'resolution': scale}
-    target_path = downloader.target_path(format_dict)
-    if not os.path.exists(target_path):
-        sys.stdout.write(
-            'Downloading border data for cartopy...\n')
-        sys.stdout.flush()
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            try:
-                path = downloader.path(format_dict)
-            except Exception:
-                sys.stderr.write(
-                    '\nUnable to download data. '
-                    'Check your internet connection.\n')
-                sys.exit(1)
-        sys.stdout.write(f'Done! Data cached to {Path(path).parents[0]}\n\n')
+    scales = ('10m', '50m')
+    for scale in scales:
+        downloader = Downloader.from_config((
+            'shapefiles', 'natural_earth', category, name, scale))
+        format_dict = {
+            'config': cartopy_config, 'category': category, 'name': name,
+            'resolution': scale}
+        target_path = downloader.target_path(format_dict)
+        if not os.path.exists(target_path):
+            sys.stdout.write(
+                'Downloading border data for cartopy...\n')
+            sys.stdout.flush()
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                try:
+                    path = downloader.path(format_dict)
+                except Exception:
+                    sys.stderr.write(
+                        '\nUnable to download data. '
+                        'Check your internet connection.\n')
+                    sys.exit(1)
+            sys.stdout.write(
+                f'Done! Data cached to {Path(path).parents[0]}\n\n')
 
 
 def _check_cartopy_version():
