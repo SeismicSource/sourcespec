@@ -4,29 +4,48 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 Copyright (c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
 
-## Unreleased
+## v1.7 - 2023-03-31
+
+This release improves trace processing through the use of modern routines for
+instrument correction, optional baseline removal, a new clipping detection
+algorithm and a better definition of signal and noise time windows.
+
+A new plot is introduced, "stacked spectra" which allows to compare all the
+spectra at once (and easily detect problematic stations 😉).
+Also, a new command line tool, `plot_sourcepars`, allows making aggregate
+plots of source parameters for many events (starting from the SQLite database).
+
+New config file parameters have been added, while some have been removed.
+Please run `source_spec -U CONFIG_FILE_NAME` to update your old config file.
+
+As always, many bugfixes and improvements have been made in this release.
+Thanks to all the users who took time to write and ask questions (by mail
+or using the official SourceSpec [Discussions]).
+
+Big kudos to Kris Vanneste [@krisvanneste] who helped all along the development
+with code review and testing and submitted pull requests on noise windows and
+clipping detection.
+
+Below is the detailed Changelog 👇
 
 ### Input/output
 
-- New output file in YAML format. The old `.out` file is still available but
-  deprecated.
-- Support for SVG format for plot files (can be used in HTML output as
-  alternative to PNG)
-- Improved trace plot quality for vector formats (PDF, SVG)
-- Option to add an agency logo to the HTML page
 - Possibility of using a single PAZ file as a "generic" PAZ file for all the
   stations
 - Command line option `--station_metadata` (or `-w`) for overriding the config
   file parameter with the same name (see pull request [#16])
 - Removed command line option `--no-response` for avoiding removing instrument
   response (use the config option `correct_instrumental_response` instead)
-- Logscale for boxplots, if parameters span a large interval
-  (see pull request [#15])
+- New output file in YAML format. The old `.out` file is still available but
+  deprecated.
 - Information on the inversion procedure in YAML and HTML output
+- Option to add an agency logo to the HTML page
 - Possibility of generating HTML report without figures (see [#30])
 
 ### Processing
 
+- Use modern ObsPy `trace.remove_response()` routine for instrument correction
+  (see [#27])
 - Option to remove the trace baseline after instrument correction and before
   filtering (`remove_baseline` config parameter) (see [#25])
 - New algorithms for clipping detection based on kernel density estimation of
@@ -40,10 +59,6 @@ Copyright (c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
     algorithm and the other `clipping_*` parameters to adjust the results.
   - The algorithms can also be called from the command line, e.g. for debug
     purposes, using the shell command `clipping_detection`.
-- Use modern ObsPy `trace.remove_response()` routine for instrument correction
-  (see [#27])
-- Magnitude limits for inversion are now autoset between 90% of the minimum
-  of the spectral plateau and 110% of its maximum (see [#22])
 - Relax noise window requirements if noise weighting is not used.
   This is useful for older triggered records with noise windows
   that are short or even missing entirely (see pull request [#18])
@@ -59,6 +74,8 @@ Copyright (c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
 - Extract source and station P and S velocities from global 'iasp91' velocity
   model, if both `v(p,s)_source` and `v(p,s)_stations` are set to `None`
   (see [#20])
+- Magnitude limits for inversion are now autoset between 90% of the minimum
+  of the spectral plateau and 110% of its maximum (see [#22])
 
 ### Post-Inversion
 
@@ -79,6 +96,11 @@ Copyright (c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
   at beginning or at the end can be easily detected (see [#21])
 - Plot noise and signal windows separately for each component (see [#21])
 - Show on the trace plot the reason why a trace has been ignored
+- Logscale for boxplots, if parameters span a large interval
+  (see pull request [#15])
+- Support for SVG format for plot files (can be used in HTML output as
+  alternative to PNG)
+- Improved trace plot quality for vector formats (PDF, SVG)
 - New command line tool: `plot_sourcepars` to make 1D or 2D plot of source
   parameters from a sqlite parameter file.
 
@@ -474,6 +496,9 @@ Extended and generalized for the CRL application.
 ## v0.1 - 2012-01-17
 
 Initial Python port.
+
+[Discussions]: https://github.com/SeismicSource/sourcespec/discussions
+[@krisvanneste]: https://github.com/krisvanneste
 
 [#2]: https://github.com/SeismicSource/sourcespec/issues/2
 [#3]: https://github.com/SeismicSource/sourcespec/issues/3
