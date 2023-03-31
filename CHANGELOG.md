@@ -2,7 +2,7 @@
 
 Earthquake source parameters from P- or S-wave displacement spectra
 
-(c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
+Copyright (c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
 
 ## Unreleased
 
