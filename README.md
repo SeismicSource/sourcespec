@@ -279,6 +279,10 @@ You can install it easily through `pip`:
 
     pip install sourcespec
 
+To upgrade from a previously installed version:
+
+    pip install --upgrade sourcespec
+
 #### From SourceSpec GitHub releases
 
 Download the latest release from the
