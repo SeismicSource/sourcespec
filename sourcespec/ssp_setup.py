@@ -151,7 +151,7 @@ def _cartopy_download_borders():
 
 
 def _check_cartopy_version():
-    cartopy_min_ver = (0, 18, 0)
+    cartopy_min_ver = (0, 21, 0)
     try:
         cartopy_ver = None
         import cartopy  #NOQA
@@ -168,8 +168,8 @@ def _check_cartopy_version():
             f'\nPlease install cartopy >= {cartopy_min_ver_str} to plot maps.'
             '\nHow to install: '
             'https://scitools.org.uk/cartopy/docs/latest/installing.html\n\n'
-            'Alternatively, set "plot_station_map" and "html_report" to '
-            '"False" in config file.\n'
+            'Alternatively, set "plot_station_map" to "False" '
+            'in config file.\n'
         )
         if cartopy_ver is not None:
             msg += f'Installed cartopy version: {CARTOPY_VERSION_STR}.\n'
