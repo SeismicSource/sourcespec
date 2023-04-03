@@ -19,7 +19,6 @@ import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
 import cartopy.io.shapereader as shpreader
 import cartopy.feature as cfeature
-from shapely.errors import ShapelyDeprecationWarning
 from obspy.imaging.beachball import beach
 from sourcespec.adjustText import adjust_text
 from pyproj import Geod
@@ -36,9 +35,11 @@ logger = logging.getLogger(__name__.split('.')[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
-# The following code fails with Sphinx, so we need to ignore any exception
+# The following code fails with Sphinx and with Shapely<1,8, so we need to
+# ignore any exception
 with contextlib.suppress(Exception):
     # Ignore Shapely deprecation warnings, since they depend on Cartopy
+    from shapely.errors import ShapelyDeprecationWarning
     warnings.filterwarnings('ignore', category=ShapelyDeprecationWarning)
 
 
