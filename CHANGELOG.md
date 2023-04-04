@@ -8,6 +8,12 @@ Copyright (c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
 
 This release requires at least Python 3.7.
 
+### Requirements
+
+- Python minimum version raised to 3.7
+- Matplotlib minimum version raised to 3.2
+- Cartopy minimum version raised to 0.21
+
 ## v1.7 - 2023-03-31
 
 This release improves trace processing through the use of modern routines for
