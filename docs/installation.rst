@@ -2,7 +2,7 @@
 Installation
 ############
 
-SourceSpec requires at least Python 3.6. All the required dependencies
+SourceSpec requires at least Python 3.7. All the required dependencies
 will be downloaded and installed during the setup process.
 
 

@@ -4,6 +4,10 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 Copyright (c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
 
+## unreleased
+
+This release requires at least Python 3.7.
+
 ## v1.7 - 2023-03-31
 
 This release improves trace processing through the use of modern routines for
@@ -28,7 +32,7 @@ clipping detection.
 
 Below is the detailed Changelog 👇
 
-### Input/output
+### v1.7: Input/output
 
 - Possibility of using a single PAZ file as a "generic" PAZ file for all the
   stations
@@ -42,7 +46,7 @@ Below is the detailed Changelog 👇
 - Option to add an agency logo to the HTML page
 - Possibility of generating HTML report without figures (see [#30])
 
-### Processing
+### v1.7: Processing
 
 - Use modern ObsPy `trace.remove_response()` routine for instrument correction
   (see [#27])
@@ -77,7 +81,7 @@ Below is the detailed Changelog 👇
 - Magnitude limits for inversion are now autoset between 90% of the minimum
   of the spectral plateau and 110% of its maximum (see [#22])
 
-### Post-Inversion
+### v1.7: Post-Inversion
 
 - Possibility of choosing the reference summary statistics that will be used
   for map plots, QuakeML and HYPO output, as well as for the "Event Summary"
@@ -89,7 +93,7 @@ Below is the detailed Changelog 👇
 - Possibility of defining the number of sigmas for uncertainties on event means
   and weighted means
 
-### Plotting
+### v1.7: Plotting
 
 - New plot: stacked spectra
 - Do not zero-pad traces to common length when plotting, so that missing data
@@ -104,7 +108,7 @@ Below is the detailed Changelog 👇
 - New command line tool: `plot_sourcepars` to make 1D or 2D plot of source
   parameters from a sqlite parameter file.
 
-### Config file
+### v1.7: Config file
 
 - Removed `sensitivity_only` option from `correct_instrumental_response`
 - Removed config parameter: `Mw_0_variability`
@@ -128,12 +132,12 @@ Below is the detailed Changelog 👇
   - `freq1_disp`, `freq2_disp`
 - Default values for `t_star_min_max` (instead of `None`)
 
-### Code improvements
+### v1.7: Code improvements
 
 - Large refactoring of the whole codebase, to make the code more modern and
   easier to maintain (see [#28])
 
-### Bugfixes
+### v1.7: Bugfixes
 
 - Properly ignore vertical components when `ignore_vertical` is `True`
 - Fix a bug preventing reading phase picks from HYPOINVERSE-2000 files

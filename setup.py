@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: CECILL-2.1
-"""setup.py: setuptools control."""
-from setuptools import setup
-import versioneer
 import sys
 
-MIN_PYTHON_VERSION = (3, 6)
-MIN_PYTHON_VERSION_STR = '{}.{}'.format(*MIN_PYTHON_VERSION)
-PYTHON_VERSION_STR = '{}.{}.{}'.format(*sys.version_info[:3])
+MIN_PYTHON_VERSION = (3, 7)
+MIN_PYTHON_VERSION_STR = '.'.join(str(n) for n in MIN_PYTHON_VERSION)
+PYTHON_VERSION_STR = '.'.join(str(n) for n in sys.version_info[:3])
 if sys.version_info < MIN_PYTHON_VERSION:
-    msg = 'SourceSpec requires Python version >= {}'.format(
-        MIN_PYTHON_VERSION_STR)
-    msg += ' you are using Python version {}'.format(PYTHON_VERSION_STR)
-    print(msg, file=sys.stderr)
-    sys.exit(1)
+    msg = (
+        'SourceSpec requires Python version >= {}'
+        ' you are using Python version {}'.format(
+            MIN_PYTHON_VERSION_STR, PYTHON_VERSION_STR)
+    )
+    sys.exit(msg)
 
+from setuptools import setup  # noqa
+import versioneer # noqa
 revision = versioneer.get_versions()['full-revisionid']
 cdn_baseurl = 'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec@{}'\
     .format(revision)
@@ -73,7 +73,6 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
