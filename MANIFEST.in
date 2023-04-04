@@ -4,6 +4,7 @@ include LICENSE.txt
 include CONTRIBUTORS.txt
 # include only files in docs, not subdirs like _build
 include docs/*
+include imgs/*
 # exclude configuration_file.rst, which is generated when
 # building docs
 exclude docs/configuration_file.rst
