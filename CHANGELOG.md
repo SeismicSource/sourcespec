@@ -8,6 +8,10 @@ Copyright (c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
 
 This release requires at least Python 3.7.
 
+### Bugfixes
+
+- Do not ignore picks labeled with lowercase "p" or "s"
+
 ### Requirements
 
 - Python minimum version raised to 3.7

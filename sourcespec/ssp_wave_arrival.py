@@ -169,7 +169,7 @@ def _travel_time_from_pick(trace, pick_time):
 
 def _find_picks(trace, phase, theo_pick_time, tolerance):
     """Search for valid picks in trace stats. Return pick time if found."""
-    for pick in (p for p in trace.stats.picks if p.phase == phase):
+    for pick in (p for p in trace.stats.picks if p.phase.upper() == phase):
         if _validate_pick(pick, theo_pick_time, tolerance, trace.id):
             trace.stats.arrivals[phase] = (phase, pick.time)
             return pick.time
