@@ -146,6 +146,8 @@ def get_picks_from_SAC(trace):
         pick = Pick()
         pick.station = trace.stats.station
         pick.time = trace.stats.starttime + time - begin
+        # we will try to get the phase from the label later
+        pick.phase = 'X'
         # now look at labels (ka, kt0, ...)
         label = ''
         with contextlib.suppress(Exception):
@@ -156,7 +158,7 @@ def get_picks_from_SAC(trace):
             pick.phase = label[1]
             pick.polarity = label[2]
             pick.quality = label[3]
-        elif len(label) > 0:
+        if pick.phase.upper() not in 'PS' and len(label) > 0:
             # we assume that label starts with 'P' or 'S'
             pick.phase = label[0]
         else:
