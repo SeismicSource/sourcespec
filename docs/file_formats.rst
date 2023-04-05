@@ -29,7 +29,7 @@ in the following formats:
 -  `HYPO71`_
 -  `HYPOINVERSE-2000`_: SourceSpec will also read phase picks, if available
 
-Event information can also be stored in the SAC file headers (header
+Event information can also be stored in the `SAC file header`_ (header
 fields: ``EVLA``, ``EVLO``, ``EVDP``, ``O``, ``KEVNM``).
 
 Phase pick formats
@@ -42,8 +42,15 @@ formats:
 -  `HYPO71`_
 -  `HYPOINVERSE-2000`_
 
-Phase picks can also be stored in the SAC file headers (header fields:
-``A`` and ``T0``).
+Phase picks can also be stored in the `SAC file header`_, using the header
+fields ``A`` and ``T0`` through ``T9``. A pick label can be specified (header
+fields ``KA`` and ``KT0`` through ``KT9``) to identify the pick; the pick label
+can be a standard 4-characters SAC label (e.g., ``"IPU0"``, ``" S 1"``) or a
+label starting with ``"P"`` or ``"S"`` (lowercase or uppercase, e.g., ``"P"``,
+``"pP"``, ``"Pg"``, ``"S"``, ``"Sn"``).
+Picks with labels that cannot be parsed by SourceSpec will be ignored.
+If no label is specified, then SourceSpec will assume that ``A`` is the P-pick
+and ``T0`` is the S-pick.
 
 Station metadata formats
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -112,6 +119,7 @@ HTML format.
 .. File format links:
 .. _miniSEED: http://ds.iris.edu/ds/nodes/dmc/data/formats/miniseed/
 .. _SAC: https://ds.iris.edu/ds/support/faq/17/sac-file-format/
+.. _SAC file header: https://ds.iris.edu/files/sac-manual/manual/file_format.html
 .. _QuakeML: https://quake.ethz.ch/quakeml/
 .. _HYPO71: https://pubs.er.usgs.gov/publication/ofr72224
 .. _HYPOINVERSE-2000: https://pubs.er.usgs.gov/publication/ofr02171

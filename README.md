@@ -119,7 +119,7 @@ following formats:
 - [HYPO71]
 - [HYPOINVERSE-2000]: SourceSpec will also read phase picks, if available
 
-Event information can also be stored in the SAC file headers (header fields:
+Event information can also be stored in the [SAC file header] (header fields:
 `EVLA`, `EVLO`, `EVDP`, `O`, `KEVNM`).
 
 ### Phase pick formats
@@ -130,8 +130,15 @@ Phase picks for P and S waves can be read from one of the following formats:
 - [HYPO71]
 - [HYPOINVERSE-2000]
 
-Phase picks can also be stored in the SAC file headers (header fields: `A` and
-`T0`).
+Phase picks can also be stored in the [SAC file header], using the header
+fields `A` and `T0` through `T9`. A pick label can be specified (header fields
+`KA` and `KT0` through `KT9`) to identify the pick; the pick label can be a
+standard 4-characters SAC label (e.g., `"IPU0"`, `" S 1"`) or a label starting
+with `"P"` or `"S"` (lowercase or uppercase, e.g., `"P"`, `"pP"`, `"Pg"`,
+`"S"`, `"Sn"`).
+Picks with labels that cannot be parsed by SourceSpec will be ignored.
+If no label is specified, then SourceSpec will assume that `A` is the P-pick
+and `T0` is the S-pick.
 
 ### Station metadata formats
 
@@ -383,7 +390,6 @@ You can also cite the following abstract presented at the
 > earthquakes in the Lesser Antilles. In AGU Fall Meeting Abstracts
 > (Vol. 2016, pp. S13A-2518), [bibcode: 2016AGUFM.S13A2518S]
 
-
 ## References
 
 - Brune, J. N. (1970). Tectonic stress and the spectra of seismic shear waves
@@ -413,6 +419,7 @@ You can also cite the following abstract presented at the
 [obspy_trace_formats]: https://docs.obspy.org/packages/autogen/obspy.core.stream.read.html
 [miniSEED]: http://ds.iris.edu/ds/nodes/dmc/data/formats/miniseed/
 [SAC]: https://ds.iris.edu/ds/support/faq/17/sac-file-format/
+[SAC file header]: https://ds.iris.edu/files/sac-manual/manual/file_format.html
 [QuakeML]: https://quake.ethz.ch/quakeml/
 [HYPO71]: https://pubs.er.usgs.gov/publication/ofr72224
 [HYPOINVERSE-2000]: https://pubs.er.usgs.gov/publication/ofr02171
