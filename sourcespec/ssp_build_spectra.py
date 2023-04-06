@@ -193,7 +193,8 @@ def _cut_signal_noise(config, trace):
             msg = f'{tr_noise_id}: truncating signal window to noise length!'
             trace_signal.data = trace_signal.data[:npts]
             # recompute signal window end time, so that it's plotted correctly
-            _recompute_time_window(trace, config.wave_type[0], npts)
+            _recompute_time_window(
+                trace, config.wave_type[0], npts, keep='start')
         else:
             msg = f'{tr_noise_id}: zero-padding noise window to signal length'
             # Notes:
@@ -206,36 +207,25 @@ def _cut_signal_noise(config, trace):
             pad_len = len(trace_signal) - len(trace_noise)
             trace_noise.data = np.pad(trace_noise.data, (0, pad_len))
             # recompute noise window start time, so that it's plotted correctly
-            _recompute_time_window(
-                trace, 'N', len(trace_signal), from_start=True)
+            _recompute_time_window(trace, 'N', len(trace_signal), keep='end')
         logger.warning(msg)
-
-    # ...and zero pad to spectral_win_length
-    if config.spectral_win_length is not None:
-        trace_signal.trim(starttime=t1,
-                          endtime=t1+config.spectral_win_length,
-                          pad=True,
-                          fill_value=0)
-        trace_noise.trim(starttime=noise_t1,
-                         endtime=noise_t1+config.spectral_win_length,
-                         pad=True,
-                         fill_value=0)
-
     return trace_signal, trace_noise
 
 
-def _recompute_time_window(trace, wave_type, npts, from_start=False):
+def _recompute_time_window(trace, wave_type, npts, keep='start'):
     """Recompute start or end time of signal or noise window,
     based on new number of points"""
     length = npts * trace.stats.delta
-    if from_start:
+    if keep == 'end':
         label, _ = trace.stats.arrivals[f'{wave_type}1']
         t1 = trace.stats.arrivals[f'{wave_type}2'][1] - length
         trace.stats.arrivals[f'{wave_type}1'] = (label, t1)
-    else:
+    elif keep == 'start':
         label, _ = trace.stats.arrivals[f'{wave_type}2']
         t2 = trace.stats.arrivals[f'{wave_type}1'][1] + length
         trace.stats.arrivals[f'{wave_type}2'] = (label, t2)
+    else:
+        raise ValueError('keep must be "start" or "end"')
 
 
 def _check_noise_level(trace_signal, trace_noise, config):
@@ -568,7 +558,15 @@ def _build_signal_and_noise_streams(config, st):
             # RuntimeError is for skipped traces
             logger.warning(msg)
             continue
-    # trim components of the same instrument to the same number of samples
+    return signal_st, noise_st
+
+
+def _trim_components(config, signal_st, noise_st, st):
+    """
+    Trim components of the same instrument to the same number of samples.
+
+    Recompute time window of the signal and noise traces for correct plotting.
+    """
     for id in sorted({tr.id[:-1] for tr in signal_st}):
         st_sel = signal_st.select(id=f'{id}*') + noise_st.select(id=f'{id}*')
         all_npts = {tr.stats.npts for tr in st_sel}
@@ -584,9 +582,8 @@ def _build_signal_and_noise_streams(config, st):
             elif tr.stats.type == 'noise':
                 tr.data = tr.data[-npts:]
         for tr in st.select(id=f'{id}*'):
-            _recompute_time_window(tr, config.wave_type[0], npts)
-            _recompute_time_window(tr, 'N', npts, from_start=True)
-    return signal_st, noise_st
+            _recompute_time_window(tr, config.wave_type[0], npts, keep='start')
+            _recompute_time_window(tr, 'N', npts, keep='end')
 
 
 def _build_signal_and_noise_spectral_streams(config, signal_st, noise_st):
@@ -624,6 +621,19 @@ def _build_signal_and_noise_spectral_streams(config, signal_st, noise_st):
     return spec_st, specnoise_st
 
 
+def _zero_pad(config, trace):
+    """Zero-pad trace to spectral_win_length"""
+    spec_win_len = config.spectral_win_length
+    if spec_win_len is None:
+        return
+    wtype = config.wave_type[0]
+    if trace.stats.type == 'signal':
+        t1 = trace.stats.arrivals[f'{wtype}1'][1]
+    elif trace.stats.type == 'noise':
+        t1 = trace.stats.arrivals['N1'][1]
+    trace.trim(starttime=t1, endtime=t1+spec_win_len, pad=True, fill_value=0)
+
+
 def build_spectra(config, st):
     """
     Build spectra and the ``spec_st`` object.
@@ -634,6 +644,9 @@ def build_spectra(config, st):
     """
     logger.info('Building spectra...')
     signal_st, noise_st = _build_signal_and_noise_streams(config, st)
+    _trim_components(config, signal_st, noise_st, st)
+    for trace in signal_st + noise_st:
+        _zero_pad(config, trace)
     spec_st, specnoise_st = \
         _build_signal_and_noise_spectral_streams(config, signal_st, noise_st)
     weight_st = _build_weight_spectral_stream(config, spec_st, specnoise_st)

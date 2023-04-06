@@ -11,8 +11,10 @@ This release requires at least Python 3.7.
 ### Bugfixes
 
 - Do not ignore picks labeled with lowercase "p" or "s"
-- Fixed: config parameter `p_arrival_tolerance` was used also for S waves
-  (instead of `s_arrival_tolerance`)
+- Fixed: config parameter `p_arrival_tolerance` was used also for S waves,
+  instead of `s_arrival_tolerance` (see [#35])
+- Fix bug where signal and noise windows where plotted with the wrong length,
+  under certain circumstances (see [#35])
 
 ### Requirements
 
@@ -536,3 +538,4 @@ Initial Python port.
 [#28]: https://github.com/SeismicSource/sourcespec/issues/28
 [#30]: https://github.com/SeismicSource/sourcespec/issues/30
 [#31]: https://github.com/SeismicSource/sourcespec/issues/31
+[#35]: https://github.com/SeismicSource/sourcespec/issues/35
