@@ -255,27 +255,24 @@ def toDeg(radians):
     return 180 * radians / math.pi
 
 
-def hypo_dist(trace):
-    """Compute hypocentral and epicentral distance (in km) for a trace."""
-    try:
-        coords = trace.stats.coords
-        hypo = trace.stats.hypo
-    except (KeyError, AttributeError):
-        return None
-    if None in (coords, hypo):
-        return None
+def station_to_event_position(trace):
+    """
+    Compute station position with respect to the event, in terms of hypocentral
+    distance (km), epicentral distance (km), great-circle distance (degrees),
+    azimuth and back-azimuth.
+
+    Values are stored in the trace stats dictionary.
+    """
+    coords = trace.stats.coords
     stla = coords.latitude
     stlo = coords.longitude
     stel = coords.elevation
+    hypo = trace.stats.hypo
     evla = hypo.latitude
     evlo = hypo.longitude
     evdp = hypo.depth
-    if None in (stla, stlo, stel, evla, evlo, evdp):
-        return None
-    epi_dist, az, baz = gps2dist_azimuth(
-        hypo.latitude, hypo.longitude,
-        trace.stats.coords.latitude, trace.stats.coords.longitude)
-    epi_dist /= 1e3   # in km
+    epi_dist, az, baz = gps2dist_azimuth(evla, evlo, stla, stlo)
+    epi_dist /= 1e3  # in km
     gcarc = kilometers2degrees(epi_dist)
     hypo_dist = math.sqrt(epi_dist**2 + (stel+evdp)**2)
     trace.stats.azimuth = az
@@ -283,5 +280,4 @@ def hypo_dist(trace):
     trace.stats.epi_dist = epi_dist
     trace.stats.hypo_dist = hypo_dist
     trace.stats.gcarc = gcarc
-    return hypo_dist
 # -----------------------------------------------------------------------------
