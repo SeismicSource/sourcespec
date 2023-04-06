@@ -239,7 +239,32 @@ def _merge_stream(config, st):
             raise RuntimeError(
                 f'{traceid}: overlap duration larger than overlap_max '
                 f'({overlap_max:.1f} s): skipping trace')
-    # Then, compute the same statisics for the signal window.
+    # Finally, demean (only if trace has not be already preprocessed)
+    if config.trace_units == 'auto':
+        # Since the count value is generally huge, we need to demean twice
+        # to take into account for the rounding error
+        st.detrend(type='constant')
+        st.detrend(type='constant')
+    # Merge stream to remove gaps and overlaps
+    try:
+        st.merge(fill_value=0)
+        # st.merge raises a generic Exception if traces have
+        # different sampling rates
+    except Exception as e:
+        raise RuntimeError(
+            f'{traceid}: unable to fill gaps: skipping trace'
+        ) from e
+    return st[0]
+
+
+def _check_signal_window(config, st):
+    """
+    Check if the signal window has sufficient amount of signal
+    (i.e., not too many gaps).
+
+    This is done on the stream, before merging.
+    """
+    traceid = st[0].id
     st_cut = st.copy()
     if config.wave_type[0] == 'S':
         t1 = st[0].stats.arrivals['S1'][1]
@@ -267,22 +292,6 @@ def _merge_stream(config, st):
         logger.info(
             f'{traceid}: signal window has {overlap_duration:.3f} seconds '
             'of overlaps.')
-    # Finally, demean (only if trace has not be already preprocessed)
-    if config.trace_units == 'auto':
-        # Since the count value is generally huge, we need to demean twice
-        # to take into account for the rounding error
-        st.detrend(type='constant')
-        st.detrend(type='constant')
-    # Merge stream to remove gaps and overlaps
-    try:
-        st.merge(fill_value=0)
-        # st.merge raises a generic Exception if traces have
-        # different sampling rates
-    except Exception as e:
-        raise RuntimeError(
-            f'{traceid}: unable to fill gaps: skipping trace'
-        ) from e
-    return st[0]
 
 
 def _add_station_to_event_position(config, trace):
@@ -320,6 +329,10 @@ def _add_arrivals(config, trace):
                 f'{trace.id}: Unable to get {phase} arrival time: '
                 'skipping trace'
             ) from e
+
+
+def _define_signal_and_noise_windows(config, trace):
+    """Define signal and noise windows for spectral analysis."""
     p_arrival_time = trace.stats.arrivals['P'][1]
     if config.wave_type[0] == 'P' and p_arrival_time < trace.stats.starttime:
         raise RuntimeError(f'{trace.id}: P-window incomplete: skipping trace')
@@ -397,6 +410,8 @@ def process_traces(config, st):
             for _trace in st_sel:
                 _add_station_to_event_position(config, _trace)
                 _add_arrivals(config, _trace)
+                _define_signal_and_noise_windows(config, _trace)
+            _check_signal_window(config, st_sel)
             trace = _merge_stream(config, st_sel)
             trace.stats.ignore = False
             trace_process = _process_trace(config, trace)
