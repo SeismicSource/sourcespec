@@ -211,89 +211,6 @@ def _process_trace(config, trace):
     return trace_process
 
 
-def _merge_stream(config, st):
-    """
-    Check for gaps and overlaps; remove mean; merge stream.
-    """
-    traceid = st[0].id
-    # First, compute gap/overlap statistics for the whole trace.
-    gaps_olaps = st.get_gaps()
-    gaps = [g for g in gaps_olaps if g[6] >= 0]
-    overlaps = [g for g in gaps_olaps if g[6] < 0]
-    gap_duration = sum(g[6] for g in gaps)
-    if gap_duration > 0:
-        logger.info(
-            f'{traceid}: trace has {gap_duration:.3f} seconds of gaps.')
-        gap_max = config.gap_max
-        if gap_max is not None and gap_duration > gap_max:
-            raise RuntimeError(
-                f'{traceid}: Gap duration larger than gap_max '
-                f'({gap_max:.1f} s): skipping trace')
-    overlap_duration = -1 * sum(g[6] for g in overlaps)
-    if overlap_duration > 0:
-        logger.info(
-            f'{traceid}: trace has {overlap_duration:.3f} seconds of '
-            'overlaps.')
-        overlap_max = config.overlap_max
-        if overlap_max is not None and overlap_duration > overlap_max:
-            raise RuntimeError(
-                f'{traceid}: overlap duration larger than overlap_max '
-                f'({overlap_max:.1f} s): skipping trace')
-    # Finally, demean (only if trace has not be already preprocessed)
-    if config.trace_units == 'auto':
-        # Since the count value is generally huge, we need to demean twice
-        # to take into account for the rounding error
-        st.detrend(type='constant')
-        st.detrend(type='constant')
-    # Merge stream to remove gaps and overlaps
-    try:
-        st.merge(fill_value=0)
-        # st.merge raises a generic Exception if traces have
-        # different sampling rates
-    except Exception as e:
-        raise RuntimeError(
-            f'{traceid}: unable to fill gaps: skipping trace'
-        ) from e
-    return st[0]
-
-
-def _check_signal_window(config, st):
-    """
-    Check if the signal window has sufficient amount of signal
-    (i.e., not too many gaps).
-
-    This is done on the stream, before merging.
-    """
-    traceid = st[0].id
-    st_cut = st.copy()
-    if config.wave_type[0] == 'S':
-        t1 = st[0].stats.arrivals['S1'][1]
-        t2 = st[0].stats.arrivals['S2'][1]
-    elif config.wave_type[0] == 'P':
-        t1 = st[0].stats.arrivals['P1'][1]
-        t2 = st[0].stats.arrivals['P2'][1]
-    st_cut.trim(starttime=t1, endtime=t2)
-    if not st_cut:
-        raise RuntimeError(
-            f'{traceid}: no signal for the selected '
-            f'{config.wave_type[0]}-wave cut interval: skipping trace >\n'
-            f'> Cut interval: {t1} - {t2}')
-    gaps_olaps = st_cut.get_gaps()
-    gaps = [g for g in gaps_olaps if g[6] >= 0]
-    overlaps = [g for g in gaps_olaps if g[6] < 0]
-    duration = st_cut[-1].stats.endtime - st_cut[0].stats.starttime
-    gap_duration = sum(g[6] for g in gaps)
-    if gap_duration > duration/4:
-        raise RuntimeError(
-            f'{traceid}: too many gaps for the selected cut interval: '
-            'skipping trace')
-    overlap_duration = -1 * sum(g[6] for g in overlaps)
-    if overlap_duration > 0:
-        logger.info(
-            f'{traceid}: signal window has {overlap_duration:.3f} seconds '
-            'of overlaps.')
-
-
 def _add_station_to_event_position(config, trace):
     """
     Add to ``trace.stats`` station-to-event distance (hypocentral and
@@ -364,13 +281,95 @@ def _define_signal_and_noise_windows(config, trace):
     t1 = max(trace.stats.starttime, p_arrival_time - config.noise_pre_time)
     t2 = t1 + config.win_length
     if t2 >= p_arrival_time:
-        logger.warning(
-            f'{trace.id}: noise window ends after P-wave arrival')
+        logger.warning(f'{trace.id}: noise window ends after P-wave arrival')
         # Note: maybe we should also take into account signal_pre_time here
         t2 = p_arrival_time
         t1 = min(t1, t2)
     trace.stats.arrivals['N1'] = ('N1', t1)
     trace.stats.arrivals['N2'] = ('N2', t2)
+
+
+def _check_signal_window(config, st):
+    """
+    Check if the signal window has sufficient amount of signal
+    (i.e., not too many gaps).
+
+    This is done on the stream, before merging.
+    """
+    traceid = st[0].id
+    st_cut = st.copy()
+    if config.wave_type[0] == 'S':
+        t1 = st[0].stats.arrivals['S1'][1]
+        t2 = st[0].stats.arrivals['S2'][1]
+    elif config.wave_type[0] == 'P':
+        t1 = st[0].stats.arrivals['P1'][1]
+        t2 = st[0].stats.arrivals['P2'][1]
+    st_cut.trim(starttime=t1, endtime=t2)
+    if not st_cut:
+        raise RuntimeError(
+            f'{traceid}: no signal for the selected '
+            f'{config.wave_type[0]}-wave cut interval: skipping trace >\n'
+            f'> Cut interval: {t1} - {t2}')
+    gaps_olaps = st_cut.get_gaps()
+    gaps = [g for g in gaps_olaps if g[6] >= 0]
+    overlaps = [g for g in gaps_olaps if g[6] < 0]
+    duration = st_cut[-1].stats.endtime - st_cut[0].stats.starttime
+    gap_duration = sum(g[6] for g in gaps)
+    if gap_duration > duration/4:
+        raise RuntimeError(
+            f'{traceid}: too many gaps for the selected cut interval: '
+            'skipping trace')
+    overlap_duration = -1 * sum(g[6] for g in overlaps)
+    if overlap_duration > 0:
+        logger.info(
+            f'{traceid}: signal window has {overlap_duration:.3f} seconds '
+            'of overlaps.')
+
+
+def _merge_stream(config, st):
+    """
+    Check for gaps and overlaps; remove mean; merge stream.
+    """
+    traceid = st[0].id
+    # First, compute gap/overlap statistics for the whole trace.
+    gaps_olaps = st.get_gaps()
+    gaps = [g for g in gaps_olaps if g[6] >= 0]
+    overlaps = [g for g in gaps_olaps if g[6] < 0]
+    gap_duration = sum(g[6] for g in gaps)
+    if gap_duration > 0:
+        logger.info(
+            f'{traceid}: trace has {gap_duration:.3f} seconds of gaps.')
+        gap_max = config.gap_max
+        if gap_max is not None and gap_duration > gap_max:
+            raise RuntimeError(
+                f'{traceid}: Gap duration larger than gap_max '
+                f'({gap_max:.1f} s): skipping trace')
+    overlap_duration = -1 * sum(g[6] for g in overlaps)
+    if overlap_duration > 0:
+        logger.info(
+            f'{traceid}: trace has {overlap_duration:.3f} seconds of '
+            'overlaps.')
+        overlap_max = config.overlap_max
+        if overlap_max is not None and overlap_duration > overlap_max:
+            raise RuntimeError(
+                f'{traceid}: overlap duration larger than overlap_max '
+                f'({overlap_max:.1f} s): skipping trace')
+    # Finally, demean (only if trace has not be already preprocessed)
+    if config.trace_units == 'auto':
+        # Since the count value is generally huge, we need to demean twice
+        # to take into account for the rounding error
+        st.detrend(type='constant')
+        st.detrend(type='constant')
+    # Merge stream to remove gaps and overlaps
+    try:
+        st.merge(fill_value=0)
+        # st.merge raises a generic Exception if traces have
+        # different sampling rates
+    except Exception as e:
+        raise RuntimeError(
+            f'{traceid}: unable to fill gaps: skipping trace'
+        ) from e
+    return st[0]
 
 
 def _skip_ignored(config, id):
