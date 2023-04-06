@@ -176,58 +176,57 @@ def _find_picks(trace, phase, theo_pick_time, tolerance):
     return None
 
 
-def add_arrivals_to_trace(trace, config):
+def add_arrival_to_trace(trace, phase, config):
     """
-    Add P and S arrival times and takeoff angles to trace.
+    Add arrival time, travel time and takeoff angle to trace for the
+    given phase.
 
     Uses the theoretical arrival time if no pick is available
     or if the pick is too different from the theoretical arrival.
     """
-    tolerance = config.p_arrival_tolerance
-    for phase in 'P', 'S':
-        key = f'{trace.id}_{phase}'
-        # First, see if there are cached values
-        with contextlib.suppress(KeyError):
-            trace.stats.arrivals[phase] =\
-                add_arrivals_to_trace.pick_cache[key]
-            trace.stats.travel_times[phase] =\
-                add_arrivals_to_trace.travel_time_cache[key]
-            trace.stats.takeoff_angles[phase] =\
-                add_arrivals_to_trace.angle_cache[key]
-            continue
-        # If no cache is available, compute travel_time and takeoff_angle
-        try:
-            travel_time, takeoff_angle, method =\
-                _wave_arrival(trace, phase, config)
-            theo_pick_time = _get_theo_pick_time(trace, travel_time)
-            pick_time = _find_picks(trace, phase, theo_pick_time, tolerance)
-        except Exception as msg:
-            for line in str(msg).splitlines():
-                logger.warning(line)
-            continue
-        if pick_time is not None:
-            logger.info(f'{trace.id}: found {phase} pick')
-            travel_time = \
-                _travel_time_from_pick(trace, pick_time) or travel_time
-            pick_phase = phase
-        else:
-            logger.info(f'{trace.id}: no {phase} pick found')
-            if theo_pick_time is None:
-                continue
-            logger.info(
-                f'{trace.id}: using theoretical {phase} pick from {method}')
-            pick_time = theo_pick_time
-            pick_phase = f'{phase}theo'
-        if config.rp_from_focal_mechanism:
-            logger.info(
-                f'{trace.id}: {phase} takeoff angle: {takeoff_angle:.1f} '
-                f'computed from {method}')
-        add_arrivals_to_trace.pick_cache[key] =\
-            trace.stats.arrivals[phase] = (pick_phase, pick_time)
-        add_arrivals_to_trace.travel_time_cache[key] =\
-            trace.stats.travel_times[phase] = travel_time
-        add_arrivals_to_trace.angle_cache[key] =\
-            trace.stats.takeoff_angles[phase] = takeoff_angle
-add_arrivals_to_trace.pick_cache = {}  #noqa
-add_arrivals_to_trace.travel_time_cache = {}  #noqa
-add_arrivals_to_trace.angle_cache = {}  #noqa
+    tolerance = (
+        config.p_arrival_tolerance
+        if phase == 'P' else
+        config.s_arrival_tolerance
+    )
+    key = f'{trace.id}_{phase}'
+    # First, see if there are cached values
+    with contextlib.suppress(KeyError):
+        trace.stats.arrivals[phase] =\
+            add_arrival_to_trace.pick_cache[key]
+        trace.stats.travel_times[phase] =\
+            add_arrival_to_trace.travel_time_cache[key]
+        trace.stats.takeoff_angles[phase] =\
+            add_arrival_to_trace.angle_cache[key]
+        return
+    # If no cache is available, compute travel_time and takeoff_angle
+    travel_time, takeoff_angle, method = _wave_arrival(trace, phase, config)
+    theo_pick_time = _get_theo_pick_time(trace, travel_time)
+    pick_time = _find_picks(trace, phase, theo_pick_time, tolerance)
+    if pick_time is not None:
+        logger.info(f'{trace.id}: found {phase} pick')
+        travel_time = \
+            _travel_time_from_pick(trace, pick_time) or travel_time
+        pick_phase = phase
+    else:
+        logger.info(f'{trace.id}: no {phase} pick found')
+        if theo_pick_time is None:
+            raise ValueError(
+                f'{trace.id}: no theoretical {phase} pick time available')
+        logger.info(
+            f'{trace.id}: using theoretical {phase} pick from {method}')
+        pick_time = theo_pick_time
+        pick_phase = f'{phase}theo'
+    if config.rp_from_focal_mechanism:
+        logger.info(
+            f'{trace.id}: {phase} takeoff angle: {takeoff_angle:.1f} '
+            f'computed from {method}')
+    add_arrival_to_trace.pick_cache[key] =\
+        trace.stats.arrivals[phase] = (pick_phase, pick_time)
+    add_arrival_to_trace.travel_time_cache[key] =\
+        trace.stats.travel_times[phase] = travel_time
+    add_arrival_to_trace.angle_cache[key] =\
+        trace.stats.takeoff_angles[phase] = takeoff_angle
+add_arrival_to_trace.pick_cache = {}  #noqa
+add_arrival_to_trace.travel_time_cache = {}  #noqa
+add_arrival_to_trace.angle_cache = {}  #noqa

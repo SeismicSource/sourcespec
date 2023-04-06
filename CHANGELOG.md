@@ -11,6 +11,8 @@ This release requires at least Python 3.7.
 ### Bugfixes
 
 - Do not ignore picks labeled with lowercase "p" or "s"
+- Fixed: config parameter `p_arrival_tolerance` was used also for S waves
+  (instead of `s_arrival_tolerance`)
 
 ### Requirements
 
