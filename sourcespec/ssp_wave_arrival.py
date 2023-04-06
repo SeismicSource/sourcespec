@@ -190,14 +190,12 @@ def add_arrival_to_trace(trace, phase, config):
         config.s_arrival_tolerance
     )
     key = f'{trace.id}_{phase}'
+    trst = trace.stats
     # First, see if there are cached values
     with contextlib.suppress(KeyError):
-        trace.stats.arrivals[phase] =\
-            add_arrival_to_trace.pick_cache[key]
-        trace.stats.travel_times[phase] =\
-            add_arrival_to_trace.travel_time_cache[key]
-        trace.stats.takeoff_angles[phase] =\
-            add_arrival_to_trace.angle_cache[key]
+        trst.arrivals[phase] = add_arrival_to_trace.pick_cache[key]
+        trst.travel_times[phase] = add_arrival_to_trace.travel_time_cache[key]
+        trst.takeoff_angles[phase] = add_arrival_to_trace.angle_cache[key]
         return
     # If no cache is available, compute travel_time and takeoff_angle
     travel_time, takeoff_angle, method = _wave_arrival(trace, phase, config)
@@ -222,11 +220,11 @@ def add_arrival_to_trace(trace, phase, config):
             f'{trace.id}: {phase} takeoff angle: {takeoff_angle:.1f} '
             f'computed from {method}')
     add_arrival_to_trace.pick_cache[key] =\
-        trace.stats.arrivals[phase] = (pick_phase, pick_time)
+        trst.arrivals[phase] = (pick_phase, pick_time)
     add_arrival_to_trace.travel_time_cache[key] =\
-        trace.stats.travel_times[phase] = travel_time
+        trst.travel_times[phase] = travel_time
     add_arrival_to_trace.angle_cache[key] =\
-        trace.stats.takeoff_angles[phase] = takeoff_angle
+        trst.takeoff_angles[phase] = takeoff_angle
 add_arrival_to_trace.pick_cache = {}  #noqa
 add_arrival_to_trace.travel_time_cache = {}  #noqa
 add_arrival_to_trace.angle_cache = {}  #noqa
