@@ -141,7 +141,7 @@ def _validate_pick(pick, theo_pick_time, tolerance, trace_id):
     if abs(delta_t) > tolerance:  # seconds
         logger.warning(
             f'{trace_id}: measured {pick.phase} pick time - theoretical time '
-            f'= {delta_t:.1f} s')
+            f'= {delta_t:.1f} s, above tolerance of {tolerance:.1f} s')
         return False
     return True
 
