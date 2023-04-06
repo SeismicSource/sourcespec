@@ -21,7 +21,8 @@ import re
 from obspy.core import Stream
 from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
-from sourcespec.ssp_util import remove_instr_response, hypo_dist
+from sourcespec.ssp_util import (
+    remove_instr_response, station_to_event_position)
 from sourcespec.ssp_wave_arrival import add_arrivals_to_trace
 from sourcespec.clipping_detection import clipping_score, clipping_peaks
 logger = logging.getLogger(__name__.split('.')[-1])
@@ -284,72 +285,80 @@ def _merge_stream(config, st):
     return st[0]
 
 
-def _add_hypo_dist_and_arrivals(config, st):
-    for trace in st:
-        if hypo_dist(trace) is None:
-            raise RuntimeError(
-                f'{trace.id}: Unable to compute hypocentral distance: '
-                'skipping trace')
-        if config.max_epi_dist is not None and \
-                trace.stats.epi_dist > config.max_epi_dist:
-            raise RuntimeError(
-                f'{trace.id}: Epicentral distance '
-                f'({trace.stats.epi_dist:.1f} km) '
-                f'larger than max_epi_dist ({config.max_epi_dist:.1f} km): '
-                'skipping trace')
-        add_arrivals_to_trace(trace, config)
-        try:
-            p_arrival_time = trace.stats.arrivals['P'][1]
-        except KeyError as e:
-            raise RuntimeError(
-                f'{trace.id}: Unable to get P arrival time: skipping trace'
-            ) from e
-        if (config.wave_type[0] == 'P' and
-                p_arrival_time < trace.stats.starttime):
-            raise RuntimeError(
-                f'{trace.id}: P-window incomplete: skipping trace')
-        try:
-            s_arrival_time = trace.stats.arrivals['S'][1]
-        except KeyError as e:
-            raise RuntimeError(
-                f'{trace.id}: Unable to get S arrival time: skipping trace'
-            ) from e
-        if (config.wave_type[0] == 'S' and
-                s_arrival_time < trace.stats.starttime):
-            raise RuntimeError(
-                f'{trace.id}: S-window incomplete: skipping trace')
-        # Signal window for spectral analysis (S phase)
-        s_minus_p = s_arrival_time-p_arrival_time
-        s_pre_time = config.signal_pre_time
-        if s_minus_p/2 < s_pre_time:
-            # use (Ts-Tp)/2 if it is smaller than signal_pre_time
-            # (for short-distance records with short S-P interval)
-            s_pre_time = s_minus_p/2
-            logger.warning(
-                f'{trace.id}: signal_pre_time is larger than (Ts-Tp)/2. '
-                'Using (Ts-Tp)/2 instead')
-        t1 = s_arrival_time - s_pre_time
-        t1 = max(trace.stats.starttime, t1)
-        t2 = t1 + config.win_length
-        trace.stats.arrivals['S1'] = ('S1', t1)
-        trace.stats.arrivals['S2'] = ('S2', t2)
-        # Signal window for spectral analysis (P phase)
-        t1 = p_arrival_time - config.signal_pre_time
-        t1 = max(trace.stats.starttime, t1)
-        t2 = t1 + min(config.win_length, s_minus_p)
-        trace.stats.arrivals['P1'] = ('P1', t1)
-        trace.stats.arrivals['P2'] = ('P2', t2)
-        # Noise window for spectral analysis
-        t1 = max(trace.stats.starttime, p_arrival_time - config.noise_pre_time)
-        t2 = t1 + config.win_length
-        if t2 >= p_arrival_time:
-            logger.warning(
-                f'{trace.id}: noise window ends after P-wave arrival')
-            # Note: maybe we should also take into account signal_pre_time here
-            t2 = p_arrival_time
-            t1 = min(t1, t2)
-        trace.stats.arrivals['N1'] = ('N1', t1)
-        trace.stats.arrivals['N2'] = ('N2', t2)
+def _add_station_to_event_position(config, trace):
+    """
+    Add to ``trace.stats`` station-to-event distance (hypocentral and
+    epicentral), great-circle distance, azimuth and backazimuth.
+    """
+    try:
+        station_to_event_position(trace)
+    except Exception as e:
+        raise RuntimeError(
+            f'{trace.id}: Unable to compute hypocentral distance: '
+            'skipping trace'
+        ) from e
+    if (
+        config.max_epi_dist is not None and
+        trace.stats.epi_dist > config.max_epi_dist
+    ):
+        raise RuntimeError(
+            f'{trace.id}: Epicentral distance '
+            f'({trace.stats.epi_dist:.1f} km) '
+            f'larger than max_epi_dist ({config.max_epi_dist:.1f} km): '
+            'skipping trace')
+
+
+def _add_arrivals(config, trace):
+    """Add to ``trace.stats`` P and S arrival times and angles."""
+    add_arrivals_to_trace(trace, config)
+    try:
+        p_arrival_time = trace.stats.arrivals['P'][1]
+    except KeyError as e:
+        raise RuntimeError(
+            f'{trace.id}: Unable to get P arrival time: skipping trace'
+        ) from e
+    if config.wave_type[0] == 'P' and p_arrival_time < trace.stats.starttime:
+        raise RuntimeError(f'{trace.id}: P-window incomplete: skipping trace')
+    try:
+        s_arrival_time = trace.stats.arrivals['S'][1]
+    except KeyError as e:
+        raise RuntimeError(
+            f'{trace.id}: Unable to get S arrival time: skipping trace'
+        ) from e
+    if config.wave_type[0] == 'S' and s_arrival_time < trace.stats.starttime:
+        raise RuntimeError(f'{trace.id}: S-window incomplete: skipping trace')
+    # Signal window for spectral analysis (S phase)
+    s_minus_p = s_arrival_time-p_arrival_time
+    s_pre_time = config.signal_pre_time
+    if s_minus_p/2 < s_pre_time:
+        # use (Ts-Tp)/2 if it is smaller than signal_pre_time
+        # (for short-distance records with short S-P interval)
+        s_pre_time = s_minus_p/2
+        logger.warning(
+            f'{trace.id}: signal_pre_time is larger than (Ts-Tp)/2. '
+            'Using (Ts-Tp)/2 instead')
+    t1 = s_arrival_time - s_pre_time
+    t1 = max(trace.stats.starttime, t1)
+    t2 = t1 + config.win_length
+    trace.stats.arrivals['S1'] = ('S1', t1)
+    trace.stats.arrivals['S2'] = ('S2', t2)
+    # Signal window for spectral analysis (P phase)
+    t1 = p_arrival_time - config.signal_pre_time
+    t1 = max(trace.stats.starttime, t1)
+    t2 = t1 + min(config.win_length, s_minus_p)
+    trace.stats.arrivals['P1'] = ('P1', t1)
+    trace.stats.arrivals['P2'] = ('P2', t2)
+    # Noise window for spectral analysis
+    t1 = max(trace.stats.starttime, p_arrival_time - config.noise_pre_time)
+    t2 = t1 + config.win_length
+    if t2 >= p_arrival_time:
+        logger.warning(
+            f'{trace.id}: noise window ends after P-wave arrival')
+        # Note: maybe we should also take into account signal_pre_time here
+        t2 = p_arrival_time
+        t1 = min(t1, t2)
+    trace.stats.arrivals['N1'] = ('N1', t1)
+    trace.stats.arrivals['N2'] = ('N2', t2)
 
 
 def _skip_ignored(config, id):
@@ -382,11 +391,13 @@ def process_traces(config, st):
     logger.info('Processing traces...')
     out_st = Stream()
     for id in sorted({tr.id for tr in st}):
-        # We still use a stream, since the trace can have gaps or overlaps
-        st_sel = st.select(id=id)
         try:
             _skip_ignored(config, id)
-            _add_hypo_dist_and_arrivals(config, st_sel)
+            # We still use a stream, since the trace can have gaps or overlaps
+            st_sel = st.select(id=id)
+            for _trace in st_sel:
+                _add_station_to_event_position(config, _trace)
+                _add_arrivals(config, _trace)
             trace = _merge_stream(config, st_sel)
             trace.stats.ignore = False
             trace_process = _process_trace(config, trace)
