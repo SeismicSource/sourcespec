@@ -23,7 +23,7 @@ from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
     remove_instr_response, station_to_event_position)
-from sourcespec.ssp_wave_arrival import add_arrivals_to_trace
+from sourcespec.ssp_wave_arrival import add_arrival_to_trace
 from sourcespec.clipping_detection import clipping_score, clipping_peaks
 logger = logging.getLogger(__name__.split('.')[-1])
 
@@ -309,22 +309,21 @@ def _add_station_to_event_position(config, trace):
 
 
 def _add_arrivals(config, trace):
-    """Add to ``trace.stats`` P and S arrival times and angles."""
-    add_arrivals_to_trace(trace, config)
-    try:
-        p_arrival_time = trace.stats.arrivals['P'][1]
-    except KeyError as e:
-        raise RuntimeError(
-            f'{trace.id}: Unable to get P arrival time: skipping trace'
-        ) from e
+    """Add to trace P and S arrival times, travel times and angles."""
+    for phase in 'P', 'S':
+        try:
+            add_arrival_to_trace(trace, phase, config)
+        except Exception as e:
+            for line in str(e).splitlines():
+                logger.warning(line)
+            raise RuntimeError(
+                f'{trace.id}: Unable to get {phase} arrival time: '
+                'skipping trace'
+            ) from e
+    p_arrival_time = trace.stats.arrivals['P'][1]
     if config.wave_type[0] == 'P' and p_arrival_time < trace.stats.starttime:
         raise RuntimeError(f'{trace.id}: P-window incomplete: skipping trace')
-    try:
-        s_arrival_time = trace.stats.arrivals['S'][1]
-    except KeyError as e:
-        raise RuntimeError(
-            f'{trace.id}: Unable to get S arrival time: skipping trace'
-        ) from e
+    s_arrival_time = trace.stats.arrivals['S'][1]
     if config.wave_type[0] == 'S' and s_arrival_time < trace.stats.starttime:
         raise RuntimeError(f'{trace.id}: S-window incomplete: skipping trace')
     # Signal window for spectral analysis (S phase)
