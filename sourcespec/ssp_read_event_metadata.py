@@ -22,11 +22,13 @@ logger = logging.getLogger(__name__.split('.')[-1])
 
 class Hypo():
     """A hypocenter object."""
-    latitude = None
-    longitude = None
-    depth = None
-    origin_time = None
-    evid = None
+
+    def __init__(self):
+        self.latitude = None
+        self.longitude = None
+        self.depth = None
+        self.origin_time = None
+        self.evid = None
 
     def __str__(self):
         return (
@@ -38,12 +40,14 @@ class Hypo():
 
 class Pick():
     """A pick object."""
-    station = None
-    flag = None
-    phase = None
-    polarity = None
-    quality = None
-    time = None
+
+    def __init__(self):
+        self.station = None
+        self.flag = None
+        self.phase = None
+        self.polarity = None
+        self.quality = None
+        self.time = None
 
     def __str__(self):
         return (

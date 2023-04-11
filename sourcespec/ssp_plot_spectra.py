@@ -44,17 +44,19 @@ synth_colors = [
 
 
 class PlotParams():
-    plot_type = None
-    stack_plots = False
-    nlines = 0
-    ncols = 0
-    freq_minmax = None
-    moment_minmax = None
-    mag_minmax = None
-    plotn = 0
-    figures = []
-    axes = None
-    ax0 = None
+
+    def __init__(self):
+        self.plot_type = None
+        self.stack_plots = False
+        self.nlines = 0
+        self.ncols = 0
+        self.freq_minmax = None
+        self.moment_minmax = None
+        self.mag_minmax = None
+        self.plotn = 0
+        self.figures = []
+        self.axes = None
+        self.ax0 = None
 
     def set_plot_params(self, config, spec_st, specnoise_st):
         """Determine the number of plots and axes min and max."""
