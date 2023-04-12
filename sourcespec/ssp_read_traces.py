@@ -273,29 +273,13 @@ def _build_filelist(path, filelist, tmpdir):
             tar.close()
         else:
             filelist.append(path)
-# -----------------------------------------------------------------------------
 
 
-# Public interface:
-def read_traces(config):
-    """Read traces, store waveforms and metadata."""
-    # read station metadata into an ObsPy ``Inventory`` object
-    inventory = read_station_metadata(config.station_metadata)
-
-    picks = []
-    hypo = None
-    # parse hypocenter file
-    if config.options.hypo_file is not None:
-        hypo, picks = parse_hypo_file(config.options.hypo_file)
-    # parse pick file
-    if config.options.pick_file is not None:
-        picks = parse_hypo71_picks(config)
-    # parse QML file
-    if config.options.qml_file is not None:
-        hypo, picks = parse_qml(config.options.qml_file, config.options.evid)
-
-    # finally, read traces
-    logger.info('Reading traces...')
+def _read_trace_files(config, inventory, hypo, picks):
+    """
+    Read trace files from a given path. Complete trace metadata and
+    return a stream object.
+    """
     # phase 1: build a file list
     # ph 1.1: create a temporary dir and run '_build_filelist()'
     #         to move files to it and extract all tar archives
@@ -348,12 +332,35 @@ def read_traces(config):
                 continue
             st.append(trace)
     shutil.rmtree(tmpdir)
+    return st
+# -----------------------------------------------------------------------------
 
+
+# Public interface:
+def read_traces(config):
+    """Read traces, store waveforms and metadata."""
+    # read station metadata into an ObsPy ``Inventory`` object
+    inventory = read_station_metadata(config.station_metadata)
+
+    picks = []
+    hypo = None
+    # parse hypocenter file
+    if config.options.hypo_file is not None:
+        hypo, picks = parse_hypo_file(config.options.hypo_file)
+    # parse pick file
+    if config.options.pick_file is not None:
+        picks = parse_hypo71_picks(config)
+    # parse QML file
+    if config.options.qml_file is not None:
+        hypo, picks = parse_qml(config.options.qml_file, config.options.evid)
+
+    # finally, read trace files
+    logger.info('Reading traces...')
+    st = _read_trace_files(config, inventory, hypo, picks)
     logger.info('Reading traces: done')
-    if len(st.traces) == 0:
+    if len(st) == 0:
         logger.info('No trace loaded')
         ssp_exit()
-
     _complete_picks(st)
 
     # if hypo is still None, get it from first trace
