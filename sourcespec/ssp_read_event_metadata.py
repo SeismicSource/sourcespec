@@ -13,10 +13,12 @@ Read event metadata in QuakeML, HYPO71 or HYPOINVERSE format.
 import os
 import contextlib
 import logging
+import yaml
 from datetime import datetime
 from obspy import UTCDateTime
 from obspy import read_events
 from sourcespec.ssp_setup import ssp_exit, traceid_map
+from sourcespec.ssp_event import SSPEvent
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -419,3 +421,25 @@ def parse_hypo71_picks(config):
         pick2.time += float(stime)
         picks.append(pick2)
     return picks
+
+
+def parse_source_spec_event_file(event_file, evid=None):
+    """
+    Parse a SourceSpec Event File, which is a YAML file.
+
+    :param event_file: path to SourceSpec event file
+    :param evid: event id
+
+    :return: SSPEvent object
+    """
+    # will raise any exception raised by yaml.safe_load()
+    events = yaml.safe_load(open(event_file))
+    if evid is not None:
+        _events = [event for event in events if event.get('event_id') == evid]
+        try:
+            event = _events[0]
+        except IndexError as e:
+            raise ValueError(f'Event {evid} not found in {event_file}') from e
+    else:
+        event = events[0]
+    return SSPEvent(event)
