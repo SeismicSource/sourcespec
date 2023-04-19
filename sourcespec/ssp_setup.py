@@ -27,10 +27,10 @@ import contextlib
 import warnings
 from datetime import datetime
 from collections import defaultdict
+from sourcespec import __version__, __banner__
 from sourcespec.configobj import ConfigObj
 from sourcespec.configobj.validate import Validator
 from sourcespec.config import Config
-from sourcespec._version import get_versions
 
 # define ipshell(), if possible
 # note: ANSI colors do not work on Windows standard terminal
@@ -800,8 +800,10 @@ def setup_logging(config, basename=None, progname='source_spec'):
 
     # Only write these debug infos for a new logfile
     if not oldlogfile:
+        banner = f'\n{__banner__}\nThis is SourceSpec v{__version__}.\n'
+        logger.info(banner)
         logger.debug('source_spec START')
-        logger.debug('SourceSpec version: ' + get_versions()['version'])
+        logger.debug(f'SourceSpec version: {__version__}')
         uname = platform.uname()
         uname_str = f'{uname[0]} {uname[2]} {uname[4]}'
         logger.debug(f'Platform: {uname_str}')
