@@ -47,7 +47,7 @@ def spectral_residuals(config, spec_st, sspec_output):
             residuals.append(res)
 
     # Save residuals as pickle file
-    evid = config.hypo.evid
+    evid = config.event.event_id
     res_file = os.path.join(config.options.outdir, f'{evid}-residuals.pickle')
     with open(res_file, 'wb') as fp:
         pickle.dump(residuals, fp)

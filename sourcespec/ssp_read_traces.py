@@ -35,7 +35,7 @@ from sourcespec.ssp_read_event_metadata import (
 from sourcespec.ssp_read_sac_header import (
     compute_sensitivity_from_SAC,
     get_instrument_from_SAC, get_station_coordinates_from_SAC,
-    get_hypocenter_from_SAC, get_picks_from_SAC)
+    get_event_from_SAC, get_picks_from_SAC)
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -197,15 +197,15 @@ def _add_coords(trace):
 _add_coords.skipped = []  #noqa
 
 
-def _add_hypocenter(trace, hypo=None):
-    """Add hypocenter information to trace."""
-    if hypo is None:
+def _add_event(trace, ssp_event=None):
+    """Add ssp_event object to trace."""
+    if ssp_event is None:
         # Try to get hypocenter information from the SAC header
         try:
-            hypo = get_hypocenter_from_SAC(trace)
+            ssp_event = get_event_from_SAC(trace)
         except Exception:
             return
-    trace.stats.hypo = hypo
+    trace.stats.event = ssp_event
 
 
 def _add_picks(trace, picks=None):
@@ -250,8 +250,10 @@ def _complete_picks(st):
 
 # FILE PARSING ----------------------------------------------------------------
 def _hypo_vel(hypo, config):
-    hypo.vp = get_vel(hypo.longitude, hypo.latitude, hypo.depth, 'P', config)
-    hypo.vs = get_vel(hypo.longitude, hypo.latitude, hypo.depth, 'S', config)
+    hypo.vp = get_vel(
+        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'P', config)
+    hypo.vs = get_vel(
+        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'S', config)
     logger.info(f'Vp_hypo: {hypo.vp:.2f} km/s, Vs_hypo: {hypo.vs:.2f} km/s')
 
 
@@ -275,7 +277,7 @@ def _build_filelist(path, filelist, tmpdir):
             filelist.append(path)
 
 
-def _read_trace_files(config, inventory, hypo, picks):
+def _read_trace_files(config, inventory, ssp_event, picks):
     """
     Read trace files from a given path. Complete trace metadata and
     return a stream object.
@@ -324,7 +326,7 @@ def _read_trace_files(config, inventory, hypo, picks):
                 _add_inventory(trace, inventory, config)
                 _check_instrtype(trace)
                 _add_coords(trace)
-                _add_hypocenter(trace, hypo)
+                _add_event(trace, ssp_event)
                 _add_picks(trace, picks)
             except Exception as err:
                 for line in str(err).splitlines():
@@ -343,30 +345,31 @@ def read_traces(config):
     inventory = read_station_metadata(config.station_metadata)
 
     picks = []
-    hypo = None
+    ssp_event = None
     # parse hypocenter file
     if config.options.hypo_file is not None:
-        hypo, picks = parse_hypo_file(config.options.hypo_file)
+        ssp_event, picks = parse_hypo_file(config.options.hypo_file)
     # parse pick file
     if config.options.pick_file is not None:
         picks = parse_hypo71_picks(config)
     # parse QML file
     if config.options.qml_file is not None:
-        hypo, picks = parse_qml(config.options.qml_file, config.options.evid)
+        ssp_event, picks = parse_qml(
+            config.options.qml_file, config.options.evid)
 
     # finally, read trace files
     logger.info('Reading traces...')
-    st = _read_trace_files(config, inventory, hypo, picks)
+    st = _read_trace_files(config, inventory, ssp_event, picks)
     logger.info('Reading traces: done')
     if len(st) == 0:
         logger.info('No trace loaded')
         ssp_exit()
     _complete_picks(st)
 
-    # if hypo is still None, get it from first trace
-    if hypo is None:
+    # if ssp_event is still None, get it from first trace
+    if ssp_event is None:
         try:
-            hypo = st[0].stats.hypo
+            ssp_event = st[0].stats.event
         except AttributeError:
             logger.error('No hypocenter information found.')
             sys.stderr.write(
@@ -376,10 +379,10 @@ def read_traces(config):
                 '(if you use the SAC format).\n'
             )
             ssp_exit()
-    # add vs to hypo
-    _hypo_vel(hypo, config)
-    # add hypo to config file
-    config.hypo = hypo
+    # add velocity info to hypocenter
+    _hypo_vel(ssp_event.hypocenter, config)
+    # add event to config file
+    config.event = ssp_event
 
     st.sort()
     return st

@@ -73,7 +73,7 @@ def _write_parfile(config, sspec_output):
     """
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
-    evid = config.hypo.evid
+    evid = config.event.event_id
     parfilename = os.path.join(
         config.options.outdir, f'{evid}.ssp.out')
     with open(parfilename, 'w') as parfile:
@@ -85,10 +85,12 @@ def _write_parfile(config, sspec_output):
         parfile.write(
             '*** Please look at the YAML file in this directory. ***\n')
 
-        hypo = config.hypo
+        evid = config.event.event_id
+        hypo = config.event.hypocenter
         parfile.write(
-            f'{hypo.evid} lon {hypo.longitude:8.3f} lat {hypo.latitude:7.3f} '
-            f'depth {hypo.depth:5.1f} km orig_time {hypo.origin_time}\n\n')
+            f'{evid} lon {hypo.longitude:8.3f} lat {hypo.latitude:7.3f} '
+            f'depth {hypo.depth.value_in_km:5.1f} km '
+            f'orig_time {hypo.origin_time}\n\n')
         parfile.write('*** Station source parameters ***\n')
         parfile.write(
             '*** Note: outliers are prepended by a star (*) symbol ***\n')
@@ -277,7 +279,8 @@ def _write_parfile(config, sspec_output):
 
         parfile.write(f'\n*** SourceSpec: {get_versions()["version"]}')
         parfile.write(
-            f'\n*** Run completed on: {config.end_of_run} {config.end_of_run_tz}')
+            f'\n*** Run completed on: {config.end_of_run} '
+            f'{config.end_of_run_tz}')
         if config.options.run_id:
             parfile.write(f'\n*** Run ID: {config.options.run_id}')
         _write_author_and_agency_to_parfile(config, parfile)
@@ -327,7 +330,7 @@ def _write_yaml(config, sspec_output):
     """Write sspec output in a YAML file."""
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
-    evid = config.hypo.evid
+    evid = config.event.event_id
     yamlfilename = os.path.join(config.options.outdir, f'{evid}.ssp.yaml')
     lines = _dict2yaml(sspec_output)
     with open(yamlfilename, 'w') as fp:
@@ -358,7 +361,7 @@ def _write_hypo(config, sspec_output):
         # line[45+i] = mw_str[0+i]
         line[69+i] = ml_str[0+i]
     outline = ''.join(line)
-    evid = config.hypo.evid
+    evid = config.event.event_id
     hypo_file_out = os.path.join(config.options.outdir, f'{evid}.ssp.h')
     with open(hypo_file_out, 'w') as fp:
         with contextlib.suppress(Exception):

@@ -105,10 +105,14 @@ def _make_fig(config, plot_params):
     ax0 = fig.add_subplot(111, label='ax0')
     ax0.set_axis_off()
     # Add event information as a title
-    hypo = config.hypo
+    evid = config.event.event_id
+    hypo = config.event.hypocenter
+    ev_lon = hypo.longitude
+    ev_lat = hypo.latitude
+    ev_depth = hypo.depth.value_in_km
     textstr = (
-        f'evid: {hypo.evid} lon: {hypo.longitude:.3f} '
-        f'lat: {hypo.latitude:.3f} depth: {hypo.depth:.1f} km'
+        f'evid: {evid} lon: {ev_lon:.3f} lat: {ev_lat:.3f} '
+        f'depth: {ev_depth:.1f} km'
     )
     with contextlib.suppress(AttributeError):
         textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
@@ -188,7 +192,7 @@ def _make_fig(config, plot_params):
 
 
 def _savefig(config, plottype, figures):
-    evid = config.hypo.evid
+    evid = config.event.event_id
     if plottype == 'regular':
         suffix = '.ssp.'
         message = 'Spectral'

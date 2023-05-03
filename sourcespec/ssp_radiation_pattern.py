@@ -96,9 +96,9 @@ def get_radiation_pattern_coefficient(stats, config):
     if not config.rp_from_focal_mechanism:
         return config[f'rp{simple_wave_type}']
     try:
-        strike = stats.hypo.strike
-        dip = stats.hypo.dip
-        rake = stats.hypo.rake
+        strike = stats.event.focal_mechanism.strike
+        dip = stats.event.focal_mechanism.dip
+        rake = stats.event.focal_mechanism.rake
     except Exception:
         msg = (
             f'Cannot find focal mechanism. Using "rp{simple_wave_type}" '

@@ -95,9 +95,9 @@ def radiated_energy(config, spec_st, specnoise_st, sspec_output):
         fmax = config.max_freq_Er
         rho = config.rho
         if config.wave_type == 'P':
-            vel = config.hypo.vp * 1000.
+            vel = config.event.hypocenter.vp * 1e3
         elif config.wave_type in ['S', 'SV', 'SH']:
-            vel = config.hypo.vs * 1000.
+            vel = config.event.hypocenter.vs * 1e3
 
         # Make sure that the param_Er object is always defined, even when Er
         # is not computed (i.e., "continue" below)

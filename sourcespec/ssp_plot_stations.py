@@ -176,11 +176,16 @@ def _plot_hypo(ax, hypo):
         )
 
 
-def _add_title(hypo, ax):
+def _add_title(event, ax):
     """Add event information as plot title."""
+    evid = event.event_id
+    hypo = event.hypocenter
+    ev_lon = hypo.longitude
+    ev_lat = hypo.latitude
+    ev_depth = hypo.depth.value_in_km
     textstr = (
-        f'evid: {hypo.evid} \nlon: {hypo.longitude:.3f} '
-        f'lat: {hypo.latitude:.3f} depth: {hypo.depth:.1f} km'
+        f'evid: {evid} \nlon: {ev_lon:.3f} lat: {ev_lat:.3f} '
+        f'depth: {ev_depth:.1f} km'
     )
     with contextlib.suppress(AttributeError):
         textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
@@ -248,11 +253,11 @@ def _make_basemap(config, maxdist):
     """Create basemap with tiles, coastlines, hypocenter
     and distance circles."""
     g = Geod(ellps='WGS84')
-    hypo = config.hypo
     # increase bounding box for large maxdist,
     # to account for deformation in Mercator projection
     mult = 1.1 if maxdist < 500 else 1.5
     maxdiagonal = maxdist*(2**0.5)*mult
+    hypo = config.event.hypocenter
     lonmax, latmax, _ = g.fwd(
         hypo.longitude, hypo.latitude, 45, maxdiagonal*1000.)
     lonmin = 2*hypo.longitude - lonmax
@@ -270,7 +275,7 @@ def _make_basemap(config, maxdist):
     ax = fig.add_subplot(111, projection=stamen_terrain.crs)
     ax.set_extent([lonmin, lonmax, latmin, latmax], crs=ccrs.Geodetic())
     ax.maxdiagonal = maxdiagonal
-    _add_title(hypo, ax)
+    _add_title(config.event, ax)
     _add_tiles(config, ax, stamen_terrain)
     _add_coastlines(config, ax)
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
@@ -423,7 +428,7 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
         # then, try to stay away from circle texts
         adjust_text(texts, add_objects=circle_texts, ax=ax, maxshift=1e3)
 
-    evid = config.hypo.evid
+    evid = config.event.event_id
     figfile_base = os.path.join(config.options.outdir, evid)
     figfile_base += f'.map_{vname}.'
     fmt = config.plot_save_format

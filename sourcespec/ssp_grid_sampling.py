@@ -372,7 +372,7 @@ class GridSampling():
         outdir = os.path.join(config.options.outdir, 'misfit')
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-        evid = config.hypo.evid
+        evid = config.event.event_id
         return os.path.join(outdir, evid)
 
     def _set_ylogscale(self, ax, extent, ylabel):

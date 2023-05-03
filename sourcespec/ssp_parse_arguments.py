@@ -107,7 +107,8 @@ def _init_parser(description, epilog, nargs):
         '-H', '--hypocenter', dest='hypo_file',
         action='store', default=None,
         help='get hypocenter information from FILE.\n'
-             'Supported formats: HYPO71, HYPOINVERSE-2000.\n'
+             'Supported formats: SourceSpec Event File, HYPO71, '
+             'HYPOINVERSE-2000.\n'
              'If this file contains picks, they will be parsed as well.',
         metavar='FILE'
     )

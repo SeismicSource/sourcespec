@@ -267,10 +267,10 @@ def station_to_event_position(trace):
     stla = coords.latitude
     stlo = coords.longitude
     stel = coords.elevation
-    hypo = trace.stats.hypo
+    hypo = trace.stats.event.hypocenter
     evla = hypo.latitude
     evlo = hypo.longitude
-    evdp = hypo.depth
+    evdp = hypo.depth.value_in_km
     epi_dist, az, baz = gps2dist_azimuth(evla, evlo, stla, stlo)
     epi_dist /= 1e3  # in km
     gcarc = kilometers2degrees(epi_dist)
