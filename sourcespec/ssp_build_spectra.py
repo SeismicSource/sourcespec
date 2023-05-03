@@ -300,9 +300,9 @@ def _displacement_to_moment(stats, config):
     """
     phase = config.wave_type[0]
     if phase == 'P':
-        v_hypo = config.hypo.vp
+        v_hypo = config.event.hypocenter.vp
     elif phase == 'S':
-        v_hypo = config.hypo.vs
+        v_hypo = config.event.hypocenter.vs
     v_station = get_vel(
         stats.coords.longitude, stats.coords.latitude, -stats.coords.elevation,
         phase, config)
@@ -362,7 +362,7 @@ def _build_spectrum(config, trace):
     stats = trace.stats
     spec.stats.instrtype = stats.instrtype
     spec.stats.coords = stats.coords
-    spec.stats.hypo = stats.hypo
+    spec.stats.event = stats.event
     spec.stats.hypo_dist = stats.hypo_dist
     spec.stats.epi_dist = stats.epi_dist
     spec.stats.ignore = stats.ignore

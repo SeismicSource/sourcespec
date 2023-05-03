@@ -162,9 +162,9 @@ def _spec_inversion(config, spec, spec_weight):
     """Invert one spectrum, return a StationParameters() object."""
     # azimuth computation
     coords = spec.stats.coords
-    hypo = spec.stats.hypo
     stla = coords.latitude
     stlo = coords.longitude
+    hypo = spec.stats.event.hypocenter
     evla = hypo.latitude
     evlo = hypo.longitude
     geod = gps2dist_azimuth(evla, evlo, stla, stlo)
@@ -284,7 +284,7 @@ def _spec_inversion(config, spec, spec_weight):
         confidence_level=68.2, format='{:.3f}')
 
     # additional parameters, computed from fc, Mw and t_star
-    vs = config.hypo.vs
+    vs = config.event.hypocenter.vs
     travel_time = spec.stats.travel_times[config.wave_type[0]]
     # seismic moment
     station_pars.Mo = SpectralParameter(
@@ -429,12 +429,12 @@ def spectral_inversion(config, spec_st, weight_st):
         config.t_star_min_max or 'null'
     sspec_output.inversion_info.fc_min_max = config.fc_min_max or 'null'
     sspec_output.inversion_info.Qo_min_max = config.Qo_min_max or 'null'
-    hypo = config.hypo
-    sspec_output.event_info.event_id = hypo.evid
-    sspec_output.event_info.longitude = hypo.longitude
-    sspec_output.event_info.latitude = hypo.latitude
-    sspec_output.event_info.depth_in_km = hypo.depth
-    sspec_output.event_info.origin_time = hypo.origin_time
+    event = config.event
+    sspec_output.event_info.event_id = event.event_id
+    sspec_output.event_info.longitude = event.hypocenter.longitude
+    sspec_output.event_info.latitude = event.hypocenter.latitude
+    sspec_output.event_info.depth_in_km = event.hypocenter.depth.value_in_km
+    sspec_output.event_info.origin_time = event.hypocenter.origin_time
     for spec in sorted(spectra, key=lambda sp: sp.id):
         if spec.stats.channel[-1] != 'H':
             continue

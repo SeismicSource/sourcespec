@@ -298,10 +298,6 @@ def _misfit_page(config):
     # Author and agency
     author, agency = _author_and_agency(config)
 
-    # event info
-    hypo = config.hypo
-    evid = hypo.evid
-
     # 1d conditional misfit plots
     misfit_plot_files = config.figures['misfit_1d']
     one_d_misfit_table_rows = _misfit_table_rows(misfit_plot_files)
@@ -325,7 +321,7 @@ def _misfit_page(config):
         '{RUN_COMPLETED}': run_completed,
         '{AUTHOR}': author,
         '{AGENCY}': agency,
-        '{EVENTID}': evid,
+        '{EVENTID}': config.event.event_id,
         '{1D_MISFIT_TABLE_ROWS}': one_d_misfit_table_rows,
         '{2D_MISFIT_TABLE_ROWS_FC_MW}': two_d_misfit_table_rows_fc_mw,
         '{2D_MISFIT_TABLE_ROWS_FC_TSTAR}': two_d_misfit_table_rows_fc_tstar,
@@ -357,15 +353,15 @@ def _add_run_info_to_html(config, replacements):
 
 def _add_event_info_to_html(config, replacements):
     """Add event info to HTML report."""
-    hypo = config.hypo
-    evid = hypo.evid
+    evid = config.event.event_id
+    hypo = config.event.hypocenter
     run_id = config.options.run_id
     replacements.update({
         '{EVENTID}': evid,
         '{RUNID}': run_id,
         '{EVENT_LONGITUDE}': f'{hypo.longitude:8.3f}',
         '{EVENT_LATITUDE}': f'{hypo.latitude:7.3f}',
-        '{EVENT_DEPTH}': f'{hypo.depth:5.1f}',
+        '{EVENT_DEPTH}': f'{hypo.depth.value_in_km:5.1f}',
         '{ORIGIN_TIME}': f'{hypo.origin_time}',
     })
     # Link to event page, if defined
@@ -877,7 +873,7 @@ def _add_misfit_plots_to_html(config, replacements):
 
 
 def _add_output_files_to_html(config, templates, replacements):
-    evid = config.hypo.evid
+    evid = config.event.event_id
     config_file = f'{evid}.ssp.conf'
     yaml_file = f'{evid}.ssp.yaml'
     log_file = f'{evid}.ssp.log'

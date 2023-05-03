@@ -661,7 +661,7 @@ def save_config(config):
     """Save config file to output dir."""
     # Actually, it renames the file already existing.
     src = os.path.join(config.options.outdir, 'source_spec.conf')
-    evid = config.hypo.evid
+    evid = config.event.event_id
     dst = os.path.join(config.options.outdir, f'{evid}.ssp.conf')
     # On Windows, dst file must not exist
     with contextlib.suppress(Exception):
@@ -672,7 +672,7 @@ def save_config(config):
 def move_outdir(config):
     """Move outdir to a new dir named from evid (and optional run_id)."""
     try:
-        evid = config.hypo.evid
+        evid = config.event.event_id
     except Exception:
         return
     src = config.options.outdir

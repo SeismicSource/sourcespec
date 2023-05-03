@@ -67,7 +67,7 @@ def write_qml(config, sspec_output):
         return
     qml_file = config.options.qml_file
     cat = read_events(qml_file)
-    evid = config.hypo.evid
+    evid = config.event.event_id
     try:
         ev = [e for e in cat if evid in str(e.resource_id)][0]
     except Exception:

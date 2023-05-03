@@ -22,24 +22,6 @@ from sourcespec.ssp_event import SSPEvent
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
-class Hypo():
-    """A hypocenter object."""
-
-    def __init__(self):
-        self.latitude = None
-        self.longitude = None
-        self.depth = None
-        self.origin_time = None
-        self.evid = None
-
-    def __str__(self):
-        return (
-            f'latitude: {self.latitude}, longitude: {self.longitude}, '
-            f'depth: {self.depth}, origin_time: {self.origin_time}, '
-            f'evid: {self.evid}'
-        )
-
-
 class Pick():
     """A pick object."""
 
@@ -59,61 +41,109 @@ class Pick():
         )
 
 
-def parse_qml(qml_file, evid=None):
+def parse_qml(qml_file, event_id=None):
     """Parse event metadata and picks from a QuakeML file."""
-    hypo = None
+    ssp_event = None
     picks = []
     if qml_file is None:
-        return hypo, picks
+        return ssp_event, picks
     try:
-        ev = _get_event_from_qml(qml_file, evid)
-        hypo = _get_hypo_from_event(ev)
-        picks = _get_picks_from_event(ev)
+        qml_event = _get_event_from_qml(qml_file, event_id)
+        ssp_event = _parse_qml_event(qml_event)
+        picks = _parse_picks_from_qml_event(qml_event)
     except Exception as err:
         logger.error(err)
         ssp_exit(1)
-    # See if there is a focal mechanism with nodal planes
+    log_messages = []
     with contextlib.suppress(Exception):
-        _get_focal_mechanism_from_event(ev, hypo)
-        logger.info('Found focal mechanism in QuakeML file')
-    return hypo, picks
+        _parse_moment_tensor_from_qml_event(qml_event, ssp_event)
+        log_messages.append('Found moment tensor in QuakeML file')
+        # Compute focal mechanism, scalar moment and magnitude.
+        # They will be overwritten later on, if they are found in the
+        # QuakeML file.
+        ssp_event.focal_mechanism.from_moment_tensor(ssp_event.moment_tensor)
+        ssp_event.scalar_moment.from_moment_tensor(ssp_event.moment_tensor)
+        ssp_event.magnitude.from_scalar_moment(ssp_event.scalar_moment)
+    with contextlib.suppress(Exception):
+        _parse_scalar_moment_from_qml_event(qml_event, ssp_event)
+        log_messages.append('Found scalar moment in QuakeML file')
+        # Compute magnitude from scalar moment. It will be overwritten later
+        # on, if it is found in the QuakeML file.
+        ssp_event.magnitude.from_scalar_moment(ssp_event.scalar_moment)
+    with contextlib.suppress(Exception):
+        _parse_magnitude_from_qml_event(qml_event, ssp_event)
+        log_messages.append('Found magnitude value in QuakeML file')
+    with contextlib.suppress(Exception):
+        _parse_focal_mechanism_from_qml_event(qml_event, ssp_event)
+        log_messages.append('Found focal mechanism in QuakeML file')
+    for msg in log_messages:
+        logger.info(msg)
+    return ssp_event, picks
 
 
-def _get_event_from_qml(qml_file, evid=None):
+def _get_event_from_qml(qml_file, event_id=None):
     cat = read_events(qml_file)
-    # If evid is None, return the first event in the catalog
-    # otherwise return the event with the given evid
-    return (
-        [e for e in cat if evid in str(e.resource_id)][0]
-        if evid is not None
-        else cat[0]
-    )
+    if event_id is not None:
+        _qml_events = [ev for ev in cat if event_id in str(ev.resource_id)]
+        try:
+            qml_event = _qml_events[0]
+        except IndexError as e:
+            raise ValueError(
+                f'Event {event_id} not found in {qml_file}') from e
+    else:
+        qml_event = cat[0]
+    return qml_event
 
 
-def _get_hypo_from_event(ev):
+def _parse_qml_event(qml_event):
+    ssp_event = SSPEvent()
+    ssp_event.event_id = qml_event.resource_id.id.split('/')[-1].split('=')[-1]
     # See if there is a preferred origin...
-    origin = ev.preferred_origin()
+    origin = qml_event.preferred_origin()
     # ...or just use the first one
     if origin is None:
-        origin = ev.origins[0]
-    hypo = Hypo()
-    hypo.latitude = origin.latitude
-    hypo.longitude = origin.longitude
-    hypo.depth = origin.depth/1000.
-    hypo.origin_time = origin.time
-    hypo.evid = ev.resource_id.id.split('/')[-1].split('=')[-1]
-    return hypo
+        origin = qml_event.origins[0]
+    ssp_event.hypocenter.longitude = origin.longitude
+    ssp_event.hypocenter.latitude = origin.latitude
+    ssp_event.hypocenter.depth.value = origin.depth
+    ssp_event.hypocenter.depth.units = 'm'
+    ssp_event.hypocenter.origin_time = origin.time
+    return ssp_event
 
 
-def _get_focal_mechanism_from_event(ev, hypo):
-    fm = ev.focal_mechanisms[0]
+def _parse_magnitude_from_qml_event(qml_event, ssp_event):
+    mag = qml_event.preferred_magnitude() or qml_event.magnitudes[0]
+    ssp_event.magnitude.value = mag.mag
+    ssp_event.magnitude.type = mag.magnitude_type
+
+
+def _parse_scalar_moment_from_qml_event(qml_event, ssp_event):
+    fm = qml_event.preferred_focal_mechanism() or qml_event.focal_mechanisms[0]
+    ssp_event.scalar_moment.value = fm.moment_tensor.scalar_moment
+    ssp_event.scalar_moment.units = 'N-m'
+
+
+def _parse_moment_tensor_from_qml_event(qml_event, ssp_event):
+    fm = qml_event.preferred_focal_mechanism() or qml_event.focal_mechanisms[0]
+    mt = fm.moment_tensor.tensor
+    ssp_event.moment_tensor.m_rr = mt.m_rr
+    ssp_event.moment_tensor.m_tt = mt.m_tt
+    ssp_event.moment_tensor.m_pp = mt.m_pp
+    ssp_event.moment_tensor.m_rt = mt.m_rt
+    ssp_event.moment_tensor.m_rp = mt.m_rp
+    ssp_event.moment_tensor.m_tp = mt.m_tp
+    ssp_event.moment_tensor.units = 'N-m'
+
+
+def _parse_focal_mechanism_from_qml_event(qml_event, ssp_event):
+    fm = qml_event.focal_mechanisms[0]
     nodal_plane = fm.nodal_planes.nodal_plane_1
-    hypo.strike = nodal_plane.strike
-    hypo.dip = nodal_plane.dip
-    hypo.rake = nodal_plane.rake
+    ssp_event.focal_mechanism.strike = nodal_plane.strike
+    ssp_event.focal_mechanism.dip = nodal_plane.dip
+    ssp_event.focal_mechanism.rake = nodal_plane.rake
 
 
-def _get_picks_from_event(ev):
+def _parse_picks_from_qml_event(ev):
     picks = []
     for pck in ev.picks:
         pick = Pick()
@@ -148,13 +178,14 @@ def _parse_hypo71_hypocenter(hypo_file):
         # Skip the first line if it contain characters in the first 10 digits:
         if any(c.isalpha() for c in line[:10]):
             line = fp.readline()
-    hypo = Hypo()
+    ssp_event = SSPEvent()
     timestr = line[:17]
     # There are two possible formats for the timestring. We try both of them
     try:
         dt = datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
     except Exception:
         dt = datetime.strptime(timestr, '%y%m%d %H%M %S.%f')
+    hypo = ssp_event.hypocenter
     hypo.origin_time = UTCDateTime(dt)
     lat = float(line[17:20])
     lat_deg = float(line[21:26])
@@ -162,18 +193,20 @@ def _parse_hypo71_hypocenter(hypo_file):
     lon = float(line[26:30])
     lon_deg = float(line[31:36])
     hypo.longitude = lon + lon_deg/60
-    hypo.depth = float(line[36:42])
+    hypo.depth.value = float(line[36:42])
+    hypo.depth.units = 'km'
     evid = os.path.basename(hypo_file)
     evid = evid.replace('.phs', '').replace('.h', '').replace('.hyp', '')
-    hypo.evid = evid
+    ssp_event.event_id = evid
     # empty picks list, for consistency with other parsers
     picks = []
-    return hypo, picks
+    return ssp_event, picks
 
 
 def _parse_hypo2000_hypo_line(line):
     word = line.split()
-    hypo = Hypo()
+    ssp_event = SSPEvent()
+    hypo = ssp_event.hypocenter
     timestr = ' '.join(word[:3])
     hypo.origin_time = UTCDateTime(timestr)
     n = 3
@@ -215,9 +248,10 @@ def _parse_hypo2000_hypo_line(line):
             raise ValueError(f'cannot read longitude: {word[n]}') from e
         n += 1
     hypo.longitude = longitude
+    hypo.depth.value = float(word[n])
     # depth is in km, according to the hypo2000 manual
-    hypo.depth = float(word[n])
-    return hypo
+    hypo.depth.units = 'km'
+    return ssp_event
 
 
 def _parse_hypo2000_station_line(line, oldpick, origin_time):
@@ -250,7 +284,7 @@ def _parse_hypo2000_station_line(line, oldpick, origin_time):
 
 
 def _parse_hypo2000_file(hypo_file):
-    hypo = Hypo()
+    ssp_event = None
     picks = []
     hypo_line = False
     station_line = False
@@ -263,14 +297,16 @@ def _parse_hypo2000_file(hypo_file):
         if len(line) < 50:
             continue
         if hypo_line:
-            hypo = _parse_hypo2000_hypo_line(line)
+            ssp_event = _parse_hypo2000_hypo_line(line)
             evid = os.path.basename(hypo_file)
             evid = evid.replace('.txt', '')
-            hypo.evid = evid
+            ssp_event.event_id = evid
+        if station_line and not ssp_event:
+            raise TypeError('Could not find hypocenter data.')
         if station_line:
             try:
                 pick = _parse_hypo2000_station_line(
-                    line, oldpick, hypo.origin_time)
+                    line, oldpick, ssp_event.hypocenter.origin_time)
                 oldpick = pick
                 picks.append(pick)
             except Exception as err:
@@ -282,13 +318,20 @@ def _parse_hypo2000_file(hypo_file):
         hypo_line = False
         if word[0] == 'STA':
             station_line = True
-    if not hypo:
+    if not ssp_event:
         raise TypeError('Could not find hypocenter data.')
-    return hypo, picks
+    return ssp_event, picks
 
 
 def parse_hypo_file(hypo_file):
-    """Parse a hypo71 or hypo2000 hypocenter file."""
+    """
+    Parse a hypo71 or hypo2000 hypocenter file.
+
+    :param hypo_file:
+        Path to the hypocenter file.
+    :returns:
+        A tuple of (SSPEvent, picks).
+    """
     err_msgs = []
     parsers = {
         'hypo71': _parse_hypo71_hypocenter,
@@ -296,8 +339,7 @@ def parse_hypo_file(hypo_file):
     }
     for format, parser in parsers.items():
         try:
-            hypo, picks = parser(hypo_file)
-            return hypo, picks
+            return parser(hypo_file)
         except Exception as err:
             msg = f'{hypo_file}: Not a {format} hypocenter file'
             err_msgs.append(msg)
@@ -423,7 +465,7 @@ def parse_hypo71_picks(config):
     return picks
 
 
-def parse_source_spec_event_file(event_file, evid=None):
+def parse_source_spec_event_file(event_file, event_id=None):
     """
     Parse a SourceSpec Event File, which is a YAML file.
 
@@ -434,12 +476,13 @@ def parse_source_spec_event_file(event_file, evid=None):
     """
     # will raise any exception raised by yaml.safe_load()
     events = yaml.safe_load(open(event_file))
-    if evid is not None:
-        _events = [event for event in events if event.get('event_id') == evid]
+    if event_id is not None:
+        _events = [ev for ev in events if ev.get('event_id') == event_id]
         try:
             event = _events[0]
         except IndexError as e:
-            raise ValueError(f'Event {evid} not found in {event_file}') from e
+            raise ValueError(
+                f'Event {event_id} not found in {event_file}') from e
     else:
         event = events[0]
     return SSPEvent(event)

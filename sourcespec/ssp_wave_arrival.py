@@ -61,9 +61,10 @@ def _wave_arrival_nll(trace, phase, NLL_time_dir, focmec):
             sta_x, sta_y = grd.project(
                 trace.stats.coords.longitude, trace.stats.coords.latitude)
             grd.sta_x, grd.sta_y = sta_x, sta_y
-        hypo_x, hypo_y = grd.project(
-            trace.stats.hypo.longitude, trace.stats.hypo.latitude)
-        hypo_z = trace.stats.hypo.depth
+        lon = trace.stats.event.hypocenter.longitude
+        lat = trace.stats.event.hypocenter.latitude
+        hypo_x, hypo_y = grd.project(lon, lat)
+        hypo_z = trace.stats.event.hypocenter.depth.value_in_km
         if type == 'time':
             travel_time = grd.get_value(hypo_x, hypo_y, hypo_z)
         elif type == 'angle':
@@ -86,15 +87,16 @@ def _wave_arrival_vel(trace, vel):
 def _wave_arrival_taup(trace, phase):
     """Travel time and takeoff angle using taup."""
     phase_list = [phase.lower(), phase]
+    hypo_depth = trace.stats.event.hypocenter.depth.value_in_km
     kwargs = dict(
-        source_depth_in_km=trace.stats.hypo.depth,
+        source_depth_in_km=hypo_depth,
         distance_in_degree=trace.stats.gcarc,
         phase_list=phase_list)
     with warnings.catch_warnings(record=True) as warns:
         try:
             arrivals = model.get_travel_times(**kwargs)
         except Exception:
-            trace.stats.hypo.depth = 0.
+            trace.stats.event.hypocenter.depth = 0.
             kwargs['source_depth_in_km'] = 0.
             arrivals = model.get_travel_times(**kwargs)
         for w in warns:
@@ -147,7 +149,7 @@ def _validate_pick(pick, theo_pick_time, tolerance, trace_id):
 
 
 def _get_theo_pick_time(trace, travel_time):
-    if trace.stats.hypo.origin_time is None:
+    if trace.stats.event.hypocenter.origin_time is None:
         msg = (
             f'{trace.id}: hypocenter origin time not set: '
             'unable to compute theoretical pick time')
@@ -155,13 +157,13 @@ def _get_theo_pick_time(trace, travel_time):
             _get_theo_pick_time.msg_cache.append(msg)
             logger.warning(msg)
         return None
-    return trace.stats.hypo.origin_time + travel_time
+    return trace.stats.event.hypocenter.origin_time + travel_time
 _get_theo_pick_time.msg_cache = [] # noqa
 
 
 def _travel_time_from_pick(trace, pick_time):
     try:
-        travel_time = pick_time - trace.stats.hypo.origin_time
+        travel_time = pick_time - trace.stats.event.hypocenter.origin_time
     except TypeError:
         travel_time = None
     return travel_time

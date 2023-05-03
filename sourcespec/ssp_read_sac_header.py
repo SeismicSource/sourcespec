@@ -14,6 +14,7 @@ import logging
 import contextlib
 from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
+from sourcespec.ssp_event import SSPEvent
 from sourcespec.ssp_read_event_metadata import Pick
 logger = logging.getLogger(__name__.split('.')[-1])
 
@@ -85,8 +86,8 @@ def get_station_coordinates_from_SAC(trace):
     return None
 
 
-def get_hypocenter_from_SAC(trace):
-    """Get hypocenter information from SAC header."""
+def get_event_from_SAC(trace):
+    """Get event information from SAC header."""
     try:
         sac_hdr = trace.stats.sac
     except AttributeError as e:
@@ -121,9 +122,14 @@ def get_hypocenter_from_SAC(trace):
     else:
         # create evid from origin time
         evid = evid_time.strftime('%Y%m%d_%H%M%S')
-    return AttribDict(
-        latitude=evla, longitude=evlo, depth=evdp, origin_time=origin_time,
-        evid=evid)
+    ssp_event = SSPEvent()
+    ssp_event.event_id = evid
+    ssp_event.hypocenter.latitude = evla
+    ssp_event.hypocenter.longitude = evlo
+    ssp_event.hypocenter.depth.value = evdp
+    ssp_event.hypocenter.depth.units = 'km'
+    ssp_event.hypocenter.origin_time = origin_time
+    return ssp_event
 
 
 def get_picks_from_SAC(trace):

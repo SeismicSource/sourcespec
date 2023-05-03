@@ -35,7 +35,7 @@ def main():
 
     # Now that we have an evid, we can rename the outdir and the log file
     move_outdir(config)
-    setup_logging(config, config.hypo.evid)
+    setup_logging(config, config.event.event_id)
     remove_old_outdir(config)
 
     # Save config to out dir

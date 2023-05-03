@@ -137,10 +137,15 @@ def _summary_params_text(sspec_output, ax):
 
 def _add_title(config, ax):
     # Add event information as a title
-    hypo = config.hypo
+    evid = config.event.event_id
+    hypo = config.event.hypocenter
+    ev_lon = hypo.longitude
+    ev_lat = hypo.latitude
+    ev_depth = hypo.depth.value_in_km
     textstr = (
-        f'evid: {hypo.evid}\nlon: {hypo.longitude:.3f} '
-        f'lat: {hypo.latitude:.3f} depth: {hypo.depth:.1f} km')
+        f'evid: {evid}\nlon: {ev_lon:.3f} lat: {ev_lat:.3f} '
+        f'depth: {ev_depth:.1f} km'
+    )
     with contextlib.suppress(AttributeError):
         textstr += f'\ntime: {hypo.origin_time.format_iris_web_service()}'
     ax.text(
@@ -177,7 +182,7 @@ def _add_code_author(config, ax):
 
 
 def _savefig(config, fig):
-    evid = config.hypo.evid
+    evid = config.event.event_id
     figfile_base = os.path.join(config.options.outdir, evid)
     figfile_base += '.stacked_spectra.'
     fmt = config.plot_save_format

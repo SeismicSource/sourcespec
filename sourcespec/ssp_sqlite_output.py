@@ -33,8 +33,8 @@ def write_sqlite(config, sspec_output):
     if not database_file:
         return
 
-    hypo = config.hypo
-    evid = hypo.evid
+    event = config.event
+    evid = event.event_id
     runid = config.options.run_id
 
     # Current supported DB version
@@ -266,14 +266,18 @@ def write_sqlite(config, sspec_output):
     except Exception as msg:
         _log_db_write_error(msg, database_file)
         ssp_exit(1)
+    ev_lon = event.hypocenter.longitude
+    ev_lat = event.hypocenter.latitude
+    ev_depth = event.hypocenter.depth.value_in_km
+    ev_origin_time = event.hypocenter.origin_time
     t = (
         # Event info
         evid,
         runid,
-        str(hypo.origin_time),
-        float(hypo.longitude),
-        float(hypo.latitude),
-        float(hypo.depth),
+        str(ev_origin_time),
+        float(ev_lon),
+        float(ev_lat),
+        float(ev_depth),
         # Statistical info
         nobs,
         config.n_sigma,
