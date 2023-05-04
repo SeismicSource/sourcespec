@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: CECILL-2.1
 """
-Read event metadata in QuakeML, HYPO71 or HYPOINVERSE format.
+Read event metadata in QuakeML, SourceSpec Event File, HYPO71 or
+HYPOINVERSE format.
 
 :copyright:
     2012-2023 Claudio Satriano <satriano@ipgp.fr>
@@ -172,7 +173,7 @@ def _parse_picks_from_qml_event(ev):
     return picks
 
 
-def _parse_hypo71_hypocenter(hypo_file):
+def _parse_hypo71_hypocenter(hypo_file, _):
     with open(hypo_file) as fp:
         line = fp.readline()
         # Skip the first line if it contain characters in the first 10 digits:
@@ -283,7 +284,7 @@ def _parse_hypo2000_station_line(line, oldpick, origin_time):
     return pick
 
 
-def _parse_hypo2000_file(hypo_file):
+def _parse_hypo2000_file(hypo_file, _):
     ssp_event = None
     picks = []
     hypo_line = False
@@ -323,25 +324,58 @@ def _parse_hypo2000_file(hypo_file):
     return ssp_event, picks
 
 
-def parse_hypo_file(hypo_file):
+def _parse_source_spec_event_file(event_file, event_id=None):
     """
-    Parse a hypo71 or hypo2000 hypocenter file.
+    Parse a SourceSpec Event File, which is a YAML file.
+
+    :param event_file: path to SourceSpec event file
+    :param evid: event id
+
+    :return: SSPEvent object
+    """
+    # will raise any exception raised by yaml.safe_load()
+    events = yaml.safe_load(open(event_file))
+    if event_id is not None:
+        _events = [ev for ev in events if ev.get('event_id') == event_id]
+        try:
+            event = _events[0]
+        except IndexError as e:
+            raise ValueError(
+                f'Event {event_id} not found in {event_file}') from e
+    else:
+        event = events[0]
+    # empty picks list, for consistency with other parsers
+    picks = []
+    return SSPEvent(event), picks
+
+
+def parse_hypo_file(hypo_file, event_id=None):
+    """
+    Parse a SourceSpec Event File, hypo71 or hypo2000 hypocenter file.
 
     :param hypo_file:
         Path to the hypocenter file.
     :returns:
-        A tuple of (SSPEvent, picks).
+        A tuple of (SSPEvent, picks, format).
     """
     err_msgs = []
     parsers = {
+        'ssp_event_file': _parse_source_spec_event_file,
         'hypo71': _parse_hypo71_hypocenter,
         'hypo2000': _parse_hypo2000_file,
     }
+    format_strings = {
+        'ssp_event_file': 'SourceSpec Event File',
+        'hypo71': 'hypo71 hypocenter file',
+        'hypo2000': 'hypo2000 hypocenter file',
+    }
     for format, parser in parsers.items():
         try:
-            return parser(hypo_file)
+            ssp_event, picks = parser(hypo_file, event_id)
+            return ssp_event, picks, format
         except Exception as err:
-            msg = f'{hypo_file}: Not a {format} hypocenter file'
+            format_str = format_strings[format]
+            msg = f'{hypo_file}: Not a {format_str}'
             err_msgs.append(msg)
             msg = f'Parsing error: {err}'
             err_msgs.append(msg)
@@ -463,26 +497,3 @@ def parse_hypo71_picks(config):
         pick2.time += float(stime)
         picks.append(pick2)
     return picks
-
-
-def parse_source_spec_event_file(event_file, event_id=None):
-    """
-    Parse a SourceSpec Event File, which is a YAML file.
-
-    :param event_file: path to SourceSpec event file
-    :param evid: event id
-
-    :return: SSPEvent object
-    """
-    # will raise any exception raised by yaml.safe_load()
-    events = yaml.safe_load(open(event_file))
-    if event_id is not None:
-        _events = [ev for ev in events if ev.get('event_id') == event_id]
-        try:
-            event = _events[0]
-        except IndexError as e:
-            raise ValueError(
-                f'Event {event_id} not found in {event_file}') from e
-    else:
-        event = events[0]
-    return SSPEvent(event)

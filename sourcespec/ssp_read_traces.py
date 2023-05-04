@@ -348,7 +348,9 @@ def read_traces(config):
     ssp_event = None
     # parse hypocenter file
     if config.options.hypo_file is not None:
-        ssp_event, picks = parse_hypo_file(config.options.hypo_file)
+        ssp_event, picks, format = parse_hypo_file(
+            config.options.hypo_file, config.options.evid)
+        config.hypo_file_format = format
     # parse pick file
     if config.options.pick_file is not None:
         picks = parse_hypo71_picks(config)
