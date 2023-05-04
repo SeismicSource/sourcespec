@@ -341,8 +341,10 @@ def _write_yaml(config, sspec_output):
     logger.info(f'Output written to file: {yamlfilename}')
 
 
-def _write_hypo(config, sspec_output):
+def _write_hypo71(config, sspec_output):
     if not config.options.hypo_file:
+        return
+    if config.hypo_file_format != 'hypo71':
         return
     with open(config.options.hypo_file, 'r') as fp:
         line = fp.readline()
@@ -351,7 +353,6 @@ def _write_hypo(config, sspec_output):
             line1 = line
             line = fp.readline()
         line = list(line)
-
     summary_values = sspec_output.reference_values()
     mw_str = f'{summary_values["Mw"]:03.2f}'
     Ml = summary_values.get('Ml', None)
@@ -393,6 +394,6 @@ def write_output(config, sspec_output):
     # Write to SQLite database, if requested
     write_sqlite(config, sspec_output)
     # Write to hypo file, if requested
-    _write_hypo(config, sspec_output)
+    _write_hypo71(config, sspec_output)
     # Write to quakeml file, if requested
     write_qml(config, sspec_output)
