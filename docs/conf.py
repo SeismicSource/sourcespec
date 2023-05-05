@@ -308,7 +308,8 @@ Comment lines start with ``#``.
 Here is the default config file, generated through ``source_spec -S``::
 
 ''')
-        configspec = os.path.join('..', 'sourcespec', 'configspec.conf')
+        configspec = os.path.join(
+            '..', 'sourcespec', 'config_files', 'configspec.conf')
         for line in open(configspec):
             if '=' in line and line[0] != '#':
                 key, val = line.split(' = ')

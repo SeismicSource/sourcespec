@@ -252,7 +252,7 @@ def _read_config(config_file, configspec=None):
 
 def _parse_configspec():
     configspec_file = os.path.join(
-        os.path.dirname(__file__), 'configspec.conf')
+        os.path.dirname(__file__), 'config_files', 'configspec.conf')
     return _read_config(configspec_file)
 
 
