@@ -124,8 +124,8 @@ def get_event_from_SAC(trace):
         evid = evid_time.strftime('%Y%m%d_%H%M%S')
     ssp_event = SSPEvent()
     ssp_event.event_id = evid
-    ssp_event.hypocenter.latitude = evla
-    ssp_event.hypocenter.longitude = evlo
+    ssp_event.hypocenter.latitude.value_in_deg = evla
+    ssp_event.hypocenter.longitude.value_in_deg = evlo
     ssp_event.hypocenter.depth.value = evdp
     ssp_event.hypocenter.depth.units = 'km'
     ssp_event.hypocenter.origin_time = origin_time

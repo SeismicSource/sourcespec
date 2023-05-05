@@ -266,8 +266,8 @@ def write_sqlite(config, sspec_output):
     except Exception as msg:
         _log_db_write_error(msg, database_file)
         ssp_exit(1)
-    ev_lon = event.hypocenter.longitude
-    ev_lat = event.hypocenter.latitude
+    ev_lon = event.hypocenter.longitude.value_in_deg
+    ev_lat = event.hypocenter.latitude.value_in_deg
     ev_depth = event.hypocenter.depth.value_in_km
     ev_origin_time = event.hypocenter.origin_time
     t = (

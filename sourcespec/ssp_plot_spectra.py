@@ -107,8 +107,8 @@ def _make_fig(config, plot_params):
     # Add event information as a title
     evid = config.event.event_id
     hypo = config.event.hypocenter
-    ev_lon = hypo.longitude
-    ev_lat = hypo.latitude
+    ev_lon = hypo.longitude.value_in_deg
+    ev_lat = hypo.latitude.value_in_deg
     ev_depth = hypo.depth.value_in_km
     textstr = (
         f'evid: {evid} lon: {ev_lon:.3f} lat: {ev_lat:.3f} '

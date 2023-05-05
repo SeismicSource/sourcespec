@@ -85,8 +85,8 @@ def _parse_qml_event(qml_event):
     # ...or just use the first one
     if origin is None:
         origin = qml_event.origins[0]
-    ssp_event.hypocenter.longitude = origin.longitude
-    ssp_event.hypocenter.latitude = origin.latitude
+    ssp_event.hypocenter.longitude.value_in_deg = origin.longitude
+    ssp_event.hypocenter.latitude.value_in_deg = origin.latitude
     ssp_event.hypocenter.depth.value = origin.depth
     ssp_event.hypocenter.depth.units = 'm'
     ssp_event.hypocenter.origin_time = origin.time
@@ -182,10 +182,10 @@ def _parse_hypo71_hypocenter(hypo_file, _):
     hypo.origin_time = UTCDateTime(dt)
     lat = float(line[17:20])
     lat_deg = float(line[21:26])
-    hypo.latitude = lat + lat_deg/60
+    hypo.latitude.value_in_deg = lat + lat_deg/60
     lon = float(line[26:30])
     lon_deg = float(line[31:36])
-    hypo.longitude = lon + lon_deg/60
+    hypo.longitude.value_in_deg = lon + lon_deg/60
     hypo.depth.value = float(line[36:42])
     hypo.depth.units = 'km'
     evid = os.path.basename(hypo_file)
@@ -221,7 +221,7 @@ def _parse_hypo2000_hypo_line(line):
         except Exception as e:
             raise ValueError(f'cannot read latitude: {word[n]}') from e
         n += 1
-    hypo.latitude = latitude
+    hypo.latitude.value_in_deg = latitude
     if word[n].isnumeric():
         # Check if word is integer
         # In this case the format should be: degrees and minutes
@@ -240,7 +240,7 @@ def _parse_hypo2000_hypo_line(line):
         except Exception as e:
             raise ValueError(f'cannot read longitude: {word[n]}') from e
         n += 1
-    hypo.longitude = longitude
+    hypo.longitude.value_in_deg = longitude
     hypo.depth.value = float(word[n])
     # depth is in km, according to the hypo2000 manual
     hypo.depth.units = 'km'
