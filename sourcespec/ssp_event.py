@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: CECILL-2.1
 """
@@ -293,9 +292,12 @@ class SSPEvent(object):
         try:
             self.event_id = event_dict['event_id']
         except KeyError as e:
-            raise KeyError('event_id is required') from e
+            raise ValueError('"event_id" is required') from e
         self.name = event_dict.get('name')
-        hypo_dict = event_dict.get('hypocenter', {})
+        try:
+            hypo_dict = event_dict['hypocenter']
+        except KeyError as e:
+            raise ValueError('"hypocenter" is required') from e
         self.hypocenter = SSPHypocenter(**hypo_dict)
         mag_dict = event_dict.get('magnitude', {})
         self.magnitude = SSPMagnitude(**mag_dict)
