@@ -54,6 +54,7 @@ Contents:
    getting_started
    configuration_file
    file_formats
+   source_spec_event_file
    installation
    sample_runs
    getting_help

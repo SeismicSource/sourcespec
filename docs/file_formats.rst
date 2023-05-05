@@ -24,10 +24,14 @@ Event formats
 SourceSpec can read event information (event ID, location, origin time)
 in the following formats:
 
--  `QuakeML`_: SourceSpec will also read phase picks and focal mechanism,
-   if available
+-  :ref:`source_spec_event_file:SourceSpec Event File`:
+   this file can contain additional event
+   information, such as magnitude, moment tensor or focal mechanism
+-  `QuakeML`_: this file can contain additional event information, such as
+   magnitude, moment tensor or focal mechanism. If phase picks are available,
+   they will be read as well
 -  `HYPO71`_
--  `HYPOINVERSE-2000`_: SourceSpec will also read phase picks, if available
+-  `HYPOINVERSE-2000`_: if phase picks are available, they will be read as well
 
 Event information can also be stored in the `SAC file header`_ (header
 fields: ``EVLA``, ``EVLO``, ``EVDP``, ``O``, ``KEVNM``).
