@@ -87,6 +87,11 @@ def _init_parser(description, epilog, nargs):
         help='update an existing config file from a previous version',
         metavar='FILE'
     )
+    group.add_argument(
+        '-y', '--samplesspevent', dest='samplesspevent',
+        action='store_true', default=False,
+        help='write sample SourceSpec Event File and exit'
+    )
     parser.add_argument(
         '-c', '--configfile', dest='config_file',
         action='store', default='source_spec.conf',
@@ -136,7 +141,8 @@ def _init_parser(description, epilog, nargs):
     parser.add_argument(
         '-e', '--evid', dest='evid',
         action='store', default=None,
-        help='get evid from catalog', metavar='EVID'
+        help='select this EVID from QuakeML or SourceSpec Event File',
+        metavar='EVID'
     )
     parser.add_argument(
         '-s', '--station', dest='station',

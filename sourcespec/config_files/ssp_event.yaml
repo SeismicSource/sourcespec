@@ -1,0 +1,86 @@
+# SourceSpec Event File
+#
+# One or more events can be defined in this file.
+# Each event must have a unique "event_id".
+# Each event description starts with a dash (-) and is followed by a mandatory
+# "event_id" field. The "hypocenter" field is mandatory, all the other fields
+# are optional.
+# Optional fields can be empty or commented out.
+# The indentation of the fields must be respected.
+#
+# For a minimal working file, replace the placeholders between "<" and ">" with
+# the appropriate values.
+#
+# This is a YAML file. For more information on the format, see
+# https://en.wikipedia.org/wiki/YAML
+
+# Mandatory event_id, preceded by a dash (-)
+- event_id: <EVENT_ID>
+  # Optional event name
+  name:
+  # Mandatory hypocenter information
+  hypocenter:
+    longitude:
+      value: <LONGITUDE>
+      # currently, only decimal degrees are supported
+      units: deg
+    latitude:
+      value: <LATITUDE>
+      # currently, only decimal degrees are supported
+      units: deg
+    depth:
+      value: <DEPTH>
+      # units can be one of the following: km, m
+      units: km
+    origin_time: <ORIGIN_TIME>
+  # Optional magnitude value.
+  # If a scalar moment or a moment tensor is given, a Mw magnitude will be
+  # (re)computed from it
+  magnitude:
+    value:
+    # magnitude type is a free string, e.g. Mw, mb, Ms, etc.
+    type:
+  # Optional scalar moment.
+  # If a moment tensor is given, the scalar moment will be (re)computed
+  # from it
+  scalar_moment:
+    value:
+    # units can be one of the following: N-m, dyne-cm
+    units:
+  # Optional focal mechanism, in terms of strike, dip and rake (in degrees)
+  # of one of the two focal planes.
+  # If a moment tensor is given, the focal mechanism will be (re)computed
+  # from it
+  focal_mechanism:
+    # currently, only decimal degrees are supported
+    units: deg
+    strike:
+    dip:
+    rake:
+  # Optional moment tensor
+  moment_tensor:
+    # units can be one of the following: N-m, dyne-cm
+    units:
+    # moment tensor components, in moment units defined above
+    m_rr:
+    m_tt:
+    m_pp:
+    m_rt:
+    m_rp:
+    m_tp:
+
+# You can specify as many events as you want, as long as they have unique
+# event_id's
+# - event_id: <EVENT_ID2>
+#   hypocenter:
+#     longitude:
+#       value: <LONGITUDE2>
+#       units: deg
+#     latitude:
+#       value: <LATITUDE2>
+#       units: deg
+#     depth:
+#       value: <DEPTH2>
+#       units: km
+#     origin_time: <ORIGIN_TIME2>
+# etc...

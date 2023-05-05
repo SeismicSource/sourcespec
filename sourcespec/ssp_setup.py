@@ -539,6 +539,23 @@ def _init_traceid_map(traceid_map_file):
         ssp_exit(1)
 
 
+def _write_sample_ssp_event_file():
+    ssp_event_file = 'ssp_event.yaml'
+    src_path = os.path.join(
+        os.path.dirname(__file__), 'config_files', 'ssp_event.yaml')
+    dest_path = os.path.join('.', ssp_event_file)
+    write_file = True
+    if os.path.exists(dest_path):
+        ans = input(
+            f'{ssp_event_file} already exists. '
+            'Do you want to overwrite it? [y/N] '
+        )
+        write_file = ans in ['y', 'Y']
+    if write_file:
+        shutil.copyfile(src_path, dest_path)
+        print(f'Sample SourceSpec Event File written to: {ssp_event_file}')
+
+
 def configure(options, progname, config_overrides=None):
     """
     Parse command line arguments and read config file.
@@ -558,6 +575,9 @@ def configure(options, progname, config_overrides=None):
         sys.exit(0)
     if options.updateconf:
         _update_config_file(options.updateconf, configspec)
+        sys.exit(0)
+    if options.samplesspevent:
+        _write_sample_ssp_event_file()
         sys.exit(0)
 
     config_obj = _read_config(options.config_file, configspec)
