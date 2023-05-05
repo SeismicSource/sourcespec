@@ -15,6 +15,7 @@ This release requires at least Python 3.7.
   instead of `s_arrival_tolerance` (see [#35])
 - Fix bug where signal and noise windows where plotted with the wrong length,
   under certain circumstances (see [#35])
+- Fix for beachball not plotted anymore with recent versions of Matplotlib.
 
 ### Requirements
 
