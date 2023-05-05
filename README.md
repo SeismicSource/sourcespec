@@ -46,6 +46,13 @@ The SourceSpec package is made of several command line tools:
 
 ### For the impatient
 
+> Note that the default config parameters are suited for a M<5 earthquake
+> recorded within ~100 km. Adjust `win_length`, `noise_pre_time`, and the
+> frequency bands (`bp_freqmin_*`, `bp_freqmax_*`, `freq1_*`, `freq2_*`)
+> according to your setup.
+
+#### Use case: miniSEED + StationXML + QuakeML
+
 If you have seismic recordings in [miniSEED] format (e.g., `traces.mseed`),
 metadata in [StationXML] format (e.g., `station.xml`) and event information in
 [QuakeML] format (e.g., `event.xml`), then:
@@ -55,10 +62,19 @@ metadata in [StationXML] format (e.g., `station.xml`) and event information in
    file;
 3. Run `source_spec -t traces.mseed -q event.xml`.
 
-> Note that the default config parameters are suited for a M<5 earthquake
-> recorded within ~100 km. Adjust `win_length`, `noise_pre_time`, and the
-> frequency bands (`bp_freqmin_*`, `bp_freqmax_*`, `freq1_*`, `freq2_*`)
-> according to your setup.
+#### Use case: SAC + PAZ + SourceSpec Event File
+
+If you have seismic recordings in [SAC] format (e.g., in a directory named
+`sac_data`), metadata as [SAC polezero (PAZ)] (e.g., in a directory named
+`paz`) and event information in any format, then:
+
+1. Generate a config file via `source_spec -S`;
+2. Edit the config file variable `station_metadata` to point to the `paz`
+   directory;
+3. Generate a sample [SourceSpec Event File] using `source_spec -y`; this
+   will create a file named `ssp_event.yaml`;
+4. Edit the file `ssp_event.yaml` with your event information;
+5. Run `source_spec -t sac_data -H ssp_event.yaml`.
 
 ### Command line arguments
 
@@ -75,10 +91,11 @@ traces via the `--trace_path` command line argument (see
 [File formats](#file-formats) below).
 
 Information on the seismic event can be stored in the trace header ([SAC]
-format), or provided through a [QuakeML] file (`--qmlfile`) or a [HYPO71] or
-[HYPOINVERSE-2000] file (`--hypocenter`). See
-[File formats](#file-formats) below for more information on the supported file
-formats.
+format), or provided through a [QuakeML] file (`--qmlfile`) or
+or, alternatively (`--hypocenter`), through a [SourceSpec Event File],
+a [HYPO71] file, or a [HYPOINVERSE-2000] file.
+See [File formats](#file-formats) below for more information on the supported
+file formats.
 
 ### Configuration file
 
@@ -114,10 +131,13 @@ location and origin time, phase picks, instrument sensitivity.
 SourceSpec can read event information (event ID, location, origin time) in the
 following formats:
 
-- [QuakeML]: SourceSpec will also read phase picks and
-  focal mechanism, if available
+- [SourceSpec Event File]: this file can contain additional event information,
+  such as magnitude, moment tensor or focal mechanism
+- [QuakeML]: this file can contain additional event information, such as
+  magnitude, moment tensor or focal mechanism. If phase picks are available,
+  they will be read as well
 - [HYPO71]
-- [HYPOINVERSE-2000]: SourceSpec will also read phase picks, if available
+- [HYPOINVERSE-2000]: if phase picks are available, they will be read as well
 
 Event information can also be stored in the [SAC file header] (header fields:
 `EVLA`, `EVLO`, `EVDP`, `O`, `KEVNM`).
@@ -420,6 +440,7 @@ You can also cite the following abstract presented at the
 [miniSEED]: http://ds.iris.edu/ds/nodes/dmc/data/formats/miniseed/
 [SAC]: https://ds.iris.edu/ds/support/faq/17/sac-file-format/
 [SAC file header]: https://ds.iris.edu/files/sac-manual/manual/file_format.html
+[SourceSpec Event File]: https://sourcespec.readthedocs.io/en/latest/source_spec_event_file.html
 [QuakeML]: https://quake.ethz.ch/quakeml/
 [HYPO71]: https://pubs.er.usgs.gov/publication/ofr72224
 [HYPOINVERSE-2000]: https://pubs.er.usgs.gov/publication/ofr02171
