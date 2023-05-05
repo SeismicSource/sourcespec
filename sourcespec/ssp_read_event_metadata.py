@@ -168,13 +168,16 @@ def _parse_hypo71_hypocenter(hypo_file, _):
         # Skip the first line if it contain characters in the first 10 digits:
         if any(c.isalpha() for c in line[:10]):
             line = fp.readline()
-    ssp_event = SSPEvent()
     timestr = line[:17]
     # There are two possible formats for the timestring. We try both of them
     try:
         dt = datetime.strptime(timestr, '%y%m%d %H %M%S.%f')
     except Exception:
-        dt = datetime.strptime(timestr, '%y%m%d %H%M %S.%f')
+        try:
+            dt = datetime.strptime(timestr, '%y%m%d %H%M %S.%f')
+        except Exception as e:
+            raise ValueError('Cannot read origin time on first line.') from e
+    ssp_event = SSPEvent()
     hypo = ssp_event.hypocenter
     hypo.origin_time = UTCDateTime(dt)
     lat = float(line[17:20])
@@ -330,8 +333,15 @@ def _parse_source_spec_event_file(event_file, event_id=None):
 
     :return: SSPEvent object
     """
-    # will raise any exception raised by yaml.safe_load()
-    events = yaml.safe_load(open(event_file))
+    try:
+        events = yaml.safe_load(open(event_file))
+    except Exception as e:
+        raise TypeError('Not a valid YAML file.') from e
+    # raise TypeError if events is not a list
+    if not isinstance(events, list):
+        raise TypeError(
+            'This is a valid YAML file, but it does not contain the key: '
+            '"- event_id:", preceded by a dash (-).')
     if event_id is not None:
         _events = [ev for ev in events if ev.get('event_id') == event_id]
         try:
@@ -341,9 +351,16 @@ def _parse_source_spec_event_file(event_file, event_id=None):
                 f'Event {event_id} not found in {event_file}') from e
     else:
         event = events[0]
+    try:
+        ssp_event = SSPEvent(event)
+    except Exception as e:
+        raise TypeError(
+            'This is a valid YAML file, but the following error occured: '
+            f'{e}.'
+        ) from e
     # empty picks list, for consistency with other parsers
     picks = []
-    return SSPEvent(event), picks
+    return ssp_event, picks
 
 
 def parse_hypo_file(hypo_file, event_id=None):
@@ -396,8 +413,7 @@ def _is_hypo71_picks(pick_file):
         if not (line[5].isalpha() and
                 line[9].isdigit() and
                 line[20].isdigit()):
-            msg = f'{pick_file}: Not a hypo71 phase file'
-            raise TypeError(msg)
+            raise TypeError(f'{pick_file}: Not a hypo71 phase file')
 
 
 def _correct_station_name(station):
