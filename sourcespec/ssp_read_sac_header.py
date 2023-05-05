@@ -15,7 +15,7 @@ import contextlib
 from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_event import SSPEvent
-from sourcespec.ssp_read_event_metadata import Pick
+from sourcespec.ssp_pick import SSPPick
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
@@ -149,7 +149,7 @@ def get_picks_from_SAC(trace):
             begin = sac_hdr['b']
         except KeyError:
             continue
-        pick = Pick()
+        pick = SSPPick()
         pick.station = trace.stats.station
         pick.time = trace.stats.starttime + time - begin
         # we will try to get the phase from the label later
