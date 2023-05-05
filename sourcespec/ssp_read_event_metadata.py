@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: CECILL-2.1
 """
@@ -20,26 +19,8 @@ from obspy import UTCDateTime
 from obspy import read_events
 from sourcespec.ssp_setup import ssp_exit, traceid_map
 from sourcespec.ssp_event import SSPEvent
+from sourcespec.ssp_pick import SSPPick
 logger = logging.getLogger(__name__.split('.')[-1])
-
-
-class Pick():
-    """A pick object."""
-
-    def __init__(self):
-        self.station = None
-        self.flag = None
-        self.phase = None
-        self.polarity = None
-        self.quality = None
-        self.time = None
-
-    def __str__(self):
-        return (
-            f'station: {self.station}, flag: {self.flag}, '
-            f'phase: {self.phase}, polarity: {self.polarity}, '
-            f'quality: {self.quality}, time: {self.time}'
-        )
 
 
 def parse_qml(qml_file, event_id=None):
@@ -147,7 +128,7 @@ def _parse_focal_mechanism_from_qml_event(qml_event, ssp_event):
 def _parse_picks_from_qml_event(ev):
     picks = []
     for pck in ev.picks:
-        pick = Pick()
+        pick = SSPPick()
         pick.station = pck.waveform_id.station_code
         pick.network = pck.waveform_id.network_code
         pick.channel = pck.waveform_id.channel_code
@@ -174,6 +155,14 @@ def _parse_picks_from_qml_event(ev):
 
 
 def _parse_hypo71_hypocenter(hypo_file, _):
+    """
+    Parse a hypo71 hypocenter file.
+
+    :param hypo_file: path to hypo71 hypocenter file
+    :param _: unused (for consistency with other parsers)
+
+    :return: a tuple of (SSPEvent, picks)
+    """
     with open(hypo_file) as fp:
         line = fp.readline()
         # Skip the first line if it contain characters in the first 10 digits:
@@ -264,7 +253,7 @@ def _parse_hypo2000_station_line(line, oldpick, origin_time):
         oldstation = ''
         oldnetwork = ''
         oldchannel = ''
-    pick = Pick()
+    pick = SSPPick()
     station = line[1:5].strip()
     pick.station = station or oldstation
     oldstation = pick.station
@@ -285,6 +274,14 @@ def _parse_hypo2000_station_line(line, oldpick, origin_time):
 
 
 def _parse_hypo2000_file(hypo_file, _):
+    """
+    Parse a hypo2000 hypocenter file.
+
+    :param hypo_file: path to hypo2000 hypocenter file
+    :param _: unused (for consistency with other parsers)
+
+    :return: a tuple of (SSPEvent, picks)
+    """
     ssp_event = None
     picks = []
     hypo_line = False
@@ -430,7 +427,7 @@ def parse_hypo71_picks(config):
 
     :param config: Config object
 
-    :return: list of Pick objects
+    :return: list of SSPPick objects
     """
     picks = []
     pick_file = config.options.pick_file
@@ -455,7 +452,7 @@ def parse_hypo71_picks(config):
                 line[9].isdigit() and
                 line[20].isdigit()):
             continue
-        pick = Pick()
+        pick = SSPPick()
         pick.station = line[:4].strip()
         pick.station = _correct_station_name(pick.station)
         pick.flag = line[4:5]
@@ -477,7 +474,7 @@ def parse_hypo71_picks(config):
             continue
         if stime.strip() == '':
             continue
-        pick2 = Pick()
+        pick2 = SSPPick()
         pick2.station = pick.station
         pick2.flag = line[36:37]
         pick2.phase = line[37:38]
