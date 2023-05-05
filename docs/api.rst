@@ -82,6 +82,11 @@ ssp_plot_spectra
 .. automodule:: ssp_plot_spectra
    :members:
 
+ssp_plot_stacked_spectra
+------------------------
+.. automodule:: ssp_plot_stacked_spectra
+   :members:
+
 ssp_plot_params_stats
 ---------------------
 .. automodule:: ssp_plot_params_stats
@@ -113,9 +118,19 @@ ssp_data_types
 .. automodule:: ssp_data_types
    :members:
 
+ssp_event
+---------
+.. automodule:: ssp_event
+   :members:
+
 ssp_grid_sampling
 -----------------
 .. automodule:: ssp_grid_sampling
+   :members:
+
+ssp_pick
+--------
+.. automodule:: ssp_pick
    :members:
 
 ssp_spectral_model
@@ -131,6 +146,16 @@ ssp_qml_output
 ssp_radiation_pattern
 ---------------------
 .. automodule:: ssp_radiation_pattern
+   :members:
+
+ssp_read_sac_header
+-------------------
+.. automodule:: ssp_read_sac_header
+   :members:
+
+ssp_read_station_metadata
+-------------------------
+.. automodule:: ssp_read_station_metadata
    :members:
 
 ssp_sqlite_output
