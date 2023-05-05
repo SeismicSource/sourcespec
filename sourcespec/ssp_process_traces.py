@@ -220,8 +220,8 @@ def _add_station_to_event_position(config, trace):
         station_to_event_position(trace)
     except Exception as e:
         raise RuntimeError(
-            f'{trace.id}: Unable to compute hypocentral distance: '
-            'skipping trace'
+            f'{trace.id}: Unable to compute hypocentral distance: {e}. '
+            'Skipping trace'
         ) from e
     if (
         config.max_epi_dist is not None and

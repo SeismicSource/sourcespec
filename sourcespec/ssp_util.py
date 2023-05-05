@@ -115,6 +115,10 @@ def _get_vel_from_taup(depth_in_km, wave):
 
 def get_vel(lon, lat, depth_in_km, wave, config):
     """Get velocity at a given point from NLL grid, config or taup model."""
+    try:
+        depth_in_km = float(depth_in_km)
+    except Exception as e:
+        raise ValueError(f'Invalid depth: {depth_in_km}') from e
     # If depth is large, we assume that we are close to the source
     if depth_in_km >= 2:
         vel = _get_vel_from_config(wave, 'source', config)
@@ -255,6 +259,14 @@ def toDeg(radians):
     return 180 * radians / math.pi
 
 
+def _validate_coord(coordinate, coordinate_name):
+    try:
+        coordinate = float(coordinate)
+    except Exception as e:
+        raise ValueError(f'Invalid {coordinate_name}: {coordinate}') from e
+    return coordinate
+
+
 def station_to_event_position(trace):
     """
     Compute station position with respect to the event, in terms of hypocentral
@@ -264,13 +276,13 @@ def station_to_event_position(trace):
     Values are stored in the trace stats dictionary.
     """
     coords = trace.stats.coords
-    stla = coords.latitude
-    stlo = coords.longitude
-    stel = coords.elevation
+    stla = _validate_coord(coords.latitude, 'station latitude')
+    stlo = _validate_coord(coords.longitude, 'station longitude')
+    stel = _validate_coord(coords.elevation, 'station elevation')
     hypo = trace.stats.event.hypocenter
-    evla = hypo.latitude
-    evlo = hypo.longitude
-    evdp = hypo.depth.value_in_km
+    evla = _validate_coord(hypo.latitude, 'event latitude')
+    evlo = _validate_coord(hypo.longitude, 'event longitude')
+    evdp = _validate_coord(hypo.depth.value_in_km, 'event depth')
     epi_dist, az, baz = gps2dist_azimuth(evla, evlo, stla, stlo)
     epi_dist /= 1e3  # in km
     gcarc = kilometers2degrees(epi_dist)

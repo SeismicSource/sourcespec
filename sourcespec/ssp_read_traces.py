@@ -380,9 +380,14 @@ def read_traces(config):
                 'or add hypocenter information to the SAC file header\n'
                 '(if you use the SAC format).\n'
             )
-            ssp_exit()
+            ssp_exit(1)
     # add velocity info to hypocenter
-    _hypo_vel(ssp_event.hypocenter, config)
+    try:
+        _hypo_vel(ssp_event.hypocenter, config)
+    except Exception as e:
+        logger.error(
+            f'Unable to compute velocity at hypocenter: {e}\n')
+        ssp_exit(1)
     # add event to config file
     config.event = ssp_event
 
