@@ -87,9 +87,11 @@ def _write_parfile(config, sspec_output):
 
         evid = config.event.event_id
         hypo = config.event.hypocenter
+        evlo = hypo.longitude.value_in_deg
+        evla = hypo.latitude.value_in_deg
+        evdp = hypo.depth.value_in_km
         parfile.write(
-            f'{evid} lon {hypo.longitude:8.3f} lat {hypo.latitude:7.3f} '
-            f'depth {hypo.depth.value_in_km:5.1f} km '
+            f'{evid} lon {evlo:8.3f} lat {evla:7.3f} depth {evdp:5.1f} km '
             f'orig_time {hypo.origin_time}\n\n')
         parfile.write('*** Station source parameters ***\n')
         parfile.write(

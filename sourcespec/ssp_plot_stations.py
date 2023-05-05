@@ -109,7 +109,7 @@ def _shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shifted'):
     return colors.LinearSegmentedColormap(name, cdict)
 
 
-def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
+def _plot_circles(ax, evlo, evla, maxdist, ncircles=5):
     geodetic_transform = ccrs.PlateCarree()
     g = Geod(ellps='WGS84')
     step = _round(maxdist/ncircles)
@@ -122,7 +122,7 @@ def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
     for dist in np.arange(step, maxdist+step, step):
         azimuths = np.arange(0, 360, 1)
         circle = np.array(
-            [g.fwd(evlon, evlat, az, dist*1e3)[:2] for az in azimuths]
+            [g.fwd(evlo, evla, az, dist*1e3)[:2] for az in azimuths]
         )
         p0 = circle[np.argmax(circle[:, 1])]
         ax.plot(
@@ -150,7 +150,6 @@ def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
 
 def _plot_epicenter_as_beachball(ax, event):
     geodetic_transform = ccrs.PlateCarree()
-    hypo = event.hypocenter
     fm = event.focal_mechanism
     # TODO: draw full moment tensor, if available
     # The following three lines will raise an exception if the focal mechanism
@@ -158,8 +157,10 @@ def _plot_epicenter_as_beachball(ax, event):
     strike = float(fm.strike)
     dip = float(fm.dip)
     rake = float(fm.rake)
-    xy = ax.projection.transform_point(
-        hypo.longitude, hypo.latitude, geodetic_transform)
+    hypo = event.hypocenter
+    evlo = hypo.longitude.value_in_deg
+    evla = hypo.latitude.value_in_deg
+    xy = ax.projection.transform_point(evlo, evla, geodetic_transform)
     # compute beachball width from map extent
     # Note: in previous versionos of SourceSpec, we used the argument axes=ax
     # to let beach() adapth the width to the axes size. However, this does not
@@ -187,8 +188,10 @@ def _plot_epicenter_as_beachball(ax, event):
 def _plot_epicenter_as_star(ax, event):
     geodetic_transform = ccrs.PlateCarree()
     hypo = event.hypocenter
+    evlo = hypo.longitude.value_in_deg
+    evla = hypo.latitude.value_in_deg
     ax.plot(
-        hypo.longitude, hypo.latitude, marker='*', markersize=20,
+        evlo, evla, marker='*', markersize=20,
         markeredgewidth=1, markeredgecolor='white',
         color='k', transform=geodetic_transform,
         zorder=10
@@ -199,12 +202,12 @@ def _add_title(event, ax):
     """Add event information as plot title."""
     evid = event.event_id
     hypo = event.hypocenter
-    ev_lon = hypo.longitude
-    ev_lat = hypo.latitude
-    ev_depth = hypo.depth.value_in_km
+    evlo = hypo.longitude.value_in_deg
+    evla = hypo.latitude.value_in_deg
+    evdp = hypo.depth.value_in_km
     textstr = (
-        f'evid: {evid} \nlon: {ev_lon:.3f} lat: {ev_lat:.3f} '
-        f'depth: {ev_depth:.1f} km'
+        f'evid: {evid} \nlon: {evlo:.3f} lat: {evla:.3f} '
+        f'depth: {evdp:.1f} km'
     )
     with contextlib.suppress(AttributeError):
         textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
@@ -278,10 +281,11 @@ def _make_basemap(config, maxdist):
     maxdiagonal = maxdist*(2**0.5)*mult
     event = config.event
     hypo = event.hypocenter
-    lonmax, latmax, _ = g.fwd(
-        hypo.longitude, hypo.latitude, 45, maxdiagonal*1000.)
-    lonmin = 2*hypo.longitude - lonmax
-    latmin = 2*hypo.latitude - latmax
+    evlo = hypo.longitude.value_in_deg
+    evla = hypo.latitude.value_in_deg
+    lonmax, latmax, _ = g.fwd(evlo, evla, 45, maxdiagonal*1000.)
+    lonmin = 2*evlo - lonmax
+    latmin = 2*evla - latmax
     tile_dir = 'maptiles'
     stamen_terrain = CachedTiler(cimgt.Stamen('terrain-background'), tile_dir)
     # Reduce dpi for vector formats, since the only raster are the maptiles
@@ -299,7 +303,7 @@ def _make_basemap(config, maxdist):
     _add_tiles(config, ax, stamen_terrain)
     _add_coastlines(config, ax)
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
-    circle_texts = _plot_circles(ax, hypo.longitude, hypo.latitude, maxdist, 5)
+    circle_texts = _plot_circles(ax, evlo, evla, maxdist, 5)
     try:
         _plot_epicenter_as_beachball(ax, event)
     except Exception:

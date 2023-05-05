@@ -165,8 +165,8 @@ def _spec_inversion(config, spec, spec_weight):
     stla = coords.latitude
     stlo = coords.longitude
     hypo = spec.stats.event.hypocenter
-    evla = hypo.latitude
-    evlo = hypo.longitude
+    evla = hypo.latitude.value_in_deg
+    evlo = hypo.longitude.value_in_deg
     geod = gps2dist_azimuth(evla, evlo, stla, stlo)
     az = geod[1]
 

@@ -359,8 +359,8 @@ def _add_event_info_to_html(config, replacements):
     replacements.update({
         '{EVENTID}': evid,
         '{RUNID}': run_id,
-        '{EVENT_LONGITUDE}': f'{hypo.longitude:8.3f}',
-        '{EVENT_LATITUDE}': f'{hypo.latitude:7.3f}',
+        '{EVENT_LONGITUDE}': f'{hypo.longitude.value_in_deg:8.3f}',
+        '{EVENT_LATITUDE}': f'{hypo.latitude.value_in_deg:7.3f}',
         '{EVENT_DEPTH}': f'{hypo.depth.value_in_km:5.1f}',
         '{ORIGIN_TIME}': f'{hypo.origin_time}',
     })

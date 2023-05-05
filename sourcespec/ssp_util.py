@@ -280,8 +280,8 @@ def station_to_event_position(trace):
     stlo = _validate_coord(coords.longitude, 'station longitude')
     stel = _validate_coord(coords.elevation, 'station elevation')
     hypo = trace.stats.event.hypocenter
-    evla = _validate_coord(hypo.latitude, 'event latitude')
-    evlo = _validate_coord(hypo.longitude, 'event longitude')
+    evla = _validate_coord(hypo.latitude.value_in_deg, 'event latitude')
+    evlo = _validate_coord(hypo.longitude.value_in_deg, 'event longitude')
     evdp = _validate_coord(hypo.depth.value_in_km, 'event depth')
     epi_dist, az, baz = gps2dist_azimuth(evla, evlo, stla, stlo)
     epi_dist /= 1e3  # in km

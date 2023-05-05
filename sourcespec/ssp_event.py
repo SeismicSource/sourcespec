@@ -35,6 +35,28 @@ def _dyne_cm_to_N_m(value):
     return None if value is None else value * 1e-7
 
 
+class SSPCoordinate(object):
+    """
+    SourceSpec coordinate class.
+
+    Stores a longitude or latitude value.
+    Currently only degrees are supported.
+    """
+    def __init__(self, value=None, units=None):
+        if units == 'deg':
+            self.value_in_deg = _float(value)
+        elif units is None:
+            self.value_in_deg = None
+        else:
+            raise ValueError('coordinate units must be deg')
+
+    def __str__(self):
+        try:
+            return(f'{self.value_in_deg:.4f}°')
+        except TypeError:
+            return('Incomplete coordinate data')
+
+
 class SSPDepth(object):
     """
     SourceSpec depth class.
@@ -80,8 +102,14 @@ class SSPHypocenter(object):
     """
     def __init__(self, longitude=None, latitude=None, depth=None,
                  origin_time=None):
-        self.longitude = _float(longitude)
-        self.latitude = _float(latitude)
+        longitude = {} if longitude is None else longitude
+        if not hasattr(longitude, 'keys'):
+            raise ValueError('longitude must be a dictionary-like object')
+        self.longitude = SSPCoordinate(**longitude)
+        latitude = {} if latitude is None else latitude
+        if not hasattr(latitude, 'keys'):
+            raise ValueError('latitude must be a dictionary-like object')
+        self.latitude = SSPCoordinate(**latitude)
         depth = {} if depth is None else depth
         if not hasattr(depth, 'keys'):
             raise ValueError('depth must be a dictionary-like object')
@@ -181,17 +209,18 @@ class SSPFocalMechanism(object):
     """
     SourceSpec focal mechanism class.
     """
-    def __init__(self, strike=None, dip=None, rake=None):
+    def __init__(self, strike=None, dip=None, rake=None, units=None):
         self.strike = _float(strike)
         self.dip = _float(dip)
         self.rake = _float(rake)
+        self.units = units
 
     def __str__(self):
         try:
             return(
-                f'Strike: {self.strike:.1f}°, '
-                f'Dip: {self.dip:.1f}°, '
-                f'Rake: {self.rake:.1f}°'
+                f'Strike: {self.strike:.1f} {self.units}, '
+                f'Dip: {self.dip:.1f} {self.units}, '
+                f'Rake: {self.rake:.1f} {self.units}'
             )
         except TypeError:
             return('Incomplete focal mechanism data')
