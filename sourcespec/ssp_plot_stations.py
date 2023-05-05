@@ -148,32 +148,51 @@ def _plot_circles(ax, evlon, evlat, maxdist, ncircles=5):
     return texts
 
 
-def _plot_hypo(ax, hypo):
+def _plot_epicenter_as_beachball(ax, event):
     geodetic_transform = ccrs.PlateCarree()
-    try:
-        strike = hypo.strike
-        dip = hypo.dip
-        rake = hypo.rake
-        xy = ax.projection.transform_point(
-            hypo.longitude, hypo.latitude, geodetic_transform)
-        meca = beach(
-            (strike, dip, rake),
-            xy=xy,
-            width=30,
-            linewidth=1,
-            facecolor='k',
-            zorder=10,
-            axes=ax
-        )
-        ax.add_collection(meca)
-    except AttributeError:
-        # plot hypocenter as a star
-        ax.plot(
-            hypo.longitude, hypo.latitude, marker='*', markersize=20,
-            markeredgewidth=1, markeredgecolor='white',
-            color='k', transform=geodetic_transform,
-            zorder=10
-        )
+    hypo = event.hypocenter
+    fm = event.focal_mechanism
+    # TODO: draw full moment tensor, if available
+    # The following three lines will raise an exception if the focal mechanism
+    # is not valid (e.g., values are None)
+    strike = float(fm.strike)
+    dip = float(fm.dip)
+    rake = float(fm.rake)
+    xy = ax.projection.transform_point(
+        hypo.longitude, hypo.latitude, geodetic_transform)
+    # compute beachball width from map extent
+    # Note: in previous versionos of SourceSpec, we used the argument axes=ax
+    # to let beach() adapth the width to the axes size. However, this does not
+    # work anymore with recent versions of Matplotlib, since the
+    # IdentityTransform() used by beach() does not provide anymore a
+    # translate() method.
+    # TODO: this should be fixed in ObsPy 1.4.1,
+    # see https://github.com/obspy/obspy/issues/2887
+    # Change this again when bumping dependencies to ObsPy >= 1.4.1
+    extent = ax.get_extent()
+    xlen = extent[1] - extent[0]
+    ylen = extent[3] - extent[2]
+    width = min(xlen, ylen)/15
+    meca = beach(
+        (strike, dip, rake),
+        xy=xy,
+        width=width,
+        linewidth=1,
+        facecolor='k',
+        zorder=10,
+    )
+    ax.add_collection(meca)
+
+
+def _plot_epicenter_as_star(ax, event):
+    geodetic_transform = ccrs.PlateCarree()
+    hypo = event.hypocenter
+    ax.plot(
+        hypo.longitude, hypo.latitude, marker='*', markersize=20,
+        markeredgewidth=1, markeredgecolor='white',
+        color='k', transform=geodetic_transform,
+        zorder=10
+    )
 
 
 def _add_title(event, ax):
@@ -257,7 +276,8 @@ def _make_basemap(config, maxdist):
     # to account for deformation in Mercator projection
     mult = 1.1 if maxdist < 500 else 1.5
     maxdiagonal = maxdist*(2**0.5)*mult
-    hypo = config.event.hypocenter
+    event = config.event
+    hypo = event.hypocenter
     lonmax, latmax, _ = g.fwd(
         hypo.longitude, hypo.latitude, 45, maxdiagonal*1000.)
     lonmin = 2*hypo.longitude - lonmax
@@ -280,7 +300,10 @@ def _make_basemap(config, maxdist):
     _add_coastlines(config, ax)
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     circle_texts = _plot_circles(ax, hypo.longitude, hypo.latitude, maxdist, 5)
-    _plot_hypo(ax, hypo)
+    try:
+        _plot_epicenter_as_beachball(ax, event)
+    except Exception:
+        _plot_epicenter_as_star(ax, event)
     return ax, circle_texts
 
 
