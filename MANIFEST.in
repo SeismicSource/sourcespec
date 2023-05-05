@@ -11,6 +11,6 @@ exclude docs/configuration_file.rst
 include bin/*.py
 include versioneer.py
 include sourcespec/_version.py
-include sourcespec/configspec.conf
+include sourcespec/config_files/configspec.conf
 include sourcespec/html_report_template/style.css
 include sourcespec/html_report_template/*.html
