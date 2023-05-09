@@ -87,5 +87,6 @@ setup(
         'pillow>=4.0.0',
         'obspy>=1.2.0',
         'pyproj',
-        'tzlocal']
+        'tzlocal',
+        'pyyaml']
     )
