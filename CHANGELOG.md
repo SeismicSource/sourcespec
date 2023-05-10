@@ -8,6 +8,12 @@ Copyright (c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
 
 This release requires at least Python 3.7.
 
+### Input/output
+
+- Introducing a new file format for providing event information
+  (hypocentral location, magnitude, focal mechanism, moment tensor):
+  the [SourceSpec Event File].
+
 ### Bugfixes
 
 - Do not ignore picks labeled with lowercase "p" or "s"
@@ -518,6 +524,7 @@ Initial Python port.
 
 [Discussions]: https://github.com/SeismicSource/sourcespec/discussions
 [@krisvanneste]: https://github.com/krisvanneste
+[SourceSpec Event File]: https://sourcespec.readthedocs.io/en/latest/source_spec_event_file.html
 
 [#2]: https://github.com/SeismicSource/sourcespec/issues/2
 [#3]: https://github.com/SeismicSource/sourcespec/issues/3
