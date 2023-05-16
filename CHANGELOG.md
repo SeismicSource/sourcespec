@@ -19,7 +19,7 @@ This release requires at least Python 3.7.
 - Do not ignore picks labeled with lowercase "p" or "s"
 - Fixed: config parameter `p_arrival_tolerance` was used also for S waves,
   instead of `s_arrival_tolerance` (see [#35])
-- Fix bug where signal and noise windows where plotted with the wrong length,
+- Fix bug where signal and noise windows were plotted with the wrong length,
   under certain circumstances (see [#35])
 - Fix for beachball not plotted anymore with recent versions of Matplotlib.
 
