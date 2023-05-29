@@ -408,6 +408,45 @@ def _build_weight_from_frequency(config, spec):
     return weight
 
 
+def _build_weight_from_inv_frequency(config, spec, pow=0.25):
+    """
+    Build spectral weights from inverse frequency (raised to a power < 1)
+    """
+    # Note: weight.data is used for plotting, weight.data_log for actual weighting
+    weight = spec.copy()
+    freq = weight.get_freq()
+    weight.data *= 0
+    # Limit non-zero weights to fmin/fmax from spectral_snratio if available
+    snr_fmin = getattr(spec.stats, 'spectral_snratio_fmin', None)
+    snr_fmax = getattr(spec.stats, 'spectral_snratio_fmax', None)
+    if snr_fmin:
+        i0 = np.where(freq >= snr_fmin)[0][0]
+    else:
+        i0 = 0
+    if snr_fmax:
+        i1 = np.where(freq <= snr_fmax)[0][-1]
+    else:
+        i1 = len(freq) - 1
+    # Build weights as if frequencies always start from 0.25 Hz
+    # to obtain similar curves regardless of fmin
+    # and to avoid too much weight for very low frequencies
+    weight.data[i0:i1+1] = 1. / (freq[i0:i1+1] - freq[i0] + 0.25)**pow
+    weight.data /= np.max(weight.data)
+    freq_log = weight.freq_log
+    weight.data_log *= 0
+    if snr_fmin:
+        i0 = np.where(freq_log >= snr_fmin)[0][0]
+    else:
+        i0 = 0
+    if snr_fmax:
+        i1 = np.where(freq_log <= snr_fmax)[0][-1]
+    else:
+        i1 = len(freq_log) - 1
+    weight.data_log[i0:i1+1] = 1. / (freq_log[i0:i1+1]-freq_log[i0]+0.25)**pow
+    weight.data_log /= np.max(weight.data_log)
+    return weight
+
+
 def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
     weight = spec.copy()
     weight.data /= specnoise.data
@@ -461,6 +500,8 @@ def _build_weight_spectral_stream(config, spec_st, specnoise_st):
             weight = _build_weight_from_noise(config, spec_h, specnoise_h)
         elif config.weighting == 'frequency':
             weight = _build_weight_from_frequency(config, spec_h)
+        elif config.weighting == 'inv_frequency':
+            weight = _build_weight_from_inv_frequency(config, spec_h)
         elif config.weighting == 'no_weight':
             weight = _build_uniform_weight(spec_h)
         weight_st.append(weight)
@@ -517,6 +558,16 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
     spectral_snratio =\
         weight.snratio[idx].sum()/len(weight.snratio[idx])
     spec.stats.spectral_snratio = spectral_snratio
+    # Save frequency range where SNR > 3 so it can be used for building weights
+    # Note: not sure if we could use config.spectral_sn_min here instead of 3
+    idx2 = (weight.snratio >= 3)[idx]
+    snr_valid_freqs = weight.get_freq()[idx2]
+    try:
+        spec.stats.spectral_snratio_fmin = snr_valid_freqs[0]
+        spec.stats.spectral_snratio_fmax = snr_valid_freqs[-1]
+    except:
+        spec.stats.spectral_snratio_fmin = None
+        spec.stats.spectral_snratio_fmax = None
     spec_id = spec.get_id()
     logger.info(
         f'{spec_id}: spectral S/N: {spectral_snratio:.2f}')
