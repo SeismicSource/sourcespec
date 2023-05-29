@@ -94,7 +94,7 @@ class Bounds(object):
     def _Qo_to_t_star(self):
         phase = self.config.wave_type[0]
         travel_time = self.spec.stats.travel_times[phase]
-        t_star_bounds = travel_time/self.config.Qo_min_max
+        t_star_bounds = travel_time/np.array(self.config.Qo_min_max)
         return sorted(t_star_bounds)
 
     def _fix_initial_values_t_star(self):
