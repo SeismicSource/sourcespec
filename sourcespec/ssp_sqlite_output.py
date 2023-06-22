@@ -78,27 +78,35 @@ def write_sqlite(config, sspec_output):
         Mo REAL,
         Mo_err_minus REAL,
         Mo_err_plus REAL,
+        Mo_is_outlier INT,
         Mw REAL,
         Mw_err_minus REAL,
         Mw_err_plus REAL,
+        Mw_is_outlier INT,
         fc REAL,
         fc_err_minus REAL,
         fc_err_plus REAL,
+        fc_is_outlier INT,
         t_star REAL,
         t_star_err_minus REAL,
         t_star_err_plus REAL,
+        t_star_is_outlier INT,
         Qo REAL,
         Qo_err_minus REAL,
         Qo_err_plus REAL,
+        Qo_is_outlier INT,
         bsd REAL,
         bsd_err_minus REAL,
         bsd_err_plus REAL,
+        bsd_is_outlier INT,
         ra REAL,
         ra_err_minus REAL,
         ra_err_plus REAL,
+        ra_is_outlier INT,
+        Er REAL,
+        Er_is_outlier INT,
         dist REAL,
-        azimuth REAL,
-        Er REAL
+        azimuth REAL
     );"""
     c.execute(sql_create_stations_table)
     # Write station source parameters to database
@@ -120,15 +128,23 @@ def write_sqlite(config, sspec_output):
         t = (
             statId, evid, runid,
             *par.Mo.value_uncertainty(),
+            int(par.Mo.outlier),
             *par.Mw.value_uncertainty(),
+            int(par.Mw.outlier),
             *par.fc.value_uncertainty(),
+            int(par.fc.outlier),
             *par.t_star.value_uncertainty(),
+            int(par.t_star.outlier),
             *par.Qo.value_uncertainty(),
+            int(par.Qo.outlier),
             *par.bsd.value_uncertainty(),
+            int(par.bsd.outlier),
             *par.radius.value_uncertainty(),
+            int(par.radius.outlier),
+            par.Er.value,
+            int(par.Er.outlier),
             par.hypo_dist_in_km,
-            par.azimuth,
-            par.Er.value
+            par.azimuth
         )
         # Create a string like ?,?,?,?
         values = ','.join('?'*len(t))
