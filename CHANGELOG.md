@@ -24,6 +24,8 @@ This release requires at least Python 3.7.
 - Fix for beachball not plotted anymore with recent versions of Matplotlib.
 - Fix bug where traces ignored because of low spectral S/N ratio, where still
   plotted as if they were valid traces
+- Fix bug when specifying an absolute path for output directory: the path
+  was treated as relative (see [#40])
 
 ### Requirements
 
@@ -549,3 +551,4 @@ Initial Python port.
 [#30]: https://github.com/SeismicSource/sourcespec/issues/30
 [#31]: https://github.com/SeismicSource/sourcespec/issues/31
 [#35]: https://github.com/SeismicSource/sourcespec/issues/35
+[#40]: https://github.com/SeismicSource/sourcespec/issues/40

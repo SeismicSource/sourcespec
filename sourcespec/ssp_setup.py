@@ -697,8 +697,10 @@ def move_outdir(config):
         return
     src = config.options.outdir
     run_id = config.options.run_id
-    path = os.path.normpath(config.options.outdir).split(os.sep)
+    path = os.path.normpath(src).split(os.sep)
     dst = os.path.join(*path[:-1], str(evid))
+    if src.startswith(os.sep):
+        dst = os.path.join(os.sep, dst)
     if run_id:
         dst += f'_{run_id}'
     # Create destination
