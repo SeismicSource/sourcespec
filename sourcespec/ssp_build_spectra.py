@@ -411,7 +411,7 @@ def _build_weight_from_frequency(config, spec):
     return weight
 
 
-def _build_weight_from_inv_frequency(config, spec, pow=0.25):
+def _build_weight_from_inv_frequency(spec, pow=0.25):
     """
     Build spectral weights from inverse frequency (raised to a power < 1)
     """
@@ -494,7 +494,7 @@ def _build_weight_spectral_stream(config, spec_st, specnoise_st):
         elif config.weighting == 'frequency':
             weight = _build_weight_from_frequency(config, spec_h)
         elif config.weighting == 'inv_frequency':
-            weight = _build_weight_from_inv_frequency(config, spec_h)
+            weight = _build_weight_from_inv_frequency(spec_h)
         elif config.weighting == 'no_weight':
             weight = _build_uniform_weight(spec_h)
         weight_st.append(weight)
