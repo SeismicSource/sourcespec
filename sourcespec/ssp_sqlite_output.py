@@ -38,7 +38,7 @@ def write_sqlite(config, sspec_output):
     runid = config.options.run_id
 
     # Current supported DB version
-    DB_VERSION = 1
+    DB_VERSION = 2
 
     # only check version if database_file exists
     check_version = os.path.isfile(database_file)
@@ -147,7 +147,7 @@ def write_sqlite(config, sspec_output):
             par.azimuth
         )
         # Create a string like ?,?,?,?
-        values = ','.join('?'*len(t))
+        values = ','.join('?' * len(t))
         sql_insert_into_stations = f'INSERT INTO Stations VALUES({values});'
         try:
             c.execute(sql_insert_into_stations, t)
@@ -369,7 +369,7 @@ def write_sqlite(config, sspec_output):
         config.agency_url
     )
     # Create a string like ?,?,?,?
-    values = ','.join('?'*len(t))
+    values = ','.join('?' * len(t))
     sql_insert_into_events = f'INSERT INTO Events VALUES({values});'
     try:
         c.execute(sql_insert_into_events, t)
