@@ -274,7 +274,7 @@ def _define_signal_and_noise_windows(config, trace):
     # Signal window for spectral analysis (P phase)
     t1 = p_arrival_time - config.signal_pre_time
     t1 = max(trace.stats.starttime, t1)
-    t2 = t1 + min(config.win_length, s_minus_p)
+    t2 = t1 + min(config.win_length, s_minus_p + s_pre_time)
     trace.stats.arrivals['P1'] = ('P1', t1)
     trace.stats.arrivals['P2'] = ('P2', t2)
     # Noise window for spectral analysis
