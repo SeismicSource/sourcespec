@@ -13,6 +13,9 @@ This release requires at least Python 3.7.
 - Introducing a new file format for providing event information
   (hypocentral location, magnitude, focal mechanism, moment tensor):
   the [SourceSpec Event File].
+- Store in the SQLite database the information on whether each parameter is
+  an outlier (see [#38]). Warning: breaks compatibility with previous database
+  versions
 
 ### Processing
 
@@ -562,4 +565,5 @@ Initial Python port.
 [#31]: https://github.com/SeismicSource/sourcespec/issues/31
 [#35]: https://github.com/SeismicSource/sourcespec/issues/35
 [#37]: https://github.com/SeismicSource/sourcespec/issues/37
+[#38]: https://github.com/SeismicSource/sourcespec/issues/38
 [#40]: https://github.com/SeismicSource/sourcespec/issues/40
