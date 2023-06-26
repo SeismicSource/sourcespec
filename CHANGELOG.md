@@ -22,6 +22,8 @@ This release requires at least Python 3.7.
 - Fix bug where signal and noise windows were plotted with the wrong length,
   under certain circumstances (see [#35])
 - Fix for beachball not plotted anymore with recent versions of Matplotlib.
+- Fix bug where traces ignored because of low spectral S/N ratio, where still
+  plotted as if they were valid traces
 
 ### Requirements
 

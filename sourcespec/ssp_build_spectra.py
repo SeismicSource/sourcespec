@@ -530,15 +530,21 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
             raise SpectrumIgnored(msg, reason)
 
 
-def _ignore_spectrum(msg, trace, spec, specnoise):
+def _ignore_spectrum(msg, spec, specnoise):
     """Ignore spectrum. Set ignore flag and reason."""
     logger.warning(msg)
-    trace.stats.ignore = True
-    trace.stats.ignore_reason = msg.reason
     spec.stats.ignore = True
     spec.stats.ignore_reason = msg.reason
     specnoise.stats.ignore = True
     specnoise.stats.ignore_reason = msg.reason
+
+
+def _ignore_trace(msg, trace):
+    """Ignore trace. Set ignore flag and reason."""
+    # NOTE: no logger.warning here, because it is already done in
+    # _ignore_spectrum()
+    trace.stats.ignore = True
+    trace.stats.ignore_reason = msg.reason
 
 
 def _build_signal_and_noise_streams(config, st):
@@ -586,8 +592,13 @@ def _trim_components(config, signal_st, noise_st, st):
             _recompute_time_window(tr, 'N', npts, keep='end')
 
 
-def _build_signal_and_noise_spectral_streams(config, signal_st, noise_st):
-    """Build signal and noise spectral streams."""
+def _build_signal_and_noise_spectral_streams(
+        config, signal_st, noise_st, original_st):
+    """
+    Build signal and noise spectral streams.
+
+    Note: original_st is only used to keep track of ignored traces.
+    """
     spec_st = Stream()
     specnoise_st = Stream()
     for trace_signal in sorted(signal_st, key=lambda tr: tr.id):
@@ -601,7 +612,9 @@ def _build_signal_and_noise_spectral_streams(config, signal_st, noise_st):
             logger.warning(msg)
             continue
         except SpectrumIgnored as msg:
-            _ignore_spectrum(msg, trace_signal, spec, specnoise)
+            _ignore_spectrum(msg, spec, specnoise)
+            trace_original = original_st.select(id=trace_signal.id)[0]
+            _ignore_trace(msg, trace_original)
         spec_st.append(spec)
         specnoise_st.append(specnoise)
     if not spec_st:
@@ -647,8 +660,8 @@ def build_spectra(config, st):
     _trim_components(config, signal_st, noise_st, st)
     for trace in signal_st + noise_st:
         _zero_pad(config, trace)
-    spec_st, specnoise_st = \
-        _build_signal_and_noise_spectral_streams(config, signal_st, noise_st)
+    spec_st, specnoise_st = _build_signal_and_noise_spectral_streams(
+        config, signal_st, noise_st, st)
     weight_st = _build_weight_spectral_stream(config, spec_st, specnoise_st)
     logger.info('Building spectra: done')
     return spec_st, specnoise_st, weight_st
