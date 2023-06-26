@@ -415,6 +415,8 @@ def _build_weight_from_inv_frequency(spec, pow=0.25):
     """
     Build spectral weights from inverse frequency (raised to a power < 1)
     """
+    if pow >= 1:
+        raise ValueError('pow must be < 1')
     # Note: weight.data is used for plotting, weight.data_log for actual weighting
     weight = spec.copy()
     freq = weight.get_freq()
