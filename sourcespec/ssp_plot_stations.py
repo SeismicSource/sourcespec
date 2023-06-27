@@ -324,7 +324,10 @@ def _contrast_color(color):
     return 'black' if L > 0.179 else 'white'
 
 
-def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
+def _plot_stations(
+    config, lonlat_dist, st_ids,
+    values, outliers, vmean, verr, vname
+):
     maxdist = np.max(lonlat_dist[:, 2])
     ax, circle_texts = _make_basemap(config, maxdist)
 
@@ -346,8 +349,9 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
         0., 1.22, textstr, fontsize=14,
         ha='left', va='top', transform=ax.transAxes)
 
+    values_no_outliers = values[~outliers]
     if vname == 'mag':
-        vmax = np.max(np.abs(values - vmean))
+        vmax = np.max(np.abs(values_no_outliers - vmean))
         vmin = -vmax
         vmax += vmean
         vmin += vmean
@@ -357,8 +361,8 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
         cbar_extend = 'neither'
         cmap = cm.Spectral_r
     elif vname == 'fc':
-        vmin = np.min(values)
-        vmax = np.max(values)
+        vmin = np.min(values_no_outliers)
+        vmax = np.max(values_no_outliers)
         cbar_extend = 'neither'
         # limit colorbar to ±3sigma
         if vmax > vmean + 3 * verr_plus:
@@ -492,7 +496,14 @@ def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
 
 
 def plot_stations(config, sspec_output):
-    """Plot station map, color coded by magnitude or fc."""
+    """
+    Plot station map, color coded by magnitude or fc.
+
+    :param config: Configuration object
+    :type config: config.Config
+    :param sspec_output: SourceSpecOutput object
+    :type sspec_output: ssp_data_types.SourceSpecOutput
+    """
     # Check config, if we need to plot at all
     if not config.plot_show and not config.plot_save:
         return
@@ -510,12 +521,16 @@ def plot_stations(config, sspec_output):
     summary_values = sspec_output.reference_values()
     summary_uncertainties = sspec_output.reference_uncertainties()
     mag = np.array([stationpar[k]['Mw'].value for k in st_ids])
+    mag_outliers = np.array([stationpar[k]['Mw'].outlier for k in st_ids])
     summary_mag = summary_values['Mw']
     summary_mag_err = summary_uncertainties['Mw']
     _plot_stations(
-        config, lonlat_dist, st_ids, mag, summary_mag, summary_mag_err, 'mag')
+        config, lonlat_dist, st_ids,
+        mag, mag_outliers, summary_mag, summary_mag_err, 'mag')
     fc = np.array([stationpar[k]['fc'].value for k in st_ids])
+    fc_outliers = np.array([stationpar[k]['fc'].outlier for k in st_ids])
     summary_fc = summary_values['fc']
     summary_fc_err = summary_uncertainties['fc']
     _plot_stations(
-        config, lonlat_dist, st_ids, fc, summary_fc, summary_fc_err, 'fc')
+        config, lonlat_dist, st_ids,
+        fc, fc_outliers, summary_fc, summary_fc_err, 'fc')

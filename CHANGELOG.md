@@ -25,6 +25,10 @@ previous versions.
   have larger weight in the inversion. If traces contain noise, weights will
   be set to zero where SNR < 3 (see [#37])
 
+### Plotting
+
+- Station maps: exclude outliers when computing colorbar limits
+
 ### Config file
 
 - New option `inv_frequency` for the config parameter `weighting` (see [#37])
