@@ -147,7 +147,7 @@ def _check_data_len(config, trace):
             f'{traceId}: No data for the selected cut interval: '
             'skipping trace')
     nzeros = len(np.where(trace_cut.data == 0)[0])
-    if nzeros > npts/4:
+    if nzeros > npts / 4:
         raise RuntimeError(
             f'{traceId}: Signal window is zero for more than 25%: '
             'skipping trace')
@@ -238,7 +238,10 @@ def _check_noise_level(trace_signal, trace_noise, config):
     except ZeroDivisionError:
         scale_factor = 1
     trace_noise_rms = ((trace_noise.data**2 * scale_factor).sum())**0.5
-    if trace_noise_rms/trace_signal_rms < 1e-6 and config.weighting == 'noise':
+    if (
+        trace_noise_rms / trace_signal_rms < 1e-6 and
+        config.weighting == 'noise'
+    ):
         # Skip trace if noise level is too low and if noise weighting is used
         raise RuntimeError(
             f'{traceId}: Noise level is too low or zero: '
@@ -272,9 +275,9 @@ def _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist):
     mid_freq = np.logical_and(freqs > 0.2, freqs <= 0.25)
     high_freq = freqs >= 0.25
     exponent[low_freq] = 0.5
-    exponent[mid_freq] = 0.5 + 2*np.log(5*freqs[mid_freq])
+    exponent[mid_freq] = 0.5 + 2 * np.log(5 * freqs[mid_freq])
     exponent[high_freq] = 0.7
-    return cutoff_dist * (dist/cutoff_dist)**exponent
+    return cutoff_dist * (dist / cutoff_dist)**exponent
 
 
 def _geometrical_spreading_coefficient(config, spec):
@@ -317,7 +320,7 @@ def _displacement_to_moment(stats, config):
         velocity_log_messages.append(msg)
     v_hypo *= 1000.
     v_station *= 1000.
-    v3 = v_hypo**(5./2) * v_station**(1./2)
+    v3 = v_hypo**(5. / 2) * v_station**(1. / 2)
     rp = get_radiation_pattern_coefficient(stats, config)
     return 4 * math.pi * v3 * config.rho / (2 * rp)
 
@@ -330,14 +333,14 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
     # frequencies in logarithmic spacing
     log_df = _log_freq[-1] - _log_freq[-2]
     freq_logspace =\
-        10**(np.arange(_log_freq[0], _log_freq[-1]+log_df, log_df))
+        10**(np.arange(_log_freq[0], _log_freq[-1] + log_df, log_df))
     # 2. Reinterpolate data using log10 frequencies
     # make sure that extrapolation does not create negative values
     f = interp1d(freq, spec.data, fill_value='extrapolate')
     data_logspace = f(freq_logspace)
     data_logspace[data_logspace <= 0] = np.min(spec.data)
     # 3. Smooth log10-spaced data points
-    npts = max(1, int(round(smooth_width_decades/log_df)))
+    npts = max(1, int(round(smooth_width_decades / log_df)))
     data_logspace = smooth(data_logspace, window_len=npts)
     # 4. Reinterpolate to linear frequencies
     # make sure that extrapolation does not create negative values
@@ -348,9 +351,9 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
     # 5. Optimize the sampling rate of log spectrum,
     #    based on the width of the smoothing window
     # make sure that extrapolation does not create negative values
-    log_df = smooth_width_decades/5
+    log_df = smooth_width_decades / 5
     freq_logspace =\
-        10**(np.arange(_log_freq[0], _log_freq[-1]+log_df, log_df))
+        10**(np.arange(_log_freq[0], _log_freq[-1] + log_df, log_df))
     spec.freq_log = freq_logspace
     data_logspace = f(freq_logspace)
     data_logspace[data_logspace <= 0] = np.min(spec.data)
@@ -408,6 +411,37 @@ def _build_weight_from_frequency(config, spec):
     return weight
 
 
+def _build_weight_from_inv_frequency(spec, pow=0.25):
+    """
+    Build spectral weights from inverse frequency (raised to a power < 1)
+    """
+    if pow >= 1:
+        raise ValueError('pow must be < 1')
+    # Note: weight.data is used for plotting, weight.data_log for actual weighting
+    weight = spec.copy()
+    freq = weight.get_freq()
+    weight.data *= 0
+    # Limit non-zero weights to fmin/fmax from spectral_snratio if available
+    snr_fmin = getattr(spec.stats, 'spectral_snratio_fmin', None)
+    snr_fmax = getattr(spec.stats, 'spectral_snratio_fmax', None)
+    i0 = np.where(freq >= snr_fmin)[0][0] if snr_fmin else 0
+    i1 = np.where(freq <= snr_fmax)[0][-1] if snr_fmax else len(freq) - 1
+    # Build weights as if frequencies always start from 0.25 Hz
+    # to obtain similar curves regardless of fmin
+    # and to avoid too much weight for very low frequencies
+    weight.data[i0: i1 + 1] = 1. / (freq[i0: i1 + 1] - freq[i0] + 0.25)**pow
+    weight.data /= np.max(weight.data)
+    freq_log = weight.freq_log
+    weight.data_log *= 0
+    i0 = np.where(freq_log >= snr_fmin)[0][0] if snr_fmin else 0
+    i1 = np.where(freq_log <= snr_fmax)[0][-1] if snr_fmax\
+        else len(freq_log) - 1
+    weight.data_log[i0: i1 + 1] =\
+        1. / (freq_log[i0: i1 + 1] - freq_log[i0] + 0.25)**pow
+    weight.data_log /= np.max(weight.data_log)
+    return weight
+
+
 def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
     weight = spec.copy()
     weight.data /= specnoise.data
@@ -421,7 +455,7 @@ def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
     weight.data /= np.max(weight.data)
     # slightly taper weight at low frequencies, to avoid overestimating
     # weight at low frequencies, in cases where noise is underestimated
-    cosine_taper(weight.data, weight.stats.delta/4, left_taper=True)
+    cosine_taper(weight.data, weight.stats.delta / 4, left_taper=True)
     # Make sure weight is positive
     weight.data[weight.data <= 0] = 0.001
     return weight
@@ -461,6 +495,8 @@ def _build_weight_spectral_stream(config, spec_st, specnoise_st):
             weight = _build_weight_from_noise(config, spec_h, specnoise_h)
         elif config.weighting == 'frequency':
             weight = _build_weight_from_frequency(config, spec_h)
+        elif config.weighting == 'inv_frequency':
+            weight = _build_weight_from_inv_frequency(spec_h)
         elif config.weighting == 'no_weight':
             weight = _build_uniform_weight(spec_h)
         weight_st.append(weight)
@@ -470,7 +506,7 @@ def _build_weight_spectral_stream(config, spec_st, specnoise_st):
 def _select_spectra(spec_st, specid):
     """Select spectra from stream, based on specid."""
     network, station, location, channel = specid.split('.')
-    channel = channel + '?'*(3-len(channel))
+    channel = channel + '?' * (3 - len(channel))
     spec_st_sel = spec_st.select(
         network=network, station=station, location=location, channel=channel)
     spec_st_sel = Stream(sp for sp in spec_st_sel if not sp.stats.ignore)
@@ -511,12 +547,21 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
     if config.spectral_sn_freq_range is not None:
         sn_fmin, sn_fmax = config.spectral_sn_freq_range
         freqs = weight.get_freq()
-        idx = np.where((sn_fmin <= freqs)*(freqs <= sn_fmax))
+        idx = np.where((sn_fmin <= freqs) * (freqs <= sn_fmax))
     else:
         idx = range(len(weight.snratio))
-    spectral_snratio =\
-        weight.snratio[idx].sum()/len(weight.snratio[idx])
+    spectral_snratio = weight.snratio[idx].sum() / len(weight.snratio[idx])
     spec.stats.spectral_snratio = spectral_snratio
+    # Save frequency range where SNR > 3 so it can be used for building weights
+    # Note: not sure if we could use config.spectral_sn_min here instead of 3
+    idx2 = (weight.snratio >= 3)[idx]
+    snr_valid_freqs = weight.get_freq()[idx2]
+    try:
+        spec.stats.spectral_snratio_fmin = snr_valid_freqs[0]
+        spec.stats.spectral_snratio_fmax = snr_valid_freqs[-1]
+    except IndexError:
+        spec.stats.spectral_snratio_fmin = None
+        spec.stats.spectral_snratio_fmax = None
     spec_id = spec.get_id()
     logger.info(
         f'{spec_id}: spectral S/N: {spectral_snratio:.2f}')
@@ -644,7 +689,7 @@ def _zero_pad(config, trace):
         t1 = trace.stats.arrivals[f'{wtype}1'][1]
     elif trace.stats.type == 'noise':
         t1 = trace.stats.arrivals['N1'][1]
-    trace.trim(starttime=t1, endtime=t1+spec_win_len, pad=True, fill_value=0)
+    trace.trim(starttime=t1, endtime=t1 + spec_win_len, pad=True, fill_value=0)
 
 
 def build_spectra(config, st):

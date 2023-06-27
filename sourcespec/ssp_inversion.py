@@ -152,6 +152,16 @@ def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_log, statId):
         idx0 = 0
         # the closest index to f_weight:
         idx1 = np.where(freq_log <= config.f_weight)[0][-1]
+    elif config.weighting == 'inv_frequency':
+        weight_idxs = np.where(weight >= 0.7)[0]
+        try:
+            idx0 = weight_idxs[0]
+        except IndexError:
+            idx0 = 0
+        try:
+            idx1 = weight_idxs[-1]
+        except IndexError:
+            idx1 = len(weight) - 1
     else:
         idx0 = 0
         idx1 = len(weight) // 2
@@ -403,6 +413,7 @@ def spectral_inversion(config, spec_st, weight_st):
     weighting_messages = {
         'noise': 'Using noise weighting for inversion.',
         'frequency': 'Using frequency weighting for inversion.',
+        'inv_frequency': 'Using inverse frequency weighting for inversion.',
         'no_weight': 'Using no weighting for inversion.'
     }
     logger.info(weighting_messages[config.weighting])

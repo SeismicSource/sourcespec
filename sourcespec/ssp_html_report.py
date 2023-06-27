@@ -520,6 +520,7 @@ def _add_inversion_info_to_html(sspec_output, replacements):
     weightings = {
         'noise': 'Noise weighting',
         'frequency': 'Frequency weighting',
+        'inv_frequency': 'Inverse frequency weighting',
         'no_weight': 'No weighting',
     }
     inversion_algorithm = inversion_algorithms[

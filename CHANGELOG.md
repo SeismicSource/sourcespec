@@ -14,6 +14,16 @@ This release requires at least Python 3.7.
   (hypocentral location, magnitude, focal mechanism, moment tensor):
   the [SourceSpec Event File].
 
+### Processing
+
+- New weighting option based on inverse frequency, so that lower frequencies
+  have larger weight in the inversion. If traces contain noise, weights will
+  be set to zero where SNR < 3 (see [#37])
+
+### Config file
+
+- New option `inv_frequency` for the config parameter `weighting` (see [#37])
+
 ### Bugfixes
 
 - Do not ignore picks labeled with lowercase "p" or "s"
@@ -551,4 +561,5 @@ Initial Python port.
 [#30]: https://github.com/SeismicSource/sourcespec/issues/30
 [#31]: https://github.com/SeismicSource/sourcespec/issues/31
 [#35]: https://github.com/SeismicSource/sourcespec/issues/35
+[#37]: https://github.com/SeismicSource/sourcespec/issues/37
 [#40]: https://github.com/SeismicSource/sourcespec/issues/40
