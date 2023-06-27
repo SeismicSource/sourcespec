@@ -90,17 +90,17 @@ def _get_vel_from_NLL(lon, lat, depth_in_km, wave, config):
     if grd.type == 'VELOCITY':
         vel = value
     elif grd.type == 'VELOCITY_METERS':
-        vel = value/1e3
+        vel = value / 1e3
     elif grd.type == 'SLOWNESS':
-        vel = 1./value
+        vel = 1. / value
     elif grd.type == 'SLOW_LEN':
         vel = grd.dx / value
     elif grd.type == 'VEL2':
         vel = value**0.5
     elif grd.type == 'SLOW2':
-        vel = 1./(value**0.5)
+        vel = 1. / (value**0.5)
     elif grd.type == 'SLOW2_METERS':
-        vel = (1./(value**0.5))/1e3
+        vel = (1. / (value**0.5)) / 1e3
     else:
         raise ValueError(f'Unsupported grid type: {grd.type}')
     logger.info(f'Using {wave} velocity from NLL model')
@@ -164,12 +164,12 @@ def bsd(Mo_in_N_m, ra_in_m):
 
     Madariaga (2009), doi:10.1007/978-1-4419-7695-6_22, eq. 27
     """
-    return 7./16 * Mo_in_N_m / ra_in_m**3 * 1e-6
+    return 7. / 16 * Mo_in_N_m / ra_in_m**3 * 1e-6
 
 
 def quality_factor(travel_time_in_s, t_star_in_s):
     """Compute quality factor from travel time and t_star."""
-    return np.inf if t_star_in_s == 0 else travel_time_in_s/t_star_in_s
+    return np.inf if t_star_in_s == 0 else travel_time_in_s / t_star_in_s
 # -----------------------------------------------------------------------------
 
 
@@ -195,13 +195,17 @@ def smooth(x, window_len=11, window='hanning'):
     if window not in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
         raise ValueError("Window is one of 'flat', 'hanning', 'hamming', "
                          "'bartlett', 'blackman'")
-    s = np.r_[2*x[0]-x[window_len-1::-1], x, 2*x[-1]-x[-1:-window_len:-1]]
+    s = np.r_[
+        2 * x[0] - x[window_len - 1::-1],
+        x,
+        2 * x[-1] - x[-1:-window_len:-1]
+    ]
     if window == 'flat':  # moving average
         w = np.ones(window_len, 'd')
     else:
         w = eval(f'np.{window}(window_len)')
-    y = np.convolve(w/w.sum(), s, mode='same')
-    yy = y[window_len:-window_len+1]
+    y = np.convolve(w / w.sum(), s, mode='same')
+    yy = y[window_len:-window_len + 1]
     # check if there are NaN values
     nanindexes = np.where(np.isnan(yy))
     yy[nanindexes] = x[nanindexes]
@@ -286,7 +290,7 @@ def station_to_event_position(trace):
     epi_dist, az, baz = gps2dist_azimuth(evla, evlo, stla, stlo)
     epi_dist /= 1e3  # in km
     gcarc = kilometers2degrees(epi_dist)
-    hypo_dist = math.sqrt(epi_dist**2 + (stel+evdp)**2)
+    hypo_dist = math.sqrt(epi_dist**2 + (stel + evdp)**2)
     trace.stats.azimuth = az
     trace.stats.back_azimuth = baz
     trace.stats.epi_dist = epi_dist

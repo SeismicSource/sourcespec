@@ -64,12 +64,12 @@ def _plot_fc_and_mw(sspec_output, ax, ax2):
     if fc_min < 0:
         fc_min = 0.01
     ax.axvspan(
-        fc_min, fc+fc_err_right, color='#bbbbbb', alpha=0.3, zorder=9)
+        fc_min, fc + fc_err_right, color='#bbbbbb', alpha=0.3, zorder=9)
     ax.axvline(fc, color='#999999', linewidth=2., zorder=10)
     Mw = sspec_output.reference_values()['Mw']
     Mw_err_left, Mw_err_right = sspec_output.reference_uncertainties()['Mw']
     ax2.axhspan(
-        Mw-Mw_err_left, Mw+Mw_err_right, color='#bbbbbb',
+        Mw - Mw_err_left, Mw + Mw_err_right, color='#bbbbbb',
         alpha=0.3, zorder=8)
 
 

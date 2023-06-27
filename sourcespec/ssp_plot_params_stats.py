@@ -74,12 +74,12 @@ def box_plots(config, sspec_output):
         vmean = np.mean(values)
         # remove values that are very far from the mean
         # (otherwise plot is too compressed)
-        _newvalues = values[np.abs(values-vmean)/vmean < 10]
+        _newvalues = values[np.abs(values - vmean) / vmean < 10]
         if len(_newvalues) > 0:
             values = _newvalues
         # use logscale if values span a large interval, avoid zero values
         min_values = np.min(values) or 1e-10
-        if max(values)/min_values > 50:
+        if max(values) / min_values > 50:
             values = values[values != 0]
             ax.set_xscale('log')
         whiskers = config.nIQR

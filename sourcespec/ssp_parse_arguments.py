@@ -258,7 +258,7 @@ def _parse_args_for_source_model(options):
         for opt in oplist:
             for n, x in enumerate(opt):
                 if x is None:
-                    opt[n] = opt[n-1]
+                    opt[n] = opt[n - 1]
 
     options.fc, options.mag, options.Mo, options.t_star, options.alpha = \
         oplist

@@ -305,7 +305,7 @@ def _dict2yaml(dict_like, level=0):
         for key, value in dict_like.items()
         if not key.startswith('_') and value is not None
     }
-    indent = ' '*2*level
+    indent = ' ' * 2 * level
     # use oneliners for dict-like objects containing value and uncertainty keys
     if set(target_dict.keys()).intersection(set(value_uncertainty_keys)):
         oneliner = str(target_dict).replace("'", "")
@@ -322,7 +322,7 @@ def _dict2yaml(dict_like, level=0):
                 for line in comment.split('\n'):
                     lines += f'# {line}\n'
             lines += f'{indent}{key}:\n'
-            lines += _dict2yaml(value, level+1)
+            lines += _dict2yaml(value, level + 1)
         else:
             lines += f'{indent}{key}: {value}\n'
     return lines
@@ -358,11 +358,11 @@ def _write_hypo71(config, sspec_output):
     summary_values = sspec_output.reference_values()
     mw_str = f'{summary_values["Mw"]:03.2f}'
     Ml = summary_values.get('Ml', None)
-    ml_str = f'{Ml:03.2f}' if Ml is not None and ~np.isnan(Ml) else ' '*4
+    ml_str = f'{Ml:03.2f}' if Ml is not None and ~np.isnan(Ml) else ' ' * 4
     for i in range(4):
-        line[49+i] = mw_str[0+i]
-        # line[45+i] = mw_str[0+i]
-        line[69+i] = ml_str[0+i]
+        line[49 + i] = mw_str[0 + i]
+        # line[45 + i] = mw_str[0 + i]
+        line[69 + i] = ml_str[0 + i]
     outline = ''.join(line)
     evid = config.event.event_id
     hypo_file_out = os.path.join(config.options.outdir, f'{evid}.ssp.h')

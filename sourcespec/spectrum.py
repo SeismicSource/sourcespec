@@ -56,7 +56,7 @@ class Spectrum(Trace):
 
     def get_freq(self):
         fdelta = self.stats.delta
-        freq = np.arange(0, self.stats.npts*fdelta, fdelta)
+        freq = np.arange(0, self.stats.npts * fdelta, fdelta)
         freq = freq[:self.stats.npts]
         freq += self.stats.begin
         return freq
@@ -77,13 +77,14 @@ class Spectrum(Trace):
         begin = self.stats.begin
         spec_slice = copy(self)
         spec_slice.stats = deepcopy(self.stats)
-        spec_slice.trim(t-begin+fmin, t-begin+fmax, pad, nearest_sample,
-                        fill_value)
+        spec_slice.trim(
+            t - begin + fmin, t - begin + fmax,
+            pad, nearest_sample, fill_value)
         delta_t = t - spec_slice.stats.starttime
         if delta_t > 0:
             spec_slice.stats.begin = begin - delta_t
         else:
             # find the closest frequency to fmin:
-            idx = (np.abs(spec_slice.get_freq()-fmin)).argmin()
+            idx = (np.abs(spec_slice.get_freq() - fmin)).argmin()
             spec_slice.stats.begin = freq[idx]
         return spec_slice

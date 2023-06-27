@@ -50,7 +50,7 @@ def _get_bandpass_frequencies(config, trace):
 
 def filter_trace(config, trace):
     bp_freqmin, bp_freqmax = _get_bandpass_frequencies(config, trace)
-    nyquist = 1./(2. * trace.stats.delta)
+    nyquist = 1. / (2. * trace.stats.delta)
     if bp_freqmax >= nyquist:
         bp_freqmax = nyquist * 0.999
         logger.warning(
@@ -135,7 +135,7 @@ def _check_sn_ratio(config, trace):
                 f'{trace.stats.info}: empty noise window: skipping trace')
         logger.warning(f'{trace.stats.info}: empty noise window!')
         rmsnoise = 1.
-    sn_ratio = rmsS/rmsnoise
+    sn_ratio = rmsS / rmsnoise
     logger.info(f'{trace.stats.info}: S/N: {sn_ratio:.1f}')
     trace.stats.sn_ratio = sn_ratio
     # stop here if trace is already ignored
@@ -197,7 +197,9 @@ def _process_trace(config, trace):
     bp_freqmin, bp_freqmax = _get_bandpass_frequencies(config, trace)
     if config.correct_instrumental_response:
         try:
-            pre_filt = (bp_freqmin, bp_freqmin*1.1, bp_freqmax*0.9, bp_freqmax)
+            pre_filt = (
+                bp_freqmin, bp_freqmin * 1.1,
+                bp_freqmax * 0.9, bp_freqmax)
             remove_instr_response(trace_process, pre_filt)
         except Exception as e:
             raise RuntimeError(
@@ -257,12 +259,12 @@ def _define_signal_and_noise_windows(config, trace):
     if config.wave_type[0] == 'S' and s_arrival_time < trace.stats.starttime:
         raise RuntimeError(f'{trace.id}: S-window incomplete: skipping trace')
     # Signal window for spectral analysis (S phase)
-    s_minus_p = s_arrival_time-p_arrival_time
+    s_minus_p = s_arrival_time - p_arrival_time
     s_pre_time = config.signal_pre_time
-    if s_minus_p/2 < s_pre_time:
+    if s_minus_p / 2 < s_pre_time:
         # use (Ts-Tp)/2 if it is smaller than signal_pre_time
         # (for short-distance records with short S-P interval)
-        s_pre_time = s_minus_p/2
+        s_pre_time = s_minus_p / 2
         logger.warning(
             f'{trace.id}: signal_pre_time is larger than (Ts-Tp)/2. '
             'Using (Ts-Tp)/2 instead')
@@ -315,7 +317,7 @@ def _check_signal_window(config, st):
     overlaps = [g for g in gaps_olaps if g[6] < 0]
     duration = st_cut[-1].stats.endtime - st_cut[0].stats.starttime
     gap_duration = sum(g[6] for g in gaps)
-    if gap_duration > duration/4:
+    if gap_duration > duration / 4:
         raise RuntimeError(
             f'{traceid}: too many gaps for the selected cut interval: '
             'skipping trace')
@@ -386,13 +388,13 @@ def _skip_ignored(config, id):
     if config.use_traceids is not None:
         combined = (
             "(" + ")|(".join(config.use_traceids) + ")"
-            ).replace('.', r'\.')
+        ).replace('.', r'\.')
         if not any(re.match(combined, s) for s in ss):
             raise RuntimeError(f'{id}: ignored from config file')
     if config.ignore_traceids is not None:
         combined = (
             "(" + ")|(".join(config.ignore_traceids) + ")"
-            ).replace('.', r'\.')
+        ).replace('.', r'\.')
         if any(re.match(combined, s) for s in ss):
             raise RuntimeError(f'{id}: ignored from config file')
 

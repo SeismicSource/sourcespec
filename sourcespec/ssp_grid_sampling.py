@@ -39,17 +39,17 @@ def peak_width(x, peak_idx, rel_height, negative=False):
     sign = -1 if negative else 1
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', category=PeakPropertyWarning)
-        _, width_height, idx_left, idx_right = peak_widths(
-            sign*x, [peak_idx, ], 1-rel_height)
+        _, width_height, idx_left, idx_right =\
+            peak_widths(sign * x, [peak_idx, ], 1 - rel_height)
     idx_left = int(idx_left)
     idx_right = int(idx_right)
-    width_height = sign*width_height[0]
+    width_height = sign * width_height[0]
     # fall back approach if the previous one fails
     if idx_left == idx_right:
         height = x.max() - x.min()
         if not negative:
             rel_height = 1 - rel_height
-        width_height = x.max() - rel_height*height
+        width_height = x.max() - rel_height * height
         # Search for the indexes of the misfit curve points which are
         # closest to width_height, on the left and on the right
         #   Note: This assumes that the misfit function is monotonic.
@@ -110,7 +110,7 @@ class GridSampling():
                 raise RuntimeError(msg)
             if mode == 'log':
                 if bds[0] == 0:
-                    bds = (bds[1]/ns, bds[1])
+                    bds = (bds[1] / ns, bds[1])
                 bds = tuple(np.log10(bds))
             self.truebounds.append(bds)
         self.kdt = None
@@ -189,8 +189,8 @@ class GridSampling():
             return None
         error = []
         for p, w in zip(self.params_opt, self.conditional_peak_widths):
-            err_left = p-w[1]
-            err_right = w[2]-p
+            err_left = p - w[1]
+            err_right = w[2] - p
             error.append((err_left, err_right))
         return tuple(error)
 
@@ -239,7 +239,7 @@ class GridSampling():
                 break
         deltas = []
         for bds, ns in zip(self.truebounds, self.nsteps):
-            deltas.append((bds[1] - bds[0])/ns)
+            deltas.append((bds[1] - bds[0]) / ns)
         pdf, extent = kdt.get_pdf(deltas)
         self.kdt = kdt
         self.misfit = -np.log(pdf)
@@ -327,7 +327,7 @@ class GridSampling():
         fig, ax = plt.subplots(1, 1, figsize=(5, 4), dpi=300)
         # imshow: saturate scale at 2 times the minimum
         mmap = ax.imshow(
-            mm, vmax=2*mm.min(), origin='lower', cmap='viridis',
+            mm, vmax=2 * mm.min(), origin='lower', cmap='viridis',
             extent=extent, aspect='auto'
         )
         ax.set_xlim(extent[0], extent[1])

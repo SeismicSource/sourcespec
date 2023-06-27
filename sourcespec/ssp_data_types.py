@@ -67,8 +67,8 @@ class Bounds(object):
         if config.fc_min_max is None:
             # If no bound is given, set it to fc_0 +/- a decade
             scale = 10.  # a decade
-            self.fc_min = fc_0/scale
-            self.fc_max = fc_0*scale
+            self.fc_min = fc_0 / scale
+            self.fc_max = fc_0 * scale
         else:
             self.fc_min, self.fc_max = config.fc_min_max
         if self.fc_min > fc_0:
@@ -94,7 +94,7 @@ class Bounds(object):
     def _Qo_to_t_star(self):
         phase = self.config.wave_type[0]
         travel_time = self.spec.stats.travel_times[phase]
-        t_star_bounds = travel_time/np.array(self.config.Qo_min_max)
+        t_star_bounds = travel_time / np.array(self.config.Qo_min_max)
         return sorted(t_star_bounds)
 
     def _fix_initial_values_t_star(self):
@@ -380,8 +380,9 @@ class SourceSpecOutput(OrderedAttribDict):
         _values = values[~naninf]
         if n is not None and len(_values) > 0:
             Q1, _, Q3 = np.percentile(_values, [25, 50, 75])
-            IQR = Q3-Q1
-            outliers = np.logical_or(values < Q1 - n*IQR, values > Q3 + n*IQR)
+            IQR = Q3 - Q1
+            outliers = np.logical_or(
+                values < Q1 - n * IQR, values > Q3 + n * IQR)
             outliers = np.logical_or(outliers, naninf)
         else:
             outliers = naninf

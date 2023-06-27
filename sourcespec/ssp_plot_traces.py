@@ -46,7 +46,7 @@ def _nplots(config, st, maxlines, ncols):
     else:
         nplots = len({tr.id[:-1] for tr in st if not tr.stats.ignore})
     nplots = len({tr.id[:-1] for tr in st})
-    nlines = int(np.ceil(nplots/ncols))
+    nlines = int(np.ceil(nplots / ncols))
     nlines = min(nlines, maxlines)
     if nplots < ncols:
         ncols = 1
@@ -100,8 +100,8 @@ def _make_fig(config, nlines, ncols):
     ax0.text(1., -0.1, textstr, fontsize=10, linespacing=1.5,
              ha='right', va='top', transform=ax0.transAxes)
     axes = []
-    for n in range(nlines*ncols):
-        plotn = n+1
+    for n in range(nlines * ncols):
+        plotn = n + 1
         if plotn == 1:
             ax = fig.add_subplot(nlines, ncols, plotn)
         else:
@@ -157,7 +157,7 @@ def _plot_min_max(ax, x_vals, y_vals, linewidth, color, alpha, zorder):
     """Quick and dirty plot using less points. Useful for vector plotting."""
     ax_width_in_pixels = int(np.ceil(ax.bbox.width))
     nsamples = len(x_vals)
-    samples_per_pixel = int(np.ceil(nsamples/ax_width_in_pixels))
+    samples_per_pixel = int(np.ceil(nsamples / ax_width_in_pixels))
     # find the closest multiple of samples_per_pixel (rounded down)
     nsamples -= nsamples % samples_per_pixel
     # resample x_vals
@@ -170,7 +170,7 @@ def _plot_min_max(ax, x_vals, y_vals, linewidth, color, alpha, zorder):
     y_max = y_vals.max(axis=1)
     # double the number of elements in x_vals
     dx = x_vals[1] - x_vals[0]
-    x_vals = np.column_stack((x_vals, x_vals+dx/2)).flatten()
+    x_vals = np.column_stack((x_vals, x_vals + dx / 2)).flatten()
     # alternate mins and maxs in y_vals
     y_vals = np.column_stack((y_min, y_max)).flatten()
     ax.plot(
@@ -207,20 +207,20 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
     if orientation in config.vertical_channel_codes:
         color = 'purple'
         if ntraces > 1:
-            rectangle_patch_origin = 1./3
-            rectangle_patch_height = 1./3
+            rectangle_patch_origin = 1. / 3
+            rectangle_patch_height = 1. / 3
     if orientation in config.horizontal_channel_codes_1:
         color = 'green'
         if ntraces > 1:
             trace.data = (trace.data / tmax - 1) * tmax
             rectangle_patch_origin = 0
-            rectangle_patch_height = 1./3
+            rectangle_patch_height = 1. / 3
     if orientation in config.horizontal_channel_codes_2:
         color = 'blue'
         if ntraces > 1:
             trace.data = (trace.data / tmax + 1) * tmax
-            rectangle_patch_origin = 2./3
-            rectangle_patch_height = 1./3
+            rectangle_patch_origin = 2. / 3
+            rectangle_patch_height = 1. / 3
     # dim out ignored traces
     alpha = 0.3 if trace.stats.ignore else 1.0
     times = trace.times() + trace.stats.time_offset
@@ -255,7 +255,7 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
         N2 = trace.stats.arrivals['N2'][1] - starttime
         rect = patches.Rectangle(
             (N1, rectangle_patch_origin),
-            width=N2-N1, height=rectangle_patch_height,
+            width=(N2 - N1), height=rectangle_patch_height,
             transform=trans, color='#eeeeee',
             zorder=-1)
         ax.add_patch(rect)
@@ -268,7 +268,7 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
         t2 = trace.stats.arrivals['P2'][1] - starttime
     rect = patches.Rectangle(
         (t1, rectangle_patch_origin),
-        width=t2-t1, height=rectangle_patch_height,
+        width=(t2 - t1), height=rectangle_patch_height,
         transform=trans, color='yellow',
         alpha=0.5, zorder=-1)
     ax.add_patch(rect)
@@ -307,7 +307,7 @@ def _add_station_info_text(trace, ax, path_effects):
 def _add_labels(axes, plotn, ncols):
     """Add xlabels to the last row of plots."""
     # A row has "ncols" plots: the last row is from `plotn-ncols` to `plotn`
-    n0 = max(plotn-ncols, 0)
+    n0 = max(plotn - ncols, 0)
     for ax in axes[n0:plotn]:
         ax.xaxis.set_tick_params(which='both', labelbottom=True)
         ax.set_xlabel('Time (s)', fontsize=8)
@@ -375,13 +375,13 @@ def plot_traces(config, st, ncols=None, block=True):
         if not st_sel:
             continue
         plotn += 1
-        if plotn > nlines*ncols:
+        if plotn > nlines * ncols:
             _set_ylim(axes)
-            _add_labels(axes, plotn-1, ncols)
+            _add_labels(axes, plotn - 1, ncols)
             fig, axes = _make_fig(config, nlines, ncols)
             figures.append(fig)
             plotn = 1
-        ax = axes[plotn-1]
+        ax = axes[plotn - 1]
         if config.trace_units == 'auto':
             instrtype = [
                 t.stats.instrtype for t in st_sel.traces

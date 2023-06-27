@@ -735,16 +735,16 @@ def _color_handler_emit(fn):
     """
     def new(*args):
         levelno = args[0].levelno
-        if(levelno >= logging.CRITICAL):
+        if levelno >= logging.CRITICAL:
             color = '\x1b[31;1m'  # red
-        elif(levelno >= logging.ERROR):
+        elif levelno >= logging.ERROR:
             color = '\x1b[31;1m'  # red
-        elif(levelno >= logging.WARNING):
+        elif levelno >= logging.WARNING:
             color = '\x1b[33;1m'  # yellow
-        elif(levelno >= logging.INFO):
+        elif levelno >= logging.INFO:
             # color = '\x1b[32;1m'  # green
             color = '\x1b[0m'  # no color
-        elif(levelno >= logging.DEBUG):
+        elif levelno >= logging.DEBUG:
             color = '\x1b[35;1m'  # purple
         else:
             color = '\x1b[0m'  # no color

@@ -52,9 +52,9 @@ class SSPCoordinate(object):
 
     def __str__(self):
         try:
-            return(f'{self.value_in_deg:.4f}°')
+            return f'{self.value_in_deg:.4f}°'
         except TypeError:
-            return('Incomplete coordinate data')
+            return 'Incomplete coordinate data'
 
 
 class SSPDepth(object):
@@ -67,9 +67,9 @@ class SSPDepth(object):
 
     def __str__(self):
         try:
-            return(f'{self.value:.1f} {self.units}')
+            return f'{self.value:.1f} {self.units}'
         except TypeError:
-            return('Incomplete depth data')
+            return 'Incomplete depth data'
 
     @property
     def value_in_m(self):
@@ -118,14 +118,14 @@ class SSPHypocenter(object):
 
     def __str__(self):
         try:
-            return(
+            return (
                 f'Longitude: {self.longitude:.4f}°, '
                 f'Latitude: {self.latitude:.4f}°, '
                 f'Depth: {self.depth.value:.1f} {self.depth.units}, '
                 f'Origin time: {self.origin_time}'
             )
         except TypeError:
-            return('Incomplete hypocenter data')
+            return 'Incomplete hypocenter data'
 
 
 class SSPMagnitude(object):
@@ -138,11 +138,11 @@ class SSPMagnitude(object):
 
     def __str__(self):
         try:
-            return(
+            return (
                 f'Magnitude: {self.type} {self.value:.1f}'
             )
         except TypeError:
-            return('Incomplete magnitude data')
+            return 'Incomplete magnitude data'
 
     def from_scalar_moment(self, scalar_moment):
         """
@@ -158,7 +158,7 @@ class SSPMagnitude(object):
             moment = _dyne_cm_to_N_m(moment)
         elif scalar_moment.units != 'N-m':
             raise ValueError('scalar_moment units must be N-m or dyne-cm')
-        self.value = 2/3 * (np.log10(moment) - 9.1)
+        self.value = 2 / 3 * (np.log10(moment) - 9.1)
         self.type = 'Mw'
 
 
@@ -173,11 +173,11 @@ class SSPScalarMoment(object):
 
     def __str__(self):
         try:
-            return(
+            return (
                 f'Scalar moment: {self.value:.1e} {self.units}'
             )
         except TypeError:
-            return('Incomplete scalar moment data')
+            return 'Incomplete scalar moment data'
 
     def to_N_m(self):
         """Convert the scalar moment to N-m, if necessary."""
@@ -217,13 +217,13 @@ class SSPFocalMechanism(object):
 
     def __str__(self):
         try:
-            return(
+            return (
                 f'Strike: {self.strike:.1f} {self.units}, '
                 f'Dip: {self.dip:.1f} {self.units}, '
                 f'Rake: {self.rake:.1f} {self.units}'
             )
         except TypeError:
-            return('Incomplete focal mechanism data')
+            return 'Incomplete focal mechanism data'
 
     def from_moment_tensor(self, moment_tensor):
         """
@@ -257,7 +257,7 @@ class SSPMomentTensor(object):
 
     def __str__(self):
         try:
-            return(
+            return (
                 f'units: {self.units}, '
                 f'm_rr: {self.m_rr:.1e}, '
                 f'm_tt: {self.m_tt:.1e}, '
@@ -267,7 +267,7 @@ class SSPMomentTensor(object):
                 f'm_tp: {self.m_tp:.1e}'
             )
         except TypeError:
-            return('Incomplete moment tensor data')
+            return 'Incomplete moment tensor data'
 
     def to_N_m(self):
         """Convert the moment tensor to N-m, if necessary."""
@@ -304,7 +304,7 @@ class SSPEvent(object):
             self.from_event_dict(event_dict)
 
     def __str__(self):
-        return(
+        return (
             f'Event ID: {self.event_id}\n'
             f'Name: {self.name}\n'
             f'Hypocenter:\n  {self.hypocenter}\n'

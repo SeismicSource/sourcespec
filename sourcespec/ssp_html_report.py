@@ -97,10 +97,10 @@ def _agency_logo_path(config):
 def _agency_logo(config):
     agency_logo_path = _agency_logo_path(config)
     if agency_logo_path is None:
-        return ""
+        return ''
     agency_logo_img = f'<img class="logo" src="{agency_logo_path}"/>'
-    indent5 = 5*'  '
-    indent6 = 6*'  '
+    indent5 = 5 * '  '
+    indent6 = 6 * '  '
     if config.agency_url is not None:
         agency_logo_html = (
             f'{indent5}<a href="{config.agency_url}" target="_blank">\n'
@@ -167,8 +167,8 @@ def _author_and_agency(config):
 
 def _page_footer(config):
     footer_html = ''
-    indent3 = 3*'  '
-    indent4 = 4*'  '
+    indent3 = 3 * '  '
+    indent4 = 4 * '  '
     footer_html += f'{indent3}<div class="text_footer">\n'
     author = _author_html(config)
     agency = _agency_html(config)
@@ -271,10 +271,10 @@ def _misfit_table_rows(misfit_plot_files):
             '{MISFIT_PLOT}', misfit_plot_file)
         misfit_table_rows += '\n'
         if n % 3 == 2:
-            misfit_table_rows += 10*' '
+            misfit_table_rows += 10 * ' '
             misfit_table_rows += '</tr>\n'
-            misfit_table_rows += 10*' '
-    misfit_table_rows += 10*' '
+            misfit_table_rows += 10 * ' '
+    misfit_table_rows += 10 * ' '
     misfit_table_rows += '</tr>'
     return misfit_table_rows
 

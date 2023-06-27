@@ -31,7 +31,7 @@ def _spectral_integral(spec, t_star, fmax):
     # Data is in moment units. Let's put it back to displacement units,
     # and derive it to velocity through multiplication by 2*pi*freq:
     # (2. is the free-surface amplification factor)
-    data = (spec.data/spec.coeff) * (2*np.pi*freq)
+    data = (spec.data / spec.coeff) * (2 * np.pi * freq)
     # Correct data for attenuation:
     data *= np.exp(np.pi * t_star * freq)
     # Compute the energy integral, up to fmax:
@@ -56,7 +56,7 @@ def _radiated_energy_coefficient(rho, vel):
     # averaging between measurements at different stations, instead of
     # precise measurements at a single station.
     # S is the free-surface amplification factor, which we put = 2
-    return 8 * np.pi * (1./2.)**2 * rho * vel
+    return 8 * np.pi * (1. / 2.)**2 * rho * vel
 
 
 def _finite_bandwidth_correction(spec, fc, fmax):
@@ -68,7 +68,10 @@ def _finite_bandwidth_correction(spec, fc, fmax):
     """
     if fmax is None:
         fmax = spec.get_freq()[-1]
-    return 2./np.pi * (np.arctan2(fmax, fc) - (fmax/fc)/(1+(fmax/fc)**2.))
+    return (
+        2. / np.pi *
+        (np.arctan2(fmax, fc) - (fmax / fc) / (1 + (fmax / fc)**2.))
+    )
 
 
 def radiated_energy(config, spec_st, specnoise_st, sspec_output):

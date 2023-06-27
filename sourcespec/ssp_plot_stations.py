@@ -10,7 +10,6 @@ Station plotting routine.
     (http://www.cecill.info/licences.en.html)
 """
 import os
-import time
 import logging
 import contextlib
 import numpy as np
@@ -49,12 +48,12 @@ with contextlib.suppress(Exception):
 
 def _round(x, base=5):
     """Round to base."""
-    if x <= base/2:
+    if x <= base / 2:
         return 0
     round_x = 0
     while round_x == 0:
-        round_x = int(base * round(float(x)/base))
-        base = base/2.
+        round_x = int(base * round(float(x) / base))
+        base = base / 2.
     return round_x
 
 
@@ -112,17 +111,17 @@ def _shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shifted'):
 def _plot_circles(ax, evlo, evla, maxdist, ncircles=5):
     geodetic_transform = ccrs.PlateCarree()
     g = Geod(ellps='WGS84')
-    step = _round(maxdist/ncircles)
+    step = _round(maxdist / ncircles)
     if step == 0:
         step = 1
     if maxdist < 1:  # 1 km
         ncircles = 5
         step = 0.2
     texts = []
-    for dist in np.arange(step, maxdist+step, step):
+    for dist in np.arange(step, maxdist + step, step):
         azimuths = np.arange(0, 360, 1)
         circle = np.array(
-            [g.fwd(evlo, evla, az, dist*1e3)[:2] for az in azimuths]
+            [g.fwd(evlo, evla, az, dist * 1e3)[:2] for az in azimuths]
         )
         p0 = circle[np.argmax(circle[:, 1])]
         ax.plot(
@@ -173,7 +172,7 @@ def _plot_epicenter_as_beachball(ax, event):
     extent = ax.get_extent()
     xlen = extent[1] - extent[0]
     ylen = extent[3] - extent[2]
-    width = min(xlen, ylen)/15
+    width = min(xlen, ylen) / 15
     meca = beach(
         (strike, dip, rake),
         xy=xy,
@@ -278,14 +277,14 @@ def _make_basemap(config, maxdist):
     # increase bounding box for large maxdist,
     # to account for deformation in Mercator projection
     mult = 1.1 if maxdist < 500 else 1.5
-    maxdiagonal = maxdist*(2**0.5)*mult
+    maxdiagonal = maxdist * (2 ** 0.5) * mult
     event = config.event
     hypo = event.hypocenter
     evlo = hypo.longitude.value_in_deg
     evla = hypo.latitude.value_in_deg
-    lonmax, latmax, _ = g.fwd(evlo, evla, 45, maxdiagonal*1000.)
-    lonmin = 2*evlo - lonmax
-    latmin = 2*evla - latmax
+    lonmax, latmax, _ = g.fwd(evlo, evla, 45, maxdiagonal * 1000.)
+    lonmin = 2 * evlo - lonmax
+    latmin = 2 * evla - latmax
     tile_dir = 'maptiles'
     stamen_terrain = CachedTiler(cimgt.Stamen('terrain-background'), tile_dir)
     # Reduce dpi for vector formats, since the only raster are the maptiles
@@ -318,8 +317,10 @@ def _contrast_color(color):
     Source: https://stackoverflow.com/a/3943023/2021880
     """
     R, G, B = [
-        c/12.92 if c <= 0.03928 else ((c+0.055)/1.055)**2.4 for c in color[:3]]
-    L = 0.2126*R + 0.7152*G + 0.0722*B  # luminance
+        c / 12.92 if c <= 0.03928
+        else ((c + 0.055) / 1.055)**2.4
+        for c in color[:3]]
+    L = 0.2126 * R + 0.7152 * G + 0.0722 * B  # luminance
     return 'black' if L > 0.179 else 'white'
 
 
@@ -346,13 +347,13 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
         ha='left', va='top', transform=ax.transAxes)
 
     if vname == 'mag':
-        vmax = np.max(np.abs(values-vmean))
+        vmax = np.max(np.abs(values - vmean))
         vmin = -vmax
         vmax += vmean
         vmin += vmean
         if vmax == vmin:
-            vmax = vmean+0.5
-            vmin = vmean-0.5
+            vmax = vmean + 0.5
+            vmin = vmean - 0.5
         cbar_extend = 'neither'
         cmap = cm.Spectral_r
     elif vname == 'fc':
@@ -360,22 +361,22 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
         vmax = np.max(values)
         cbar_extend = 'neither'
         # limit colorbar to ±3sigma
-        if vmax > vmean+3*verr_plus:
-            vmax = vmean+3*verr_plus
+        if vmax > vmean + 3 * verr_plus:
+            vmax = vmean + 3 * verr_plus
             cbar_extend = 'max'
-        if vmin < vmean-3*verr_minus:
-            vmin = vmean-3*verr_minus
+        if vmin < vmean - 3 * verr_minus:
+            vmin = vmean - 3 * verr_minus
             cbar_extend = 'both' if cbar_extend == 'max' else 'min'
         if vmax == vmin:
-            vmax = vmean+1
-            vmin = vmean-1
-        midpoint = (vmean-vmin)/(vmax-vmin)
+            vmax = vmean + 1
+            vmin = vmean - 1
+        midpoint = (vmean - vmin) / (vmax - vmin)
         cmap = _shiftedColorMap(cm.PRGn, midpoint=midpoint)
     # Corner case, when errorbars are larger than vmin or vmax
-    if vmin > vmean-verr_minus:
-        vmin = vmean-(verr_minus*1.1)
-    if vmax < vmean+verr_plus:
-        vmax = vmean+(verr_plus*1.1)
+    if vmin > vmean - verr_minus:
+        vmin = vmean - (verr_minus * 1.1)
+    if vmax < vmean + verr_plus:
+        vmax = vmean + (verr_plus * 1.1)
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
     trans = ccrs.PlateCarree()
@@ -413,12 +414,12 @@ def _plot_stations(config, lonlat_dist, st_ids, values, vmean, verr, vname):
     cax.axhline(vmean, lw=2, color='black')
     linestyle = (0, (2, 1))
     linewidth = 1.5
-    color = _contrast_color(cmap(norm(vmean-verr_minus)))
+    color = _contrast_color(cmap(norm(vmean - verr_minus)))
     cax.axhline(
-        vmean-verr_minus, lw=linewidth, linestyle=linestyle, color=color)
-    color = _contrast_color(cmap(norm(vmean+verr_plus)))
+        vmean - verr_minus, lw=linewidth, linestyle=linestyle, color=color)
+    color = _contrast_color(cmap(norm(vmean + verr_plus)))
     cax.axhline(
-        vmean+verr_plus, lw=linewidth, linestyle=linestyle, color=color)
+        vmean + verr_plus, lw=linewidth, linestyle=linestyle, color=color)
     if vname == 'fc':
         cm_label = 'Corner Frequency (Hz)'
     elif vname == 'mag':
@@ -481,10 +482,10 @@ def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
     # find consecutive indexes (i.e., more than two stations overlapping)
     didx = np.diff(idx)
     idx_idx = np.where(didx == 1)[0]
-    idx_consec = idx[idx_idx+1]
+    idx_consec = idx[idx_idx + 1]
     # spread stations horizontally
     lonlat_dist[idx] += np.array((-spread, 0, 0))
-    lonlat_dist[idx+1] += np.array((spread, 0, 0))
+    lonlat_dist[idx + 1] += np.array((spread, 0, 0))
     # further spread vertically a third station
     lonlat_dist[idx_consec] += np.array((0, spread, 0))
     return lonlat_dist
@@ -504,7 +505,7 @@ def plot_stations(config, sspec_output):
         for k in st_ids])
     maxdist = np.max(lonlat_dist[:, 2])
     # empirical rule to define overlapping station spread
-    spread = maxdist/4e3
+    spread = maxdist / 4e3
     _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=spread)
     summary_values = sspec_output.reference_values()
     summary_uncertainties = sspec_output.reference_uncertainties()

@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__.split('.')[-1])
 
 def _check_nyquist(freqmax, trace):
     """Check if freqmax is smaller than Nyquist frequency."""
-    nyquist = 1./(2. * trace.stats.delta)
+    nyquist = 1. / (2. * trace.stats.delta)
     if freqmax >= nyquist:
         freqmax = nyquist * 0.999
         msg = (
@@ -104,7 +104,7 @@ def _process_trace(config, tr, t0, t1):
             f'{tr.id}: No data for the selected cut interval: skipping trace'
         )
     nzeros = len(np.where(tr_process.data == 0)[0])
-    if nzeros > npts/4:
+    if nzeros > npts / 4:
         raise RuntimeError(
             f'{tr.id}: Too many gaps for the selected cut interval: '
             'skipping trace'
@@ -120,7 +120,7 @@ def _process_trace(config, tr, t0, t1):
     freqmin = config.ml_bp_freqmin
     freqmax = _check_nyquist(freqmax=config.ml_bp_freqmax, trace=tr)
     # ...remove response...
-    pre_filt = (freqmin, freqmin*1.1, freqmax*0.9, freqmax)
+    pre_filt = (freqmin, freqmin * 1.1, freqmax * 0.9, freqmax)
     if config.correct_instrumental_response:
         remove_instr_response(tr_process, pre_filt)
     # ...filter
@@ -191,7 +191,7 @@ def local_magnitude(config, st, proc_st, sspec_output):
 
         # Local magnitude
         # amp must be in millimeters for local magnitude computation
-        amp = np.abs(tr_process.max())*1000.
+        amp = np.abs(tr_process.max()) * 1e3
         h_dist = tr_process.stats.hypo_dist
         ml = _compute_local_magnitude(config, amp, h_dist)
         statId = f'{tr_id} {tr.stats.instrtype}'

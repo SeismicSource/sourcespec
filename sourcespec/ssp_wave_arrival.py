@@ -78,7 +78,7 @@ def _wave_arrival_vel(trace, vel):
     if vel is None:
         raise RuntimeError
     travel_time = trace.stats.hypo_dist / vel
-    takeoff_angle = degrees(asin(trace.stats.epi_dist/trace.stats.hypo_dist))
+    takeoff_angle = degrees(asin(trace.stats.epi_dist / trace.stats.hypo_dist))
     # takeoff angle is 180° upwards and 0° downwards
     takeoff_angle = 180. - takeoff_angle
     return travel_time, takeoff_angle

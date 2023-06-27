@@ -89,4 +89,4 @@ setup(
         'pyproj',
         'tzlocal',
         'pyyaml']
-    )
+)

@@ -54,7 +54,7 @@ class KDTCell():
             increments[self.ndiv >= self.maxdiv] *= 0
             # dimensions that will be divided
             self.ndiv[self.ndiv < self.maxdiv] += parts
-        increments = increments * self.delta/(parts-1)
+        increments = increments * self.delta / (parts - 1)
         # take the minimum coordinate and transform it to a column vector
         mincoord = self.extent[:, 0].reshape(-1, 1)
         # add minimum coordinates to the increments
@@ -66,10 +66,10 @@ class KDTCell():
         for c in set(itertools.product(*coords)):
             # c is a coordinate n-uplet. Let's transform it to column vector
             c = np.array(c).reshape(-1, 1)
-            delta = self.delta/parts
+            delta = self.delta / parts
             # FIXME: I forgot my own code!
             #  should this `2` be `parts`? or is it related to delta/2?
-            inc = np.mgrid[0:dim, 0:2][1] * delta - delta/2
+            inc = np.mgrid[0:dim, 0:2][1] * delta - delta / 2
             extent = c + inc
             cells.append(
                 KDTCell(
@@ -89,7 +89,7 @@ class KDTree():
         # of the search hypervolume
         cell0 = KDTCell(self.extent, calc_pdf, maxdiv=maxdiv)
         self.init_prob = cell0.prob
-        cell0.min_cell_prob = cell0.prob*min_cell_prob
+        cell0.min_cell_prob = cell0.prob * min_cell_prob
         self.cells = cell0.divide(init_parts)
         self.ncells = len(self.cells)
 
@@ -111,7 +111,7 @@ class KDTree():
         for v in np.hstack((extent, deltas)):
             start, stop, step = v
             # add a small number to make sure end value is included
-            stop += stop/1e5
+            stop += stop / 1e5
             rng = np.arange(start, stop, step)
             ranges.append(rng)
             extent_new += [rng[0], rng[-1]]

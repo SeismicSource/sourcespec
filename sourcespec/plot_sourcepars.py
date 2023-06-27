@@ -56,9 +56,9 @@ def stress_drop_curve_fc_mw(delta_sigma, vs, mw, b=-0.5):
     vs *= 1e3  # S-wave velocity in m/s
     delta_sigma *= 1e6  # stress drop in Pa
     # b is the slope of stress-drop curve: b!=-0.5 means no self-similarity
-    power10 = 10**(-(-3*b*mw + 9.1)-0.935)
+    power10 = 10**(-(-3 * b * mw + 9.1) - 0.935)
     # return fc in Hz
-    return vs * (delta_sigma * power10)**(1./3)
+    return vs * (delta_sigma * power10)**(1. / 3)
 
 
 def stress_drop_curve_Er_mw(delta_sigma, vs, rho, mw):
@@ -69,7 +69,7 @@ def stress_drop_curve_Er_mw(delta_sigma, vs, rho, mw):
     """
     # Eq. (33) of Madariaga (2009):
     #   0.2331 * delta_sigma = mu * Er / Mo
-    mu = (vs*1000)**2. * rho
+    mu = (vs * 1000)**2. * rho
     Mo = mag_to_moment(mw)
     delta_sigma *= 1e6
     # return Er in N·m
@@ -77,16 +77,16 @@ def stress_drop_curve_Er_mw(delta_sigma, vs, rho, mw):
 
 
 def fc_mw_function(mw, a, b):
-    return a/3. + b*mw
+    return a / 3. + b * mw
 
 
 def calc_r2(x, y, yerr, a, b, f):
     """Coefficient of determination."""
     y_mean = np.mean(y)
     y_calc = fc_mw_function(x, a, b)
-    SS_tot = np.sum(((y-y_mean)/yerr)**2.)
-    SS_res = np.sum(((y-y_calc)/yerr)**2.)
-    return 1 - SS_res/SS_tot
+    SS_tot = np.sum(((y - y_mean) / yerr)**2.)
+    SS_res = np.sum(((y - y_calc) / yerr)**2.)
+    return 1 - SS_res / SS_tot
 
 
 def parse_args():
@@ -310,7 +310,7 @@ class Params(object):
         """Plot stress-drop curves for different delta_sigma."""
         mag_min, mag_max = ax.get_xlim()
         mw_step = 0.1
-        mw_test = np.arange(mag_min, mag_max-2*mw_step, mw_step)
+        mw_test = np.arange(mag_min, mag_max - 2 * mw_step, mw_step)
         fc_min = np.inf
         fc_max = 0.
         for delta_sigma in (0.1, 1., 10., 100.):
@@ -324,13 +324,13 @@ class Params(object):
             # Get rid of ".0" in floats
             label = label.rstrip('.0') + ' MPa'
             ax.text(mw_test[-1], fc_test[-1], label)
-        ax.set_ylim((fc_min*0.9, fc_max*1.1))
+        ax.set_ylim((fc_min * 0.9, fc_max * 1.1))
 
     def _stress_drop_curves_Er_mw(self, vs, rho, ax):
         """Plot stress-drop curves for different delta_sigma."""
         mag_min, mag_max = ax.get_xlim()
         mw_step = 0.1
-        mw_test = np.arange(mag_min, mag_max-2*mw_step, mw_step)
+        mw_test = np.arange(mag_min, mag_max - 2 * mw_step, mw_step)
         Er_min = np.inf
         Er_max = 0.
         for delta_sigma in (0.1, 1., 10., 100.):
@@ -344,7 +344,7 @@ class Params(object):
             # Get rid of ".0" in floats
             label = label.rstrip('.0') + ' MPa'
             ax.text(mw_test[-1], Er_test[-1], label)
-        ax.set_ylim((Er_min*0.5, Er_max*2))
+        ax.set_ylim((Er_min * 0.5, Er_max * 2))
 
     def _2d_hist_fc_mw(self, fig, ax, nbins=None):
         """Plot a 2d histogram of fc vs mw."""
@@ -360,8 +360,8 @@ class Params(object):
             fc_nbins = nbins
         self.nbins_x = mw_nbins
         self.nbins_y = fc_nbins
-        mw_bins = np.linspace(mw_min, mw_max+0.1, mw_nbins)
-        fc_bins = 10**np.linspace(log_fc_min, log_fc_max+0.1, fc_nbins)
+        mw_bins = np.linspace(mw_min, mw_max + 0.1, mw_nbins)
+        fc_bins = 10**np.linspace(log_fc_min, log_fc_max + 0.1, fc_nbins)
         counts, _, _ = np.histogram2d(
             self.mw, self.fc, bins=(mw_bins, fc_bins))
         cm = ax.pcolormesh(
@@ -382,8 +382,8 @@ class Params(object):
         else:
             mw_nbins = nbins
             Er_nbins = nbins
-        mw_bins = np.linspace(mw_min, mw_max+0.1, mw_nbins)
-        Er_bins = 10**np.linspace(log_Er_min, log_Er_max+0.1, Er_nbins)
+        mw_bins = np.linspace(mw_min, mw_max + 0.1, mw_nbins)
+        Er_bins = 10**np.linspace(log_Er_min, log_Er_max + 0.1, Er_nbins)
         self.nbins_x = mw_nbins
         self.nbins_y = Er_nbins
         counts, _, _ = np.histogram2d(
@@ -406,8 +406,8 @@ class Params(object):
         else:
             mw_nbins = nbins
             bsd_nbins = nbins
-        mw_bins = np.linspace(mw_min, mw_max+0.1, mw_nbins)
-        bsd_bins = 10**np.linspace(log_bsd_min, log_bsd_max+0.1, bsd_nbins)
+        mw_bins = np.linspace(mw_min, mw_max + 0.1, mw_nbins)
+        bsd_bins = 10**np.linspace(log_bsd_min, log_bsd_max + 0.1, bsd_nbins)
         self.nbins_x = mw_nbins
         self.nbins_y = bsd_nbins
         counts, _, _ = np.histogram2d(
@@ -464,7 +464,7 @@ class Params(object):
         """Plot a linear regression of fc vs mw."""
         mag_min, mag_max = ax.get_xlim()
         mw_step = 0.1
-        mw_test = np.arange(mag_min, mag_max-2*mw_step, mw_step)
+        mw_test = np.arange(mag_min, mag_max - 2 * mw_step, mw_step)
         if slope:
             f = fc_mw_function
         else:
@@ -481,13 +481,13 @@ class Params(object):
             a, = popt
             b = -0.5
         print(f'a: {a:.1f} b {b:.1f}:')
-        slope = (3/2)/b
+        slope = (3 / 2) / b
         print(f'slope: {slope:.1f}')
         r2 = calc_r2(self.mw, y, np.ones_like(y), a, b, f)
         # r2_err = calc_r2(mw, y, yerr, a, b, f)
         print('r2:', r2)
         # print('r2_err:', r2_err)
-        delta_sigma = 1./((vs*1000.)**3.) * 10**(a + 9.1 + 0.935)
+        delta_sigma = 1. / ((vs * 1000.)**3.) * 10**(a + 9.1 + 0.935)
         delta_sigma /= 1e6
         print('delta_sigma', delta_sigma)
         fc_test = stress_drop_curve_fc_mw(delta_sigma, vs, mw_test, b)
@@ -612,16 +612,16 @@ class Params(object):
         if nbins is None:
             # find the number of bins as the closest power of 10 to the
             # number of values divided by 10
-            nbins_exp = int(np.ceil(np.log10(nvalues/10)))
+            nbins_exp = int(np.ceil(np.log10(nvalues / 10)))
             nbins = int(10**nbins_exp)
             # reduce the number of bins if there are too few values per bin
-            if nvalues/nbins < 2:
+            if nvalues / nbins < 2:
                 nbins //= 2
         if log:
             values_mean = 10**(np.mean(np.log10(values)))
             min_exp = np.floor(np.min(np.log10(values)))
             max_exp = np.ceil(np.max(np.log10(values)))
-            bins = np.logspace(min_exp, max_exp, nbins+1)
+            bins = np.logspace(min_exp, max_exp, nbins + 1)
         else:
             values_mean = np.mean(values)
             maxval = np.max(np.abs(values))

@@ -62,11 +62,11 @@ def _get_histogram(trace):
     """Compute the histogram of a trace."""
     # Compute data histogram with a number of bins equal to 0.5% of data points
     # or 31, whichever is larger
-    nbins = max(31, int(len(trace.data)*0.005))
+    nbins = max(31, int(len(trace.data) * 0.005))
     if nbins % 2 == 0:
         nbins += 1
     counts, bins = np.histogram(trace.data, bins=nbins)
-    counts = counts/np.max(counts)
+    counts = counts / np.max(counts)
     bin_width = bins[1] - bins[0]
     return counts, bins, bin_width
 
@@ -74,7 +74,7 @@ def _get_histogram(trace):
 def _get_distance_weight(density_points, order=2, min_weight=1, max_weight=5):
     """Compute the distance weight for the kernel density."""
     dist_weight = np.abs(density_points)**order
-    dist_weight *= (max_weight-min_weight)/dist_weight.max()
+    dist_weight *= (max_weight - min_weight) / dist_weight.max()
     dist_weight += min_weight
     return dist_weight
 
@@ -146,7 +146,7 @@ def clipping_peaks(trace, sensitivity=3, clipping_percentile=10, debug=False):
     lower_clip_bound = 100 - clipping_percentile
     num_kde_bins = 101
     num_edge_bins = int(np.ceil(
-        (num_kde_bins/2.) * (100 - lower_clip_bound) / 100.))
+        (num_kde_bins / 2.) * (100 - lower_clip_bound) / 100.))
     trace, _, _ = _preprocess(
         trace, remove_linear_trend=False, remove_baseline=False)
     min_data = np.min(trace.data)
@@ -156,7 +156,7 @@ def clipping_peaks(trace, sensitivity=3, clipping_percentile=10, debug=False):
     # Distance weight, parabolic, between 1 and 5
     dist_weight = _get_distance_weight(
         density_points, order=2, min_weight=1, max_weight=5)
-    density_weight = density*dist_weight
+    density_weight = density * dist_weight
     # Add 1 bin at start/end with value equal to min. of 5 first/last
     # bins to ensure local maxima at start/end are recognized as peaks
     density_weight = np.hstack([[density_weight[:num_edge_bins].min()],
@@ -166,7 +166,7 @@ def clipping_peaks(trace, sensitivity=3, clipping_percentile=10, debug=False):
     min_prominence = [0.5, 0.3, 0.2, 0.15, 0.125]
     peaks, props = find_peaks(
         density_weight,
-        prominence=min_prominence[sensitivity-1]
+        prominence=min_prominence[sensitivity - 1]
     )
     # Remove start/end bins again
     peaks = peaks[(peaks > 0) & (peaks < (num_kde_bins + 1))]
@@ -260,16 +260,16 @@ def clipping_score(trace, remove_baseline=False, debug=False):
     dist_weight_full = _get_distance_weight(
         density_points, order=8, min_weight=1, max_weight=100)
     # Compute full weighted kernel density, including the central part
-    density_weight_full = density*dist_weight_full
+    density_weight_full = density * dist_weight_full
     # Distance weight for weighted kernel density without central peak,
     # 8th order, between 0 and 100
     dist_weight_no_central = _get_distance_weight(
         density_points, order=8, min_weight=0, max_weight=100)
     # Compute weighted kernel density, excluding the central part
-    density_weight_no_central = density*dist_weight_no_central
+    density_weight_no_central = density * dist_weight_no_central
     # Compute the clipping score
     clipping_score = 100 *\
-        np.sum(density_weight_no_central**2)/np.sum(density_weight_full**2)
+        np.sum(density_weight_no_central**2) / np.sum(density_weight_full**2)
     if debug:
         _plot_clipping_analysis(
             trace, max_data, density_points, density, density_weight_full,
@@ -337,7 +337,7 @@ def _plot_clipping_analysis(
     # density plots
     counts, bins, bin_width = _get_histogram(trace.data)
     ax_density.hist(
-        bins[:-1] + bin_width/2., bins=len(counts), weights=counts,
+        bins[:-1] + bin_width / 2., bins=len(counts), weights=counts,
         orientation='horizontal', zorder=10)
     ax_density.plot(density, density_points, label='kernel density', zorder=20)
     ax_density.plot(
@@ -358,7 +358,7 @@ def _plot_clipping_analysis(
             -max_data, density_points[num_edge_bins],
             alpha=0.5, color='yellow')
         ax_density.axhspan(
-            density_points[num_kde_bins-1-num_edge_bins], max_data,
+            density_points[num_kde_bins - 1 - num_edge_bins], max_data,
             alpha=0.5, color='yellow')
     if clipping_score is not None:
         ax_density.set_title(f'Clipping score: {clipping_score:.2f}%')

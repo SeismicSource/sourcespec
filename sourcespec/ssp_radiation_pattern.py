@@ -18,7 +18,7 @@ model = TauPyModel(model='iasp91')
 
 
 def toRad(angle):
-    return angle/180. * pi
+    return angle / 180. * pi
 
 
 def radiation_pattern(strike, dip, rake, takeoff_angle, azimuth, wave):
@@ -49,26 +49,26 @@ def radiation_pattern(strike, dip, rake, takeoff_angle, azimuth, wave):
 
 def _rad_patt_P(phi, dip, rake, takeoff):
     return (
-        cos(rake) * sin(dip) * sin(takeoff)**2 * sin(2*phi) -
-        cos(rake) * cos(dip) * sin(2*takeoff) * cos(phi) +
-        sin(rake) * sin(2*dip) *
+        cos(rake) * sin(dip) * sin(takeoff)**2 * sin(2 * phi) -
+        cos(rake) * cos(dip) * sin(2 * takeoff) * cos(phi) +
+        sin(rake) * sin(2 * dip) *
         (cos(takeoff)**2 - sin(takeoff)**2 * sin(phi)**2) +
-        sin(rake) * cos(2*dip) * sin(2*takeoff) * sin(phi)
+        sin(rake) * cos(2 * dip) * sin(2 * takeoff) * sin(phi)
     )
 
 
 def _rad_patt_S(phi, dip, rake, takeoff):
     RSV = _rad_patt_SV(phi, dip, rake, takeoff)
     RSH = _rad_patt_SH(phi, dip, rake, takeoff)
-    return (RSV**2. + RSH**2.)**(1./2)
+    return (RSV**2. + RSH**2.)**(1. / 2)
 
 
 def _rad_patt_SV(phi, dip, rake, takeoff):
     return (
-        sin(rake) * cos(2*dip) * cos(2*takeoff) * sin(phi) -
-        cos(rake) * cos(dip) * cos(2*takeoff) * cos(phi) +
-        0.5 * cos(rake) * sin(dip) * sin(2*takeoff) * sin(2*phi) -
-        0.5 * sin(rake) * sin(2*dip) * sin(2*takeoff) *
+        sin(rake) * cos(2 * dip) * cos(2 * takeoff) * sin(phi) -
+        cos(rake) * cos(dip) * cos(2 * takeoff) * cos(phi) +
+        0.5 * cos(rake) * sin(dip) * sin(2 * takeoff) * sin(2 * phi) -
+        0.5 * sin(rake) * sin(2 * dip) * sin(2 * takeoff) *
         (1 + sin(phi)**2)
     )
 
@@ -76,9 +76,9 @@ def _rad_patt_SV(phi, dip, rake, takeoff):
 def _rad_patt_SH(phi, dip, rake, takeoff):
     return (
         cos(rake) * cos(dip) * cos(takeoff) * sin(phi) +
-        cos(rake) * sin(dip) * sin(takeoff) * cos(2*phi) +
-        sin(rake) * cos(2*dip) * cos(takeoff) * cos(phi) -
-        0.5 * sin(rake) * sin(2*dip) * sin(takeoff) * sin(2*phi)
+        cos(rake) * sin(dip) * sin(takeoff) * cos(2 * phi) +
+        sin(rake) * cos(2 * dip) * cos(takeoff) * cos(phi) -
+        0.5 * sin(rake) * sin(2 * dip) * sin(takeoff) * sin(2 * phi)
     )
 
 

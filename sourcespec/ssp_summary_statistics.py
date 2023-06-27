@@ -43,13 +43,13 @@ def _avg_and_std(values, errors=None, logarithmic=False):
         weights = weights[notnan]
     values = values[notnan]
     average = np.average(values, weights=weights)
-    variance = np.average((values-average)**2, weights=weights)
+    variance = np.average((values - average)**2, weights=weights)
     std = np.sqrt(variance)
     if not logarithmic:
         return average, np.array((std, std))
     log_average = 10.**average
-    minus = log_average - 10.**(average-std)
-    plus = 10.**(average+std) - log_average
+    minus = log_average - 10.**(average - std)
+    plus = 10.**(average + std) - log_average
     return log_average, np.array((minus, plus))
 
 
@@ -64,7 +64,7 @@ def _weights(values, errors=None, logarithmic=False):
     if logarithmic:
         # compute the width of the error bar in log10 units
         # replace negative left values with 1/10 of the central value
-        values_minus[values_minus <= 0] = values[values_minus <= 0]/10
+        values_minus[values_minus <= 0] = values[values_minus <= 0] / 10
         values_log_minus = np.log10(values_minus)
         values_log_plus = np.log10(values_plus)
         errors_width = values_log_plus - values_log_minus
@@ -74,7 +74,7 @@ def _weights(values, errors=None, logarithmic=False):
     # fix for infinite weight (zero error width)
     errors_width[errors_width == 0] =\
         np.nanmin(errors_width[errors_width > 0])
-    return 1./(errors_width**2.)
+    return 1. / (errors_width**2.)
 
 
 def _normal_confidence_level(n_sigma):
@@ -85,7 +85,7 @@ def _normal_confidence_level(n_sigma):
     def gauss(x):
         return norm.pdf(x, 0, 1)
     confidence, _ = quad(gauss, -n_sigma, n_sigma)
-    return np.round(confidence*100, 2)
+    return np.round(confidence * 100, 2)
 
 
 def _percentiles(
@@ -142,8 +142,8 @@ def _param_summary_statistics(
         (config.upper_percentage - config.lower_percentage), 2)
     summary.percentiles = SummaryStatistics(
         type='percentiles', value=mid_pctl,
-        lower_uncertainty=mid_pctl-low_pctl,
-        upper_uncertainty=up_pctl-mid_pctl,
+        lower_uncertainty=mid_pctl - low_pctl,
+        upper_uncertainty=up_pctl - mid_pctl,
         confidence_level=conf_level,
         lower_percentage=config.lower_percentage,
         mid_percentage=config.mid_percentage,

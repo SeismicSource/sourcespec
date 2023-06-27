@@ -58,7 +58,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         _, params_cov = curve_fit(
             spectral_model, freq_log, ydata,
             p0=params_opt, sigma=yerr,
-            bounds=(params_opt-(1e-10), params_opt+(1e-10))
+            bounds=(params_opt - (1e-10), params_opt + (1e-10))
         )
         err = np.sqrt(params_cov.diagonal())
         # symmetric error
@@ -90,7 +90,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         _, params_cov = curve_fit(
             spectral_model, freq_log, ydata,
             p0=params_opt, sigma=yerr,
-            bounds=(params_opt-(1e-10), params_opt+(1e-10))
+            bounds=(params_opt - (1e-10), params_opt + (1e-10))
         )
         err = np.sqrt(params_cov.diagonal())
         # symmetric error
@@ -147,7 +147,7 @@ def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_log, statId):
                 idx1 = idx_max[1]
             except IndexError:
                 # if there are no other maxima, just take 5 points
-                idx1 = idx0+5
+                idx1 = idx0 + 5
     elif config.weighting == 'frequency':
         idx0 = 0
         # the closest index to f_weight:
@@ -188,7 +188,7 @@ def _spec_inversion(config, spec, spec_weight):
     # 'curve_fit' interprets 'yerr' as standard deviation array
     # and calculates weights as 1/yerr^2 .
     # Therefore we build yerr as:
-    yerr = 1./np.sqrt(weight)
+    yerr = 1. / np.sqrt(weight)
 
     # Find frequency range (indexes) to compute Mw_0 and t_star_0
     # When using noise weighting, idx1 is the first maximum in
@@ -207,7 +207,7 @@ def _spec_inversion(config, spec, spec_weight):
         ydata_corr = smooth(ydata_corr, window_len=18)
         slope, Mw_0 = np.polyfit(
             freq_log[idx0: idx1], ydata_corr[idx0: idx1], deg=1)
-        t_star_0 = -3./2 * slope / (np.pi * np.log10(np.e))
+        t_star_0 = -3. / 2 * slope / (np.pi * np.log10(np.e))
         t_star_min = t_star_0 * (1 - config.t_star_0_variability)
         t_star_max = t_star_0 * (1 + config.t_star_0_variability)
     if not config.invert_t_star_0 or t_star_0 < 0:
@@ -301,7 +301,7 @@ def _spec_inversion(config, spec, spec_weight):
         id='Mw', value=mag_to_moment(Mw), format='{:.3e}')
     # source radius in meters
     station_pars.radius = SpectralParameter(
-        id='radius', value=source_radius(fc, vs*1e3), format='{:.3f}')
+        id='radius', value=source_radius(fc, vs * 1e3), format='{:.3f}')
     # Brune stress drop in MPa
     station_pars.bsd = SpectralParameter(
         id='bsd', value=bsd(station_pars.Mo.value, station_pars.radius.value),
@@ -333,8 +333,8 @@ def _spec_inversion(config, spec, spec_weight):
     if fc_min <= 0:
         fc_min = freq_log[0]
     fc_max = fc + fc_err[1]
-    radius_min = source_radius(fc_max, vs*1e3)
-    radius_max = source_radius(fc_min, vs*1e3)
+    radius_min = source_radius(fc_max, vs * 1e3)
+    radius_max = source_radius(fc_min, vs * 1e3)
     station_pars.radius.lower_uncertainty =\
         station_pars.radius.value - radius_min
     station_pars.radius.upper_uncertainty =\

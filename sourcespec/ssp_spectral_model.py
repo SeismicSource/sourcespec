@@ -36,9 +36,11 @@ def spectral_model(freq, Mw, fc, t_star, alpha=1.):
     #           log (exp (- w *t_star/2))
     # attenuation model: exp[-pi t* f] with t*=T /Q
     loge = math.log10(math.e)
-    return (Mw -
-            (2./3.)*np.log10(1. + np.power((freq/fc), 2)) -
-            (2./3.)*loge * (math.pi * np.power(freq, alpha) * t_star))
+    return (
+        Mw -
+        (2. / 3.) * np.log10(1. + np.power((freq / fc), 2)) -
+        (2. / 3.) * loge * (math.pi * np.power(freq, alpha) * t_star)
+    )
 
 
 def objective_func(xdata, ydata, weight):
@@ -55,7 +57,7 @@ def objective_func(xdata, ydata, weight):
         res = np.array(ydata) - np.array(model)
         res2 = np.power(res, 2)
         wres = np.array(weight) * np.array(res2)
-        return np.sqrt(np.sum(wres)/errsum)
+        return np.sqrt(np.sum(wres) / errsum)
     return _objective_func
 
 

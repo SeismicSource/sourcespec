@@ -35,7 +35,7 @@ def make_synth(config, spec_st, trace_spec=None):
         else:
             spec.stats.begin = fmin
             spec.stats.delta = fdelta
-            spec.stats.npts = int((fmax-fmin)/fdelta)
+            spec.stats.npts = int((fmax - fmin) / fdelta)
 
         if math.isnan(Mo):
             Mo = mag_to_moment(mag)

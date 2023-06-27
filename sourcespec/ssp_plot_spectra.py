@@ -84,7 +84,7 @@ class PlotParams():
             # increment the number of plots,
             # based on the number of uniqs band+instrument codes
             nplots += len({x.stats.channel[:-1] for x in spec_st_sel})
-        nlines = int(math.ceil(nplots/self.ncols))
+        nlines = int(math.ceil(nplots / self.ncols))
         maxlines = config.plot_spectra_maxrows
         self.nlines = min(nlines, maxlines)
         if self.plot_type != 'weight':
@@ -150,8 +150,8 @@ def _make_fig(config, plot_params):
         1., -0.1, textstr, fontsize=10, linespacing=1.5,
         ha='right', va='top', transform=ax0.transAxes)
     axes = []
-    for n in range(nlines*ncols):
-        plotn = n+1
+    for n in range(nlines * ncols):
+        plotn = n + 1
         # ax1 has moment units (or weight)
         if plotn == 1:
             ax = (
@@ -239,19 +239,19 @@ def _add_labels(plot_params):
     plot_type = plot_params.plot_type
     axes = plot_params.axes
     # A row has "ncols" plots: the last row is from `plotn-ncols` to `plotn`
-    n0 = max(plotn-ncols, 0)
+    n0 = max(plotn - ncols, 0)
     for ax, ax2 in axes[n0:plotn]:
         ax.xaxis.set_tick_params(which='both', labelbottom=True)
         ax.set_xlabel('Frequency (Hz)')
     # Show the y-labels only for the first column
-    for i in range(0, len(axes)+ncols, ncols):
+    for i in range(0, len(axes) + ncols, ncols):
         try:
             ax = axes[i][0]
         except IndexError:
             continue
         try:
             # for ax2 we take the last column
-            ax2 = axes[i-1][1]
+            ax2 = axes[i - 1][1]
         except IndexError:
             continue
         ax.yaxis.set_tick_params(which='both', labelleft=True)
@@ -263,7 +263,7 @@ def _add_labels(plot_params):
                     which='both', labelright=True, pad=0, width=2)
                 ax2.set_ylabel('Magnitude')
     # still some work to do on the last plot
-    ax, ax2 = axes[plotn-1]
+    ax, ax2 = axes[plotn - 1]
     if ax2:
         ax2.yaxis.set_tick_params(
             which='both', labelright=True, pad=0, width=2)
@@ -291,7 +291,7 @@ def _color_lines(config, orientation, plotn, stack_plots):
     elif orientation == 'S':
         # synthetic spectrum
         color = (
-            synth_colors[(plotn-1) % len(synth_colors)]
+            synth_colors[(plotn - 1) % len(synth_colors)]
             if stack_plots
             else 'black'
         )
@@ -512,7 +512,7 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
         else f'[-{t_star_err_left:.2f},+{t_star_err_right:.2f}]s'
     )
     t_star_text = f't*: {t_star:.2f}{t_star_err_text}'
-    if len(fc_text+t_star_text) > 38:
+    if len(fc_text + t_star_text) > 38:
         sep = '\n'
         params_text_ypos -= 0.01
         station_text_ypos += 0.06
@@ -535,14 +535,14 @@ def _plot_fc_and_mw(spec, ax, ax2):
     Mw = spec.stats.par['Mw']
     if 'par_err' in spec.stats.keys():
         fc_err_left, fc_err_right = spec.stats.par_err['fc']
-        fc_min = fc-fc_err_left
+        fc_min = fc - fc_err_left
         if fc_min < 0:
             fc_min = 0.01
         ax.axvspan(
-            fc_min, fc+fc_err_right, color='#bbbbbb', alpha=0.3, zorder=1)
+            fc_min, fc + fc_err_right, color='#bbbbbb', alpha=0.3, zorder=1)
         Mw_err_left, Mw_err_right = spec.stats.par_err['Mw']
         ax2.axhspan(
-            Mw-Mw_err_left, Mw+Mw_err_right, color='#bbbbbb',
+            Mw - Mw_err_left, Mw + Mw_err_right, color='#bbbbbb',
             alpha=0.3, zorder=1)
     ax.axvline(fc, color='#999999', linewidth=2., zorder=1)
 
@@ -553,7 +553,7 @@ def _plot_spec(config, plot_params, spec, spec_noise):
     plot_type = plot_params.plot_type
     stack_plots = plot_params.stack_plots
     axes = plot_params.axes
-    ax, ax2 = axes[plotn-1]
+    ax, ax2 = axes[plotn - 1]
     orientation = spec.stats.channel[-1]
     # Path effect to contour text in white
     path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
@@ -602,7 +602,7 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
     network, station, location, code = specid.split('.')
     spec_st_sel = spec_st.select(
         network=network, station=station, location=location)
-    if plotn > nlines*ncols:
+    if plotn > nlines * ncols:
         # Add labels and legend before making a new figure
         _add_labels(plot_params)
         _add_legend(config, plot_params, spec_st, specnoise_st)
@@ -618,7 +618,7 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
     global station_text_ypos
     snratio_text_ypos = 0.95
     if plot_params.stack_plots:
-        station_text_ypos = 0.05 + 0.10*(plotn-1)
+        station_text_ypos = 0.05 + 0.10 * (plotn - 1)
     else:
         station_text_ypos = 0.15
     # sort specs by orientation letter, so that synthetic is plotted first
