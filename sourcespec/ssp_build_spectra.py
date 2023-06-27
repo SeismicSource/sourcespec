@@ -417,7 +417,8 @@ def _build_weight_from_inv_frequency(spec, pow=0.25):
     """
     if pow >= 1:
         raise ValueError('pow must be < 1')
-    # Note: weight.data is used for plotting, weight.data_log for actual weighting
+    # Note: weight.data is used for plotting,
+    #       weight.data_log for actual weighting
     weight = spec.copy()
     freq = weight.get_freq()
     weight.data *= 0
@@ -455,7 +456,10 @@ def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
     weight.data /= np.max(weight.data)
     # slightly taper weight at low frequencies, to avoid overestimating
     # weight at low frequencies, in cases where noise is underestimated
-    cosine_taper(weight.data, weight.stats.delta / 4, left_taper=True)
+    cosine_taper(
+        weight.data,
+        min(0.25, weight.stats.delta / 4),
+        left_taper=True)
     # Make sure weight is positive
     weight.data[weight.data <= 0] = 0.001
     return weight
