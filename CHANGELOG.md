@@ -7,6 +7,8 @@ Copyright (c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
 ## unreleased
 
 This release requires at least Python 3.7.
+Warning: the SQLite database used by this version is not compatible with
+previous versions.
 
 ### Input/output
 
