@@ -18,6 +18,9 @@ previous versions.
 - Store in the SQLite database the information on whether each parameter is
   an outlier (see [#38]). Warning: breaks compatibility with previous database
   versions
+- HTML report improvements:
+  - author, agency and run completion date in the summary table
+  - SourceSpec version in the inversion information table
 
 ### Processing
 

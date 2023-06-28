@@ -121,7 +121,7 @@ def _logo_file_url():
 def _version_and_run_completed(config):
     ssp_version = get_versions()['version']
     run_completed = (
-        f'{config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")}'
+        f'{config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")} '
         f'{config.end_of_run_tz}'
     )
     return ssp_version, run_completed
@@ -153,16 +153,14 @@ def _agency_html(config):
     return agency
 
 
-def _author_and_agency(config):
-    author = _author_html(config)
-    agency = _agency_html(config)
+def _author_and_agency_html(author, agency):
     if author != '':
         author = f'<br/><br/>{author}'
     if author == '' and agency != '':
         agency = f'<br/><br/>{agency}'
     if author != '' and agency != '':
         agency = f'<br/>{agency}'
-    return author, agency
+    return author + agency
 
 
 def _page_footer(config):
@@ -296,7 +294,9 @@ def _misfit_page(config):
     ssp_version, run_completed = _version_and_run_completed(config)
 
     # Author and agency
-    author, agency = _author_and_agency(config)
+    author = _author_html(config)
+    agency = _agency_html(config)
+    author_and_agency = _author_and_agency_html(author, agency)
 
     # 1d conditional misfit plots
     misfit_plot_files = config.figures['misfit_1d']
@@ -319,8 +319,7 @@ def _misfit_page(config):
         '{LOGO_FILE}': logo_file,
         '{VERSION}': ssp_version,
         '{RUN_COMPLETED}': run_completed,
-        '{AUTHOR}': author,
-        '{AGENCY}': agency,
+        '{AUTHOR_AND_AGENCY}': author_and_agency,
         '{EVENTID}': config.event.event_id,
         '{1D_MISFIT_TABLE_ROWS}': one_d_misfit_table_rows,
         '{2D_MISFIT_TABLE_ROWS_FC_MW}': two_d_misfit_table_rows_fc_mw,
@@ -335,18 +334,39 @@ def _misfit_page(config):
 
 def _add_run_info_to_html(config, replacements):
     """Add run info to HTML report."""
+    ssp_url = 'https://sourcespec.seismicsource.org'
     logo_file = _logo_file_url()
     agency_logo = _agency_logo(config)
     ssp_version, run_completed = _version_and_run_completed(config)
-    author, agency = _author_and_agency(config)
+    author = _author_html(config)
+    if not author:
+        author_comment_begin = '<!--'
+        author_comment_end = '-->'
+    else:
+        author_comment_begin = ''
+        author_comment_end = ''
+    agency = _agency_html(config)
+    if not agency:
+        agency_comment_begin = '<!--'
+        agency_comment_end = '-->'
+    else:
+        agency_comment_begin = ''
+        agency_comment_end = ''
+    author_and_agency = _author_and_agency_html(author, agency)
     page_footer = _page_footer(config)
     replacements.update({
         '{AGENCY_LOGO}': agency_logo,
         '{LOGO_FILE}': logo_file,
         '{VERSION}': ssp_version,
+        '{SSP_URL}': ssp_url,
         '{RUN_COMPLETED}': run_completed,
         '{AUTHOR}': author,
+        '{AUTHOR_COMMENT_BEGIN}': author_comment_begin,
+        '{AUTHOR_COMMENT_END}': author_comment_end,
         '{AGENCY}': agency,
+        '{AGENCY_COMMENT_BEGIN}': agency_comment_begin,
+        '{AGENCY_COMMENT_END}': agency_comment_end,
+        '{AUTHOR_AND_AGENCY}': author_and_agency,
         '{PAGE_FOOTER}': page_footer,
     })
 
