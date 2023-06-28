@@ -893,13 +893,17 @@ def _add_misfit_plots_to_html(config, replacements):
     })
 
 
-def _add_output_files_to_html(config, templates, replacements):
+def _add_downloadable_files_to_html(config, templates, replacements):
+    """Add links to downloadable files to HTML report."""
+    # symlink to input files (not supported on Windows)
+    input_files = '' if os.name == 'nt' else 'input_files'
     evid = config.event.event_id
     config_file = f'{evid}.ssp.conf'
     yaml_file = f'{evid}.ssp.yaml'
     log_file = f'{evid}.ssp.log'
 
     replacements.update({
+        '{INPUT_FILES}': input_files,
         '{CONF_FILE_BNAME}': config_file,
         '{CONF_FILE}': config_file,
         '{YAML_FILE_BNAME}': yaml_file,
@@ -967,7 +971,7 @@ def html_report(config, sspec_output):
     _add_stacked_spectra_to_html(config, replacements)
     _add_station_table_to_html(config, sspec_output, templates, replacements)
     _add_misfit_plots_to_html(config, replacements)
-    _add_output_files_to_html(config, templates, replacements)
+    _add_downloadable_files_to_html(config, templates, replacements)
 
     index = open(templates.index_html).read()
     index = _multireplace(index, replacements)

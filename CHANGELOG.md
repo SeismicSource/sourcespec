@@ -18,9 +18,12 @@ previous versions.
 - Store in the SQLite database the information on whether each parameter is
   an outlier (see [#38]). Warning: breaks compatibility with previous database
   versions
+- Input files are now linked symbolically in the `input_files` subdirectory
+  of the output directory (not implemented for Windows)
 - HTML report improvements:
   - author, agency and run completion date in the summary table
   - SourceSpec version in the inversion information table
+  - link to input files
 
 ### Processing
 

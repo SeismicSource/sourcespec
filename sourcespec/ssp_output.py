@@ -373,6 +373,35 @@ def _write_hypo71(config, sspec_output):
     logger.info(f'Hypo file written to: {hypo_file_out}')
 
 
+def _make_symlinks(config):
+    """Make symlinks to input files into output directory."""
+    # Windows does not support symlinks
+    if os.name == 'nt':
+        return
+    outdir = config.options.outdir
+    out_data_dir = os.path.join(outdir, 'input_files')
+    os.makedirs(out_data_dir, exist_ok=True)
+    filelist =\
+        list(config.options.trace_path) +\
+        [
+            config.options.station_metadata,
+            config.options.hypo_file,
+            config.options.pick_file,
+            config.options.qml_file,
+            config.station_metadata
+        ]
+    for filename in filelist:
+        if filename is None or not os.path.exists(filename):
+            continue
+        basename = os.path.basename(filename)
+        linkname = os.path.join(out_data_dir, basename)
+        if os.path.exists(linkname):
+            os.remove(linkname)
+        # filename is three directories up from linkname
+        filename = os.path.join('..', '..', '..', filename)
+        os.symlink(filename, linkname)
+
+
 def write_output(config, sspec_output):
     """Write results into different formats."""
     # Add run info to output object
@@ -389,6 +418,8 @@ def write_output(config, sspec_output):
     run_info.agency_full_name = config.agency_full_name
     run_info.agency_short_name = config.agency_short_name
     run_info.agency_url = config.agency_url
+    # Symlink input files into output directory
+    _make_symlinks(config)
     # Write to parfile (deprecated)
     _write_parfile(config, sspec_output)
     # Write to YAML file
