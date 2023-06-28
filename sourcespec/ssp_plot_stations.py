@@ -197,7 +197,7 @@ def _plot_epicenter_as_star(ax, event):
     )
 
 
-def _add_title(event, ax):
+def _add_event_info(event, ax):
     """Add event information as plot title."""
     evid = event.event_id
     hypo = event.hypocenter
@@ -211,7 +211,7 @@ def _add_title(event, ax):
     with contextlib.suppress(AttributeError):
         textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
     ax.text(
-        0., 1.15, textstr, fontsize=10,
+        0., 1.05, textstr, fontsize=10,
         ha='left', va='top', linespacing=1.5, transform=ax.transAxes)
 
 
@@ -295,10 +295,13 @@ def _make_basemap(config, maxdist):
         figsize = (7.5, 7.5)
         dpi = 200
     fig = plt.figure(figsize=figsize, dpi=dpi)
+    # Create an invisible axis and use it for title and footer
+    ax0 = fig.add_subplot(111, label='ax0')
+    ax0.set_axis_off()
+    _add_event_info(config.event, ax0)
     ax = fig.add_subplot(111, projection=stamen_terrain.crs)
     ax.set_extent([lonmin, lonmax, latmin, latmax], crs=ccrs.Geodetic())
     ax.maxdiagonal = maxdiagonal
-    _add_title(config.event, ax)
     _add_tiles(config, ax, stamen_terrain)
     _add_coastlines(config, ax)
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
@@ -307,7 +310,59 @@ def _make_basemap(config, maxdist):
         _plot_epicenter_as_beachball(ax, event)
     except Exception:
         _plot_epicenter_as_star(ax, event)
-    return ax, circle_texts
+    return ax0, ax, circle_texts
+
+
+def _add_footer(config, ax):
+    """
+    Add code and author information at the figure footer.
+    """
+    textstr = (
+        f'SourceSpec v{get_versions()["version"]} '
+        f'- {config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")} '
+        f'{config.end_of_run_tz} '
+    )
+    textstr2 = ''
+    if config.author_name is not None:
+        textstr2 += config.author_name
+    elif config.author_email is not None:
+        textstr2 += config.author_email
+    if config.agency_short_name is not None:
+        if textstr2 != '':
+            textstr2 += ' - '
+        textstr2 += config.agency_short_name
+    elif config.agency_full_name is not None:
+        if textstr2 != '':
+            textstr2 += ' - '
+        textstr2 += config.agency_full_name
+    if textstr2 != '':
+        textstr = f'{textstr}\n{textstr2} '
+    ax.text(
+        1.12, 0, textstr, fontsize=8, linespacing=1.5,
+        ha='right', va='top', transform=ax.transAxes)
+
+
+def _add_main_title(config, ax, vname, vmean, verr):
+    """
+    Add to the figure the main title with the value and its error.
+    """
+    verr_minus, verr_plus = _get_verr_minus_plus(verr)
+    textstr = f'{config.options.evname} — ' if config.options.evname else ''
+    if vname == 'fc':
+        textstr += (
+            f'fc {vmean:.3f} ± {verr_minus:.3f} Hz'
+            if np.isclose(verr_minus, verr_plus, atol=1e-3)
+            else f'fc {vmean:.3f} [- {verr_minus:.3f}, + {verr_plus:.3f}] Hz'
+        )
+    elif vname == 'mag':
+        textstr += (
+            f'Mw {vmean:.2f} ± {verr_minus:.2f}'
+            if np.isclose(verr_minus, verr_plus, atol=1e-2)
+            else f'Mw {vmean:.2f} [- {verr_minus:.2f}, + {verr_plus:.2f}]'
+        )
+    ax.text(
+        0., 1.09, textstr, fontsize=14,
+        ha='left', va='top', transform=ax.transAxes)
 
 
 def _contrast_color(color):
@@ -324,31 +379,26 @@ def _contrast_color(color):
     return 'black' if L > 0.179 else 'white'
 
 
+def _get_verr_minus_plus(verr):
+    """
+    Return the minus and plus error values for the given error value.
+    """
+    if isinstance(verr, tuple):
+        verr_minus, verr_plus = verr
+    else:
+        verr_minus = verr_plus = verr
+    return verr_minus, verr_plus
+
+
 def _plot_stations(
     config, lonlat_dist, st_ids,
     values, outliers, vmean, verr, vname
 ):
     maxdist = np.max(lonlat_dist[:, 2])
-    ax, circle_texts = _make_basemap(config, maxdist)
+    ax0, ax, circle_texts = _make_basemap(config, maxdist)
+    _add_main_title(config, ax0, vname, vmean, verr)
 
-    textstr = f'{config.options.evname} — ' if config.options.evname else ''
-    if vname == 'fc':
-        verr_minus, verr_plus = verr
-        textstr += f'fc {vmean:.3f} [- {verr_minus:.3f}, + {verr_plus:.3f}] Hz'
-    elif vname == 'mag':
-        try:
-            # asymmetrical error
-            verr_minus, verr_plus = verr
-            textstr += (
-                f'Mw {vmean:.2f} [- {verr_minus:.2f}, + {verr_plus:.2f}]')
-        except TypeError:
-            # symmetrical error
-            verr_minus = verr_plus = verr
-            textstr += f'Mw {vmean:.2f} ± {verr:.2f}'
-    ax.text(
-        0., 1.22, textstr, fontsize=14,
-        ha='left', va='top', transform=ax.transAxes)
-
+    verr_minus, verr_plus = _get_verr_minus_plus(verr)
     values_no_outliers = values[~outliers]
     if vname == 'mag':
         vmax = np.max(np.abs(values_no_outliers - vmean))
@@ -429,36 +479,14 @@ def _plot_stations(
     elif vname == 'mag':
         cm_label = 'Magnitude'
     cax.set_ylabel(cm_label)
-    # Add code and author information at the figure bottom
-    textstr = (
-        f'SourceSpec v{get_versions()["version"]} '
-        f'- {config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")} '
-        f'{config.end_of_run_tz} '
-    )
-    textstr2 = ''
-    if config.author_name is not None:
-        textstr2 += config.author_name
-    elif config.author_email is not None:
-        textstr2 += config.author_email
-    if config.agency_short_name is not None:
-        if textstr2 != '':
-            textstr2 += ' - '
-        textstr2 += config.agency_short_name
-    elif config.agency_full_name is not None:
-        if textstr2 != '':
-            textstr2 += ' - '
-        textstr2 += config.agency_full_name
-    if textstr2 != '':
-        textstr = f'{textstr}\n{textstr2} '
-    cax.text(
-        1., -0.1, textstr, fontsize=8, linespacing=1.5,
-        ha='right', va='top', transform=cax.transAxes)
 
     if config.plot_station_names_on_map:
         # first adjust text labels relatively to each other
         adjust_text(texts, ax=ax, maxshift=1e3)
         # then, try to stay away from circle texts
         adjust_text(texts, add_objects=circle_texts, ax=ax, maxshift=1e3)
+
+    _add_footer(config, ax0)
 
     evid = config.event.event_id
     figfile_base = os.path.join(config.options.outdir, evid)
