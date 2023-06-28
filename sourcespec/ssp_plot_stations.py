@@ -390,14 +390,10 @@ def _get_verr_minus_plus(verr):
     return verr_minus, verr_plus
 
 
-def _plot_stations(
-    config, lonlat_dist, st_ids,
-    values, outliers, vmean, verr, vname
-):
-    maxdist = np.max(lonlat_dist[:, 2])
-    ax0, ax, circle_texts = _make_basemap(config, maxdist)
-    _add_main_title(config, ax0, vname, vmean, verr)
-
+def _get_cmap_and_norm(values, outliers, vname, vmean, verr):
+    """
+    Return the colormap and normalization for the given values.
+    """
     verr_minus, verr_plus = _get_verr_minus_plus(verr)
     values_no_outliers = values[~outliers]
     if vname == 'mag':
@@ -432,7 +428,14 @@ def _plot_stations(
     if vmax < vmean + verr_plus:
         vmax = vmean + (verr_plus * 1.1)
     norm = colors.Normalize(vmin=vmin, vmax=vmax)
+    return cmap, norm, cbar_extend
 
+
+def _plot_stations_scatter(
+        config, ax, lonlat_dist, st_ids, values, cmap, norm, circle_texts):
+    """
+    Plot the stations as scatter points on the map.
+    """
     trans = ccrs.PlateCarree()
     lonlat = lonlat_dist[:, :2]
     ax.scatter(
@@ -455,8 +458,17 @@ def _plot_stations(
                 PathEffects.Normal()
             ])
             texts.append(t)
+        # first adjust text labels relatively to each other
+        adjust_text(texts, ax=ax, maxshift=1e3)
+        # then, try to stay away from circle texts
+        adjust_text(texts, add_objects=circle_texts, ax=ax, maxshift=1e3)
 
-    # Add a colorbar
+
+def _add_colorbar(
+        ax, cmap, norm, vmean, verr, vname, cbar_extend):
+    """
+    Add a colorbar to the given axes.
+    """
     ax_divider = make_axes_locatable(ax)
     cax = ax_divider.append_axes(
         'right', size='6%', pad='15%', axes_class=plt.Axes)
@@ -468,6 +480,7 @@ def _plot_stations(
     cax.axhline(vmean, lw=2, color='black')
     linestyle = (0, (2, 1))
     linewidth = 1.5
+    verr_minus, verr_plus = _get_verr_minus_plus(verr)
     color = _contrast_color(cmap(norm(vmean - verr_minus)))
     cax.axhline(
         vmean - verr_minus, lw=linewidth, linestyle=linestyle, color=color)
@@ -480,14 +493,11 @@ def _plot_stations(
         cm_label = 'Magnitude'
     cax.set_ylabel(cm_label)
 
-    if config.plot_station_names_on_map:
-        # first adjust text labels relatively to each other
-        adjust_text(texts, ax=ax, maxshift=1e3)
-        # then, try to stay away from circle texts
-        adjust_text(texts, add_objects=circle_texts, ax=ax, maxshift=1e3)
 
-    _add_footer(config, ax0)
-
+def _savefig(config, fig, vname):
+    """
+    Save the figure to a file.
+    """
     evid = config.event.event_id
     figfile_base = os.path.join(config.options.outdir, evid)
     figfile_base += f'.map_{vname}.'
@@ -504,6 +514,23 @@ def _plot_stations(
         elif vname == 'fc':
             logger.info(f'Station-corner_freq map saved to: {figfile}')
         config.figures['station_maps'].append(figfile)
+
+
+def _make_station_map(
+        config, lonlat_dist, st_ids, values, outliers, vmean, verr, vname):
+    """
+    Make a map of stations with the given values.
+    """
+    maxdist = np.max(lonlat_dist[:, 2])
+    ax0, ax, circle_texts = _make_basemap(config, maxdist)
+    _add_main_title(config, ax0, vname, vmean, verr)
+    cmap, norm, cbar_extend = _get_cmap_and_norm(
+        values, outliers, vname, vmean, verr)
+    _plot_stations_scatter(
+        config, ax, lonlat_dist, st_ids, values, cmap, norm, circle_texts)
+    _add_colorbar(ax, cmap, norm, vmean, verr, vname, cbar_extend)
+    _add_footer(config, ax0)
+    _savefig(config, ax0.get_figure(), vname)
 
 
 def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
@@ -552,13 +579,13 @@ def plot_stations(config, sspec_output):
     mag_outliers = np.array([stationpar[k]['Mw'].outlier for k in st_ids])
     summary_mag = summary_values['Mw']
     summary_mag_err = summary_uncertainties['Mw']
-    _plot_stations(
+    _make_station_map(
         config, lonlat_dist, st_ids,
         mag, mag_outliers, summary_mag, summary_mag_err, 'mag')
     fc = np.array([stationpar[k]['fc'].value for k in st_ids])
     fc_outliers = np.array([stationpar[k]['fc'].outlier for k in st_ids])
     summary_fc = summary_values['fc']
     summary_fc_err = summary_uncertainties['fc']
-    _plot_stations(
+    _make_station_map(
         config, lonlat_dist, st_ids,
         fc, fc_outliers, summary_fc, summary_fc_err, 'fc')
