@@ -125,6 +125,12 @@ def _overwrite_ok(db_file):
 
 
 def update_db_file(db_file):
+    """
+    Update an existing SourceSpec database from a previous version.
+
+    :param db_file: SQLite database file
+    :type db_file: str
+    """
     if not _overwrite_ok(db_file):
         return
     print(f'Updating {db_file}...')
@@ -134,6 +140,9 @@ def update_db_file(db_file):
         # create a backup copy
         shutil.copy2(db_file, f'{db_file}.bak')
         _version_1_to_2(cursor)
+        print(
+            f'{db_file} updated from version {db_version} '
+            f'to version {DB_VERSION}.')
     elif db_version == DB_VERSION:
         print(f'{db_file} is already up-to-date.')
         exit(0)
