@@ -57,6 +57,14 @@ def _version_1_to_2(cursor):
     :param cursor: SQLite cursor
     :type cursor: sqlite3.Cursor
     """
+    # New in version 2:
+    # Stations:
+    #   - primary keys: stid, evid, runid
+    #   - new keys: Mo_is_outlier, Mw_is_outlier, fc_is_outlier,
+    #     t_star_is_outlier, Qo_is_outlier, bsd_is_outlier, ra_is_outlier,
+    #     Er_is_outlier
+    # Events:
+    #   - primary keys: evid, runid
     sql_create_stations_table = (
         'CREATE TABLE IF NOT EXISTS StationsNew ('
         + '\n'.join(
