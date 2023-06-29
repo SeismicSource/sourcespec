@@ -7,8 +7,10 @@ Copyright (c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
 ## unreleased
 
 This release requires at least Python 3.7.
+
 Warning: the SQLite database used by this version is not compatible with
-previous versions.
+previous versions. You will need to upgrade your old database manually or using
+`source_spec -u DATABASE_FILE_NAME`.
 
 ### Input/output
 
@@ -18,6 +20,8 @@ previous versions.
 - Store in the SQLite database the information on whether each parameter is
   an outlier (see [#38]). Warning: breaks compatibility with previous database
   versions
+- New command line option (`-u` or `--updatedb`) to update an existing database
+  from a previous version
 - Input files are now linked symbolically in the `input_files` subdirectory
   of the output directory (not implemented for Windows)
 - HTML report improvements:

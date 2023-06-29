@@ -88,6 +88,12 @@ def _init_parser(description, epilog, nargs):
         metavar='FILE'
     )
     group.add_argument(
+        '-u', '--updatedb', dest='updatedb',
+        action='store', default=None,
+        help='update an existing SourceSpec database from a previous version',
+        metavar='DATABASE_FILE'
+    )
+    group.add_argument(
         '-y', '--samplesspevent', dest='samplesspevent',
         action='store_true', default=False,
         help='write sample SourceSpec Event File and exit'

@@ -31,6 +31,7 @@ from sourcespec import __version__, __banner__
 from sourcespec.configobj import ConfigObj
 from sourcespec.configobj.validate import Validator
 from sourcespec.config import Config
+from sourcespec.ssp_update_db import update_db_file
 
 # define ipshell(), if possible
 # note: ANSI colors do not work on Windows standard terminal
@@ -575,6 +576,9 @@ def configure(options, progname, config_overrides=None):
         sys.exit(0)
     if options.updateconf:
         _update_config_file(options.updateconf, configspec)
+        sys.exit(0)
+    if options.updatedb:
+        update_db_file(options.updatedb)
         sys.exit(0)
     if options.samplesspevent:
         _write_sample_ssp_event_file()

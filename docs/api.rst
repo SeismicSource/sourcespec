@@ -163,6 +163,11 @@ ssp_sqlite_output
 .. automodule:: ssp_sqlite_output
    :members:
 
+ssp_update_db
+-------------
+.. automodule:: ssp_update_db
+   :members:
+
 ssp_util
 --------
 .. automodule:: ssp_util

@@ -67,8 +67,8 @@ def _check_db_version(cursor, db_file):
             f'"{db_version}" Current supported version is "{DB_VERSION}".'
         )
         logger.info(
-            'Remove or rename your old database file, '
-            'so that a new one can be created.'
+            'Use "source_spec --updatedb" to update your database. '
+            'The current database will be backed up.'
         )
         ssp_exit(1)
 
