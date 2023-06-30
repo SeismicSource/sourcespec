@@ -432,7 +432,7 @@ def _get_cmap_and_norm(values, outliers, vname, vmean, verr):
 
 
 def _plot_stations_scatter(
-        config, ax, lonlat_dist, st_ids, values, cmap, norm, circle_texts):
+        config, ax, lonlat_dist, st_ids, values, cmap, norm):
     """
     Plot the stations as scatter points on the map.
     """
@@ -458,10 +458,19 @@ def _plot_stations_scatter(
                 PathEffects.Normal()
             ])
             texts.append(t)
-        # first adjust text labels relatively to each other
-        adjust_text(texts, ax=ax, maxshift=1e3)
-        # then, try to stay away from circle texts
-        adjust_text(texts, add_objects=circle_texts, ax=ax, maxshift=1e3)
+    return texts
+
+
+def _adjust_text_labels(station_texts, circle_texts, ax):
+    """
+    Adjust the text labels so that they do not overlap.
+    """
+    if not station_texts:
+        return
+    # first adjust text labels relatively to each other
+    adjust_text(station_texts, ax=ax, maxshift=1e3)
+    # then, try to stay away from circle texts
+    adjust_text(station_texts, add_objects=circle_texts, ax=ax, maxshift=1e3)
 
 
 def _add_colorbar(
@@ -526,10 +535,11 @@ def _make_station_map(
     _add_main_title(config, ax0, vname, vmean, verr)
     cmap, norm, cbar_extend = _get_cmap_and_norm(
         values, outliers, vname, vmean, verr)
-    _plot_stations_scatter(
-        config, ax, lonlat_dist, st_ids, values, cmap, norm, circle_texts)
+    station_texts = _plot_stations_scatter(
+        config, ax, lonlat_dist, st_ids, values, cmap, norm)
     _add_colorbar(ax, cmap, norm, vmean, verr, vname, cbar_extend)
     _add_footer(config, ax0)
+    _adjust_text_labels(station_texts, circle_texts, ax)
     _savefig(config, ax0.get_figure(), vname)
 
 
