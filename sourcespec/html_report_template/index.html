@@ -36,7 +36,7 @@
             <a href="#event_summary">
               <i class="fas fa-info-circle"></i>
               &nbsp;&nbsp;
-              Summary
+              Event Summary
             </a>
           </li>{MAP_MAG_COMMENT_BEGIN}
           <li>
@@ -52,7 +52,14 @@
               &nbsp;&nbsp;
               Corner Frequency
             </a>
-          </li>{MAP_FC_COMMENT_END}
+          </li>{MAP_FC_COMMENT_END}{STACKED_SPECTRA_COMMENT_BEGIN}
+          <li>
+            <a href="#stacked_spectra">
+              <i class="fas fa-image"></i>
+              &nbsp;&nbsp;
+              Stacked Spectra
+            </a>
+          </li>{STACKED_SPECTRA_COMMENT_END}
           <li>
             <a href="#inversion_info">
               <i class="fas fa-info-circle"></i>
@@ -87,14 +94,7 @@
               &nbsp;&nbsp;
               Spectral Parameter<br>Box Plots
             </a>
-          </li>{BOX_PLOTS_COMMENT_END}{STACKED_SPECTRA_COMMENT_BEGIN}
-          <li>
-            <a href="#stacked_spectra">
-              <i class="fas fa-image"></i>
-              &nbsp;&nbsp;
-              Stacked Spectra
-            </a>
-          </li>{STACKED_SPECTRA_COMMENT_END}
+          </li>{BOX_PLOTS_COMMENT_END}
           <li>
             <a href="#station_parameters">
               <i class="fas fa-table"></i>
@@ -136,7 +136,7 @@
 {PAGE_FOOTER}
 
       <div class="page">
-        <h2>Summary</h2>
+        <h2>Event Summary</h2>
         <table class="table">
           <tbody>
             <tr>
@@ -147,45 +147,48 @@
                   &nbsp;<i class="fas fa-external-link-alt"></i>
                 </a>{EVENT_URL_COMMENT_END}
               </td>
-            <tr>
-              <th scope="row">Run completed on:</th>
-              <td>{RUN_COMPLETED}</td>
             </tr>{RUNID_COMMENT_BEGIN}
             <tr>
               <th scope="row">Run ID:</th>
               <td>{RUNID}</td>
-            </tr>{RUNID_COMMENT_END}{AUTHOR_COMMENT_BEGIN}
+            </tr>{RUNID_COMMENT_END}
             <tr>
-              <th scope="row">Author:</th>
-              <td>{AUTHOR}</td>
-            </tr>{AUTHOR_COMMENT_END}{AGENCY_COMMENT_BEGIN}
-            <tr>
-              <th scope="row">Agency:</th>
-              <td>{AGENCY}</td>
-            </tr>{AGENCY_COMMENT_END}
-            <tr>
-              <th scope="row">Event Longitude:</th>
-              <td>{EVENT_LONGITUDE} °E</td>
-            </tr>
-            <tr>
-              <th scope="row">Event Latitude:</th>
-              <td>{EVENT_LATITUDE} °N</td>
-            </tr>
-            <tr>
-              <th scope="row">Event Depth:</th>
-              <td>{EVENT_DEPTH} km</td>
-            </tr>
-            <tr>
-              <th scope="row">Event Origin Time:</th>
+              <th scope="row">Origin Time:</th>
               <td>{ORIGIN_TIME} UTC</td>
             </tr>
             <tr>
+              <th scope="row">Longitude:</th>
+              <td>{EVENT_LONGITUDE} °E</td>
+            </tr>
+            <tr>
+              <th scope="row">Latitude:</th>
+              <td>{EVENT_LATITUDE} °N</td>
+            </tr>
+            <tr>
+              <th scope="row">Depth:</th>
+              <td>{EVENT_DEPTH} km</td>
+            </tr>
+            <tr>
               <th scope="row">Moment Magnitude:</th>
-              <td>{MW_SUMMARY}</td>
+              <td>Mw {MW_SUMMARY}</td>
             </tr>
             <tr>
               <th scope="row">Corner Frequency:</th>
               <td>{FC_SUMMARY} Hz</td>
+            </tr>
+            <tr>
+              <th scope="row">Run information:</th>
+              <td>
+                Run completed on {RUN_COMPLETED}
+                {AUTHOR_COMMENT_BEGIN}
+                <br>
+                {AUTHOR}
+                {AUTHOR_COMMENT_END}
+                {AGENCY_COMMENT_BEGIN}
+                <br>
+                {AGENCY}
+                {AGENCY_COMMENT_END}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -210,6 +213,16 @@
         </div>
       </div>
 {MAP_FC_COMMENT_END}
+
+{STACKED_SPECTRA_COMMENT_BEGIN}
+      <div class="page">
+        <div class="line" id="stacked_spectra"></div>
+        <h2>Stacked Spectra</h2>
+        <div class="item" data-src="{STACKED_SPECTRA}">
+          <img class="stacked_spectra" src="{STACKED_SPECTRA}"/>
+        </div>
+      </div>
+{STACKED_SPECTRA_COMMENT_END}
 
       <div class="page">
         <div class="line" id="inversion_info"></div>
@@ -378,16 +391,6 @@
         </div>
       </div>
 {BOX_PLOTS_COMMENT_END}
-
-{STACKED_SPECTRA_COMMENT_BEGIN}
-      <div class="page">
-        <div class="line" id="stacked_spectra"></div>
-        <h2>Stacked Spectra</h2>
-        <div class="item" data-src="{STACKED_SPECTRA}">
-          <img class="stacked_spectra" src="{STACKED_SPECTRA}"/>
-        </div>
-      </div>
-{STACKED_SPECTRA_COMMENT_END}
 
       <div class="page">
         <div class="line" id="station_parameters"></div>
