@@ -79,8 +79,7 @@ Installing a developer snapshot
 -------------------------------
 
 If you need a recent feature that is not in the latest release (see the
-``unreleased`` section in `CHANGELOG
-<https://github.com/SeismicSource/sourcespec/blob/master/CHANGELOG.md>`__),
+"unreleased" section in :ref:`changelog`),
 you want to use the more recent development snapshot from the `SourceSpec
 GitHub repository <https://github.com/SeismicSource/sourcespec>`__.
 
