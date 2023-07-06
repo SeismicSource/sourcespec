@@ -297,7 +297,25 @@ downloaded and installed during the setup process.
 
 ### Installing the latest release
 
-#### Using pip and PyPI (preferred method)
+### Using Anaconda
+
+The following command will automatically create an [Anaconda] environment
+named `sourcespec`, install the required packages and install the latest
+version of SourceSpec via `pip`:
+
+    conda env create --file https://raw.githubusercontent.com/SeismicSource/sourcespec/main/sourcespec_conda_env.yml
+
+If you want a different name for your environment, use:
+
+    conda env create -n YOUR_ENV_NAME --file https://raw.githubusercontent.com/SeismicSource/sourcespec/main/sourcespec_conda_env.yml
+
+To keep SourceSpec updated run:
+
+    pip install --upgrade sourcespec
+
+from within your environment.
+
+#### Using pip and PyPI
 
 The latest release of SourceSpec is available on the
 [Python Package Index](https://pypi.org/project/sourcespec/).
@@ -332,7 +350,7 @@ If you need a recent feature that is not in the latest release (see the
 recent development snapshot from the
 [SourceSpec GitHub repository](https://github.com/SeismicSource/sourcespec).
 
-#### Using pip (preferred method)
+#### Using pip
 
 The easiest way to install the most recent development snapshot is to download
 and install it through `pip`, using its builtin `git` client:
@@ -434,6 +452,7 @@ You can also cite the following abstract presented at the
 [documentation]: https://sourcespec.readthedocs.io
 [Discussions]: https://github.com/SeismicSource/sourcespec/discussions
 [Issues]: https://github.com/SeismicSource/sourcespec/issues
+[Anaconda]: https://www.anaconda.com/products/individual
 
 <!-- File formats -->
 [obspy_trace_formats]: https://docs.obspy.org/packages/autogen/obspy.core.stream.read.html

@@ -9,8 +9,34 @@ will be downloaded and installed during the setup process.
 Installing the latest release
 -----------------------------
 
-Using pip and PyPI (preferred method)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using Anaconda
+~~~~~~~~~~~~~~
+
+The following command will automatically create an `Anaconda <https://www.anaconda.com/products/individual>`__
+environment named ``sourcespec``, install the required packages and install the latest
+version of SourceSpec via ``pip``:
+
+::
+
+   conda env create --file https://raw.githubusercontent.com/SeismicSource/sourcespec/main/sourcespec_conda_env.yml
+
+If you want a different name for your environment, use:
+
+::
+
+   conda env create -n YOUR_ENV_NAME --file https://raw.githubusercontent.com/SeismicSource/sourcespec/main/sourcespec_conda_env.yml
+
+To keep SourceSpec updated run:
+
+::
+
+   pip install --upgrade sourcespec
+
+from within your environment.
+
+
+Using pip and PyPI
+~~~~~~~~~~~~~~~~~~
 
 The latest release of SourceSpec is available on the `Python Package
 Index <https://pypi.org/project/sourcespec/>`__.
@@ -58,8 +84,8 @@ If you need a recent feature that is not in the latest release (see the
 you want to use the more recent development snapshot from the `SourceSpec
 GitHub repository <https://github.com/SeismicSource/sourcespec>`__.
 
-Using pip (preferred method)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using pip
+~~~~~~~~~
 
 The easiest way to install the most recent development snapshot is to download
 and install it through ``pip``, using its builtin ``git`` client:
