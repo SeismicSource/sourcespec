@@ -442,6 +442,8 @@ def spectral_inversion(config, spec_st, weight_st):
     sspec_output.inversion_info.Qo_min_max = config.Qo_min_max or 'null'
     event = config.event
     sspec_output.event_info.event_id = event.event_id
+    if event.name is not None:
+        sspec_output.event_info.event_name = event.name
     sspec_output.event_info.longitude = event.hypocenter.longitude
     sspec_output.event_info.latitude = event.hypocenter.latitude
     sspec_output.event_info.depth_in_km = event.hypocenter.depth.value_in_km
