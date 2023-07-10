@@ -27,6 +27,7 @@ previous versions. You will need to upgrade your old database manually or using
 - New command line option (`-R` or `--run_id_subdir`) to use `run_id`
   (if defined) as a subdirectory of the event directory
 - HTML report improvements:
+  - event name in the summary table, if available
   - author, agency and run completion date in the summary table
   - SourceSpec version in the inversion information table
   - link to input files

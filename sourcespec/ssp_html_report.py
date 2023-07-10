@@ -374,10 +374,12 @@ def _add_run_info_to_html(config, replacements):
 def _add_event_info_to_html(config, replacements):
     """Add event info to HTML report."""
     evid = config.event.event_id
+    evname = config.event.name
     hypo = config.event.hypocenter
     run_id = config.options.run_id
     replacements.update({
         '{EVENTID}': evid,
+        '{EVENT_NAME}': evname,
         '{RUNID}': run_id,
         '{EVENT_LONGITUDE}': f'{hypo.longitude.value_in_deg:8.3f}',
         '{EVENT_LATITUDE}': f'{hypo.latitude.value_in_deg:7.3f}',
@@ -404,6 +406,16 @@ def _add_event_info_to_html(config, replacements):
         '{EVENT_URL}': event_url,
         '{EVENT_URL_COMMENT_BEGIN}': event_url_comment_begin,
         '{EVENT_URL_COMMENT_END}': event_url_comment_end
+    })
+    # Only show Event Name if it is not empty
+    if evname:
+        evname_comment_begin = evname_comment_end = ''
+    else:
+        evname_comment_begin = '<!--'
+        evname_comment_end = '-->'
+    replacements.update({
+        '{EVENT_NAME_COMMENT_BEGIN}': evname_comment_begin,
+        '{EVENT_NAME_COMMENT_END}': evname_comment_end
     })
     # Only show Run ID if it is not empty
     if run_id:
