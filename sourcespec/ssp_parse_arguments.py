@@ -118,7 +118,7 @@ def _init_parser(description, epilog, nargs):
         '-H', '--hypocenter', dest='hypo_file',
         action='store', default=None,
         help='get hypocenter information from FILE.\n'
-             'Supported formats: SourceSpec Event File, HYPO71, '
+             'Supported formats: SourceSpec Event File, HYPO71,\n'
              'HYPOINVERSE-2000.\n'
              'If this file contains picks, they will be parsed as well.',
         metavar='FILE'
@@ -173,14 +173,25 @@ def _update_parser_for_source_spec(parser):
     parser.add_argument(
         '-o', '--outdir', dest='outdir',
         action='store', default='sspec_out',
-        help='save output to OUTDIR (default: sspec_out)',
+        help='save output to OUTDIR (default: sspec_out).\n'
+             'The results are further organized in event subdirectories\n'
+             'named after the event id',
         metavar='OUTDIR'
     )
     parser.add_argument(
         '-r', '--run_id', dest='run_id',
         action='store', default='',
-        help='string identifying current run (default: "")',
+        help='string identifying current run (default: none)\n'
+             'If specified, it will be appended to the event directory name\n'
+             'unless the option "-R" is used, in which case it will be used\n'
+             'as a subdirectory of the event directory.',
         metavar='RUN_ID'
+    )
+    parser.add_argument(
+        '-R', '--run_id_subdir', dest='run_id_subdir',
+        action='store_true', default='False',
+        help='use run_id as a subdirectory of the event directory\n'
+             '(default: False)'
     )
 
 

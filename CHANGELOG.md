@@ -24,6 +24,8 @@ previous versions. You will need to upgrade your old database manually or using
   from a previous version
 - Input files are now linked symbolically in the `input_files` subdirectory
   of the output directory (not implemented for Windows)
+- New command line option (`-R` or `--run_id_subdir`) to use `run_id`
+  (if defined) as a subdirectory of the event directory
 - HTML report improvements:
   - author, agency and run completion date in the summary table
   - SourceSpec version in the inversion information table
