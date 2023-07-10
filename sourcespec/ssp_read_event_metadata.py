@@ -30,8 +30,14 @@ def parse_qml(config):
     picks = []
     qml_file = config.options.qml_file
     event_id = config.options.evid
-    qml_event_description = config.qml_event_description
-    qml_event_description_regex = config.qml_event_description_regex
+    # No need to parse event name from QuakeML if event name is given
+    # in the command line
+    if config.options.evname is None:
+        qml_event_description = config.qml_event_description
+        qml_event_description_regex = config.qml_event_description_regex
+    else:
+        qml_event_description = False
+        qml_event_description_regex = None
     if qml_file is None:
         return ssp_event, picks
     try:

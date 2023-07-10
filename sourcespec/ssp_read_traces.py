@@ -387,6 +387,12 @@ def read_traces(config):
         logger.error(
             f'Unable to compute velocity at hypocenter: {e}\n')
         ssp_exit(1)
+    if config.options.evname is not None:
+        # add evname from command line, if any, overriding the one in ssp_event
+        ssp_event.name = config.options.evname
+    else:
+        # add evname from ssp_event, if any, to config file
+        config.options.evname = ssp_event.name
     # add event to config file
     config.event = ssp_event
 
