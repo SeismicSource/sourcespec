@@ -14,6 +14,7 @@ import os
 import contextlib
 import logging
 import yaml
+import re
 from datetime import datetime
 from obspy import UTCDateTime
 from obspy import read_events
@@ -23,15 +24,22 @@ from sourcespec.ssp_pick import SSPPick
 logger = logging.getLogger(__name__.split('.')[-1])
 
 
-def parse_qml(qml_file, event_id=None):
+def parse_qml(config):
     """Parse event metadata and picks from a QuakeML file."""
     ssp_event = None
     picks = []
+    qml_file = config.options.qml_file
+    event_id = config.options.evid
+    qml_event_description = config.qml_event_description
+    qml_event_description_regex = config.qml_event_description_regex
     if qml_file is None:
         return ssp_event, picks
     try:
         qml_event = _get_event_from_qml(qml_file, event_id)
-        ssp_event = _parse_qml_event(qml_event)
+        ssp_event = _parse_qml_event(
+            qml_event,
+            parse_event_name_from_description=qml_event_description,
+            event_description_regex=qml_event_description_regex)
         picks = _parse_picks_from_qml_event(qml_event)
     except Exception as err:
         logger.error(err)
@@ -96,10 +104,26 @@ def _get_evid_from_resource_id(resource_id):
     return evid
 
 
-def _parse_qml_event(qml_event):
+def _parse_qml_event(
+        qml_event,
+        parse_event_name_from_description=False, event_description_regex=None):
     ssp_event = SSPEvent()
     ssp_event.event_id = _get_evid_from_resource_id(
         str(qml_event.resource_id.id))
+    if parse_event_name_from_description:
+        try:
+            ssp_event.name = str(qml_event.event_descriptions[0].text)
+        except IndexError:
+            logger.warning(
+                'QuakeML file does not contain an event description.')
+    if ssp_event.name and event_description_regex:
+        pattern = re.compile(event_description_regex)
+        match = pattern.search(ssp_event.name)
+        if match:
+            name = match.group()
+            # capitalize first letter
+            name = name[0].upper() + name[1:]
+            ssp_event.name = name
     # See if there is a preferred origin...
     origin = qml_event.preferred_origin()
     # ...or just use the first one

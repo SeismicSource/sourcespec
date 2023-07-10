@@ -44,6 +44,8 @@ previous versions. You will need to upgrade your old database manually or using
 ### Config file
 
 - New option `inv_frequency` for the config parameter `weighting` (see [#37])
+- New parameters, `qml_event_description` and `qml_event_description_regex`,
+  to obtain the event name from the QuakeML event "description" tag
 
 ### Bugfixes
 

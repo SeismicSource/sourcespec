@@ -356,8 +356,7 @@ def read_traces(config):
         picks = parse_hypo71_picks(config)
     # parse QML file
     if config.options.qml_file is not None:
-        ssp_event, picks = parse_qml(
-            config.options.qml_file, config.options.evid)
+        ssp_event, picks = parse_qml(config)
 
     # finally, read trace files
     logger.info('Reading traces...')
