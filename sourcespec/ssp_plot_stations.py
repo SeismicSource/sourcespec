@@ -204,9 +204,10 @@ def _add_event_info(event, ax):
     evlo = hypo.longitude.value_in_deg
     evla = hypo.latitude.value_in_deg
     evdp = hypo.depth.value_in_km
-    textstr = (
-        f'evid: {evid} \nlon: {evlo:.3f} lat: {evla:.3f} '
-        f'depth: {evdp:.1f} km'
+    textstr = f'{event.name} — ' if event.name else ''
+    textstr += (
+        f'evid: {evid}\n'
+        f'lon: {evlo:.3f} lat: {evla:.3f} depth: {evdp:.1f} km'
     )
     with contextlib.suppress(AttributeError):
         textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
@@ -342,20 +343,19 @@ def _add_footer(config, ax):
         ha='right', va='top', transform=ax.transAxes)
 
 
-def _add_main_title(config, ax, vname, vmean, verr):
+def _add_main_title(ax, vname, vmean, verr):
     """
     Add to the figure the main title with the value and its error.
     """
     verr_minus, verr_plus = _get_verr_minus_plus(verr)
-    textstr = f'{config.options.evname} — ' if config.options.evname else ''
     if vname == 'fc':
-        textstr += (
+        textstr = (
             f'fc {vmean:.3f} ± {verr_minus:.3f} Hz'
             if np.isclose(verr_minus, verr_plus, atol=1e-3)
             else f'fc {vmean:.3f} [- {verr_minus:.3f}, + {verr_plus:.3f}] Hz'
         )
     elif vname == 'mag':
-        textstr += (
+        textstr = (
             f'Mw {vmean:.2f} ± {verr_minus:.2f}'
             if np.isclose(verr_minus, verr_plus, atol=1e-2)
             else f'Mw {vmean:.2f} [- {verr_minus:.2f}, + {verr_plus:.2f}]'
@@ -532,7 +532,7 @@ def _make_station_map(
     """
     maxdist = np.max(lonlat_dist[:, 2])
     ax0, ax, circle_texts = _make_basemap(config, maxdist)
-    _add_main_title(config, ax0, vname, vmean, verr)
+    _add_main_title(ax0, vname, vmean, verr)
     cmap, norm, cbar_extend = _get_cmap_and_norm(
         values, outliers, vname, vmean, verr)
     station_texts = _plot_stations_scatter(
