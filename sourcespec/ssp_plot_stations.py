@@ -443,8 +443,8 @@ def _plot_stations_scatter(
         marker='^', s=100,
         color=cmap(norm(values)), edgecolor='k',
         zorder=99, transform=trans)
+    texts = []
     if config.plot_station_names_on_map:
-        texts = []
         for _lonlat, _statid in zip(lonlat, st_ids):
             _statid = '.'.join(_statid.split('.')[:2])
             _statid = f'  {_statid}'
