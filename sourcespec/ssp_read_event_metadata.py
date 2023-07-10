@@ -77,9 +77,29 @@ def _get_event_from_qml(qml_file, event_id=None):
     return qml_event
 
 
+def _get_evid_from_resource_id(resource_id):
+    """
+    Get evid from resource_id.
+
+    :param resource_id: resource_id string
+    :returns: evid string
+    """
+    evid = resource_id
+    if '/' in evid:
+        evid = resource_id.split('/')[-1]
+    if '?' in evid:
+        evid = resource_id.split('?')[-1]
+    if '&' in evid:
+        evid = evid.split('&')[0]
+    if '=' in evid:
+        evid = evid.split('=')[-1]
+    return evid
+
+
 def _parse_qml_event(qml_event):
     ssp_event = SSPEvent()
-    ssp_event.event_id = qml_event.resource_id.id.split('/')[-1].split('=')[-1]
+    ssp_event.event_id = _get_evid_from_resource_id(
+        str(qml_event.resource_id.id))
     # See if there is a preferred origin...
     origin = qml_event.preferred_origin()
     # ...or just use the first one
