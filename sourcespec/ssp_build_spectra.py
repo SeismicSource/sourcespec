@@ -544,22 +544,24 @@ def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
 
 def _check_spectral_sn_ratio(config, spec, specnoise):
     weight = _build_weight_from_noise(config, spec, specnoise)
+    freqs = weight.get_freq()
     # if no noise window is available, snratio is not computed
     if weight.snratio is None:
         spec.stats.spectral_snratio = None
         return
     if config.spectral_sn_freq_range is not None:
         sn_fmin, sn_fmax = config.spectral_sn_freq_range
-        freqs = weight.get_freq()
-        idx = np.where((sn_fmin <= freqs) * (freqs <= sn_fmax))
+        valid_freqs_idx = np.where((sn_fmin <= freqs) * (freqs <= sn_fmax))
+        valid_freqs = freqs[valid_freqs_idx]
+        valid_snratio = weight.snratio[valid_freqs_idx]
     else:
-        idx = range(len(weight.snratio))
-    spectral_snratio = weight.snratio[idx].sum() / len(weight.snratio[idx])
+        valid_freqs = freqs
+        valid_snratio = weight.snratio
+    spectral_snratio = valid_snratio.mean()
     spec.stats.spectral_snratio = spectral_snratio
     # Save frequency range where SNR > 3 so it can be used for building weights
     # Note: not sure if we could use config.spectral_sn_min here instead of 3
-    idx2 = (weight.snratio >= 3)[idx]
-    snr_valid_freqs = weight.get_freq()[idx2]
+    snr_valid_freqs = valid_freqs[valid_snratio >= 3]
     try:
         spec.stats.spectral_snratio_fmin = snr_valid_freqs[0]
         spec.stats.spectral_snratio_fmax = snr_valid_freqs[-1]
@@ -567,16 +569,14 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
         spec.stats.spectral_snratio_fmin = None
         spec.stats.spectral_snratio_fmax = None
     spec_id = spec.get_id()
-    logger.info(
-        f'{spec_id}: spectral S/N: {spectral_snratio:.2f}')
-    if config.spectral_sn_min:
-        ssnmin = config.spectral_sn_min
-        if spectral_snratio < ssnmin:
-            msg = (
-                f'{spec_id}: spectral S/N smaller than {ssnmin:.2f}: '
-                'ignoring spectrum')
-            reason = 'low spectral S/N'
-            raise SpectrumIgnored(msg, reason)
+    logger.info(f'{spec_id}: spectral S/N: {spectral_snratio:.2f}')
+    ssnmin = config.spectral_sn_min or -np.inf
+    if spectral_snratio < ssnmin:
+        msg = (
+            f'{spec_id}: spectral S/N smaller than {ssnmin:.2f}: '
+            'ignoring spectrum')
+        reason = 'low spectral S/N'
+        raise SpectrumIgnored(msg, reason)
 
 
 def _ignore_spectrum(msg, spec, specnoise):
