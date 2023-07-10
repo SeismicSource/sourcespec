@@ -166,8 +166,16 @@ class Params(object):
         """
         self.stat = stat
         self.runid = runid
+        if not os.path.isfile(sqlite_file):
+            raise FileNotFoundError(f'File "{sqlite_file}" not found')
         conn = sqlite3.connect(sqlite_file)
         cur = conn.cursor()
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = [t[0] for t in cur.fetchall()]
+        for table in 'Events', 'Stations':
+            if table not in tables:
+                raise ValueError(
+                    f'Table "{table}" not found in file "{sqlite_file}"')
         query_condition = f'where runid="{runid}"' if runid is not None else ''
         self.evids = query_event_params_into_numpy(
             cur, 'evid', str, query_condition)
