@@ -110,9 +110,10 @@ def box_plots(config, sspec_output):
     ev_lon = hypo.longitude.value_in_deg
     ev_lat = hypo.latitude.value_in_deg
     ev_depth = hypo.depth.value_in_km
-    textstr = (
-        f'evid: {evid}\nlon: {ev_lon:.3f} lat: {ev_lat:.3f} '
-        f'depth: {ev_depth:.1f} km'
+    textstr = f'{config.options.evname} — ' if config.options.evname else ''
+    textstr += (
+        f'evid: {evid}\n'
+        f'lon: {ev_lon:.3f} lat: {ev_lat:.3f} depth: {ev_depth:.1f} km'
     )
     with contextlib.suppress(AttributeError):
         textstr += f' time: {hypo.origin_time.format_iris_web_service()}'
