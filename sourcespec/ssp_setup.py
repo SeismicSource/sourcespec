@@ -678,6 +678,8 @@ def configure(options, progname, config_overrides=None):
     _init_plotting(config.plot_show)
     # Create a dict to store figure paths
     config.figures = defaultdict(list)
+    # store the absolute path of the current working directory
+    config.workdir = os.getcwd()
     return config
 
 

@@ -380,6 +380,7 @@ def _make_symlinks(config):
         return
     outdir = config.options.outdir
     out_data_dir = os.path.join(outdir, 'input_files')
+    rel_path = os.path.relpath(config.workdir, out_data_dir)
     os.makedirs(out_data_dir, exist_ok=True)
     filelist =\
         list(config.options.trace_path) +\
@@ -388,7 +389,6 @@ def _make_symlinks(config):
             config.options.hypo_file,
             config.options.pick_file,
             config.options.qml_file,
-            config.station_metadata
         ]
     for filename in filelist:
         if filename is None or not os.path.exists(filename):
@@ -397,8 +397,7 @@ def _make_symlinks(config):
         linkname = os.path.join(out_data_dir, basename)
         if os.path.exists(linkname):
             os.remove(linkname)
-        # filename is three directories up from linkname
-        filename = os.path.join('..', '..', '..', filename)
+        filename = os.path.join(rel_path, filename)
         os.symlink(filename, linkname)
 
 
