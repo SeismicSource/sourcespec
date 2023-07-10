@@ -47,7 +47,13 @@ def _get_db_version(cursor, db_file):
     :param db_file: SQLite database file
     :type db_file: str
     """
-    return cursor.execute('PRAGMA user_version').fetchone()[0]
+    try:
+        return cursor.execute('PRAGMA user_version').fetchone()[0]
+    except Exception as msg:
+        sys.stderr.write(f'{msg}\n')
+        sys.stderr.write(
+            f'Please check whether "{db_file}" is a valid SQLite file.\n')
+        exit(1)
 
 
 def _version_1_to_2(cursor):
