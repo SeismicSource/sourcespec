@@ -38,7 +38,7 @@ from sourcespec.ssp_update_db import update_db_file
 if sys.stdout.isatty() and sys.platform != 'win32':
     try:
         from IPython.terminal.embed import InteractiveShellEmbed
-        ipshell = InteractiveShellEmbed()
+        ipshell = InteractiveShellEmbed.instance()
     except ImportError:
         ipshell = None
 else:
