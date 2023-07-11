@@ -467,10 +467,25 @@ def _adjust_text_labels(station_texts, circle_texts, ax):
     """
     if not station_texts:
         return
+    # store original text positions and texts
+    text_pos = [(t.get_position(), t.get_text()) for t in station_texts]
+    # compute mean position
+    x_pos_mean = np.mean([p[0][0] for p in text_pos])
+    y_pos_mean = np.mean([p[0][1] for p in text_pos])
     # first adjust text labels relatively to each other
     adjust_text(station_texts, ax=ax, maxshift=1e3)
     # then, try to stay away from circle texts
     adjust_text(station_texts, add_objects=circle_texts, ax=ax, maxshift=1e3)
+    # check if some text labels are too far away from the mean position
+    # (i.e., bug in adjust_text) and move them back to their original position
+    for t in station_texts:
+        txt = t.get_text()
+        x_pos, y_pos = t.get_position()
+        delta_x = np.abs(x_pos - x_pos_mean)
+        delta_y = np.abs(y_pos - y_pos_mean)
+        if delta_x > 100 or delta_y > 100:
+            x_pos, y_pos = [tp[0] for tp in text_pos if tp[1] == txt][0]
+            t.set_position((x_pos, y_pos))
 
 
 def _add_colorbar(
