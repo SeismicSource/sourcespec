@@ -189,7 +189,7 @@ def _update_parser_for_source_spec(parser):
     )
     parser.add_argument(
         '-R', '--run_id_subdir', dest='run_id_subdir',
-        action='store_true', default='False',
+        action='store_true', default=False,
         help='use run_id as a subdirectory of the event directory\n'
              '(default: False)'
     )
