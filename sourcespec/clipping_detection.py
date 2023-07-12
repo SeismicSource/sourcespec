@@ -253,8 +253,13 @@ def clipping_score(trace, remove_baseline=False, debug=False):
     """
     trace, trace_baseline, max_data = _preprocess(
         trace, remove_linear_trend=True, remove_baseline=remove_baseline)
-    density, density_points = _get_kernel_density(
-        trace, -max_data, max_data, 101)
+    try:
+        density, density_points = _get_kernel_density(
+            trace, -max_data, max_data, 101)
+    except Exception:
+        # if the kernel density estimation fails (e.g., all samples are equal)
+        # return the maximum clipping score
+        return 100
     # Distance weight for full weighted kernel density,
     # 8th order, between 1 and 100
     dist_weight_full = _get_distance_weight(
