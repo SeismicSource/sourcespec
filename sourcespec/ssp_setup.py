@@ -557,6 +557,22 @@ def _write_sample_ssp_event_file():
         print(f'Sample SourceSpec Event File written to: {ssp_event_file}')
 
 
+def fix_and_expand_path(path):
+    """
+    Fix any path issues and expand it
+    
+    :param path: str, path specification
+    :return: str, fixed and expanded path
+    """
+    fixed_path = os.path.normpath(path).split(os.sep)
+    fixed_path = os.path.join(*fixed_path)
+    if path.startswith(os.sep):
+        fixed_path = os.path.join(os.sep, fixed_path)
+    elif path.startswith('~'):
+        fixed_path = os.path.expanduser(fixed_path)
+    return fixed_path
+
+
 def configure(options, progname, config_overrides=None):
     """
     Parse command line arguments and read config file.
@@ -584,6 +600,8 @@ def configure(options, progname, config_overrides=None):
         _write_sample_ssp_event_file()
         sys.exit(0)
 
+    if options.config_file:
+        options.config_file = fix_and_expand_path(options.config_file)
     config_obj = _read_config(options.config_file, configspec)
 
     # Apply overrides
@@ -614,6 +632,17 @@ def configure(options, progname, config_overrides=None):
     _check_deprecated_config_options(config_obj)
     _check_mandatory_config_params(config_obj)
 
+    # Fix and expand paths in options
+    options.outdir = fix_and_expand_path(options.outdir)
+    if options.trace_path:
+        options.trace_path = fix_and_expand_path(options.trace_path)
+    if options.qml_file:
+        options.qml_file = fix_and_expand_path(options.qml_file)
+    if options.hypo_file:
+        options.hypo_file = fix_and_expand_path(options.hypo_file)
+    if options.pick_file:
+        options.pick_file = fix_and_expand_path(options.pick_file)
+
     # Create a 'no_evid_' subdir into outdir.
     # The random hex string will make it sure that this name is unique
     # It will be then renamed once an evid is available
@@ -640,6 +669,16 @@ def configure(options, progname, config_overrides=None):
         config.vertical_channel_codes.append(msc[0])
         config.horizontal_channel_codes_1.append(msc[1])
         config.horizontal_channel_codes_2.append(msc[2])
+    
+    # Fix and expand paths in config
+    if config.database_file:
+        config.database_file = fix_and_expand_path(config.database_file)
+    if config.traceid_mapping_file:
+        config.traceid_mapping_file = fix_and_expand_path(config.traceid_mapping_file)
+    if config.station_metadata:
+        config.station_metadata = fix_and_expand_path(config.station_metadata)
+    if config.residuals_filepath:
+        config.residuals_filepath = fix_and_expand_path(config.residuals_filepath)
 
     # A list of warnings to be issued when logger is set up
     config.warnings = []
@@ -704,10 +743,8 @@ def move_outdir(config):
     src = config.options.outdir
     run_id = config.options.run_id
     run_id_subdir = config.options.run_id_subdir
-    path = os.path.normpath(src).split(os.sep)
-    dst = os.path.join(*path[:-1], str(evid))
-    if src.startswith(os.sep):
-        dst = os.path.join(os.sep, dst)
+    dst = os.path.split(src)[0]
+    dst = os.path.join(dst, str(evid))
     if run_id and run_id_subdir:
         dst = os.path.join(dst, str(run_id))
     elif run_id:
