@@ -405,7 +405,7 @@ def _parse_source_spec_event_file(event_file, event_id=None):
         ssp_event = SSPEvent(event)
     except Exception as e:
         raise TypeError(
-            'This is a valid YAML file, but the following error occured: '
+            'This is a valid YAML file, but the following error occurred: '
             f'{e}.'
         ) from e
     # empty picks list, for consistency with other parsers

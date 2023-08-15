@@ -109,7 +109,7 @@ def parse_args():
     parser.add_argument(
         '-s', '--statistics', default='mean',
         help='Statistics to use: "mean", "wmean" (weighted mean) '
-             'or "pctl" (precentiles). Default is "mean"')
+             'or "pctl" (percentiles). Default is "mean"')
     parser.add_argument(
         '-i', '--nbins', type=int, default=None,
         help='Number of bins in the histogram (default: autoset)')

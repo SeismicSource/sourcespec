@@ -144,7 +144,7 @@ def _read_paz_file(file):
     - paz file name (without prefix and suffix) can have
       the trace_id (NET.STA.LOC.CHAN) of the corresponding trace in the last
       part of his name (e.g., 20110208_1600.NOW.IV.CRAC.00.EHZ.paz),
-      otherwhise it will be treaten as a generic paz.
+      otherwise it will be treaten as a generic paz.
 
     :param file: path to the PAZ file
     :type file: str
