@@ -676,11 +676,13 @@ def configure(options, progname, config_overrides=None):
     if config.database_file:
         config.database_file = fix_and_expand_path(config.database_file)
     if config.traceid_mapping_file:
-        config.traceid_mapping_file = fix_and_expand_path(config.traceid_mapping_file)
+        config.traceid_mapping_file = fix_and_expand_path(
+            config.traceid_mapping_file)
     if config.station_metadata:
         config.station_metadata = fix_and_expand_path(config.station_metadata)
     if config.residuals_filepath:
-        config.residuals_filepath = fix_and_expand_path(config.residuals_filepath)
+        config.residuals_filepath = fix_and_expand_path(
+            config.residuals_filepath)
 
     # A list of warnings to be issued when logger is set up
     config.warnings = []
