@@ -560,7 +560,7 @@ def _write_sample_ssp_event_file():
 def fix_and_expand_path(path):
     """
     Fix any path issues and expand it
-    
+
     :param path: str, path specification
     :return: str, fixed and expanded path
     """
@@ -635,7 +635,9 @@ def configure(options, progname, config_overrides=None):
     # Fix and expand paths in options
     options.outdir = fix_and_expand_path(options.outdir)
     if options.trace_path:
-        options.trace_path = fix_and_expand_path(options.trace_path)
+        # trace_path is a list
+        options.trace_path = [
+            fix_and_expand_path(path) for path in options.trace_path]
     if options.qml_file:
         options.qml_file = fix_and_expand_path(options.qml_file)
     if options.hypo_file:
@@ -669,7 +671,7 @@ def configure(options, progname, config_overrides=None):
         config.vertical_channel_codes.append(msc[0])
         config.horizontal_channel_codes_1.append(msc[1])
         config.horizontal_channel_codes_2.append(msc[2])
-    
+
     # Fix and expand paths in config
     if config.database_file:
         config.database_file = fix_and_expand_path(config.database_file)
