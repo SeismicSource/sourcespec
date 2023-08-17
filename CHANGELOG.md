@@ -61,6 +61,8 @@ previous versions. You will need to upgrade your old database manually or using
   plotted as if they were valid traces
 - Fix bug when specifying an absolute path for output directory: the path
   was treated as relative (see [#40])
+- Fix bug where paths starting with tilde (~) were not parsed correctly
+  (see [#43] and [#44])
 
 ### Requirements
 
@@ -590,3 +592,5 @@ Initial Python port.
 [#38]: https://github.com/SeismicSource/sourcespec/issues/38
 [#39]: https://github.com/SeismicSource/sourcespec/issues/39
 [#40]: https://github.com/SeismicSource/sourcespec/issues/40
+[#43]: https://github.com/SeismicSource/sourcespec/issues/43
+[#44]: https://github.com/SeismicSource/sourcespec/issues/44
