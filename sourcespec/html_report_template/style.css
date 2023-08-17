@@ -45,12 +45,32 @@ table.summary th[scope=col] {
   text-align: right;
 }
 
+table.summary th.parameter {
+  background-color: white;
+  border-right: 2px dotted #dee2e6;
+  position: -webkit-sticky;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+}
+
 .highlighted_column {
   border: 2px dotted #666;
+  background-color: #dadada;
 }
 
 .th_subtitle {
   font-size: 0.8em;
+}
+
+.table_summary_wrapper {
+  white-space: nowrap;
+  overflow: hidden;
+  /* scrollbar style for Firefox */
+  scrollbar-width: auto;
+}
+.table_summary_wrapper:hover {
+  overflow: scroll;
 }
 
 table.stations {
@@ -373,6 +393,15 @@ a.article:hover {
     font-size: 27.4px;
     background: #17054f;
     color: white;
+  }
+  .station_map {
+    max-width: 100%;
+  }
+  .box_plot {
+    max-width: 100%;
+  }
+  .stacked_spectra {
+    max-width: 100%;
   }
 }
 

@@ -312,78 +312,80 @@
           for <a href="#event_summary">Event Summary</a> and
           <a href="#moment_magnitude">Map Plots</a>.
         </h6>
-        <table class="table summary">
-          <colgroup>
-            <col>
-            <col {COL_MEAN_HIGHLIGHTED}>
-            <col {COL_WMEAN_HIGHLIGHTED}>
-            <col {COL_PERC_HIGHLIGHTED}>
-          </colgroup>
-          <thead>
-            <tr>
-              <th></th>
-              <th scope="col">Mean<div class="th_subtitle">({N_SIGMA})</div></th>
-              <th scope="col">Weighted Mean<div class="th_subtitle">({N_SIGMA})</div></th>
-              <th scope="col">Percentiles<div class="th_subtitle">({PERCENTAGES})</div></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th scope="row">Mw</th>
-              <td>{MW_MEAN_AND_ERR}</td>
-              <td>{MW_WMEAN_AND_ERR}</td>
-              <td>{MW_PERC_AND_ERR}</td>
-            </tr>
-            <tr>
-              <th scope="row">Seismic Moment (N&#183;m)</th>
-              <td>{M0_MEAN_AND_ERR}</td>
-              <td>{M0_WMEAN_AND_ERR}</td>
-              <td>{M0_PERC_AND_ERR}</td>
-            </tr>
-            <tr>
-              <th scope="row">Corner Frequency (Hz)</th>
-              <td>{FC_MEAN_AND_ERR}</td>
-              <td>{FC_WMEAN_AND_ERR}</td>
-              <td>{FC_PERC_AND_ERR}</td>
-            </tr>
-            <tr>
-              <th scope="row">t-star (s)</th>
-              <td>{TSTAR_MEAN_AND_ERR}</td>
-              <td>{TSTAR_WMEAN_AND_ERR}</td>
-              <td>{TSTAR_PERC_AND_ERR}</td>
-            </tr>
-            <tr>
-              <th scope="row">Qo</th>
-              <td>{Q0_MEAN_AND_ERR}</td>
-              <td>{Q0_WMEAN_AND_ERR}</td>
-              <td>{Q0_PERC_AND_ERR}</td>
-            </tr>
-            <tr>
-              <th scope="row">Source Radius (m)</th>
-              <td>{RADIUS_MEAN_AND_ERR}</td>
-              <td>{RADIUS_WMEAN_AND_ERR}</td>
-              <td>{RADIUS_PERC_AND_ERR}</td>
-            </tr>
-            <tr>
-              <th scope="row">Brune Stress Drop (MPa)</th>
-              <td>{BSD_MEAN_AND_ERR}</td>
-              <td>{BSD_WMEAN_AND_ERR}</td>
-              <td>{BSD_PERC_AND_ERR}</td>
-            </tr>
-            <tr>
-              <th scope="row">Radiated Energy (N&#183;m)</th>
-              <td>{ER_MEAN_AND_ERR}</td>
-              <td></td>
-              <td>{ER_PERC_AND_ERR}</td>
-            </tr>{ML_COMMENT_BEGIN}
-            <tr>
-              <th scope="row">Ml</th>
-              <td>{ML_MEAN_AND_ERR}</td>
-              <td></td>
-              <td>{ML_PERC_AND_ERR}</td>
-            </tr>{ML_COMMENT_END}
-          </tbody>
-        </table>
+        <div class="table_summary_wrapper">
+          <table class="table summary">
+            <colgroup>
+              <col>
+              <col {COL_MEAN_HIGHLIGHTED}>
+              <col {COL_WMEAN_HIGHLIGHTED}>
+              <col {COL_PERC_HIGHLIGHTED}>
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="parameter"></th>
+                <th scope="col">Mean<div class="th_subtitle">({N_SIGMA})</div></th>
+                <th scope="col">Weighted Mean<div class="th_subtitle">({N_SIGMA})</div></th>
+                <th scope="col">Percentiles<div class="th_subtitle">({PERCENTAGES})</div></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th class="parameter" scope="row">Mw</th>
+                <td>{MW_MEAN_AND_ERR}</td>
+                <td>{MW_WMEAN_AND_ERR}</td>
+                <td>{MW_PERC_AND_ERR}</td>
+              </tr>
+              <tr>
+                <th class="parameter" scope="row">Seismic Moment (N&#183;m)</th>
+                <td>{M0_MEAN_AND_ERR}</td>
+                <td>{M0_WMEAN_AND_ERR}</td>
+                <td>{M0_PERC_AND_ERR}</td>
+              </tr>
+              <tr>
+                <th class="parameter" scope="row">Corner Frequency (Hz)</th>
+                <td>{FC_MEAN_AND_ERR}</td>
+                <td>{FC_WMEAN_AND_ERR}</td>
+                <td>{FC_PERC_AND_ERR}</td>
+              </tr>
+              <tr>
+                <th class="parameter" scope="row">t-star (s)</th>
+                <td>{TSTAR_MEAN_AND_ERR}</td>
+                <td>{TSTAR_WMEAN_AND_ERR}</td>
+                <td>{TSTAR_PERC_AND_ERR}</td>
+              </tr>
+              <tr>
+                <th class="parameter" scope="row">Qo</th>
+                <td>{Q0_MEAN_AND_ERR}</td>
+                <td>{Q0_WMEAN_AND_ERR}</td>
+                <td>{Q0_PERC_AND_ERR}</td>
+              </tr>
+              <tr>
+                <th class="parameter" scope="row">Source Radius (m)</th>
+                <td>{RADIUS_MEAN_AND_ERR}</td>
+                <td>{RADIUS_WMEAN_AND_ERR}</td>
+                <td>{RADIUS_PERC_AND_ERR}</td>
+              </tr>
+              <tr>
+                <th class="parameter" scope="row">Brune Stress Drop (MPa)</th>
+                <td>{BSD_MEAN_AND_ERR}</td>
+                <td>{BSD_WMEAN_AND_ERR}</td>
+                <td>{BSD_PERC_AND_ERR}</td>
+              </tr>
+              <tr>
+                <th class="parameter" scope="row">Radiated Energy (N&#183;m)</th>
+                <td>{ER_MEAN_AND_ERR}</td>
+                <td></td>
+                <td>{ER_PERC_AND_ERR}</td>
+              </tr>{ML_COMMENT_BEGIN}
+              <tr>
+                <th class="parameter" scope="row">Ml</th>
+                <td>{ML_MEAN_AND_ERR}</td>
+                <td></td>
+                <td>{ML_PERC_AND_ERR}</td>
+              </tr>{ML_COMMENT_END}
+            </tbody>
+          </table>
+        </div>
       </div> <!-- page -->
 
 {BOX_PLOTS_COMMENT_BEGIN}
