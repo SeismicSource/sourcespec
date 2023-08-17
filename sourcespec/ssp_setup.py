@@ -559,10 +559,11 @@ def _write_sample_ssp_event_file():
 
 def fix_and_expand_path(path):
     """
-    Fix any path issues and expand it
+    Fix any path issues and expand it.
 
-    :param path: str, path specification
-    :return: str, fixed and expanded path
+    :param str path: Path specification
+    :return: The fixed and expanded path
+    :rtype: str
     """
     fixed_path = os.path.normpath(path).split(os.sep)
     fixed_path = os.path.join(*fixed_path)
