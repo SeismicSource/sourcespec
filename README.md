@@ -267,7 +267,7 @@ Starting from the inverted parameters $M_0$ ( $M_w$ ), $fc$, $t^*$ and following
 the equations in [Madariaga (2011)][Madariaga2011], other quantities are
 computed for each station:
 
-- the Brune stress drop
+- the Brune static stress drop
 - the source radius
 - the quality factor $Q_0$ of P- or S-waves
 

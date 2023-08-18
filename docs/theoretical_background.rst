@@ -30,7 +30,7 @@ The component spectra are combined through the root sum of squares:
 
     S(f) = \sqrt{S^2_z(f) + S^2_n(f) + S^2_e(f)}
 
-where :math:`f` is the frequency and :math:`S_x(f)``` is the P- or S-wave
+where :math:`f` is the frequency and :math:`S_x(f)` is the P- or S-wave
 spectrum for component :math:`x`.
 
 .. figure:: imgs/example_spectrum.svg
@@ -44,8 +44,8 @@ spectrum for component :math:`x`.
 Spectral model
 ==============
 
-The Fourier amplitude spectrum of the S-wave displacement in far field can be
-modelled as the product of a source term :cite:p:`Brune1970` and a
+The Fourier amplitude spectrum of the P- or S-wave displacement in far field
+can be modelled as the product of a source term :cite:p:`Brune1970` and a
 propagation term (geometric and anelastic attenuation of body waves):
 
 .. math::
@@ -66,6 +66,7 @@ where:
 
 - :math:`\mathcal{G}(r)` is the geometrical spreading coefficient (see below)
   and :math:`r` is the hypocentral distance;
+- the coefficient :math:`2` is the free surface amplification factor;
 - :math:`R_{\Theta\Phi}` is the radiation pattern coefficient for P- or S-waves
   (average or computed from focal mechanism, if available);
 - :math:`\rho_h` and :math:`\rho_r` are the medium densities at the hypocenter
@@ -187,10 +188,11 @@ Finally coming to the following model used for the inversion:
 where :math:`M_w \equiv \frac{2}{3} (\log_{10} M_0 - 9.1)`.
 
 
-Inversion procedure
+Inverted parameters
 ===================
 
-The parameters to determine are :math:`M_w`, :math:`f_c` and :math:`t^*`.
+The parameters determined from the spectral inversion are :math:`M_w`,
+:math:`f_c` and :math:`t^*`.
 
 The inversion is performed in moment magnitude :math:`M_w` units (logarithmic
 amplitude). Different inversion algorithms can be used:
@@ -212,11 +214,15 @@ amplitude). Different inversion algorithms can be used:
    misfit grid, using `k-d
    tree <https://en.wikipedia.org/wiki/K-d_tree>`__
 
+
+Other computed parameters
+=========================
+
 Starting from the inverted parameters :math:`M_0` ( :math:`M_w` ),
 :math:`fc`, :math:`t^*` and following the equations in :cite:t:`Madariaga2011`,
 other quantities are computed for each station:
 
--  the Brune stress drop
+-  the Brune static stress drop
 -  the source radius
 -  the quality factor :math:`Q_0` of P- or S-waves
 
@@ -232,8 +238,36 @@ based on the `interquartile
 range <https://en.wikipedia.org/wiki/Interquartile_range>`__ rule.
 
 
-Attenuation
------------
+Source radius and Brune static stress drop
+------------------------------------------
+The Brune static stress drop :math:`\Delta \sigma` is computed under the
+assumption of a circular rupture of radius :math:`a`. The model of
+:cite:t:`Brune1970` provides an expression for the source radius (equation 31
+in :cite:t:`Madariaga2011`):
+
+.. math::
+
+   a = 0.3724 \frac{v_s}{f_c}
+
+where :math:`v_s` is the S-wave velocity at the hypocenter (in :math:`m / s`)
+and :math:`f_c` is the corner frequency (in :math:`Hz`) estimated from the
+spectral inversion.
+
+The Brune static stress drop is then computed using the circular crack model,
+as discussed in :cite:t:`Madariaga2011` (equation 27):
+
+.. math::
+
+   \Delta \sigma =
+   \frac{7}{16}
+   \frac{M_0}{a^3}
+
+where :math:`M_0` is the seismic moment (in :math:`N \cdot m`) and
+:math:`a` is the source radius (in :math:`m`).
+
+
+Quality factor
+--------------
 The retrieved attenuation parameter :math:`t^*` is converted to the P- or
 S-wave quality factor :math:`Q_0^{[P|S]}` using the following expression:
 
@@ -245,6 +279,74 @@ where :math:`tt_{[P|S]}(r)` is the P- or S-wave travel time from source to
 station and :math:`r` is the hypocentral distance.
 
 
+Radiated energy
+---------------
+The radiated energy :math:`E_r` is computed from the integral of the squared
+velocity spectrum :math:`\dot{S}(f) = 2 \pi f S(f)`.
+
+Following :cite:t:`Boatwright2002` (equation 1) and :cite:t:`Lancieri2012`
+(equation 3), the radiated energy is computed as:
+
+.. math::
+
+   E_r = 8 \pi \mathcal{G}^2(r) C^2 \rho_h c_h
+            \int_{0}^{f_{max}} e^{2 \pi f t^*} |\dot{S}(f)|^2 df
+
+where :math:`\mathcal{G}^2(r)` is the squared geometrical spreading coefficient
+(see above), :math:`C` is a constant discussed below, :math:`\rho_h` and
+:math:`c_h` are, respectively, the density and P- or S-wave velocity [#f1]_
+close to the hypocenter, :math:`f_{max}` is the maximum frequency used to
+compute the energy (see :ref:`configuration_file:Configuration File` for
+details on the ``max_freq_Er`` parameter), and the exponential term in the
+integrand is the squared correction for anelastic attenuation.
+
+The constant :math:`C` is defined in :cite:t:`Boatwright2002` (equation 2) as:
+
+.. math::
+
+   C = \frac{\left<R_{\Theta\Phi}\right>}{R_{\Theta\Phi} F}
+
+where :math:`\left<R_{\Theta\Phi}\right>` is the root mean square radiation
+pattern computed on the focal sphere, :math:`R_{\Theta\Phi}` is the
+radiation pattern coefficient for the given station, and :math:`F` is the
+free surface amplification factor.
+Here we assume :math:`F = 2` and :math:`\left<R_{\Theta\Phi}\right> = 1`
+(hence, :math:`C = 1/2`).
+The latter assumption means that we rely on the averaging between measurements
+of radiated energy at different stations, instead of precise measurements at a
+single station.
+
+Noise correction
+++++++++++++++++
+To account for low frequency noise, below the corner frequency, under the
+hypothesis that energy is additive and that noise is stationary, we compute
+a corrected energy as:
+
+.. math::
+
+   \tilde{E}_r = E_r- E_{r,noise}
+
+where :math:`E_r` is the observed radiated energy and :math:`E_{r,noise}` is
+the radiated energy computed from the noise spectrum.
+
+Finite bandwidth correction
++++++++++++++++++++++++++++
+The final step is to correct the radiated energy for the finite bandwidth
+of the observed spectrum. Following :cite:t:`Lancieri2012` (equation 4), and
+:cite:t:`DiBona1988`, the noise-corrected radiated energy is divided by
+the following factor:
+
+.. math::
+
+  R = \frac{2}{\pi}
+    \left[
+      \frac{-f_{max}/f_c}{1+(f_{max}/f_c)^2} + \arctan(f_{max}/f_c)
+    \right]
+
+where :math:`f_c` is the corner frequency and :math:`f_{max}` is the maximum
+frequency used to compute the energy.
+
+
 Station Residuals
 -----------------
 Station-specific effects can be determined by running ``source_spec`` on several
@@ -253,3 +355,12 @@ inverted spectra. These averages are obtained through the command
 ``source_residuals``; the resulting residuals file can be used for a second run
 of ``source_spec`` (see the ``residuals_filepath`` option in
 :ref:`configuration_file:Configuration File`).
+
+
+.. rubric:: Footnotes
+
+.. [#f1] SourceSpec can compute radiated energy from either the P- or S-wave
+   displacement spectra, depending on the value chose for the configuration
+   parameter ``wave_type`` (see :ref:`configuration_file:Configuration File`).
+   However, when using P waves, the code will warn that radiated energy
+   computed from P waves might be underestimated.
