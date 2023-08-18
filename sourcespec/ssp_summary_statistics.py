@@ -124,16 +124,21 @@ def _param_summary_statistics(
         lower_uncertainty=mean_error[0],
         upper_uncertainty=mean_error[1],
         confidence_level=conf_level, nobs=nobs)
-    # weighted mean (only if errors are defined)
     if not np.all(np.isnan(errors)):
+        # weighted mean (only if errors are defined)
         wmean_value, wmean_error = _avg_and_std(
             values, errors, logarithmic=logarithmic)
-        wmean_error *= config.n_sigma
-        summary.weighted_mean = SummaryStatistics(
-            type='weighted_mean', value=wmean_value,
-            lower_uncertainty=wmean_error[0],
-            upper_uncertainty=wmean_error[1],
-            confidence_level=conf_level, nobs=nobs)
+    else:
+        # else use an unweighted mean
+        logger.info(
+            f'{id} values have no uncertainty: weighted mean cannot be '
+            'computed. Using unweighted mean instead.')
+        wmean_value, wmean_error = mean_value, mean_error
+    summary.weighted_mean = SummaryStatistics(
+        type='weighted_mean', value=wmean_value,
+        lower_uncertainty=wmean_error[0],
+        upper_uncertainty=wmean_error[1],
+        confidence_level=conf_level, nobs=nobs)
     # percentiles
     low_pctl, mid_pctl, up_pctl = _percentiles(
         values, config.lower_percentage, config.mid_percentage,

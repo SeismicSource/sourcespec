@@ -754,11 +754,15 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
     })
     Er_mean = means['Er']
     Er_mean_error = mean_errors['Er']
+    Er_wmean = wmeans['Er']
+    Er_wmean_error = wmean_errors['Er']
     Er_perc = percentiles['Er']
     Er_perc_error = percentile_errors['Er']
     replacements.update({
         '{ER_MEAN_AND_ERR}': _summary_value_and_err_text(
             Er_mean, Er_mean_error, '{:.3e}'),
+        '{ER_WMEAN_AND_ERR}': _summary_value_and_err_text(
+            Er_wmean, Er_wmean_error, '{:.3e}'),
         '{ER_PERC_AND_ERR}': _summary_value_and_err_text(
             Er_perc, Er_perc_error, '{:.3e}'),
     })

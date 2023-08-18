@@ -38,6 +38,13 @@ previous versions. You will need to upgrade your old database manually or using
   have larger weight in the inversion. If traces contain noise, weights will
   be set to zero where SNR < 3 (see [#37])
 
+### Post-Inversion
+
+- For parameters with no station-level uncertainty defined (currently,
+  radiated energy), use simple mean when computing summary weighted averages
+  (the previous behavior was to not compute weighted averages for these
+  parameters)
+
 ### Plotting
 
 - Station maps: exclude outliers when computing colorbar limits
