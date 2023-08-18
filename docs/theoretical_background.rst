@@ -114,7 +114,7 @@ with
   \gamma (f) =
   \begin{cases}
     0.5  &  f \le 0.20 Hz\\
-    0.5 + 2 \log (5f)  &  0.20 < f < 0.25 Hz\\
+    0.5 + 2 \log_{10} (5f)  &  0.20 < f < 0.25 Hz\\
     0.7  &  f \ge 0.25 Hz\\
   \end{cases}
 

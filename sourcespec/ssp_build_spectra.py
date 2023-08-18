@@ -275,7 +275,7 @@ def _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist):
     mid_freq = np.logical_and(freqs > 0.2, freqs <= 0.25)
     high_freq = freqs >= 0.25
     exponent[low_freq] = 0.5
-    exponent[mid_freq] = 0.5 + 2 * np.log(5 * freqs[mid_freq])
+    exponent[mid_freq] = 0.5 + 2 * np.log10(5 * freqs[mid_freq])
     exponent[high_freq] = 0.7
     return cutoff_dist * (dist / cutoff_dist)**exponent
 

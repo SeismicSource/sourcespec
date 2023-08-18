@@ -53,6 +53,7 @@ previous versions. You will need to upgrade your old database manually or using
 - Do not ignore picks labeled with lowercase "p" or "s"
 - Fixed: config parameter `p_arrival_tolerance` was used also for S waves,
   instead of `s_arrival_tolerance` (see [#35])
+- Fix Boatwright spreading model (log10 instead of natural log)
 - Fix bug where signal and noise windows were plotted with the wrong length,
   under certain circumstances (see [#35])
 - Fixes related to records with short signal windows (see [#39])
