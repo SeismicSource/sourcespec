@@ -263,17 +263,15 @@ amplitude). Different inversion algorithms can be used:
 - GS: [grid search]
 - IS: [importance sampling] of misfit grid, using [k-d tree]
 
-Starting from the inverted parameters $M_0$ ( $M_w$ ), $fc$, $t^*$ and following
-the equations in [Madariaga (2011)][Madariaga2011], other quantities are
-computed for each station:
+Starting from the inverted parameters $M_0$ ( $M_w$ ), $fc$, $t^*$ and
+following the equations in [Madariaga (2011)][Madariaga2011] and
+[Lancieri (2012)][Lancieri2012], other quantities are computed for each
+station:
 
-- the Brune static stress drop
-- the source radius
+- the Brune static stress drop $\Delta \sigma$
+- the source radius $a$
+- the radiated energy $E_r$
 - the quality factor $Q_0$ of P- or S-waves
-
-Finally, the radiated energy $E_r$ can be measured from the displacement
-spectra, following the approach described in [Lancieri et al.
-(2012)][Lancieri2012].
 
 As a bonus, local magnitude $M_l$ can be computed as well.
 

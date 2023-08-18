@@ -219,16 +219,13 @@ Other computed parameters
 =========================
 
 Starting from the inverted parameters :math:`M_0` ( :math:`M_w` ),
-:math:`fc`, :math:`t^*` and following the equations in :cite:t:`Madariaga2011`,
-other quantities are computed for each station:
+:math:`fc`, :math:`t^*` and following the equations in :cite:t:`Madariaga2011`
+and :cite:t:`Lancieri2012`, other quantities are computed for each station:
 
--  the Brune static stress drop
--  the source radius
+-  the Brune static stress drop :math:`\Delta \sigma`
+-  the source radius :math:`a`
+-  the radiated energy :math:`E_r`
 -  the quality factor :math:`Q_0` of P- or S-waves
-
-Finally, the radiated energy :math:`E_r` can be measured from the
-displacement spectra, following the approach described in
-:cite:t:`Lancieri2012`.
 
 As a bonus, local magnitude :math:`M_l` can be computed as well.
 
@@ -264,19 +261,6 @@ as discussed in :cite:t:`Madariaga2011` (equation 27):
 
 where :math:`M_0` is the seismic moment (in :math:`N \cdot m`) and
 :math:`a` is the source radius (in :math:`m`).
-
-
-Quality factor
---------------
-The retrieved attenuation parameter :math:`t^*` is converted to the P- or
-S-wave quality factor :math:`Q_0^{[P|S]}` using the following expression:
-
-.. math::
-
-   Q_0^{[P|S]} = \frac{tt_{[P|S]}(r)}{t^*}
-
-where :math:`tt_{[P|S]}(r)` is the P- or S-wave travel time from source to
-station and :math:`r` is the hypocentral distance.
 
 
 Radiated energy
@@ -347,6 +331,19 @@ where :math:`f_c` is the corner frequency and :math:`f_{max}` is the maximum
 frequency used to compute the energy.
 
 
+Quality factor
+--------------
+The retrieved attenuation parameter :math:`t^*` is converted to the P- or
+S-wave quality factor :math:`Q_0^{[P|S]}` using the following expression:
+
+.. math::
+
+   Q_0^{[P|S]} = \frac{tt_{[P|S]}(r)}{t^*}
+
+where :math:`tt_{[P|S]}(r)` is the P- or S-wave travel time from source to
+station and :math:`r` is the hypocentral distance.
+
+
 Station Residuals
 -----------------
 Station-specific effects can be determined by running ``source_spec`` on several
@@ -360,7 +357,7 @@ of ``source_spec`` (see the ``residuals_filepath`` option in
 .. rubric:: Footnotes
 
 .. [#f1] SourceSpec can compute radiated energy from either the P- or S-wave
-   displacement spectra, depending on the value chose for the configuration
+   displacement spectra, depending on the value chosen for the configuration
    parameter ``wave_type`` (see :ref:`configuration_file:Configuration File`).
    However, when using P waves, the code will warn that radiated energy
    computed from P waves might be underestimated.
