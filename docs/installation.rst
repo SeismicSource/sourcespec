@@ -26,6 +26,14 @@ If you want a different name for your environment, use:
 
    conda env create -n YOUR_ENV_NAME --file https://raw.githubusercontent.com/SeismicSource/sourcespec/main/sourcespec_conda_env.yml
 
+Activate the environment with:
+
+::
+
+   conda activate sourcespec
+
+(or ``conda activate YOUR_ENV_NAME``)
+
 To keep SourceSpec updated run:
 
 ::
