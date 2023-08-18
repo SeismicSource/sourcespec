@@ -135,6 +135,7 @@ class SSPMagnitude(object):
     def __init__(self, value=None, type=None):
         self.value = _float(value)
         self.type = type
+        self.computed = False
 
     def __str__(self):
         try:
@@ -160,6 +161,7 @@ class SSPMagnitude(object):
             raise ValueError('scalar_moment units must be N-m or dyne-cm')
         self.value = 2 / 3 * (np.log10(moment) - 9.1)
         self.type = 'Mw'
+        self.computed = True
 
 
 class SSPScalarMoment(object):

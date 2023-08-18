@@ -175,6 +175,7 @@ def _spec_inversion(config, spec, spec_weight):
     stla = coords.latitude
     stlo = coords.longitude
     hypo = spec.stats.event.hypocenter
+    magnitude = spec.stats.event.magnitude
     evla = hypo.latitude.value_in_deg
     evlo = hypo.longitude.value_in_deg
     geod = gps2dist_azimuth(evla, evlo, stla, stlo)
@@ -214,6 +215,11 @@ def _spec_inversion(config, spec, spec_weight):
         # we calculate the initial value for Mw as an average
         Mw_0 = np.nanmean(ydata[idx0: idx1])
         t_star_0 = config.t_star_0
+
+    if config.Mw_0_from_event_file and magnitude.value is not None:
+        logger.info(
+            f'{statId}: setting Mw_0 from event file: {magnitude.value:.4f}')
+        Mw_0 = magnitude.value
 
     initial_values = InitialValues(Mw_0, fc_0, t_star_0)
     logger.info(f'{statId}: initial values: {initial_values}')

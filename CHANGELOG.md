@@ -38,6 +38,11 @@ previous versions. You will need to upgrade your old database manually or using
   have larger weight in the inversion. If traces contain noise, weights will
   be set to zero where SNR < 3 (see [#37])
 
+### Inversion
+
+- Possibility of using the magnitude (or scalar moment) provided in the event
+  file as initial Mw value for the inversion
+
 ### Post-Inversion
 
 - For parameters with no station-level uncertainty defined (currently,
@@ -54,6 +59,8 @@ previous versions. You will need to upgrade your old database manually or using
 - New option `inv_frequency` for the config parameter `weighting` (see [#37])
 - New parameters, `qml_event_description` and `qml_event_description_regex`,
   to obtain the event name from the QuakeML event "description" tag
+- New option `Mw_0_from_event_file` to use the magnitude (or scalar moment)
+  provided in the event file as initial Mw value for the inversion
 
 ### Bugfixes
 
