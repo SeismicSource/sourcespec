@@ -266,7 +266,7 @@ where :math:`M_0` is the seismic moment (in :math:`N \cdot m`) and
 Radiated energy
 ---------------
 The radiated energy :math:`E_r` is computed from the integral of the squared
-velocity spectrum :math:`\dot{S}(f) = 2 \pi f S(f)`.
+velocity amplitude spectrum: :math:`\dot{S}^2(f) = [ 2 \pi f S(f) ]^2`.
 
 Following :cite:t:`Boatwright2002` (equation 1) and :cite:t:`Lancieri2012`
 (equation 3), the radiated energy is computed as:
@@ -274,7 +274,7 @@ Following :cite:t:`Boatwright2002` (equation 1) and :cite:t:`Lancieri2012`
 .. math::
 
    E_r = 8 \pi \mathcal{G}^2(r) C^2 \rho_h c_h
-            \int_{0}^{f_{max}} e^{2 \pi f t^*} |\dot{S}(f)|^2 df
+            \int_{0}^{f_{max}} e^{2 \pi f t^*} \dot{S}^2(f) df
 
 where :math:`\mathcal{G}^2(r)` is the squared geometrical spreading coefficient
 (see above), :math:`C` is a constant discussed below, :math:`\rho_h` and
