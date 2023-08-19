@@ -393,17 +393,6 @@ def read_traces(config):
     else:
         # add evname from ssp_event, if any, to config file
         config.options.evname = ssp_event.name
-    if config.Mw_0_from_event_file and ssp_event.magnitude.value is not None:
-        msg = (
-            f'The event file provides a magnitude value: '
-            f'{ssp_event.magnitude.type} '
-            f'{ssp_event.magnitude.value:.4f}')
-        if ssp_event.magnitude.computed:
-            msg += ' (computed from scalar moment)'
-        logger.info(msg)
-        logger.info(
-            'This value will be used as initial value for Mw in the '
-            'inversion.')
     # add event to config file
     config.event = ssp_event
 

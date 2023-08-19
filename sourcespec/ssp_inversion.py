@@ -217,8 +217,6 @@ def _spec_inversion(config, spec, spec_weight):
         t_star_0 = config.t_star_0
 
     if config.Mw_0_from_event_file and magnitude.value is not None:
-        logger.info(
-            f'{statId}: setting Mw_0 from event file: {magnitude.value:.4f}')
         Mw_0 = magnitude.value
 
     initial_values = InitialValues(Mw_0, fc_0, t_star_0)
@@ -454,6 +452,14 @@ def spectral_inversion(config, spec_st, weight_st):
     sspec_output.event_info.latitude = event.hypocenter.latitude
     sspec_output.event_info.depth_in_km = event.hypocenter.depth.value_in_km
     sspec_output.event_info.origin_time = event.hypocenter.origin_time
+    if config.Mw_0_from_event_file and event.magnitude.value is not None:
+        msg = (
+            f'Setting Mw_0 to the value provided in the event file: '
+            f'{event.magnitude.type} '
+            f'{event.magnitude.value:.4f}')
+        if event.magnitude.computed:
+            msg += ' (computed from scalar moment)'
+        logger.info(msg)
     for spec in sorted(spectra, key=lambda sp: sp.id):
         if spec.stats.channel[-1] != 'H':
             continue
