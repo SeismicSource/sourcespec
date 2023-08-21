@@ -770,18 +770,22 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
     if config.compute_local_magnitude:
         Ml_mean = means['Ml']
         Ml_mean_error = mean_errors['Ml']
+        Ml_wmean = wmeans['Ml']
+        Ml_wmean_error = wmean_errors['Ml']
         Ml_perc = percentiles['Ml']
         Ml_perc_error = percentile_errors['Ml']
         Ml_comment_begin = ''
         Ml_comment_end = ''
     else:
-        Ml_mean = Ml_perc = np.nan
-        Ml_mean_error = Ml_perc_error = (np.nan, np.nan)
+        Ml_mean = Ml_wmean = Ml_perc = np.nan
+        Ml_mean_error = Ml_wmean_error = Ml_perc_error = (np.nan, np.nan)
         Ml_comment_begin = '<!--'
         Ml_comment_end = '-->'
     replacements.update({
         '{ML_MEAN_AND_ERR}': _summary_value_and_err_text(
             Ml_mean, Ml_mean_error, '{:.2f}'),
+        '{ML_WMEAN_AND_ERR}': _summary_value_and_err_text(
+            Ml_wmean, Ml_wmean_error, '{:.2f}'),
         '{ML_PERC_AND_ERR}': _summary_value_and_err_text(
             Ml_perc, Ml_perc_error, '{:.2f}'),
         '{ML_COMMENT_BEGIN}': Ml_comment_begin,
