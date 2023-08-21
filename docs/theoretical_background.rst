@@ -82,7 +82,8 @@ where:
 Geometrical spreading
 ---------------------
 The geometrical spreading coefficient :math:`\mathcal{G}(r)` can be defined in
-one of the following ways:
+one of the following ways (see the ``geom_spred_model`` option in
+:ref:`configuration_file:Configuration File`):
 
 - :math:`\mathcal{G}(r) = r^n`: :math:`n` can be any positive number.
   :math:`n=1` (default value) is the theoretical value for a body wave in a
@@ -90,7 +91,9 @@ one of the following ways:
   :math:`n=0.5` is the theoretical value for a surface wave in a homogeneous
   half-space.
 
-- Following :cite:t:`Boatwright2002`, eq. 8:
+- Following :cite:t:`Boatwright2002` (eq. 8), to account for the mixture of
+  body waves, Lg waves and surface waves at regional distances
+  (:math:`r < 200 km`), a two-part geometrical spreading coefficient:
 
   - body wave spreading (:math:`\mathcal{G}(r) = r`) for hypocentral distances
     below a cutoff distance :math:`r_0`;
