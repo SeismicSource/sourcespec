@@ -376,6 +376,12 @@
                 <td>{ER_MEAN_AND_ERR}</td>
                 <td>{ER_WMEAN_AND_ERR}</td>
                 <td>{ER_PERC_AND_ERR}</td>
+              </tr>
+              <tr>
+                <th class="parameter" scope="row">Apparent Stress (MPa)</th>
+                <td>{SIGMA_A_MEAN_AND_ERR}</td>
+                <td>{SIGMA_A_WMEAN_AND_ERR}</td>
+                <td>{SIGMA_A_PERC_AND_ERR}</td>
               </tr>{ML_COMMENT_BEGIN}
               <tr>
                 <th class="parameter" scope="row">Ml</th>
@@ -442,13 +448,17 @@
                     <br/>Energy<br/>(N&#183;m)
                 </th>
                 <th onclick="sortTable(10, numeric=true)" scope="col">
+                  <nobr><i class="fas fa-sort dontprint_inline"></i>&nbsp;Apparent</nobr>
+                    <br/>Stress<br/>(MPa)
+                </th>
+                <th onclick="sortTable(11, numeric=true)" scope="col">
                   <nobr><i class="fas fa-sort dontprint_inline"></i>&nbsp;Hypocentral</nobr>
                     <br/>Distance<br/>(km)
                 </th>
-                <th onclick="sortTable(11, numeric=true)" scope="col">
+                <th onclick="sortTable(12, numeric=true)" scope="col">
                   <nobr><i class="fas fa-sort dontprint_inline"></i>&nbsp;Azimuth</nobr><br/>(°)
                 </th>{ML_COMMENT_BEGIN}
-                <th onclick="sortTable(12, numeric=true)" scope="col">
+                <th onclick="sortTable(13, numeric=true)" scope="col">
                   <nobr><i class="fas fa-sort"></i>&nbsp;Ml</nobr>
                 </th>{ML_COMMENT_END}
               </tr>

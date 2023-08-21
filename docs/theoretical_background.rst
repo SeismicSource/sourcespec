@@ -228,6 +228,7 @@ and :cite:t:`Lancieri2012`, other quantities are computed for each station:
 -  the Brune static stress drop :math:`\Delta \sigma`
 -  the source radius :math:`a`
 -  the radiated energy :math:`E_r`
+-  the apparent stress :math:`\sigma_a`
 -  the quality factor :math:`Q_0` of P- or S-waves
 
 As a bonus, local magnitude :math:`M_l` can be computed as well.
@@ -332,6 +333,30 @@ the following factor:
 
 where :math:`f_c` is the corner frequency and :math:`f_{max}` is the maximum
 frequency used to compute the energy.
+
+
+Apparent stress
+---------------
+
+The apparent stress :math:`\sigma_a` is computed as (:cite:t:`Madariaga2011`,
+eq. 18):
+
+.. math::
+
+   \sigma_a = \mu_h \frac{E_r^S}{M_0}
+
+where :math:`\mu_h` is the shear modulus (or rigidity, in :math:`Pa`) near the
+hypocenter, :math:`E_r^S` is the radiated energy (in :math:`N \cdot m`)
+measured on S-waves, and :math:`M_0` is the seismic moment
+(in :math:`N \cdot m`).
+
+The value of :math:`\mu_h` is computed from the shear wave velocity
+(:math:`\beta_h`) and the density at the hypocenter, using the following
+expression:
+
+.. math::
+
+   \mu_h = \rho_h \beta_h^2
 
 
 Quality factor

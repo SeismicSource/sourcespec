@@ -162,10 +162,10 @@ def _write_stations_table(cursor, db_file, sspec_output, config):
             int(par.bsd.outlier),
             *par.radius.value_uncertainty(),
             int(par.radius.outlier),
-            par.Er.value,
-            # Er_err_minus and Er_err_plus are not defined
-            np.nan, np.nan,
+            *par.Er.value_uncertainty(),
             int(par.Er.outlier),
+            *par.sigma_a.value_uncertainty(),
+            int(par.sigma_a.outlier),
             par.hypo_dist_in_km,
             par.azimuth
         )
@@ -302,6 +302,13 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
         *wmean_errors['Er'],
         percentiles['Er'],
         *percentile_errors['Er'],
+        # Apparent stress
+        means['sigma_a'],
+        *mean_errors['sigma_a'],
+        wmeans['sigma_a'],
+        *wmean_errors['sigma_a'],
+        percentiles['sigma_a'],
+        *percentile_errors['sigma_a'],
         # Local magnitude
         means.get('Ml', None),
         *mean_errors.get('Ml', (None, None)),

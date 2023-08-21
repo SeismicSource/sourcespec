@@ -56,9 +56,11 @@ def main():
     from sourcespec.ssp_inversion import spectral_inversion
     sspec_output = spectral_inversion(config, spec_st, weight_st)
 
-    # Radiated energy
-    from sourcespec.ssp_radiated_energy import radiated_energy
-    radiated_energy(config, spec_st, specnoise_st, sspec_output)
+    # Radiated energy and apparent stress
+    from sourcespec.ssp_radiated_energy import (
+        radiated_energy_and_apparent_stress)
+    radiated_energy_and_apparent_stress(
+        config, spec_st, specnoise_st, sspec_output)
 
     # Local magnitude
     if config.compute_local_magnitude:

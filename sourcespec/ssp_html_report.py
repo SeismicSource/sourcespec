@@ -766,6 +766,20 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
         '{ER_PERC_AND_ERR}': _summary_value_and_err_text(
             Er_perc, Er_perc_error, '{:.3e}'),
     })
+    sigma_a_mean = means['sigma_a']
+    sigma_a_mean_error = mean_errors['sigma_a']
+    sigma_a_wmean = wmeans['sigma_a']
+    sigma_a_wmean_error = wmean_errors['sigma_a']
+    sigma_a_perc = percentiles['sigma_a']
+    sigma_a_perc_error = percentile_errors['sigma_a']
+    replacements.update({
+        '{SIGMA_A_MEAN_AND_ERR}': _summary_value_and_err_text(
+            sigma_a_mean, sigma_a_mean_error, '{:.3e}'),
+        '{SIGMA_A_WMEAN_AND_ERR}': _summary_value_and_err_text(
+            sigma_a_wmean, sigma_a_wmean_error, '{:.3e}'),
+        '{SIGMA_A_PERC_AND_ERR}': _summary_value_and_err_text(
+            sigma_a_perc, sigma_a_perc_error, '{:.3e}'),
+    })
     # Local magnitude, if computed
     if config.compute_local_magnitude:
         Ml_mean = means['Ml']
@@ -854,6 +868,8 @@ def _add_station_table_to_html(config, sspec_output, templates, replacements):
         ra_text, ra_err_text =\
             _station_value_and_err_text(par, 'radius', '{:.3f}')
         Er_text, _ = _station_value_and_err_text(par, 'Er', '{:.3e}')
+        sigma_a_text, sigma_a_err_text =\
+            _station_value_and_err_text(par, 'sigma_a', '{:.3e}')
         Ml_text, _ = _station_value_and_err_text(par, 'Ml', '{:.3f}')
         hyp_dist_text, _ =\
             _station_value_and_err_text(par, 'hypo_dist_in_km', '{:.3f}')
@@ -875,6 +891,8 @@ def _add_station_table_to_html(config, sspec_output, templates, replacements):
             '{STATION_BSD_ERR}': bsd_err_text,
             '{STATION_RA}': ra_text,
             '{STATION_RA_ERR}': ra_err_text,
+            '{STATION_SIGMA_A}': sigma_a_text,
+            '{STATION_SIGMA_A_ERR}': sigma_a_err_text,
             '{STATION_ER}': Er_text,
             '{STATION_ML}': Ml_text,
             '{STATION_DIST}': hyp_dist_text,

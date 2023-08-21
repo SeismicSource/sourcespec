@@ -47,6 +47,7 @@ def box_plots(config, sspec_output):
         'bsd': PlotParam('Brune Static Stress Drop', 'MPa', '#D4ADD2'),
         'Qo': PlotParam('Quality Factor', None, '#C07131'),
         'Er': PlotParam('Radiated Energy', 'N·m', '#00E3E9'),
+        'sigma_a': PlotParam('Apparent Stress', 'MPa', '#943B99'),
         'Ml': PlotParam('Ml', None, '#FC8384')
     }
     npars = len(plot_params)
@@ -57,7 +58,7 @@ def box_plots(config, sspec_output):
         mpe.Normal()
     ]
 
-    fig, axes = plt.subplots(npars, 1, figsize=(8, 9), dpi=300)
+    fig, axes = plt.subplots(npars, 1, figsize=(8, 10), dpi=300)
     fig.set_tight_layout(True)
     # Create an invisible axis and use it for title and footer
     ax0 = fig.add_subplot(111, label='ax0')

@@ -74,13 +74,35 @@ def _finite_bandwidth_correction(spec, fc, fmax):
     )
 
 
-def radiated_energy(config, spec_st, specnoise_st, sspec_output):
-    """Compute radiated energy, using eq. (3) in Lancieri et al. (2012)."""
-    logger.info('Computing radiated energy...')
+def radiated_energy_and_apparent_stress(
+        config, spec_st, specnoise_st, sspec_output):
+    """
+    Compute radiated energy (in N.m) and apparent stress (in MPa).
+
+    :param config: Config object
+    :param config type: :class:`sourcespec.config.Config`
+    :param spec_st: Stream of spectra
+    :param spec_st type: :class:`obspy.core.stream.Stream`
+    :param specnoise_st: Stream of noise spectra
+    :param specnoise_st type: :class:`obspy.core.stream.Stream`
+    :param sspec_output: Output of spectral inversion
+    :param sspec_output type:
+        :class:`sourcespec.ssp_data_types.SourceSpecOutput`
+    """
+    logger.info('Computing radiated energy and apparent stress...')
     if config.wave_type == 'P':
         logger.warning(
             'Warning: computing radiated energy from P waves might lead to '
             'an underestimation')
+    fmax = config.max_freq_Er
+    rho = config.event.hypocenter.rho
+    if config.wave_type == 'P':
+        vel = config.event.hypocenter.vp * 1e3
+        mu = None
+    elif config.wave_type in ['S', 'SV', 'SH']:
+        vel = config.event.hypocenter.vs * 1e3
+        mu = rho * vel**2
+        logger.info(f'Rigidity (mu) for apparent stress: {mu:.3e} Pa')
     # Select specids with channel code: '??H'
     spec_ids = [spec.id for spec in spec_st if spec.id[-1] == 'H']
     for spec_id in spec_ids:
@@ -89,19 +111,10 @@ def radiated_energy(config, spec_st, specnoise_st, sspec_output):
 
         try:
             station_pars = sspec_output.station_parameters[spec_id]
-            par = station_pars._params
         except KeyError:
             continue
-
-        t_star = par['t_star']
-        fc = par['fc']
-        fmax = config.max_freq_Er
-        rho = config.event.hypocenter.rho
-        if config.wave_type == 'P':
-            vel = config.event.hypocenter.vp * 1e3
-        elif config.wave_type in ['S', 'SV', 'SH']:
-            vel = config.event.hypocenter.vs * 1e3
-
+        t_star = station_pars.t_star.value
+        fc = station_pars.fc.value
         # Make sure that the param_Er object is always defined, even when Er
         # is not computed (i.e., "continue" below)
         try:
@@ -125,7 +138,34 @@ def radiated_energy(config, spec_st, specnoise_st, sspec_output):
 
         R = _finite_bandwidth_correction(spec, fc, fmax)
         Er /= R
-
         # Store into the StationParameter() object
         param_Er.value = Er
-    logger.info('Computing radiated energy: done')
+
+        # Now compute apparent stress sigma_a
+        # (eq. (5) from Lancieri et al. 2012)
+        # Make sure that the param_sigma_a object is always defined,
+        # even when sigmaa_a is not computed (i.e., "continue" below)
+        try:
+            param_sigma_a = station_pars.sigma_a
+        except KeyError:
+            param_sigma_a = SpectralParameter(
+                id='sigma_a', value=np.nan, format='{:.3e}')
+            station_pars.sigma_a = param_sigma_a
+
+        if config.wave_type == 'P':
+            logger.warning(
+                'Warning: computing apparent stress from P waves is not '
+                'implemented')
+            continue
+        Mo = station_pars.Mo.value
+        Mo_min = Mo - station_pars.Mo.lower_uncertainty
+        Mo_max = Mo + station_pars.Mo.upper_uncertainty
+        sigma_a = mu * Er / Mo / 1e6  # in MPa
+        sigma_a_min = mu * Er / Mo_max / 1e6  # in MPa
+        sigma_a_max = mu * Er / Mo_min / 1e6  # in MPa
+        param_sigma_a.value = sigma_a
+        param_sigma_a.lower_uncertainty = sigma_a - sigma_a_min
+        param_sigma_a.upper_uncertainty = sigma_a + sigma_a_max
+        param_sigma_a.confidence_level = station_pars.Mo.confidence_level
+
+    logger.info('Computing radiated energy and apparent stress: done')

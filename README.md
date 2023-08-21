@@ -15,8 +15,8 @@ Copyright (c) 2011-2023 Claudio Satriano <satriano@ipgp.fr>
 
 SourceSpec is a collection of command line tools to compute earthquake source
 parameters (seismic moment, corner frequency, radiated energy, source size,
-stress drop) from the inversion of P-wave and S-wave displacement spectra
-recorded at one or more seismic stations.
+static stress drop, apparent stress) from the inversion of P-wave and S-wave
+displacement spectra recorded at one or more seismic stations.
 SourceSpec also computes attenuation parameters (t-star, quality factor) and,
 as a bonus, local magnitude.
 
@@ -271,6 +271,7 @@ station:
 - the Brune static stress drop $\Delta \sigma$
 - the source radius $a$
 - the radiated energy $E_r$
+- the apparent stress $\sigma_a$
 - the quality factor $Q_0$ of P- or S-waves
 
 As a bonus, local magnitude $M_l$ can be computed as well.

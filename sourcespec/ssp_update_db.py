@@ -66,9 +66,11 @@ def _version_1_to_2(cursor):
     # Stations table:
     # New in version 2:
     #   - primary keys: stid, evid, runid
-    #   - new keys: Mo_is_outlier, Mw_is_outlier, fc_is_outlier,
+    #   - new keys:
+    #     Mo_is_outlier, Mw_is_outlier, fc_is_outlier,
     #     t_star_is_outlier, Qo_is_outlier, bsd_is_outlier, ra_is_outlier,
-    #     Er_is_outlier, Er_err_minus, Er_err_plus
+    #     Er_err_minus, Er_err_plus, Er_is_outlier
+    #     sigma_a, sigma_a_err_minus, sigma_a_err_plus, sigma_a_is_outlier
     sql_create_stations_table = (
         'CREATE TABLE IF NOT EXISTS StationsNew ('
         + '\n'.join(
@@ -79,8 +81,10 @@ def _version_1_to_2(cursor):
     )
     new_station_keys = [
         'Mo_is_outlier', 'Mw_is_outlier', 'fc_is_outlier', 't_star_is_outlier',
-        'Qo_is_outlier', 'bsd_is_outlier', 'ra_is_outlier', 'Er_is_outlier',
-        'Er_err_minus', 'Er_err_plus'
+        'Qo_is_outlier', 'bsd_is_outlier', 'ra_is_outlier',
+        'Er_err_minus', 'Er_err_plus', 'Er_is_outlier',
+        'sigma_a', 'sigma_a_err_minus', 'sigma_a_err_plus',
+        'sigma_a_is_outlier'
     ]
     stations_keys = ', '.join([
         key for key in STATIONS_TABLE.keys() if key not in new_station_keys])
@@ -94,8 +98,12 @@ def _version_1_to_2(cursor):
     # Events table:
     # New in version 2:
     #   - primary keys: evid, runid
-    #   - new keys: Er_wmean, Er_wmean_err_minus, Er_wmean_err_plus,
-    #     Ml_wmean, Ml_wmean_err_minus, Ml_wmean_err_plus
+    #   - new keys:
+    #     Er_wmean, Er_wmean_err_minus, Er_wmean_err_plus,
+    #     Ml_wmean, Ml_wmean_err_minus, Ml_wmean_err_plus,
+    #     sigma_a_mean, sigma_a_mean_err_minus, sigma_a_mean_err_plus,
+    #     sigma_a_wmean, sigma_a_wmean_err_minus, sigma_a_wmean_err_plus,
+    #     sigma_a_pctl, sigma_a_pctl_err_minus, sigma_a_pctl_err_plus
     sql_create_events_table = (
         'CREATE TABLE IF NOT EXISTS EventsNew ('
         + '\n'.join(
@@ -106,7 +114,10 @@ def _version_1_to_2(cursor):
     )
     new_events_keys = [
         'Er_wmean', 'Er_wmean_err_minus', 'Er_wmean_err_plus',
-        'Ml_wmean', 'Ml_wmean_err_minus', 'Ml_wmean_err_plus'
+        'Ml_wmean', 'Ml_wmean_err_minus', 'Ml_wmean_err_plus',
+        'sigma_a_mean', 'sigma_a_mean_err_minus', 'sigma_a_mean_err_plus',
+        'sigma_a_wmean', 'sigma_a_wmean_err_minus', 'sigma_a_wmean_err_plus',
+        'sigma_a_pctl', 'sigma_a_pctl_err_minus', 'sigma_a_pctl_err_plus'
     ]
     events_keys = ', '.join([
         key for key in EVENTS_TABLE.keys() if key not in new_events_keys])

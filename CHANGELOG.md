@@ -26,6 +26,7 @@ previous versions. You will need to upgrade your old database manually or using
   - Store in the `Events` table weighted means for radiated energy and local
     magnitude, even if those means are currently the same as the simple means,
     since those parameters do not have station-level errors defined
+  - New columns for apparent stress in both `Events` and `Stations` tables
 - New command line option (`-u` or `--updatedb`) to update an existing database
   from a previous version
 - Input files are now linked symbolically in the `input_files` subdirectory
@@ -59,6 +60,7 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Post-Inversion
 
+- New source parameter: apparent stress
 - For parameters with no station-level uncertainty defined (currently,
   radiated energy), use simple mean when computing summary weighted averages
   (the previous behavior was to not compute weighted averages for these

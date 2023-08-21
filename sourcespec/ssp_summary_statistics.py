@@ -230,6 +230,14 @@ def compute_summary_statistics(config, sspec_output):
             logarithmic=True
         )
 
+    # Apparent stress (MPa)
+    sspec_output.summary_spectral_parameters.sigma_a =\
+        _param_summary_statistics(
+            config, sspec_output,
+            id='sigma_a', name='apparent stress', units='MPa', format='{:.3e}',
+            logarithmic=True
+        )
+
     # Ml
     if config.compute_local_magnitude:
         sspec_output.summary_spectral_parameters.Ml =\
