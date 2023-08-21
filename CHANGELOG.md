@@ -42,6 +42,10 @@ previous versions. You will need to upgrade your old database manually or using
 
 - Possibility of using the magnitude (or scalar moment) provided in the event
   file as initial Mw value for the inversion
+- Reintroduced the possibility of providing the variability around the initial
+  Mw value
+- By combining the previous options, it is now possible to fix the Mw value
+  during the inversion to the value provided in the event file
 
 ### Post-Inversion
 
@@ -59,8 +63,10 @@ previous versions. You will need to upgrade your old database manually or using
 - New option `inv_frequency` for the config parameter `weighting` (see [#37])
 - New parameters, `qml_event_description` and `qml_event_description_regex`,
   to obtain the event name from the QuakeML event "description" tag
-- New option `Mw_0_from_event_file` to use the magnitude (or scalar moment)
+- New parameter `Mw_0_from_event_file` to use the magnitude (or scalar moment)
   provided in the event file as initial Mw value for the inversion
+- Reintroduced the parameter `Mw_0_variability` to set the variability around
+  the initial Mw value
 
 ### Bugfixes
 

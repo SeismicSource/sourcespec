@@ -215,15 +215,24 @@ def _spec_inversion(config, spec, spec_weight):
         # we calculate the initial value for Mw as an average
         Mw_0 = np.nanmean(ydata[idx0: idx1])
         t_star_0 = config.t_star_0
+    # Mw_0_min and Mw_0_max are used to set the bounds for Mw
+    # (see below)
+    Mw_0_min = np.nanmin(ydata[idx0: idx1])
+    Mw_0_max = np.nanmax(ydata[idx0: idx1])
 
     if config.Mw_0_from_event_file and magnitude.value is not None:
         Mw_0 = magnitude.value
+        # If Mw_0 is provided in the event file, we will set the inversion
+        # bounds around it (see below)
+        Mw_0_min = Mw_0_max = Mw_0
 
     initial_values = InitialValues(Mw_0, fc_0, t_star_0)
     logger.info(f'{statId}: initial values: {initial_values}')
     bounds = Bounds(config, spec, initial_values)
-    bounds.Mw_min = np.nanmin(ydata[idx0: idx1]) * 0.9
-    bounds.Mw_max = np.nanmax(ydata[idx0: idx1]) * 1.1
+    Mw_0_variability =\
+        config.Mw_0_variability if config.Mw_0_variability > 0 else 1e-6
+    bounds.Mw_min = Mw_0_min * (1 - Mw_0_variability)
+    bounds.Mw_max = Mw_0_max * (1 + Mw_0_variability)
     if t_star_min is not None:
         bounds.t_star_min = t_star_min
     if t_star_max is not None:

@@ -378,7 +378,10 @@ class SourceSpecOutput(OrderedAttribDict):
         station_ids = np.array(list(self.station_parameters.keys()))
         naninf = np.logical_or(np.isnan(values), np.isinf(values))
         _values = values[~naninf]
-        if n is not None and len(_values) > 0:
+        # check if _values are all the same within 0.01 %
+        if np.ptp(_values) < 0.0001 * np.mean(_values):
+            outliers = naninf
+        elif n is not None and len(_values) > 0:
             Q1, _, Q3 = np.percentile(_values, [25, 50, 75])
             IQR = Q3 - Q1
             outliers = np.logical_or(

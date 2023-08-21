@@ -272,6 +272,14 @@ class GridSampling():
             xlabel = self.params_name[dim]
             if self.params_unit[dim]:
                 xlabel += f' ({self.params_unit[dim]})'
+            # add some margin if values are too close
+            tolerance = 1e-3
+            if np.isclose(v.min(), v.max(), rtol=tolerance):
+                vmean = np.mean(v)
+                vmin = vmean - tolerance * np.abs(vmean)
+                vmax = vmean + tolerance * np.abs(vmean)
+                ax[dim].set_xlim(vmin, vmax)
+                ax[dim].set_ylim(0, 1)
             ax[dim].set_xlabel(xlabel)
             ax[dim].set_ylabel('misfit')
         ax[0].set_title(label)
@@ -330,8 +338,19 @@ class GridSampling():
             mm, vmax=2 * mm.min(), origin='lower', cmap='viridis',
             extent=extent, aspect='auto'
         )
-        ax.set_xlim(extent[0], extent[1])
-        ax.set_ylim(extent[2], extent[3])
+        xmin, xmax, ymin, ymax = extent
+        # add some margin if values are too close
+        tolerance = 1e-3
+        if np.isclose(xmin, xmax, rtol=tolerance):
+            xmean = np.mean((xmin, xmax))
+            xmin = xmean - tolerance * np.abs(xmean)
+            xmax = xmean + tolerance * np.abs(xmean)
+        if np.isclose(ymin, ymax, rtol=tolerance):
+            ymean = np.mean((ymin, ymax))
+            ymin = ymean - tolerance * np.abs(ymean)
+            ymax = ymean + tolerance * np.abs(ymean)
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
         if self.kdt is not None:
             self._plot_kdtree_structure(ax, plot_par_idx, params_opt_all)
         ax.scatter(*params_opt, facecolors='none', edgecolors='w')
