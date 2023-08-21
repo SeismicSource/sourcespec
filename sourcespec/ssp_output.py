@@ -262,11 +262,11 @@ def _write_parfile(config, sspec_output):
         bsd_mean = means['bsd']
         bsd_error = errors['bsd']
         s = _value_error_str(bsd_mean, bsd_error, '{:.3e}')
-        parfile.write(f'Brune stress drop: {s} MPa\n')
+        parfile.write(f'Brune static stress drop: {s} MPa\n')
         bsd_mean_weight = means_weight['bsd']
         bsd_error_weight = errors_weight['bsd']
         s = _value_error_str(bsd_mean_weight, bsd_error_weight, '{:.3e}')
-        parfile.write(f'Brune stress drop (weighted): {s} MPa\n')
+        parfile.write(f'Brune static stress drop (weighted): {s} MPa\n')
 
         Ml_mean = means.get('Ml', None)
         Ml_error = errors.get('Ml', None)

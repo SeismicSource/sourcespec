@@ -315,7 +315,7 @@ def _spec_inversion(config, spec, spec_weight):
     # source radius in meters
     station_pars.radius = SpectralParameter(
         id='radius', value=source_radius(fc, vs * 1e3), format='{:.3f}')
-    # Brune stress drop in MPa
+    # Brune static stress drop in MPa
     station_pars.bsd = SpectralParameter(
         id='bsd', value=bsd(station_pars.Mo.value, station_pars.radius.value),
         format='{:.3e}')
@@ -353,7 +353,7 @@ def _spec_inversion(config, spec, spec_weight):
     station_pars.radius.upper_uncertainty =\
         radius_max - station_pars.radius.value
     station_pars.radius.confidence_level = 68.2
-    # Brune stress drop in MPa
+    # Brune static stress drop in MPa
     bsd_min = bsd(Mo_min, radius_max)
     bsd_max = bsd(Mo_max, radius_min)
     station_pars.bsd.lower_uncertainty = station_pars.bsd.value - bsd_min

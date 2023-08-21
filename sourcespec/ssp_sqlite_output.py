@@ -288,7 +288,7 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
         *wmean_errors['radius'],
         percentiles['radius'],
         *percentile_errors['radius'],
-        # Brune stress drop
+        # Brune static stress drop
         means['bsd'],
         *mean_errors['bsd'],
         wmeans['bsd'],

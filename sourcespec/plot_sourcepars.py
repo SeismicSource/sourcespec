@@ -127,10 +127,10 @@ def parse_args():
         help='Maximum magnitude')
     parser.add_argument(
         '-b', '--bsdmin', type=float, default=None,
-        help='Minimum Brune stress drop')
+        help='Minimum Brune static stress drop')
     parser.add_argument(
         '-B', '--bsdmax', type=float, default=None,
-        help='Maximum Brune stress drop')
+        help='Maximum Brune static stress drop')
     parser.add_argument(
         '-H', '--hist', default=False, action='store_true',
         help='Draw an histogram instead of a scatter plot (only for 2D plots)')
@@ -575,7 +575,8 @@ class Params(object):
 
     def plot_bsd_mw(self, hist=False, fit=False, slope=False, nbins=None):
         """
-        Plot the logarithm of the Brune stress drop vs the moment magnitude.
+        Plot the logarithm of the Brune static stress drop vs the moment
+        magnitude.
 
         Parameters
         ----------
@@ -610,7 +611,7 @@ class Params(object):
     def plot_hist(self, param_name, nbins=None):
         parameters = {
             'fc': ('Corner Frequency', 'Hz', 'log'),
-            'bsd': ('Brune Stress Drop', 'MPa', 'log'),
+            'bsd': ('Brune Static Stress Drop', 'MPa', 'log'),
             'ra': ('Source Radius', 'm', 'lin'),
             'Mo': ('Seismic Moment', 'N·m', 'log'),
             't_star': ('T star', 's', 'lin'),
