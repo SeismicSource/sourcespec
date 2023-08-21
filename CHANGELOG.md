@@ -17,9 +17,15 @@ previous versions. You will need to upgrade your old database manually or using
 - Introducing a new file format for providing event information
   (hypocentral location, magnitude, focal mechanism, moment tensor):
   the [SourceSpec Event File].
-- Store in the SQLite database the information on whether each parameter is
-  an outlier (see [#38]). Warning: breaks compatibility with previous database
-  versions
+- Changes in the SQLite database (warning: these changes break compatibility
+  with previous database versions):
+  - Store the `Stations` table information on whether each parameter is an
+    outlier (see [#38])
+  - Make place in the `Stations` table for station-level errors on radiated
+    energy (even if they are currently not computed)
+  - Store in the `Events` table weighted means for radiated energy and local
+    magnitude, even if those means are currently the same as the simple means,
+    since those parameters do not have station-level errors defined
 - New command line option (`-u` or `--updatedb`) to update an existing database
   from a previous version
 - Input files are now linked symbolically in the `input_files` subdirectory

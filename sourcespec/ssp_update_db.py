@@ -63,14 +63,12 @@ def _version_1_to_2(cursor):
     :param cursor: SQLite cursor
     :type cursor: sqlite3.Cursor
     """
+    # Stations table:
     # New in version 2:
-    # Stations:
     #   - primary keys: stid, evid, runid
     #   - new keys: Mo_is_outlier, Mw_is_outlier, fc_is_outlier,
     #     t_star_is_outlier, Qo_is_outlier, bsd_is_outlier, ra_is_outlier,
-    #     Er_is_outlier
-    # Events:
-    #   - primary keys: evid, runid
+    #     Er_is_outlier, Er_err_minus, Er_err_plus
     sql_create_stations_table = (
         'CREATE TABLE IF NOT EXISTS StationsNew ('
         + '\n'.join(
@@ -79,18 +77,25 @@ def _version_1_to_2(cursor):
         + 'PRIMARY KEY (' + ', '.join(STATIONS_PRIMARY_KEYS) + ')'
         + ');'
     )
-    new_keys = [
+    new_station_keys = [
         'Mo_is_outlier', 'Mw_is_outlier', 'fc_is_outlier', 't_star_is_outlier',
-        'Qo_is_outlier', 'bsd_is_outlier', 'ra_is_outlier', 'Er_is_outlier'
+        'Qo_is_outlier', 'bsd_is_outlier', 'ra_is_outlier', 'Er_is_outlier',
+        'Er_err_minus', 'Er_err_plus'
     ]
     stations_keys = ', '.join([
-        key for key in STATIONS_TABLE.keys() if key not in new_keys])
+        key for key in STATIONS_TABLE.keys() if key not in new_station_keys])
     sql_insert_stations = (
         f'INSERT INTO StationsNew ({stations_keys}) '
         f'SELECT {stations_keys} FROM Stations;'
     )
     sql_drop_stations = 'DROP TABLE Stations;'
     sql_rename_stations = 'ALTER TABLE StationsNew RENAME TO Stations;'
+
+    # Events table:
+    # New in version 2:
+    #   - primary keys: evid, runid
+    #   - new keys: Er_wmean, Er_wmean_err_minus, Er_wmean_err_plus,
+    #     Ml_wmean, Ml_wmean_err_minus, Ml_wmean_err_plus
     sql_create_events_table = (
         'CREATE TABLE IF NOT EXISTS EventsNew ('
         + '\n'.join(
@@ -99,7 +104,12 @@ def _version_1_to_2(cursor):
         + 'PRIMARY KEY (' + ', '.join(EVENTS_PRIMARY_KEYS) + ')'
         + ');'
     )
-    events_keys = ', '.join(EVENTS_TABLE.keys())
+    new_events_keys = [
+        'Er_wmean', 'Er_wmean_err_minus', 'Er_wmean_err_plus',
+        'Ml_wmean', 'Ml_wmean_err_minus', 'Ml_wmean_err_plus'
+    ]
+    events_keys = ', '.join([
+        key for key in EVENTS_TABLE.keys() if key not in new_events_keys])
     sql_insert_events = (
         f'INSERT INTO EventsNew ({events_keys}) '
         f'SELECT {events_keys} FROM Events;'

@@ -12,6 +12,7 @@ SQLite output for source_spec.
 import os.path
 import logging
 import sqlite3
+import numpy as np
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_db_definitions import (
     DB_VERSION,
@@ -94,7 +95,10 @@ def _log_db_write_error(db_err, db_file):
     """
     logger.error(f'Unable to insert values: {db_err}')
     logger.info('Maybe your sqlite database has an old format.')
-    logger.info('Try to remove or rename your database file.')
+    logger.info(
+        'Use "source_spec --updatedb" to update your database. '
+        'The current database will be backed up.'
+    )
     logger.info(f'(Current database file: {db_file})')
     ssp_exit(1)
 
@@ -159,6 +163,8 @@ def _write_stations_table(cursor, db_file, sspec_output, config):
             *par.radius.value_uncertainty(),
             int(par.radius.outlier),
             par.Er.value,
+            # Er_err_minus and Er_err_plus are not defined
+            np.nan, np.nan,
             int(par.Er.outlier),
             par.hypo_dist_in_km,
             par.azimuth
@@ -292,11 +298,15 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
         # Radiated energy
         means['Er'],
         *mean_errors['Er'],
+        wmeans['Er'],
+        *wmean_errors['Er'],
         percentiles['Er'],
         *percentile_errors['Er'],
         # Local magnitude
         means.get('Ml', None),
         *mean_errors.get('Ml', (None, None)),
+        wmeans.get('Ml', None),
+        *wmean_errors.get('Ml', (None, None)),
         percentiles.get('Ml', None),
         *percentile_errors.get('Ml', (None, None)),
         # Run info
