@@ -323,6 +323,7 @@ def _update_config_file(config_file, configspec):
         'PLOT_SAVE_FORMAT': 'plot_save_format',
         'vp': 'vp_source',
         'vs': 'vs_source',
+        'rho': 'rho_source',
         'pre_p_time': 'noise_pre_time',
         'pre_s_time': 'signal_pre_time',
         'rps_from_focal_mechanism': 'rp_from_focal_mechanism',
@@ -406,6 +407,10 @@ def _check_deprecated_config_options(config_obj):
         deprecation_msgs.append(
             '> "vs" config parameter has been renamed to "vs_source".\n'
         )
+    if 'rho' in config_obj:
+        deprecation_msgs.append(
+            '> "rho" config parameter has been renamed to "rho_source".\n'
+        )
     if 'pre_p_time' in config_obj:
         deprecation_msgs.append(
             '> "pre_p_time" config parameter has been renamed to '
@@ -469,7 +474,6 @@ def _check_mandatory_config_params(config_obj):
         'rmsmin',
         'sn_min',
         'spectral_sn_min',
-        'rho',
         'rpp',
         'rps',
         'geom_spread_n_exponent',

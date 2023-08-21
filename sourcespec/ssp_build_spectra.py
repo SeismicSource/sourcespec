@@ -23,7 +23,8 @@ from scipy.interpolate import interp1d
 from obspy.core import Stream
 from sourcespec import spectrum
 from sourcespec.ssp_setup import ssp_exit
-from sourcespec.ssp_util import smooth, cosine_taper, moment_to_mag, get_vel
+from sourcespec.ssp_util import (
+    smooth, cosine_taper, moment_to_mag, get_property, property_string)
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
 from sourcespec.ssp_radiation_pattern import get_radiation_pattern_coefficient
@@ -292,7 +293,7 @@ def _geometrical_spreading_coefficient(config, spec):
 
 
 # store log messages to avoid duplicates
-velocity_log_messages = []
+property_log_messages = []
 
 
 def _displacement_to_moment(stats, config):
@@ -302,27 +303,36 @@ def _displacement_to_moment(stats, config):
     From Aki&Richards,1980
     """
     phase = config.wave_type[0]
-    if phase == 'P':
-        v_hypo = config.event.hypocenter.vp
-    elif phase == 'S':
-        v_hypo = config.event.hypocenter.vs
-    v_station = get_vel(
-        stats.coords.longitude, stats.coords.latitude, -stats.coords.elevation,
-        phase, config)
+    lon = stats.coords.longitude
+    lat = stats.coords.latitude
+    depth = -stats.coords.elevation
+    depth_string = property_string('station depth', depth)
+    v_name = f'v{phase.lower()}'
+    v_source = config.event.hypocenter[v_name]
+    v_source_string = property_string(f'{v_name}_source', v_source)
+    v_station = get_property(lon, lat, depth, v_name, config)
+    v_station_string = property_string(f'{v_name}_station', v_station)
+    rho_source = config.event.hypocenter.rho
+    rho_source_string = property_string('rho_source', rho_source)
+    rho_station = get_property(lon, lat, depth, 'rho', config)
+    rho_station_string = property_string('rho_station', rho_station)
     specid = '.'.join((
         stats.network, stats.station, stats.location, stats.channel))
     msg = (
-        f'{specid}: V{phase.lower()}_hypo: {v_hypo:.2f} km/s, '
-        f'V{phase.lower()}_station: {v_station:.2f} km/s')
-    global velocity_log_messages
-    if msg not in velocity_log_messages:
+        f'{specid}: {depth_string}, '
+        f'{v_source_string}, {v_station_string}, '
+        f'{rho_source_string}, {rho_station_string}'
+    )
+    global property_log_messages
+    if msg not in property_log_messages:
         logger.info(msg)
-        velocity_log_messages.append(msg)
-    v_hypo *= 1000.
+        property_log_messages.append(msg)
+    v_source *= 1000.
     v_station *= 1000.
-    v3 = v_hypo**(5. / 2) * v_station**(1. / 2)
+    v3 = v_source**(5. / 2) * v_station**(1. / 2)
+    rho = rho_source**0.5 * rho_station**0.5
     rp = get_radiation_pattern_coefficient(stats, config)
-    return 4 * math.pi * v3 * config.rho / (2 * rp)
+    return 4 * math.pi * v3 * rho / (2 * rp)
 
 
 def _smooth_spectrum(spec, smooth_width_decades=0.2):

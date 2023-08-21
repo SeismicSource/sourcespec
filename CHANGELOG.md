@@ -40,6 +40,10 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Processing
 
+- Possibility of specifying a different density for the source and for the
+  stations
+- If density is not provided (i.e., it is `None`), use the density from the
+  global velocity model "iasp91"
 - New weighting option based on inverse frequency, so that lower frequencies
   have larger weight in the inversion. If traces contain noise, weights will
   be set to zero where SNR < 3 (see [#37])
@@ -66,6 +70,8 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Config file
 
+- Config parameter `rho` renamed to `rho_source`
+- New config parameter `rho_stations`
 - New option `inv_frequency` for the config parameter `weighting` (see [#37])
 - New parameters, `qml_event_description` and `qml_event_description_regex`,
   to obtain the event name from the QuakeML event "description" tag

@@ -51,31 +51,48 @@ def select_trace(stream, traceid, instrtype):
             if tr.stats.instrtype == instrtype][0]
 
 
-def _get_vel_from_config(wave, where, config):
-    if wave not in ['P', 'S']:
-        msg = f'Invalid wave type: {wave}'
-        raise ValueError(msg)
+def _get_property_from_config(property, where, config):
+    """
+    Get medium property from config.
+
+    :param property: Property to be retrieved
+                     (``'vp'``, ``'vs'`` or ``'rho'``).
+    :type property: str
+    :param where: Location type (``'source'`` or ``'stations'``).
+    :type where: str
+    :param config: Configuration object.
+    :type config: :class:`~sourcespec.config.Config`
+    :return: Property value.
+    :rtype: float
+    """
+    if property not in ['vp', 'vs', 'rho']:
+        raise ValueError(f'Invalid property: {property}')
     if where not in ['source', 'stations']:
-        msg = f'Invalid location type: {wave}'
-        raise ValueError(msg)
-    if wave == 'P':
-        if where == 'source':
-            vel = config.vp_source
-        elif where == 'stations':
-            vel = (
-                config.vp_stations if config.vp_stations is not None
-                else config.vp_source)
-    elif wave == 'S':
-        if where == 'source':
-            vel = config.vs_source
-        elif where == 'stations':
-            vel = (
-                config.vs_stations if config.vs_stations is not None
-                else config.vs_source)
-    return vel
+        raise ValueError(f'Invalid location type: {where}')
+    value = config[f'{property}_{where}']
+    # Use source property if stations property is not defined
+    if where == 'stations' and value is None:
+        value = config[f'{property}_source']
+    return value
 
 
 def _get_vel_from_NLL(lon, lat, depth_in_km, wave, config):
+    """
+    Get velocity from NLL model.
+
+    :param lon: Longitude (degrees).
+    :type lon: float
+    :param lat: Latitude (degrees).
+    :type lat: float
+    :param depth_in_km: Depth (km).
+    :type depth_in_km: float
+    :param wave: Wave type (``'P'`` or ``'S'``).
+    :type wave: str
+    :param config: Configuration object.
+    :type config: :class:`~sourcespec.config.Config`
+    :return: Velocity (km/s).
+    :rtype: float
+    """
     # Lazy-import here, since nllgrid is not an installation requirement
     from nllgrid import NLLGrid
     grdfile = f'*.{wave}.mod.hdr'
@@ -107,34 +124,101 @@ def _get_vel_from_NLL(lon, lat, depth_in_km, wave, config):
     return vel
 
 
-def _get_vel_from_taup(depth_in_km, wave):
+def _get_property_from_taup(depth_in_km, property):
+    """
+    Get medium property (P- or S-wave velocity, density) at a given depth
+    from taup model.
+
+    :param depth_in_km: Depth (km).
+    :type depth_in_km: float
+    :param property: Property to be retrieved
+                     (``'vp'``, ``'vs'`` or ``'rho'``).
+    :type property: str
+    :return: Property value.
+    :rtype: float
+    """
     if depth_in_km < 0:
         depth_in_km = 1e-3
-    return v_model.evaluate_above(depth_in_km, wave)[0]
+    try:
+        prop = {'vp': 'p', 'vs': 's', 'rho': 'r'}[property]
+    except KeyError as e:
+        raise ValueError(f'Invalid property: {property}') from e
+    value = v_model.evaluate_above(depth_in_km, prop)[0]
+    if property == 'rho':
+        value *= 1e3  # convert g/cm**3 to kg/m**3
+    return value
 
 
-def get_vel(lon, lat, depth_in_km, wave, config):
-    """Get velocity at a given point from NLL grid, config or taup model."""
+def get_property(lon, lat, depth_in_km, property, config):
+    """
+    Get medium property (P- or S-wave velocity, density) at a given point
+    from NLL grid, config or taup model.
+
+    :param lon: Longitude (degrees).
+    :type lon: float
+    :param lat: Latitude (degrees).
+    :type lat: float
+    :param depth_in_km: Depth (km).
+    :type depth_in_km: float
+    :param property: Property to be retrieved
+                     (``'vp'``, ``'vs'`` or ``'rho'``).
+    :type property: str
+    :param config: Configuration object.
+    :type config: :class:`~sourcespec.config.Config`
+    :return: Property value.
+    :rtype: float
+    """
+    if property not in ['vp', 'vs', 'rho']:
+        raise ValueError(f'Invalid property: {property}')
     try:
         depth_in_km = float(depth_in_km)
     except Exception as e:
         raise ValueError(f'Invalid depth: {depth_in_km}') from e
     # If depth is large, we assume that we are close to the source
     if depth_in_km >= 2:
-        vel = _get_vel_from_config(wave, 'source', config)
+        value = _get_property_from_config(property, 'source', config)
     else:
-        vel = _get_vel_from_config(wave, 'stations', config)
-    if vel is None and config.NLL_model_dir is None:
-        vel = _get_vel_from_taup(depth_in_km, wave)
-        logger.info(
-            f'Using {wave} velocity from global velocity model (iasp91)')
-    if config.NLL_model_dir is not None:
+        value = _get_property_from_config(property, 'stations', config)
+    if config.NLL_model_dir is not None and property in ['vp', 'vs']:
+        wave = 'P' if property == 'vp' else 'S'
         try:
-            vel = _get_vel_from_NLL(lon, lat, depth_in_km, wave, config)
+            value = _get_vel_from_NLL(lon, lat, depth_in_km, wave, config)
         except Exception as msg:
             logger.warning(msg)
             logger.warning(f'Using {wave} velocity from config')
-    return vel
+    if value is None:
+        value = _get_property_from_taup(depth_in_km, property)
+        logger.info(
+            f'Using {property} from global model (iasp91)')
+    return value
+
+
+def property_string(property, value):
+    """
+    Return a string with the property name and value.
+
+    :param property: Property name. Must contain one of the following:
+                     ``'vp'``, ``'vs'``, ``'rho'``, ``'depth'``
+    :type property: str
+    :param value: Property value.
+    :type value: float
+    :return: Property string.
+    :rtype: str
+    """
+    if 'vp' in property or 'vs' in property:
+        value = round(value, 2)
+        unit = 'km/s'
+    elif 'rho' in property:
+        value = round(value, 1)
+        unit = 'kg/m3'
+    elif 'depth' in property:
+        value = round(value, 1)
+        unit = 'km'
+    else:
+        raise ValueError(f'Invalid property: {property}')
+    if value.is_integer():
+        value = int(value)
+    return f'{property}: {value} {unit}'
 # -----------------------------------------------------------------------------
 
 

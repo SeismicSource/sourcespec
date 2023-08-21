@@ -27,7 +27,7 @@ from obspy.core import Stream
 from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import (
     ssp_exit, instr_codes_vel, instr_codes_acc, traceid_map)
-from sourcespec.ssp_util import get_vel
+from sourcespec.ssp_util import get_property, property_string
 from sourcespec.ssp_read_station_metadata import (
     read_station_metadata, PAZ)
 from sourcespec.ssp_read_event_metadata import (
@@ -250,11 +250,17 @@ def _complete_picks(st):
 
 # FILE PARSING ----------------------------------------------------------------
 def _hypo_vel(hypo, config):
-    hypo.vp = get_vel(
-        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'P', config)
-    hypo.vs = get_vel(
-        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'S', config)
-    logger.info(f'Vp_hypo: {hypo.vp:.2f} km/s, Vs_hypo: {hypo.vs:.2f} km/s')
+    hypo.vp = get_property(
+        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'vp', config)
+    hypo.vs = get_property(
+        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'vs', config)
+    hypo.rho = get_property(
+        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'rho', config)
+    depth_string = property_string('source depth', hypo.depth.value_in_km)
+    vp_string = property_string('vp_source', hypo.vp)
+    vs_string = property_string('vs_source', hypo.vs)
+    rho_string = property_string('rho_source', hypo.rho)
+    logger.info(f'{depth_string}, {vp_string}, {vs_string}, {rho_string}')
 
 
 def _build_filelist(path, filelist, tmpdir):

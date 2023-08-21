@@ -96,7 +96,7 @@ def radiated_energy(config, spec_st, specnoise_st, sspec_output):
         t_star = par['t_star']
         fc = par['fc']
         fmax = config.max_freq_Er
-        rho = config.rho
+        rho = config.event.hypocenter.rho
         if config.wave_type == 'P':
             vel = config.event.hypocenter.vp * 1e3
         elif config.wave_type in ['S', 'SV', 'SH']:
