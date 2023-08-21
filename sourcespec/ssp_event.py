@@ -50,6 +50,10 @@ class SSPCoordinate(object):
         else:
             raise ValueError('coordinate units must be deg')
 
+    # make the class subscriptable
+    def __getitem__(self, key):
+        return getattr(self, key)
+
     def __str__(self):
         try:
             return f'{self.value_in_deg:.4f}°'
@@ -64,6 +68,10 @@ class SSPDepth(object):
     def __init__(self, value=None, units=None):
         self.value = _float(value)
         self.units = units
+
+    # make the class subscriptable
+    def __getitem__(self, key):
+        return getattr(self, key)
 
     def __str__(self):
         try:
@@ -116,6 +124,10 @@ class SSPHypocenter(object):
         self.depth = SSPDepth(**depth)
         self.origin_time = _time(origin_time)
 
+    # make the class subscriptable
+    def __getitem__(self, key):
+        return getattr(self, key)
+
     def __str__(self):
         try:
             return (
@@ -136,6 +148,10 @@ class SSPMagnitude(object):
         self.value = _float(value)
         self.type = type
         self.computed = False
+
+    # make the class subscriptable
+    def __getitem__(self, key):
+        return getattr(self, key)
 
     def __str__(self):
         try:
@@ -172,6 +188,10 @@ class SSPScalarMoment(object):
         self.value = _float(value)
         self.units = units
         self.to_N_m()
+
+    # make the class subscriptable
+    def __getitem__(self, key):
+        return getattr(self, key)
 
     def __str__(self):
         try:
@@ -217,6 +237,10 @@ class SSPFocalMechanism(object):
         self.rake = _float(rake)
         self.units = units
 
+    # make the class subscriptable
+    def __getitem__(self, key):
+        return getattr(self, key)
+
     def __str__(self):
         try:
             return (
@@ -256,6 +280,10 @@ class SSPMomentTensor(object):
         self.m_rp = _float(m_rp)
         self.m_tp = _float(m_tp)
         self.to_N_m()
+
+    # make the class subscriptable
+    def __getitem__(self, key):
+        return getattr(self, key)
 
     def __str__(self):
         try:
@@ -304,6 +332,10 @@ class SSPEvent(object):
         self.moment_tensor = SSPMomentTensor()
         if event_dict is not None:
             self.from_event_dict(event_dict)
+
+    # make the class subscriptable
+    def __getitem__(self, key):
+        return getattr(self, key)
 
     def __str__(self):
         return (
