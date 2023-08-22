@@ -69,6 +69,8 @@ previous versions. You will need to upgrade your old database manually or using
 ### Plotting
 
 - Station maps: exclude outliers when computing colorbar limits
+- Station maps: improved computation of bounding box for regional and
+  teleseismic events
 
 ### Config file
 

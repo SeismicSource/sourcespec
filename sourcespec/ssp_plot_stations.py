@@ -46,13 +46,13 @@ with contextlib.suppress(Exception):
 # add table with values
 
 
-def _round(x, base=5):
+def _round_to_base(x, base):
     """Round to base."""
     if x <= base / 2:
         return 0
     round_x = 0
     while round_x == 0:
-        round_x = int(base * round(float(x) / base))
+        round_x = int(base * np.ceil(float(x) / base))
         base = base / 2.
     return round_x
 
@@ -108,17 +108,24 @@ def _shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shifted'):
     return colors.LinearSegmentedColormap(name, cdict)
 
 
-def _plot_circles(ax, evlo, evla, maxdist, ncircles=5):
-    geodetic_transform = ccrs.PlateCarree()
-    g = Geod(ellps='WGS84')
-    step = _round(maxdist / ncircles)
+def _get_circles_step(maxdist, ncircles):
+    """
+    Return the step for the circles to be plotted.
+    """
+    step = _round_to_base(maxdist / ncircles, base=5)
     if step == 0:
         step = 1
     if maxdist < 1:  # 1 km
-        ncircles = 5
         step = 0.2
+    return step
+
+
+def _plot_circles(ax, evlo, evla, distances):
+    geodetic_transform = ccrs.PlateCarree()
+    g = Geod(ellps='WGS84')
     texts = []
-    for dist in np.arange(step, maxdist + step, step):
+    maxdist = np.max(distances)
+    for dist in distances:
         azimuths = np.arange(0, 360, 1)
         circle = np.array(
             [g.fwd(evlo, evla, az, dist * 1e3)[:2] for az in azimuths]
@@ -275,17 +282,21 @@ def _make_basemap(config, maxdist):
     """Create basemap with tiles, coastlines, hypocenter
     and distance circles."""
     g = Geod(ellps='WGS84')
-    # increase bounding box for large maxdist,
-    # to account for deformation in Mercator projection
-    mult = 1.1 if maxdist < 500 else 1.5
-    maxdiagonal = maxdist * (2 ** 0.5) * mult
     event = config.event
     hypo = event.hypocenter
     evlo = hypo.longitude.value_in_deg
     evla = hypo.latitude.value_in_deg
-    lonmax, latmax, _ = g.fwd(evlo, evla, 45, maxdiagonal * 1000.)
-    lonmin = 2 * evlo - lonmax
-    latmin = 2 * evla - latmax
+    ncircles = 5
+    circles_step = _get_circles_step(maxdist, ncircles)
+    # compute bounding box, adding 0.2 to ncircles to have some padding
+    maxdist = (ncircles + 0.2) * circles_step
+    lonmin = g.fwd(evlo, evla, 270, maxdist * 1e3)[0]
+    lonmax = g.fwd(evlo, evla, 90, maxdist * 1e3)[0]
+    latmin = g.fwd(evlo, evla, 180, maxdist * 1e3)[1]
+    latmax = g.fwd(evlo, evla, 0, maxdist * 1e3)[1]
+    # maxdiagonal is the distance between the two corners of the map
+    # (i.e., the diagonal of the bounding box)
+    maxdiagonal = g.inv(lonmin, latmin, lonmax, latmax)[2] / 1e3
     tile_dir = 'maptiles'
     stamen_terrain = CachedTiler(cimgt.Stamen('terrain-background'), tile_dir)
     # Reduce dpi for vector formats, since the only raster are the maptiles
@@ -306,7 +317,8 @@ def _make_basemap(config, maxdist):
     _add_tiles(config, ax, stamen_terrain)
     _add_coastlines(config, ax)
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
-    circle_texts = _plot_circles(ax, evlo, evla, maxdist, 5)
+    circles_distances = np.arange(1, ncircles + 1) * circles_step
+    circle_texts = _plot_circles(ax, evlo, evla, circles_distances)
     try:
         _plot_epicenter_as_beachball(ax, event)
     except Exception:
