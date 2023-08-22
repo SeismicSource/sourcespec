@@ -262,7 +262,7 @@ class SSPFocalMechanism(object):
             raise TypeError('moment_tensor must be an SSPMomentTensor object')
         _tensor_components = ('m_rr', 'm_tt', 'm_pp', 'm_rt', 'm_rp', 'm_tp')
         _tensor = [getattr(moment_tensor, cmp) for cmp in _tensor_components]
-        _fps1, _fps2 = mopad.MomentTensor(_tensor).get_fps()
+        _fps1, _fps2 = mopad.MomentTensor(_tensor, system='USE').get_fps()
         self.strike, self.dip, self.rake = _fps1
 
 

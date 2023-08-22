@@ -57,7 +57,7 @@
     strike:
     dip:
     rake:
-  # Optional moment tensor
+  # Optional moment tensor, in up-south-east convention (USE)
   moment_tensor:
     # units can be one of the following: N-m, dyne-cm
     units:
