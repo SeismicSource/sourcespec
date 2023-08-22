@@ -115,14 +115,21 @@ def radiated_energy_and_apparent_stress(
             continue
         t_star = station_pars.t_star.value
         fc = station_pars.fc.value
-        # Make sure that the param_Er object is always defined, even when Er
-        # is not computed (i.e., "continue" below)
+        # Make sure that the param_Er and param_sigma_a objects are always
+        # defined, even when Er and/or sigma_a are not computed
+        # (i.e., "continue" below)
         try:
             param_Er = station_pars.Er
         except KeyError:
             param_Er = SpectralParameter(
                 id='Er', value=np.nan, format='{:.3e}')
             station_pars.Er = param_Er
+        try:
+            param_sigma_a = station_pars.sigma_a
+        except KeyError:
+            param_sigma_a = SpectralParameter(
+                id='sigma_a', value=np.nan, format='{:.3e}')
+            station_pars.sigma_a = param_sigma_a
 
         # Compute signal and noise integrals and subtract noise from signal,
         # under the hypothesis that energy is additive and noise is stationary
@@ -143,15 +150,6 @@ def radiated_energy_and_apparent_stress(
 
         # Now compute apparent stress sigma_a
         # (eq. (5) from Lancieri et al. 2012)
-        # Make sure that the param_sigma_a object is always defined,
-        # even when sigmaa_a is not computed (i.e., "continue" below)
-        try:
-            param_sigma_a = station_pars.sigma_a
-        except KeyError:
-            param_sigma_a = SpectralParameter(
-                id='sigma_a', value=np.nan, format='{:.3e}')
-            station_pars.sigma_a = param_sigma_a
-
         if config.wave_type == 'P':
             logger.warning(
                 'Warning: computing apparent stress from P waves is not '
