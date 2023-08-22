@@ -401,9 +401,9 @@ def _get_cmap_and_norm(values, outliers, vname, vmean, verr):
         vmin = -vmax
         vmax += vmean
         vmin += vmean
-        if vmax == vmin:
-            vmax = vmean + 0.5
-            vmin = vmean - 0.5
+        if np.isclose(vmax, vmin):
+            vmax = vmean + 0.1
+            vmin = vmean - 0.1
         cbar_extend = 'neither'
         cmap = cm.Spectral_r
     elif vname == 'fc':
