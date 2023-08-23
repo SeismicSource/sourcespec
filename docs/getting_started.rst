@@ -10,9 +10,10 @@ For the impatient
 .. note::
 
    Note that the default config parameters are suited for a M<5 earthquake
-   recorded within ~100 km. Adjust ``win_length``, ``noise_pre_time``, and the
+   recorded within ~100 km. Adjust ``win_length``, ``noise_pre_time``, the
    frequency bands (``bp_freqmin_*``, ``bp_freqmax_*``, ``freq1_*``,
-   ``freq2_*``) according to your setup.
+   ``freq2_*``) and the bounds on ``fc`` and ``t_star``, according to your
+   problem.
 
 Use case: miniSEED + StationXML + QuakeML
 ------------------------------------------
