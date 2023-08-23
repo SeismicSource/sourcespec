@@ -48,6 +48,9 @@ previous versions. You will need to upgrade your old database manually or using
 - New weighting option based on inverse frequency, so that lower frequencies
   have larger weight in the inversion. If traces contain noise, weights will
   be set to zero where SNR < 3 (see [#37])
+- For weights computed from spectral S/N ratio (noise weighting), set to zero
+  all the weights below 20% of the maximum weight, so that these weakly
+  constrained parts of the spectrum are ignored in the inversion
 
 ### Inversion
 
