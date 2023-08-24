@@ -167,3 +167,4 @@ def radiated_energy_and_apparent_stress(
         param_sigma_a.confidence_level = station_pars.Mo.confidence_level
 
     logger.info('Computing radiated energy and apparent stress: done')
+    logger.info('---------------------------------------------------')

@@ -368,6 +368,7 @@ def read_traces(config):
     logger.info('Reading traces...')
     st = _read_trace_files(config, inventory, ssp_event, picks)
     logger.info('Reading traces: done')
+    logger.info('---------------------------------------------------')
     if len(st) == 0:
         logger.info('No trace loaded')
         ssp_exit()

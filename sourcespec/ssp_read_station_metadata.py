@@ -208,4 +208,5 @@ def read_station_metadata(path):
                 logger.warning(msg2)
                 continue
     logger.info('Reading station metadata: done')
+    logger.info('---------------------------------------------------')
     return inventory

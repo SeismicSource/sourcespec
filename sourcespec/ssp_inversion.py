@@ -484,4 +484,5 @@ def spectral_inversion(config, spec_st, weight_st):
         sspec_output.station_parameters[station_pars._id] = station_pars
 
     logger.info('Inverting spectra: done')
+    logger.info('---------------------------------------------------')
     return sspec_output

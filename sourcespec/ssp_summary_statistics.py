@@ -159,6 +159,7 @@ def _param_summary_statistics(
 
 def compute_summary_statistics(config, sspec_output):
     """Compute summary statistics from station spectral parameters."""
+    logger.info('Computing summary statistics...')
     if len(sspec_output.station_parameters) == 0:
         logger.info('No source parameter calculated')
         ssp_exit()
@@ -257,3 +258,5 @@ def compute_summary_statistics(config, sspec_output):
     percentiles = sspec_output.percentiles_values()
     sourcepar_percentiles = {par: percentiles[par] for par in params_name}
     logger.info(f'params_percentiles: {sourcepar_percentiles}')
+    logger.info('Computing summary statistics: done')
+    logger.info('---------------------------------------------------')

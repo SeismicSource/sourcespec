@@ -714,7 +714,10 @@ def build_spectra(config, st):
     accelerometers and velocimeters, uncorrected for anelastic attenuation,
     corrected for instrumental constants, normalized by geometrical spreading.
     """
-    logger.info('Building spectra...')
+    wave_type = config.wave_type
+    logger.info(f'Building {wave_type}-wave spectra...')
+    if wave_type[0] == 'P':
+        logger.info('Ignoring horizontal components for P-wave spectra')
     signal_st, noise_st = _build_signal_and_noise_streams(config, st)
     _trim_components(config, signal_st, noise_st, st)
     for trace in signal_st + noise_st:
@@ -722,5 +725,6 @@ def build_spectra(config, st):
     spec_st, specnoise_st = _build_signal_and_noise_spectral_streams(
         config, signal_st, noise_st, st)
     weight_st = _build_weight_spectral_stream(config, spec_st, specnoise_st)
-    logger.info('Building spectra: done')
+    logger.info(f'Building {wave_type}-wave spectra: done')
+    logger.info('---------------------------------------------------')
     return spec_st, specnoise_st, weight_st

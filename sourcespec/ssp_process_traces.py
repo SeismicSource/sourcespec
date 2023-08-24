@@ -438,4 +438,5 @@ def process_traces(config, st):
             st_sel.rotate('NE->RT')
 
     logger.info('Processing traces: done')
+    logger.info('---------------------------------------------------')
     return out_st
