@@ -13,6 +13,14 @@ station recordings of a single event.
 For each station, the code computes P- or S-wave displacement amplitude spectra
 for each component (e.g., Z, N, E), within a predefined time window.
 
+.. math::
+
+   S(f) = \left| \int_{t0}^{t1} s(t) e^{-i 2 \pi f t} dt \right|
+
+Note that the Fourier amplitude spectrum of ground displacement :math:`S(f)`
+has the dimensions of displacement (:math:`s(t)`) multiplied by
+time (:math:`dt`).
+
 The same thing is done for a noise time window: noise spectrum is used to
 compute spectral signal-to-noise ratio (and possibly reject low SNR spectra)
 and, optionally, to weight the spectral inversion.

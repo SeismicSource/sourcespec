@@ -28,15 +28,21 @@ def _spectral_integral(spec, t_star, fmax):
     # instead of angular frequency (2pi factor).
     deltaf = spec.stats.delta
     freq = spec.get_freq()
-    # Data is in moment units. Let's put it back to displacement units,
-    # and derive it to velocity through multiplication by 2*pi*freq:
-    # (2. is the free-surface amplification factor)
-    data = (spec.data / spec.coeff) * (2 * np.pi * freq)
+    # Data is in moment units. By dividing by coeff, we get the units of the
+    # Fourier transform of the ground displacement (m * s) multiplied by the
+    # units of the geometrical spreading correction (m).
+    # The result is threfore in units of m^2*s
+    data = spec.data / spec.coeff
+    # Then a derivative with respect to time is performed (to go from
+    # displacement to velocity) through multiplication by 2*pi*freq.
+    # The result is in units of m^2.
+    data *= (2 * np.pi * freq)
     # Correct data for attenuation:
     data *= np.exp(np.pi * t_star * freq)
     # Compute the energy integral, up to fmax:
     if fmax is not None:
         data[freq > fmax] = 0.
+    # Returned value has units of (m^2)^2 * Hz = m^4/s
     return np.sum((data**2) * deltaf)
 
 
@@ -56,6 +62,7 @@ def _radiated_energy_coefficient(rho, vel):
     # averaging between measurements at different stations, instead of
     # precise measurements at a single station.
     # S is the free-surface amplification factor, which we put = 2
+    # This coefficient has units of kg/m^3 * m/s = kg/(m^2 * s)
     return 8 * np.pi * (1. / 2.)**2 * rho * vel
 
 
@@ -136,6 +143,9 @@ def radiated_energy_and_apparent_stress(
         signal_integral = _spectral_integral(spec, t_star, fmax)
         noise_integral = _spectral_integral(specnoise, t_star, fmax)
         coeff = _radiated_energy_coefficient(rho, vel)
+        # Coefficient has units of kg/(m^2 * s)
+        # Signal and noise integrals have units of m^4 / s
+        # Er has therefore units of kg * m^2 / s^2 = kg * m/s^2 * m = N * m
         Er = coeff * (signal_integral - noise_integral)
         if Er < 0:
             logger.warning(

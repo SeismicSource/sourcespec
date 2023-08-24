@@ -26,6 +26,7 @@ def do_fft(signal, delta):
     if not npts % 2:
         npts -= 1
 
+    # note that fft has the dimensions of the signal multiplied by time (delta)
     fft = np.fft.rfft(signal, n=npts) * delta
     fftfreq = np.fft.fftfreq(len(signal), d=delta)
     fftfreq = fftfreq[:fft.size]
