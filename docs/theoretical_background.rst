@@ -128,8 +128,9 @@ since we correct the spectral amplitude and not the energy.
 Building spectra
 ================
 
-In ``source_spec``, the observed spectrum of component :math:`x`,
-:math:`S_x(f)` is converted into moment magnitude units :math:`M_w`.
+In ``source_spec``, the observed spectrum of component :math:`x` (vertical or
+horizontal), :math:`S_x(f)` is converted into moment magnitude units
+:math:`M_w`.
 
 The first step is to multiply the spectrum for the geometrical spreading
 coefficient and convert it to seismic moment units:
@@ -248,9 +249,9 @@ in :cite:t:`Madariaga2011`):
 
 .. math::
 
-   a = 0.3724 \frac{v_s}{f_c}
+   a = 0.3724 \frac{\beta_h}{f_c}
 
-where :math:`v_s` is the S-wave velocity at the hypocenter (in :math:`m / s`)
+where :math:`\beta_h` is the S-wave velocity at the hypocenter (in :math:`m/s`)
 and :math:`f_c` is the corner frequency (in :math:`Hz`) estimated from the
 spectral inversion.
 
@@ -343,16 +344,16 @@ eq. 18):
 
 .. math::
 
-   \sigma_a = \mu_h \frac{E_r^S}{M_0}
+   \sigma_a = \mu_h \frac{E_r^s}{M_0}
 
 where :math:`\mu_h` is the shear modulus (or rigidity, in :math:`Pa`) near the
-hypocenter, :math:`E_r^S` is the radiated energy (in :math:`N \cdot m`)
+hypocenter, :math:`E_r^s` is the radiated energy (in :math:`N \cdot m`)
 measured on S-waves, and :math:`M_0` is the seismic moment
 (in :math:`N \cdot m`).
 
 The value of :math:`\mu_h` is computed from the shear wave velocity
-(:math:`\beta_h`) and the density at the hypocenter, using the following
-expression:
+(:math:`\beta_h`) and the density (:math:`\rho_h`) at the hypocenter,
+using the following expression:
 
 .. math::
 
@@ -362,13 +363,13 @@ expression:
 Quality factor
 --------------
 The retrieved attenuation parameter :math:`t^*` is converted to the P- or
-S-wave quality factor :math:`Q_0^{[P|S]}` using the following expression:
+S-wave quality factor :math:`Q_0^{[p|s]}` using the following expression:
 
 .. math::
 
-   Q_0^{[P|S]} = \frac{tt_{[P|S]}(r)}{t^*}
+   Q_0^{[p|s]} = \frac{tt_{[p|s]}(r)}{t^*}
 
-where :math:`tt_{[P|S]}(r)` is the P- or S-wave travel time from source to
+where :math:`tt_{[p|s]}(r)` is the P- or S-wave travel time from source to
 station and :math:`r` is the hypocentral distance.
 
 
