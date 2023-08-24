@@ -103,14 +103,11 @@ def radiated_energy_and_apparent_stress(
             'an underestimation')
     fmax = config.max_freq_Er
     rho = config.event.hypocenter.rho
-    vp = config.event.hypocenter.vp * 1e3
-    vs = config.event.hypocenter.vs * 1e3
-    mu = rho * vs**2
-    logger.info(f'Rigidity (mu) for apparent stress: {mu:.3e} Pa')
-    if config.wave_type == 'P':
-        vel = vp
-    elif config.wave_type in ['S', 'SV', 'SH']:
-        vel = vs
+    vs_hypo = config.event.hypocenter.vs * 1e3
+    mu = rho * vs_hypo**2
+    logger.info(
+        'Rigidity value close to the source (mu_h) for apparent stress: '
+        f'{mu:.3e} Pa')
     # Select specids with channel code: '??H'
     spec_ids = [spec.id for spec in spec_st if spec.id[-1] == 'H']
     for spec_id in spec_ids:
@@ -143,6 +140,8 @@ def radiated_energy_and_apparent_stress(
         # under the hypothesis that energy is additive and noise is stationary
         signal_integral = _spectral_integral(spec, t_star, fmax)
         noise_integral = _spectral_integral(specnoise, t_star, fmax)
+        rho = spec.stats.rho_station
+        vel = spec.stats.v_station * 1e3
         coeff = _radiated_energy_coefficient(rho, vel)
         # Coefficient has units of kg/(m^2 * s)
         # Signal and noise integrals have units of m^4 / s

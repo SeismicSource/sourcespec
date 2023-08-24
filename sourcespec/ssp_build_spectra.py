@@ -311,10 +311,13 @@ def _displacement_to_moment(stats, config):
     v_source = config.event.hypocenter[v_name]
     v_source_string = property_string(f'{v_name}_source', v_source)
     v_station = get_property(lon, lat, depth, v_name, config)
+    stats.v_station = v_station
+    stats.v_station_type = phase
     v_station_string = property_string(f'{v_name}_station', v_station)
     rho_source = config.event.hypocenter.rho
     rho_source_string = property_string('rho_source', rho_source)
     rho_station = get_property(lon, lat, depth, 'rho', config)
+    stats.rho_station = rho_station
     rho_station_string = property_string('rho_station', rho_station)
     specid = '.'.join((
         stats.network, stats.station, stats.location, stats.channel))
@@ -372,14 +375,13 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
 
 def _build_spectrum(config, trace):
     spec = spectrum.do_spectrum(trace)
-    stats = trace.stats
-    spec.stats.instrtype = stats.instrtype
-    spec.stats.coords = stats.coords
-    spec.stats.event = stats.event
-    spec.stats.hypo_dist = stats.hypo_dist
-    spec.stats.epi_dist = stats.epi_dist
-    spec.stats.ignore = stats.ignore
-    spec.stats.travel_times = stats.travel_times
+    spec.stats.instrtype = trace.stats.instrtype
+    spec.stats.coords = trace.stats.coords
+    spec.stats.event = trace.stats.event
+    spec.stats.hypo_dist = trace.stats.hypo_dist
+    spec.stats.epi_dist = trace.stats.epi_dist
+    spec.stats.ignore = trace.stats.ignore
+    spec.stats.travel_times = trace.stats.travel_times
     # Integrate in frequency domain, if no time-domain
     # integration has been performed
     if not config.time_domain_int:
@@ -390,7 +392,7 @@ def _build_spectrum(config, trace):
     geom_spread = _geometrical_spreading_coefficient(config, spec)
     spec.data *= geom_spread
     # convert to seismic moment
-    coeff = _displacement_to_moment(stats, config)
+    coeff = _displacement_to_moment(spec.stats, config)
     spec.data *= coeff
     # store coeff to correct back data in displacement units
     # for radiated_energy()

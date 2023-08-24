@@ -286,16 +286,17 @@ Following :cite:t:`Boatwright2002` (equation 1) and :cite:t:`Lancieri2012`
 
 .. math::
 
-   E_r = 8 \pi \mathcal{G}^2(r) C^2 \rho_h c_h
+   E_r = 8 \pi \mathcal{G}^2(r) C^2 \rho_r c_r
             \int_{0}^{f_{max}} e^{2 \pi f t^*} \dot{S}^2(f) df
 
 where :math:`\mathcal{G}^2(r)` is the squared geometrical spreading coefficient
-(see above), :math:`C` is a constant discussed below, :math:`\rho_h` and
-:math:`c_h` are, respectively, the density and P- or S-wave velocity [#f1]_
-close to the hypocenter, :math:`f_{max}` is the maximum frequency used to
-compute the energy (see :ref:`configuration_file:Configuration File` for
-details on the ``max_freq_Er`` parameter), and the exponential term in the
-integrand is the squared correction for anelastic attenuation.
+(see above), :math:`C` is a constant discussed below, :math:`\rho_r` and
+:math:`c_r` are, respectively, the density and P- or S-wave velocity [#f1]_
+at the receiver (their product is the seismic impedance), :math:`f_{max}` is
+the maximum frequency used to compute the energy (see
+:ref:`configuration_file:Configuration File` for details on the ``max_freq_Er``
+parameter), and the exponential term in the integrand is the squared correction
+for anelastic attenuation.
 
 The constant :math:`C` is defined in :cite:t:`Boatwright2002` (equation 2) as:
 
