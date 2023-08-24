@@ -375,20 +375,23 @@ class SourceSpecOutput(OrderedAttribDict):
         ``Nan`` and ``inf`` values are also marked as outliers.
         """
         values = self.value_array(key)
-        station_ids = np.array(list(self.station_parameters.keys()))
         naninf = np.logical_or(np.isnan(values), np.isinf(values))
         _values = values[~naninf]
-        # check if _values are all the same within 0.01 %
-        if np.ptp(_values) < 0.0001 * np.mean(_values):
+        # cases for which outliers cannot be computed
+        if (
+            n is None or
+            len(_values) == 0 or
+            # _values are all the same within 0.01 %
+            np.ptp(_values) < 0.0001 * np.mean(_values)
+        ):
             outliers = naninf
-        elif n is not None and len(_values) > 0:
+        else:
             Q1, _, Q3 = np.percentile(_values, [25, 50, 75])
             IQR = Q3 - Q1
             outliers = np.logical_or(
                 values < Q1 - n * IQR, values > Q3 + n * IQR)
             outliers = np.logical_or(outliers, naninf)
-        else:
-            outliers = naninf
+        station_ids = np.array(list(self.station_parameters.keys()))
         for stat_id, outl in zip(station_ids, outliers):
             stat_par = self.station_parameters[stat_id]
             stat_par[key].outlier = outl
