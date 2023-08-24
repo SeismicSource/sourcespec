@@ -103,13 +103,14 @@ def radiated_energy_and_apparent_stress(
             'an underestimation')
     fmax = config.max_freq_Er
     rho = config.event.hypocenter.rho
+    vp = config.event.hypocenter.vp * 1e3
+    vs = config.event.hypocenter.vs * 1e3
+    mu = rho * vs**2
+    logger.info(f'Rigidity (mu) for apparent stress: {mu:.3e} Pa')
     if config.wave_type == 'P':
-        vel = config.event.hypocenter.vp * 1e3
-        mu = None
+        vel = vp
     elif config.wave_type in ['S', 'SV', 'SH']:
-        vel = config.event.hypocenter.vs * 1e3
-        mu = rho * vel**2
-        logger.info(f'Rigidity (mu) for apparent stress: {mu:.3e} Pa')
+        vel = vs
     # Select specids with channel code: '??H'
     spec_ids = [spec.id for spec in spec_st if spec.id[-1] == 'H']
     for spec_id in spec_ids:
@@ -160,11 +161,6 @@ def radiated_energy_and_apparent_stress(
 
         # Now compute apparent stress sigma_a
         # (eq. (5) from Lancieri et al. 2012)
-        if config.wave_type == 'P':
-            logger.warning(
-                'Warning: computing apparent stress from P waves is not '
-                'implemented')
-            continue
         Mo = station_pars.Mo.value
         Mo_min = Mo - station_pars.Mo.lower_uncertainty
         Mo_max = Mo + station_pars.Mo.upper_uncertainty

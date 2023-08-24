@@ -352,12 +352,11 @@ eq. 18):
 
 .. math::
 
-   \sigma_a = \mu_h \frac{E_r^s}{M_0}
+   \sigma_a = \mu_h \frac{E_r}{M_0}
 
 where :math:`\mu_h` is the shear modulus (or rigidity, in :math:`Pa`) near the
-hypocenter, :math:`E_r^s` is the radiated energy (in :math:`N \cdot m`)
-measured on S-waves, and :math:`M_0` is the seismic moment
-(in :math:`N \cdot m`).
+hypocenter, :math:`E_r` is the radiated energy (in :math:`N \cdot m`), and
+:math:`M_0` is the seismic moment (in :math:`N \cdot m`).
 
 The value of :math:`\mu_h` is computed from the shear wave velocity
 (:math:`\beta_h`) and the density (:math:`\rho_h`) at the hypocenter,
