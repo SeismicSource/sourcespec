@@ -98,7 +98,7 @@ class Bounds(object):
         return sorted(t_star_bounds)
 
     def _fix_initial_values_t_star(self):
-        if self.ini_values.t_star_0 is not None:
+        if self.ini_values.t_star_0 is None:
             return
         if None in self.bounds[2]:
             return

@@ -227,7 +227,6 @@ def _spec_inversion(config, spec, spec_weight):
         Mw_0_min = Mw_0_max = Mw_0
 
     initial_values = InitialValues(Mw_0, fc_0, t_star_0)
-    logger.info(f'{statId}: initial values: {initial_values}')
     bounds = Bounds(config, spec, initial_values)
     Mw_0_variability =\
         config.Mw_0_variability if config.Mw_0_variability > 0 else 1e-6
@@ -237,6 +236,8 @@ def _spec_inversion(config, spec, spec_weight):
         bounds.t_star_min = t_star_min
     if t_star_max is not None:
         bounds.t_star_max = t_star_max
+    # Initial values need to be printed here because Bounds can modify them
+    logger.info(f'{statId}: initial values: {initial_values}')
     logger.info(f'{statId}: bounds: {bounds}')
     try:
         params_opt, params_err, misfit = _curve_fit(
