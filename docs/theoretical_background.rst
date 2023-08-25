@@ -11,15 +11,20 @@ Overview
 station recordings of a single event.
 
 For each station, the code computes P- or S-wave displacement amplitude spectra
-for each component (e.g., Z, N, E), within a predefined time window.
+for each component :math:`x` (e.g., Z, N, E), within a predefined time window.
 
 .. math::
 
-   S(f) = \left| \int_{t0}^{t1} s(t) e^{-i 2 \pi f t} dt \right|
+   S_x^{p|s}(f) =
+      \left| \int_{t^{p|s}_0}^{t^{p|s}_1} s_x(t) e^{-i 2 \pi f t} dt \right|
 
-Note that the Fourier amplitude spectrum of ground displacement :math:`S(f)`
-has the dimensions of displacement (:math:`s(t)`) multiplied by
-time (:math:`dt`).
+where the exponent :math:`p|s` means that we are considering either P- or
+S-waves, :math:`t^{p|s}_1` and :math:`t^{p|s}_1` are the start and end times of
+the P- or S-wave time window, :math:`s_x(t)` is the displacement time series
+for component :math:`x`, and :math:`f` is the frequency.
+
+Note that the Fourier amplitude spectrum of ground displacement has the
+dimensions of displacement (:math:`s_x(t)`) multiplied by time (:math:`dt`).
 
 The same thing is done for a noise time window: noise spectrum is used to
 compute spectral signal-to-noise ratio (and possibly reject low SNR spectra)
@@ -32,14 +37,20 @@ and, optionally, to weight the spectral inversion.
   Example three-component trace plot (in velocity), showing noise and S-wave
   windows.
 
-The component spectra are combined through the root sum of squares:
+The component spectra are combined through the root sum of squares
+(e.g., N, S, E):
 
 .. math::
 
-    S(f) = \sqrt{S^2_z(f) + S^2_n(f) + S^2_e(f)}
+    S^{p|s}(f) =
+      \sqrt{
+         \left( S^{p|s}_z(f) \right)^2 +
+         \left( S^{p|s}_n(f) \right)^2 +
+         \left( S^{p|s}_e(f) \right)^2
+      }
 
-where :math:`f` is the frequency and :math:`S_x(f)` is the P- or S-wave
-spectrum for component :math:`x`.
+(This is actually done later in the code, after converting the spectra to
+magnitude units, see below.)
 
 .. figure:: imgs/example_spectrum.svg
   :alt: Example spectrum plot
@@ -58,7 +69,7 @@ propagation term (geometric and anelastic attenuation of body waves):
 
 .. math::
 
-   S(f) =
+   S^{p|s}(f) =
           \frac{1}{\mathcal{G}(r)}
           \times
           \frac{2 R_{\Theta\Phi}}
@@ -66,7 +77,7 @@ propagation term (geometric and anelastic attenuation of body waves):
           \times
           M_O
           \times
-          \frac{1}{1+\left(\frac{f}{f_c}\right)^2}
+          \frac{1}{1+\left(\frac{f}{f^{p|s}_c}\right)^2}
           \times
           e^{- \pi f t^*}
 
@@ -83,7 +94,7 @@ where:
   and at the receiver, respectively;
 - :math:`M_O` is the seismic moment;
 - :math:`f` is the frequency;
-- :math:`f_c` is the corner frequency;
+- :math:`f^{p|s}_c` is the corner frequency for P- or S-waves;
 - :math:`t^*` is an attenuation parameter which includes anelastic path
   attenuation (quality factor) and station-specific effects.
 
@@ -137,7 +148,7 @@ Building spectra
 ================
 
 In ``source_spec``, the observed spectrum of component :math:`x` (vertical or
-horizontal), :math:`S_x(f)` is converted into moment magnitude units
+horizontal), :math:`S^{p|s}_x(f)` is converted into moment magnitude units
 :math:`M_w`.
 
 The first step is to multiply the spectrum for the geometrical spreading
@@ -145,43 +156,54 @@ coefficient and convert it to seismic moment units:
 
 .. math::
 
-   M_x(f) \equiv
+   M^{p|s}_x(f) \equiv
    \mathcal{G}(r) \times
    \frac{4 \pi \rho_h^{1/2} \rho_r^{1/2} c_h^{5/2} c_r^{1/2}}
         {2 R_{\Theta\Phi}}
-   \times S_x(f) =
+   \times S^{p|s}_x(f) =
           M_O \times
-          \frac{1}{1+\left(\frac{f}{f_c}\right)^2}
+          \frac{1}{1+\left(\frac{f}{f^{p|s}_c}\right)^2}
           \times
           e^{- \pi f t^*}
 
 
-Then the spectrum is converted in units of magnitude
-(the :math:`Y_x (f)` vector used in the inversion):
+Then the spectrum is converted in units of magnitude:
 
 .. math::
 
-   Y_x(f) \equiv
+   Y^{p|s}_x(f) \equiv
           \frac{2}{3} \times
-          \left( \log_{10} M_x(f) - 9.1 \right)
+          \left( \log_{10} M^{[p,s]}_x(f) - 9.1 \right)
+
+And the final data vector :math:`Y^{p|s}(f)` is obtained by combining the
+three components (e.g., N, S, E) through the root sum of squares:
+
+.. math::
+
+   Y^{p|s}(f) =
+          \sqrt{
+             \left( Y^{p|s}_z(f) \right)^2 +
+             \left( Y^{p|s}_n(f) \right)^2 +
+             \left( Y^{p|s}_e(f) \right)^2
+          }
 
 The data vector is compared to the theoretical model:
 
 .. math::
 
-   Y_x(f) =
+   Y^{p|s}(f) =
           \frac{2}{3}
           \left[ \log_{10} \left(
                     M_O \times
-                    \frac{1}{1+\left(\frac{f}{f_c}\right)^2}
+                    \frac{1}{1+\left(\frac{f}{f^{p|s}_c}\right)^2}
                     \times
                     e^{- \pi f t^*}
                     \right) - 9.1 \right] =
 
           =
-          \frac{2}{3} (\log_{10} M_0 - 9.1) +
+          \frac{2}{3} \left( \log_{10} M_0 - 9.1 \right) +
           \frac{2}{3} \left[ \log_{10} \left(
-                    \frac{1}{1+\left(\frac{f}{f_c}\right)^2} \right) +
+                    \frac{1}{1+\left(\frac{f}{f^{p|s}_c}\right)^2} \right) +
                     \log_{10} \left( e^{- \pi f t^*} \right)
                     \right]
 
@@ -190,10 +212,10 @@ Finally coming to the following model used for the inversion:
 
 .. math::
 
-   Y_x(f) =
+   Y^{p|s}(f) =
           M_w +
           \frac{2}{3} \left[ - \log_{10} \left(
-                    1+\left(\frac{f}{f_c}\right)^2 \right) -
+                    1+\left(\frac{f}{f^{p|s}_c}\right)^2 \right) -
                     \pi \, f t^* \log_{10} e
                     \right]
 
@@ -204,7 +226,7 @@ Inverted parameters
 ===================
 
 The parameters determined from the spectral inversion are :math:`M_w`,
-:math:`f_c` and :math:`t^*`.
+:math:`f^{p|s}_c` and :math:`t^*`.
 
 The inversion is performed in moment magnitude :math:`M_w` units (logarithmic
 amplitude). Different inversion algorithms can be used:
@@ -231,7 +253,7 @@ Other computed parameters
 =========================
 
 Starting from the inverted parameters :math:`M_0` ( :math:`M_w` ),
-:math:`fc`, :math:`t^*` and following the equations in :cite:t:`Madariaga2011`
+:math:`f^{p|s}_c`, :math:`t^*` and following the equations in :cite:t:`Madariaga2011`
 and :cite:t:`Lancieri2012`, other quantities are computed for each station:
 
 -  the Brune static stress drop :math:`\Delta \sigma`
@@ -257,10 +279,10 @@ in :cite:t:`Madariaga2011`):
 
 .. math::
 
-   a = \frac{2.34 \; c_h}{2 \pi f_c} = 0.3724 \frac{c_h}{f_c}
+   a = \frac{2.34 \; c_h}{2 \pi f^{p|s}_c} = 0.3724 \frac{c_h}{f^{p|s}_c}
 
 where :math:`c_h` is the P- or S-wave velocity at the hypocenter
-(in :math:`m/s`) and :math:`f_c` is the corner frequency (in :math:`Hz`)
+(in :math:`m/s`) and :math:`f^{p|s}_c` is the corner frequency (in :math:`Hz`)
 estimated from the spectral inversion of P or S waves.
 
 The Brune static stress drop is then computed using the circular crack model,
@@ -278,16 +300,17 @@ where :math:`M_0` is the seismic moment (in :math:`N \cdot m`) and
 
 Radiated energy
 ---------------
-The radiated energy :math:`E_r` is computed from the integral of the squared
-velocity amplitude spectrum: :math:`\dot{S}^2(f) = [ 2 \pi f S(f) ]^2`.
+The computation of the radiated energy :math:`E_r` starts with the integral of
+the squared velocity amplitude spectrum:
+:math:`[\dot{S}^{p|s}(f)]^2 = [ 2 \pi f S^{p|s}(f) ]^2`.
 
 Following :cite:t:`Boatwright2002` (equation 1) and :cite:t:`Lancieri2012`
-(equation 3), the radiated energy is computed as:
+(equation 3), the P- or S-wave radiated energy is computed as:
 
 .. math::
 
-   E_r = 8 \pi \mathcal{G}^2(r) C^2 \rho_r c_r
-            \int_{0}^{f_{max}} e^{2 \pi f t^*} \dot{S}^2(f) df
+   \tilde{E}_r^{p|s} = 8 \pi \mathcal{G}^2(r) C^2 \rho_r c_r
+            \int_{0}^{f_{max}} e^{2 \pi f t^*} [\dot{S}^{p|s}(f)]^2 df
 
 where :math:`\mathcal{G}^2(r)` is the squared geometrical spreading coefficient
 (see above), :math:`C` is a constant discussed below, :math:`\rho_r` and
@@ -297,6 +320,8 @@ the maximum frequency used to compute the energy (see
 :ref:`configuration_file:Configuration File` for details on the ``max_freq_Er``
 parameter), and the exponential term in the integrand is the squared correction
 for anelastic attenuation.
+The tilde on top of :math:`\tilde{E}_r^{p|s}` means that the radiated energy
+needs to be further corrected for noise and finite bandwidth (see below).
 
 The constant :math:`C` is defined in :cite:t:`Boatwright2002` (equation 2) as:
 
@@ -304,8 +329,8 @@ The constant :math:`C` is defined in :cite:t:`Boatwright2002` (equation 2) as:
 
    C = \frac{\left<R_{\Theta\Phi}\right>}{R_{\Theta\Phi} F}
 
-where :math:`\left<R_{\Theta\Phi}\right>` is the root mean square radiation
-pattern computed on the focal sphere, :math:`R_{\Theta\Phi}` is the
+where :math:`\left<R_{\Theta\Phi}\right>` is the root mean square P- or S-wave
+radiation pattern computed on the focal sphere, :math:`R_{\Theta\Phi}` is the
 radiation pattern coefficient for the given station, and :math:`F` is the
 free surface amplification factor.
 Here we assume :math:`F = 2` and :math:`\left<R_{\Theta\Phi}\right> = 1`
@@ -318,14 +343,15 @@ Noise correction
 ++++++++++++++++
 To account for low frequency noise, below the corner frequency, under the
 hypothesis that energy is additive and that noise is stationary, we compute
-a corrected energy as:
+a noise-corrected energy as:
 
 .. math::
 
-   \tilde{E}_r = E_r- E_{r,noise}
+   E^{p|s}_r = \tilde{E}^{p|s}_r - \tilde{E}^{noise}_r
 
-where :math:`E_r` is the observed radiated energy and :math:`E_{r,noise}` is
-the radiated energy computed from the noise spectrum.
+where the first term is the radiated energy computed from the P- or S-wave
+spectrum and the second term is the radiated energy computed from the noise
+spectrum.
 
 Finite bandwidth correction
 +++++++++++++++++++++++++++
@@ -371,13 +397,13 @@ using the following expression:
 Quality factor
 --------------
 The retrieved attenuation parameter :math:`t^*` is converted to the P- or
-S-wave quality factor :math:`Q_0^{[p|s]}` using the following expression:
+S-wave quality factor :math:`Q_0^{p|s}` using the following expression:
 
 .. math::
 
-   Q_0^{[p|s]} = \frac{tt_{[p|s]}(r)}{t^*}
+   Q_0^{p|s} = \frac{tt^{p|s}(r)}{t^*}
 
-where :math:`tt_{[p|s]}(r)` is the P- or S-wave travel time from source to
+where :math:`tt^{p|s}(r)` is the P- or S-wave travel time from source to
 station and :math:`r` is the hypocentral distance.
 
 
