@@ -257,11 +257,11 @@ in :cite:t:`Madariaga2011`):
 
 .. math::
 
-   a = 0.3724 \frac{\beta_h}{f_c}
+   a = \frac{2.34 \; c_h}{2 \pi f_c} = 0.3724 \frac{c_h}{f_c}
 
-where :math:`\beta_h` is the S-wave velocity at the hypocenter (in :math:`m/s`)
-and :math:`f_c` is the corner frequency (in :math:`Hz`) estimated from the
-spectral inversion.
+where :math:`c_h` is the P- or S-wave velocity at the hypocenter
+(in :math:`m/s`) and :math:`f_c` is the corner frequency (in :math:`Hz`)
+estimated from the spectral inversion of P or S waves.
 
 The Brune static stress drop is then computed using the circular crack model,
 as discussed in :cite:t:`Madariaga2011` (equation 27):

@@ -89,6 +89,8 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Bugfixes
 
+- Fix source radius computation when using P waves (use P-wave velocity instead
+  of S-wave velocity)
 - Do not ignore picks labeled with lowercase "p" or "s"
 - Fixed: config parameter `p_arrival_tolerance` was used also for S waves,
   instead of `s_arrival_tolerance` (see [#35])
