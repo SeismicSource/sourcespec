@@ -41,6 +41,8 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Processing
 
+- Use all the available components to compute P-wave spectra (previously,
+  only the vertical component was used)
 - Possibility of specifying a different density for the source and for the
   stations
 - If density is not provided (i.e., it is `None`), use the density from the

@@ -81,7 +81,7 @@ Spectral Processing
 13. The "H" component is built based on one or more spectral components,
     depending on the ``wave_type`` and ``ignore_vertical`` config parameters:
 
-    - if ``wave_type`` is ``S``:
+    - if ``wave_type`` is ``P`` or ``S``:
 
         - if ``ignore_vertical`` is ``False``, the two horizontals and the
           vertical components are combined;
@@ -97,11 +97,6 @@ Spectral Processing
     - if ``wave_type`` is ``SH``:
 
         - only the transverse component is used;
-
-    - if ``wave_type`` is ``P``:
-
-        - only the vertical component is used, independently from the value
-          of ``ignore_vertical``.
 
     Spectra are combined through the root sum of squares (see
     :ref:`theoretical_background:Overview`).

@@ -112,11 +112,7 @@ def _compute_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
         if wave_type == 'SH' and channel[-1] != 'T':
             continue
         # do not use transverse component for SV
-        # (only raidal and, optionally, vertical)
         if wave_type == 'SV' and channel[-1] == 'T':
-            continue
-        # only use vertical component for P
-        if wave_type == 'P' and channel[-1] not in vertical_channel_codes:
             continue
         if spec_h is None:
             spec_h = spec.copy()
