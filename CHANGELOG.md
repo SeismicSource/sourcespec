@@ -63,6 +63,9 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Post-Inversion
 
+- Take into account for energy partition when computing radiated energy
+  (Boatwright and Choy, 1986). This affects mostly the radiated energy
+  computed from P waves
 - New source parameter: apparent stress
 - For parameters with no station-level uncertainty defined (currently,
   radiated energy), use simple mean when computing summary weighted averages

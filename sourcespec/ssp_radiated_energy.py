@@ -43,7 +43,7 @@ def _spectral_integral(spec, t_star, fmax):
     if fmax is not None:
         data[freq > fmax] = 0.
     # Returned value has units of (m^2)^2 * Hz = m^4/s
-    return np.sum((data**2) * deltaf)
+    return np.sum(data**2) * deltaf
 
 
 def _radiated_energy_coefficient(rho, vel):
@@ -97,10 +97,6 @@ def radiated_energy_and_apparent_stress(
         :class:`sourcespec.ssp_data_types.SourceSpecOutput`
     """
     logger.info('Computing radiated energy and apparent stress...')
-    if config.wave_type == 'P':
-        logger.warning(
-            'Warning: computing radiated energy from P waves might lead to '
-            'an underestimation')
     fmax = config.max_freq_Er
     rho = config.event.hypocenter.rho
     vs_hypo = config.event.hypocenter.vs * 1e3
@@ -143,6 +139,12 @@ def radiated_energy_and_apparent_stress(
         rho = spec.stats.rho_station
         vel = spec.stats.v_station * 1e3
         coeff = _radiated_energy_coefficient(rho, vel)
+        # Total radiated energy is the sum of Er_p and Er_s, and Er_s/Er_p=15.6
+        # (Boatwright & Choy, 1986, eq. 8 & 15)
+        if config.wave_type == 'P':
+            coeff *= (1 + 15.6)
+        else:
+            coeff *= (1 + 1. / 15.6)
         # Coefficient has units of kg/(m^2 * s)
         # Signal and noise integrals have units of m^4 / s
         # Er has therefore units of kg * m^2 / s^2 = kg * m/s^2 * m = N * m

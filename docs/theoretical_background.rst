@@ -314,7 +314,7 @@ Following :cite:t:`Boatwright2002` (equation 1) and :cite:t:`Lancieri2012`
 
 where :math:`\mathcal{G}^2(r)` is the squared geometrical spreading coefficient
 (see above), :math:`C` is a constant discussed below, :math:`\rho_r` and
-:math:`c_r` are, respectively, the density and P- or S-wave velocity [#f1]_
+:math:`c_r` are, respectively, the density and P- or S-wave velocity 
 at the receiver (their product is the seismic impedance), :math:`f_{max}` is
 the maximum frequency used to compute the energy (see
 :ref:`configuration_file:Configuration File` for details on the ``max_freq_Er``
@@ -355,7 +355,7 @@ spectrum.
 
 Finite bandwidth correction
 +++++++++++++++++++++++++++
-The final step is to correct the radiated energy for the finite bandwidth
+Next step is to correct the radiated energy for the finite bandwidth
 of the observed spectrum. Following :cite:t:`Lancieri2012` (equation 4), and
 :cite:t:`DiBona1988`, the noise-corrected radiated energy is divided by
 the following factor:
@@ -364,12 +364,37 @@ the following factor:
 
   R = \frac{2}{\pi}
     \left[
-      \frac{-f_{max}/f_c}{1+(f_{max}/f_c)^2} + \arctan(f_{max}/f_c)
+      \frac{-f_{max}/f^{p|s}_c}{1+(f_{max}/f^{p|s}_c)^2} +
+      \arctan(f_{max}/f^{p|s}_c)
     \right]
 
-where :math:`f_c` is the corner frequency and :math:`f_{max}` is the maximum
-frequency used to compute the energy.
+where :math:`f^{p|s}_c` is the P- or S-wave corner frequency and
+:math:`f_{max}` is the maximum frequency used to compute the energy.
 
+Energy partition
+++++++++++++++++
+The final step is to account for the partition of energy between P and S waves.
+Following :cite:t:`Boatwright1986` (equations 8 and 15) the ratio between the
+radiated energy of measured from S-waves and the radiated energy measured from
+P-waves is:
+
+.. math::
+
+   \frac{E_r^s}{E_r^p} = 15.6
+
+The final estimate of the radiated energy is then:
+
+.. math::
+
+   E_r = \left( 1 + 15.6 \right) E_r^p
+
+or
+
+.. math::
+
+   E_r = \left( 1 + \frac{1}{15.6} \right) E_r^s
+
+depending on whether the radiated energy is computed from P or S waves.
 
 Apparent stress
 ---------------
@@ -415,12 +440,3 @@ inverted spectra. These averages are obtained through the command
 ``source_residuals``; the resulting residuals file can be used for a second run
 of ``source_spec`` (see the ``residuals_filepath`` option in
 :ref:`configuration_file:Configuration File`).
-
-
-.. rubric:: Footnotes
-
-.. [#f1] SourceSpec can compute radiated energy from either the P- or S-wave
-   displacement spectra, depending on the value chosen for the configuration
-   parameter ``wave_type`` (see :ref:`configuration_file:Configuration File`).
-   However, when using P waves, the code will warn that radiated energy
-   computed from P waves might be underestimated.
