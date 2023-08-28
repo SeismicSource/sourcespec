@@ -320,7 +320,7 @@ class Params(object):
 
     def _set_plot_title(self, ax):
         """Set the plot title."""
-        nevs = len(self.nsta)
+        nevs = len(self.evids)
         stat_descr = {
             'mean': 'mean',
             'wmean': 'weighted mean',
@@ -589,7 +589,7 @@ class Params(object):
         fig, ax, ax_Mo = self._make_mw_axis()
         ax_Mo.set_yscale('log')
 
-        mu = np.nanmean((self.vs*1e3)**2 * self.rho)
+        mu = np.nanmean((self.vs * 1e3)**2 * self.rho)
         self._stress_drop_curves_Er_mw(mu, ax)
 
         if hist:
