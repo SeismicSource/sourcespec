@@ -151,7 +151,7 @@ def parse_args():
 
 
 def query_event_params_into_numpy(cursor, param, param_type, query_condition):
-    query = f'select {param} from Events {query_condition}'
+    query = f'select {param} from Events {query_condition} order by evid,runid'
     cursor.execute(query)
     result = np.array(cursor.fetchall())
     if len(result) == 0:
