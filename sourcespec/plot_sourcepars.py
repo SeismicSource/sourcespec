@@ -484,7 +484,7 @@ class Params(object):
             fmt='o', mec='black', mfc='#FCBA25', ecolor='#FCBA25',
             alpha=alpha)
         ax.scatter(self.mw, self.Er, alpha=0, picker=True, zorder=20)
-        yformat = 'Er {:.1e} J'
+        yformat = 'Er {:.1e} N·m'
         annot = Annot(self.mw, self.Er, self.evids, yformat)
         fig.canvas.mpl_connect('pick_event', annot)
 
@@ -572,8 +572,7 @@ class Params(object):
         ax_Mo.set_ylabel('fc (Hz)')
         plt.show()
 
-    def plot_Er_mw(self, hist=False, fit=False, slope=False, nbins=None,
-                   wave_type='S'):
+    def plot_Er_mw(self, hist=False, fit=False, slope=False, nbins=None):
         """
         Plot the logarithm of the radiated energy vs the moment magnitude.
 
@@ -601,7 +600,7 @@ class Params(object):
 
         self._set_plot_title(ax)
         self._add_grid(ax_Mo)
-        ax_Mo.set_ylabel('Er (J)')
+        ax_Mo.set_ylabel('Er (N·m)')
         plt.show()
 
     def plot_bsd_mw(self, hist=False, fit=False, slope=False, nbins=None):
@@ -647,7 +646,7 @@ class Params(object):
             'Mo': ('Seismic Moment', 'N·m', 'log'),
             't_star': ('T star', 's', 'lin'),
             'Qo': ('Qo', None, 'lin'),
-            'Er': ('Radiated Energy', 'J', 'log'),
+            'Er': ('Radiated Energy', 'N·m', 'log'),
             'sigma_a': ('Apparent Stress', 'MPa', 'log'),
         }
         description, unit, log = parameters[param_name]
