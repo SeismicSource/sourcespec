@@ -674,7 +674,7 @@ class Params(object):
         log = (log == 'log')
         values = getattr(self, param_name)
         if param_name == 'fc':
-            values = values[wave_type == wave_type]
+            values = values[self.wave_type == wave_type]
             if len(values) == 0:
                 raise ValueError(
                     f'No events found for wave type "{wave_type}"')
