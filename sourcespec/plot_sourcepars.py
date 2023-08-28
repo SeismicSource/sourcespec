@@ -318,9 +318,10 @@ class Params(object):
             True, which='minor', linestyle='solid',
             color='#DDDDDD', zorder=0)
 
-    def _set_plot_title(self, ax):
+    def _set_plot_title(self, ax, nevs=None):
         """Set the plot title."""
-        nevs = len(self.evids)
+        if nevs is None:
+            nevs = len(self.evids)
         stat_descr = {
             'mean': 'mean',
             'wmean': 'weighted mean',
@@ -394,13 +395,18 @@ class Params(object):
         self.nbins_y = fc_nbins
         mw_bins = np.linspace(mw_min, mw_max + 0.1, mw_nbins)
         fc_bins = 10**np.linspace(log_fc_min, log_fc_max + 0.1, fc_nbins)
-        counts, _, _ = np.histogram2d(
-            self.mw, self.fc, bins=(mw_bins, fc_bins))
+        cond = (self.wave_type == wave_type)
+        mw = self.mw[cond]
+        if len(mw) == 0:
+            raise ValueError(f'No events found for wave type "{wave_type}"')
+        fc = self.fc[cond]
+        counts, _, _ = np.histogram2d(mw, fc, bins=(mw_bins, fc_bins))
         cm = ax.pcolormesh(
             mw_bins[:-1], fc_bins[:-1], counts.T,
             cmap='magma_r', shading='auto')
         cbaxes = fig.add_axes([0.15, 0.15, 0.02, 0.2])
         plt.colorbar(cm, cax=cbaxes, orientation='vertical', label='counts')
+        return len(fc)
 
     def _2d_hist_Er_mw(self, fig, ax, nbins=None):
         """Plot a 2d histogram of Er vs mw."""
@@ -418,13 +424,17 @@ class Params(object):
         Er_bins = 10**np.linspace(log_Er_min, log_Er_max + 0.1, Er_nbins)
         self.nbins_x = mw_nbins
         self.nbins_y = Er_nbins
-        counts, _, _ = np.histogram2d(
-            self.mw, self.Er, bins=(mw_bins, Er_bins))
+        # Er can be NaN
+        cond = ~np.isnan(self.Er)
+        mw = self.mw[cond]
+        Er = self.Er[cond]
+        counts, _, _ = np.histogram2d(mw, Er, bins=(mw_bins, Er_bins))
         cm = ax.pcolormesh(
             mw_bins[:-1], Er_bins[:-1], counts.T,
             cmap='magma_r', shading='auto')
         cbaxes = fig.add_axes([0.15, 0.15, 0.02, 0.2])
         plt.colorbar(cm, cax=cbaxes, orientation='vertical', label='counts')
+        return len(Er)
 
     def _2d_hist_bsd_mw(self, fig, ax, nbins=None):
         """Plot a 2d histogram of bsd vs mw."""
@@ -473,20 +483,31 @@ class Params(object):
         yformat = 'fc {:.2f} Hz'
         annot = Annot(mw, fc, evids, yformat)
         fig.canvas.mpl_connect('pick_event', annot)
+        return len(fc)
 
     def _scatter_Er_mw(self, fig, ax):
         """Plot the scatter plot of Er vs mw."""
+        # Er can be NaN
+        cond = ~np.isnan(self.Er)
+        mw = self.mw[cond]
+        mw_err_minus = self.mw_err_minus[cond]
+        mw_err_plus = self.mw_err_plus[cond]
+        Er = self.Er[cond]
+        Er_err_minus = self.Er_err_minus[cond]
+        Er_err_plus = self.Er_err_plus[cond]
+        evids = self.evids[cond]
         alpha = 1
         ax.errorbar(
-            self.mw, self.Er,
-            xerr=[self.mw_err_minus, self.mw_err_plus],
-            yerr=[self.Er_err_minus, self.Er_err_plus],
+            mw, Er,
+            xerr=[mw_err_minus, mw_err_plus],
+            yerr=[Er_err_minus, Er_err_plus],
             fmt='o', mec='black', mfc='#FCBA25', ecolor='#FCBA25',
             alpha=alpha)
-        ax.scatter(self.mw, self.Er, alpha=0, picker=True, zorder=20)
+        ax.scatter(mw, Er, alpha=0, picker=True, zorder=20)
         yformat = 'Er {:.1e} N·m'
-        annot = Annot(self.mw, self.Er, self.evids, yformat)
+        annot = Annot(mw, Er, evids, yformat)
         fig.canvas.mpl_connect('pick_event', annot)
+        return len(Er)
 
     def _scatter_bsd_mw(self, fig, ax):
         """Plot the scatter plot of bsd vs mw."""
@@ -562,12 +583,12 @@ class Params(object):
         self._stress_drop_curves_fc_mw(vs, ax)
 
         if hist:
-            self._2d_hist_fc_mw(fig, ax, nbins, wave_type)
+            npoints = self._2d_hist_fc_mw(fig, ax, nbins, wave_type)
         else:
-            self._scatter_fc_mw(fig, ax, wave_type)
+            npoints = self._scatter_fc_mw(fig, ax, wave_type)
         if fit:
             self._fit_fc_mw(vs, ax, slope=slope)
-        self._set_plot_title(ax)
+        self._set_plot_title(ax, npoints)
         self._add_grid(ax_Mo)
         ax_Mo.set_ylabel('fc (Hz)')
         plt.show()
@@ -592,13 +613,13 @@ class Params(object):
         self._stress_drop_curves_Er_mw(mu, ax)
 
         if hist:
-            self._2d_hist_Er_mw(fig, ax, nbins)
+            npoints = self._2d_hist_Er_mw(fig, ax, nbins)
         else:
-            self._scatter_Er_mw(fig, ax)
+            npoints = self._scatter_Er_mw(fig, ax)
         if fit:
             raise NotImplementedError('Fit not implemented yet for Er_mw')
 
-        self._set_plot_title(ax)
+        self._set_plot_title(ax, npoints)
         self._add_grid(ax_Mo)
         ax_Mo.set_ylabel('Er (N·m)')
         plt.show()
