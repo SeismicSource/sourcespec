@@ -658,6 +658,7 @@ class Params(object):
             if len(values) == 0:
                 raise ValueError(
                     f'No events found for wave type "{wave_type}"')
+        values = values[~np.isnan(values)]
         nvalues = len(values)
         if nvalues < 2:
             raise ValueError(f'Not enough values to plot histogram: {nvalues}')
