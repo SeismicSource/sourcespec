@@ -232,6 +232,9 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
     ev_lat = event.hypocenter.latitude.value_in_deg
     ev_depth = event.hypocenter.depth.value_in_km
     ev_origin_time = event.hypocenter.origin_time
+    ev_vp = event.hypocenter.vp
+    ev_vs = event.hypocenter.vs
+    ev_rho = event.hypocenter.rho
     t = (
         # Event info
         evid,
@@ -240,6 +243,9 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
         float(ev_lon),
         float(ev_lat),
         float(ev_depth),
+        float(ev_vp),
+        float(ev_vs),
+        float(ev_rho),
         # Statistical info
         nobs,
         config.n_sigma,
