@@ -89,6 +89,10 @@ previous versions. You will need to upgrade your old database manually or using
 - Station maps: exclude outliers when computing colorbar limits
 - Station maps: improved computation of bounding box for regional and
   teleseismic events
+- `plot_sourcepars`: read vp, vs and rho from the SQLite database (previously:
+  vs was hardcoded to 3.5 km/s, rho to 2700 kg/m3 and vp was not used)
+- `plot_sourcepars`: new command line option `--wave_type` to select the wave
+  type (P, S, SV or SH) for plots involving the corner frequency
 
 ### Config file
 

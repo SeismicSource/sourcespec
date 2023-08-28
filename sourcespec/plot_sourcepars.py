@@ -47,21 +47,21 @@ def mag_to_moment(mag):
     return np.power(10, (1.5 * mag + 9.1))
 
 
-def stress_drop_curve_fc_mw(delta_sigma, vs, mw, b=-0.5):
+def stress_drop_curve_fc_mw(delta_sigma, vel, mw, b=-0.5):
     """
     Constant stress drop curve in fc vs Mw.
 
     Chounet et al. (2013), https://hal.science/hal-03965701, eq. 9, page 9.
     """
-    vs *= 1e3  # S-wave velocity in m/s
+    vel *= 1e3  # P or S-wave velocity in m/s
     delta_sigma *= 1e6  # stress drop in Pa
     # b is the slope of stress-drop curve: b!=-0.5 means no self-similarity
     power10 = 10**(-(-3 * b * mw + 9.1) - 0.935)
     # return fc in Hz
-    return vs * (delta_sigma * power10)**(1. / 3)
+    return vel * (delta_sigma * power10)**(1. / 3)
 
 
-def stress_drop_curve_Er_mw(delta_sigma, vs, rho, mw):
+def stress_drop_curve_Er_mw(delta_sigma, mu, mw):
     """
     Constant stress drop curve in Er vs Mw.
 
@@ -69,7 +69,6 @@ def stress_drop_curve_Er_mw(delta_sigma, vs, rho, mw):
     """
     # Eq. (33) of Madariaga (2009):
     #   0.2331 * delta_sigma = mu * Er / Mo
-    mu = (vs * 1000)**2. * rho
     Mo = mag_to_moment(mw)
     delta_sigma *= 1e6
     # return Er in N·m
@@ -140,12 +139,19 @@ def parse_args():
     parser.add_argument(
         '-S', '--slope', default=False, action='store_true',
         help='Fit also the slope of the linear function (only for 2D plots)')
+    parser.add_argument(
+        '-w', '--wave_type', default='S',
+        help='Wave type. Only used for plots involving "fc". '
+             'One of "P", "S", "SV" or "SH". Default is "S".')
     args = parser.parse_args()
     if args.plot_type not in valid_plot_types:
         msg = f'Plot type must be one of {valid_plot_types_str}'
         raise ValueError(msg)
     if args.statistics not in ['mean', 'wmean', 'pctl']:
         msg = 'Statistics must be "mean", "wmean" or "pctl"'
+        raise ValueError(msg)
+    if args.wave_type not in ['P', 'S', 'SV', 'SH']:
+        msg = 'Wave type must be "P", "S", "SV" or "SH"'
         raise ValueError(msg)
     return args
 
@@ -179,6 +185,14 @@ class Params(object):
         query_condition = f'where runid="{runid}"' if runid is not None else ''
         self.evids = query_event_params_into_numpy(
             cur, 'evid', str, query_condition)
+        self.vp = query_event_params_into_numpy(
+            cur, 'vp', np.float64, query_condition)
+        self.vs = query_event_params_into_numpy(
+            cur, 'vs', np.float64, query_condition)
+        self.rho = query_event_params_into_numpy(
+            cur, 'rho', np.float64, query_condition)
+        self.wave_type = query_event_params_into_numpy(
+            cur, 'wave_type', str, query_condition)
         self.nsta = query_event_params_into_numpy(
             cur, 'nobs', np.int32, query_condition)
         self.Mo = query_event_params_into_numpy(
@@ -336,7 +350,7 @@ class Params(object):
             ax.text(mw_test[-1], fc_test[-1], label)
         ax.set_ylim((fc_min * 0.9, fc_max * 1.1))
 
-    def _stress_drop_curves_Er_mw(self, vs, rho, ax):
+    def _stress_drop_curves_Er_mw(self, mu, ax):
         """Plot stress-drop curves for different delta_sigma."""
         mag_min, mag_max = ax.get_xlim()
         mw_step = 0.1
@@ -344,7 +358,7 @@ class Params(object):
         Er_min = np.inf
         Er_max = 0.
         for delta_sigma in (0.1, 1., 10., 100.):
-            Er_test = stress_drop_curve_Er_mw(delta_sigma, vs, rho, mw_test)
+            Er_test = stress_drop_curve_Er_mw(delta_sigma, mu, mw_test)
             if Er_test.min() < Er_min:
                 Er_min = Er_test.min()
             if Er_test.max() > Er_max:
@@ -358,7 +372,7 @@ class Params(object):
             ax.text(mw_test[-1], Er_test[-1], label)
         ax.set_ylim((Er_min * 0.5, Er_max * 2))
 
-    def _2d_hist_fc_mw(self, fig, ax, nbins=None):
+    def _2d_hist_fc_mw(self, fig, ax, nbins=None, wave_type='S'):
         """Plot a 2d histogram of fc vs mw."""
         mw_min, mw_max = ax.get_xlim()
         fc_min, fc_max = ax.get_ylim()
@@ -430,18 +444,28 @@ class Params(object):
         cbaxes = fig.add_axes([0.15, 0.15, 0.02, 0.2])
         plt.colorbar(cm, cax=cbaxes, orientation='vertical', label='counts')
 
-    def _scatter_fc_mw(self, fig, ax):
+    def _scatter_fc_mw(self, fig, ax, wave_type='S'):
         """Plot the scatter plot of fc vs mw."""
+        cond = (self.wave_type == wave_type)
+        evids = self.evids[cond]
+        if len(evids) == 0:
+            raise ValueError(f'No events found for wave type "{wave_type}"')
+        mw = self.mw[cond]
+        mw_err_minus = self.mw_err_minus[cond]
+        mw_err_plus = self.mw_err_plus[cond]
+        fc = self.fc[cond]
+        fc_err_minus = self.fc_err_minus[cond]
+        fc_err_plus = self.fc_err_plus[cond]
         alpha = 1
         ax.errorbar(
-            self.mw, self.fc,
-            xerr=[self.mw_err_minus, self.mw_err_plus],
-            yerr=[self.fc_err_minus, self.fc_err_plus],
+            mw, fc,
+            xerr=[mw_err_minus, mw_err_plus],
+            yerr=[fc_err_minus, fc_err_plus],
             fmt='o', mec='black', mfc='#FCBA25', ecolor='#FCBA25',
             alpha=alpha)
-        ax.scatter(self.mw, self.fc, alpha=0, picker=True, zorder=20)
+        ax.scatter(mw, fc, alpha=0, picker=True, zorder=20)
         yformat = 'fc {:.2f} Hz'
-        annot = Annot(self.mw, self.fc, self.evids, yformat)
+        annot = Annot(mw, fc, evids, yformat)
         fig.canvas.mpl_connect('pick_event', annot)
 
     def _scatter_Er_mw(self, fig, ax):
@@ -511,7 +535,8 @@ class Params(object):
                 mw_test[-1], fc_test[-1], f'{delta_sigma:.1f} MPa',
                 color='red', backgroundcolor='white', zorder=50)
 
-    def plot_fc_mw(self, hist=False, fit=False, slope=False, nbins=None):
+    def plot_fc_mw(self, hist=False, fit=False, slope=False, nbins=None,
+                   wave_type='S'):
         """
         Plot the logarithm of the corner frequency vs the moment magnitude.
 
@@ -527,13 +552,13 @@ class Params(object):
         fig, ax, ax_Mo = self._make_mw_axis()
         ax_Mo.set_yscale('log')
 
-        vs = 3.5
+        vs = np.nanmean(self.vs)
         self._stress_drop_curves_fc_mw(vs, ax)
 
         if hist:
-            self._2d_hist_fc_mw(fig, ax, nbins)
+            self._2d_hist_fc_mw(fig, ax, nbins, wave_type)
         else:
-            self._scatter_fc_mw(fig, ax)
+            self._scatter_fc_mw(fig, ax, wave_type)
         if fit:
             self._fit_fc_mw(vs, ax, slope=slope)
         self._set_plot_title(ax)
@@ -541,7 +566,8 @@ class Params(object):
         ax_Mo.set_ylabel('fc (Hz)')
         plt.show()
 
-    def plot_Er_mw(self, hist=False, fit=False, slope=False, nbins=None):
+    def plot_Er_mw(self, hist=False, fit=False, slope=False, nbins=None,
+                   wave_type='S'):
         """
         Plot the logarithm of the radiated energy vs the moment magnitude.
 
@@ -557,9 +583,8 @@ class Params(object):
         fig, ax, ax_Mo = self._make_mw_axis()
         ax_Mo.set_yscale('log')
 
-        vs = 3.5
-        rho = 2700.
-        self._stress_drop_curves_Er_mw(vs, rho, ax)
+        mu = np.nanmean((self.vs*1e3)**2 * self.rho)
+        self._stress_drop_curves_Er_mw(mu, ax)
 
         if hist:
             self._2d_hist_Er_mw(fig, ax, nbins)
@@ -608,7 +633,7 @@ class Params(object):
         ax_Mo.set_ylabel('bsd (MPa)')
         plt.show()
 
-    def plot_hist(self, param_name, nbins=None):
+    def plot_hist(self, param_name, nbins=None, wave_type='S'):
         parameters = {
             'fc': ('Corner Frequency', 'Hz', 'log'),
             'bsd': ('Brune Static Stress Drop', 'MPa', 'log'),
@@ -621,7 +646,14 @@ class Params(object):
         description, unit, log = parameters[param_name]
         log = (log == 'log')
         values = getattr(self, param_name)
+        if param_name == 'fc':
+            values = values[wave_type == wave_type]
+            if len(values) == 0:
+                raise ValueError(
+                    f'No events found for wave type "{wave_type}"')
         nvalues = len(values)
+        if nvalues < 2:
+            raise ValueError(f'Not enough values to plot histogram: {nvalues}')
         if nbins is None:
             # find the number of bins as the closest power of 10 to the
             # number of values divided by 10
@@ -678,13 +710,14 @@ def run():
     )
 
     if args.plot_type == 'fc_mw':
-        params.plot_fc_mw(args.hist, args.fit, args.slope, args.nbins)
+        params.plot_fc_mw(
+            args.hist, args.fit, args.slope, args.nbins, args.wave_type)
     elif args.plot_type == 'Er_mw':
         params.plot_Er_mw(args.hist, args.fit, args.slope, args.nbins)
     elif args.plot_type == 'bsd_mw':
         params.plot_bsd_mw(args.hist, args.fit, args.slope, args.nbins)
     elif args.plot_type in valid_plot_types:
-        params.plot_hist(args.plot_type, args.nbins)
+        params.plot_hist(args.plot_type, args.nbins, args.wave_type)
 
 
 def _skip_events(params):
