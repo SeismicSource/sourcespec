@@ -19,7 +19,7 @@ for each component :math:`x` (e.g., Z, N, E), within a predefined time window.
       \left| \int_{t^{p|s}_0}^{t^{p|s}_1} s_x(t) e^{-i 2 \pi f t} dt \right|
 
 where the exponent :math:`p|s` means that we are considering either P- or
-S-waves, :math:`t^{p|s}_1` and :math:`t^{p|s}_1` are the start and end times of
+S-waves, :math:`t^{p|s}_0` and :math:`t^{p|s}_1` are the start and end times of
 the P- or S-wave time window, :math:`s_x(t)` is the displacement time series
 for component :math:`x`, and :math:`f` is the frequency.
 
