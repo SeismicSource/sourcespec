@@ -12,7 +12,6 @@ SQLite output for source_spec.
 import os.path
 import logging
 import sqlite3
-import numpy as np
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_db_definitions import (
     DB_VERSION,
