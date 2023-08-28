@@ -683,9 +683,10 @@ class Params(object):
         ax.hist(values, bins=bins)
         ax.axvline(values_mean, color='red')
         txt = (
-            f'  mean: {values_mean:.1f}' if log
-            else
-            f'  mean: {values_mean:.4f}')
+            f'  mean: {values_mean:.1e}'
+            if log else
+            f'  mean: {values_mean:.4f}'
+        )
         if unit is not None:
             txt += f' {unit}'
         ax.text(
