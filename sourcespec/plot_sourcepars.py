@@ -21,7 +21,7 @@ from scipy.optimize import curve_fit
 import sqlite3
 
 valid_plot_types = [
-    'fc', 'Er', 'bsd', 'ra', 'Mo', 't_star', 'Qo',
+    'fc', 'Er', 'bsd', 'ra', 'Mo', 't_star', 'Qo', 'sigma_a',
     'fc_mw', 'Er_mw', 'bsd_mw']
 
 
@@ -227,6 +227,12 @@ class Params(object):
             cur, f'ra_{stat}_err_minus', np.float64, query_condition)
         self.ra_err_plus = query_event_params_into_numpy(
             cur, f'ra_{stat}_err_plus', np.float64, query_condition)
+        self.sigma_a = query_event_params_into_numpy(
+            cur, f'sigma_a_{stat}', np.float64, query_condition)
+        self.sigma_a_err_minus = query_event_params_into_numpy(
+            cur, f'sigma_a_{stat}_err_minus', np.float64, query_condition)
+        self.sigma_a_err_plus = query_event_params_into_numpy(
+            cur, f'sigma_a_{stat}_err_plus', np.float64, query_condition)
         self.t_star = query_event_params_into_numpy(
             cur, f't_star_{stat}', np.float64, query_condition)
         self.t_star_err_minus = query_event_params_into_numpy(
@@ -642,6 +648,7 @@ class Params(object):
             't_star': ('T star', 's', 'lin'),
             'Qo': ('Qo', None, 'lin'),
             'Er': ('Radiated Energy', 'J', 'log'),
+            'sigma_a': ('Apparent Stress', 'MPa', 'log'),
         }
         description, unit, log = parameters[param_name]
         log = (log == 'log')
