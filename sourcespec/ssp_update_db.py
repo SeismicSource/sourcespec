@@ -99,7 +99,7 @@ def _version_1_to_2(cursor):
     # New in version 2:
     #   - primary keys: evid, runid
     #   - new keys:
-    #     vp, vs, rho,
+    #     vp, vs, rho, wave_type,
     #     Er_wmean, Er_wmean_err_minus, Er_wmean_err_plus,
     #     Ml_wmean, Ml_wmean_err_minus, Ml_wmean_err_plus,
     #     sigma_a_mean, sigma_a_mean_err_minus, sigma_a_mean_err_plus,
@@ -114,7 +114,7 @@ def _version_1_to_2(cursor):
         + ');'
     )
     new_events_keys = [
-        'vp', 'vs', 'rho',
+        'vp', 'vs', 'rho', 'wave_type',
         'Er_wmean', 'Er_wmean_err_minus', 'Er_wmean_err_plus',
         'Ml_wmean', 'Ml_wmean_err_minus', 'Ml_wmean_err_plus',
         'sigma_a_mean', 'sigma_a_mean_err_minus', 'sigma_a_mean_err_plus',

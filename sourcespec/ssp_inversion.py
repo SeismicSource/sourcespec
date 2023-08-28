@@ -447,6 +447,7 @@ def spectral_inversion(config, spec_st, weight_st):
     spectra = [sp for sta in stations for sp in spec_st.select(station=sta)]
 
     sspec_output = SourceSpecOutput()
+    sspec_output.inversion_info.wave_type = config.wave_type
     sspec_output.inversion_info.algorithm = config.inv_algorithm
     sspec_output.inversion_info.weighting = config.weighting
     sspec_output.inversion_info.t_star_0 = config.t_star_0

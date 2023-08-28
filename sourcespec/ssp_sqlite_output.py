@@ -220,6 +220,7 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
     event = config.event
     evid = event.event_id
     runid = config.options.run_id
+    wave_type = config.wave_type
     means = sspec_output.mean_values()
     mean_errors = sspec_output.mean_uncertainties()
     wmeans = sspec_output.weighted_mean_values()
@@ -247,6 +248,7 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
         float(ev_vs),
         float(ev_rho),
         # Statistical info
+        wave_type,
         nobs,
         config.n_sigma,
         config.lower_percentage,

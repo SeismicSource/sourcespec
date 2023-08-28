@@ -557,6 +557,7 @@ def _add_inversion_info_to_html(sspec_output, replacements):
     }
     inversion_algorithm = inversion_algorithms[
         sspec_output.inversion_info.algorithm]
+    inversion_wave_type = sspec_output.inversion_info.wave_type
     inversion_weighting = weightings[sspec_output.inversion_info.weighting]
     inversion_t_star_0 = f'{sspec_output.inversion_info.t_star_0} s'
     inversion_invert_t_star_0 =\
@@ -580,6 +581,7 @@ def _add_inversion_info_to_html(sspec_output, replacements):
             str(sspec_output.inversion_info.Qo_min_max)
     replacements.update({
         '{INVERSION_ALGORITHM}': inversion_algorithm,
+        '{INVERSION_WAVE_TYPE}': inversion_wave_type,
         '{INVERSION_WEIGHTING}': inversion_weighting,
         '{INVERSION_T_STAR_0}': inversion_t_star_0,
         '{INVERSION_INVERT_T_STAR_0}': inversion_invert_t_star_0,

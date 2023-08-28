@@ -69,6 +69,7 @@ EVENTS_TABLE = {
     'vp': 'REAL',
     'vs': 'REAL',
     'rho': 'REAL',
+    'wave_type': 'TEXT',
     'nobs': 'INTEGER',
     'nsigma': 'REAL',
     'mid_pct': 'REAL',
