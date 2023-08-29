@@ -75,6 +75,20 @@ def stress_drop_curve_Er_mw(delta_sigma, mu, mw):
     return 0.2331 * delta_sigma * Mo / mu
 
 
+def apparent_stress_curve_Er_mw(sigma_a, mu, mw):
+    """
+    Constant apparent stress curve in Er vs Mw.
+
+    Madariaga (2009), doi:10.1007/978-1-4419-7695-6_22, eq. 33., page 374.
+    """
+    # Eq. (33) of Madariaga (2009):
+    #   sigma_a = mu * Er / Mo
+    Mo = mag_to_moment(mw)
+    sigma_a *= 1e6
+    # return Er in N·m
+    return sigma_a * Mo / mu
+
+
 def fc_mw_function(mw, a, b):
     return a / 3. + b * mw
 
@@ -318,7 +332,7 @@ class Params(object):
             True, which='minor', linestyle='solid',
             color='#DDDDDD', zorder=0)
 
-    def _set_plot_title(self, ax, nevs=None):
+    def _set_plot_title(self, ax, nevs=None, extra_text=None):
         """Set the plot title."""
         if nevs is None:
             nevs = len(self.evids)
@@ -333,7 +347,9 @@ class Params(object):
         title += f' - {stat_descr[self.stat]}'
         if self.runid is not None:
             title += f' - runid: {self.runid}'
-        ax.set_title(title, y=0.92)
+        if extra_text is not None:
+            title += f'\n{extra_text}'
+        ax.set_title(title, y=0.95, verticalalignment='top')
 
     def _stress_drop_curves_fc_mw(self, vel, ax):
         """Plot stress-drop curves for different delta_sigma."""
@@ -372,6 +388,28 @@ class Params(object):
                 Er_max = Er_test.max()
             ax.plot(mw_test, Er_test, color='#555555')
             label = str(delta_sigma)
+            # Get rid of ".0" in label
+            if label.endswith('.0'):
+                label = label[:-2]
+            label += ' MPa'
+            ax.text(mw_test[-1], Er_test[-1], label)
+        ax.set_ylim((Er_min * 0.5, Er_max * 2))
+
+    def _apparent_stress_curves_Er_mw(self, mu, ax):
+        """Plot apparent stress curves for different delta_sigma."""
+        mag_min, mag_max = ax.get_xlim()
+        mw_step = 0.1
+        mw_test = np.arange(mag_min, mag_max - 2 * mw_step, mw_step)
+        Er_min = np.inf
+        Er_max = 0.
+        for sigma_a in (0.1, 1., 10., 100.):
+            Er_test = apparent_stress_curve_Er_mw(sigma_a, mu, mw_test)
+            if Er_test.min() < Er_min:
+                Er_min = Er_test.min()
+            if Er_test.max() > Er_max:
+                Er_max = Er_test.max()
+            ax.plot(mw_test, Er_test, color='#555555')
+            label = str(sigma_a)
             # Get rid of ".0" in label
             if label.endswith('.0'):
                 label = label[:-2]
@@ -593,7 +631,8 @@ class Params(object):
             npoints = self._scatter_fc_mw(fig, ax, wave_type)
         if fit:
             self._fit_fc_mw(vel, ax, slope=slope)
-        self._set_plot_title(ax, npoints)
+        extra_text = 'Stress drop curves'
+        self._set_plot_title(ax, npoints, extra_text)
         self._add_grid(ax_Mo)
         ax_Mo.set_ylabel('fc (Hz)')
         plt.show()
@@ -615,7 +654,9 @@ class Params(object):
         ax_Mo.set_yscale('log')
 
         mu = np.nanmean((self.vs * 1e3)**2 * self.rho)
-        self._stress_drop_curves_Er_mw(mu, ax)
+        print(f'mu: {mu:.2e} Pa')
+        # self._stress_drop_curves_Er_mw(mu, ax)
+        self._apparent_stress_curves_Er_mw(mu, ax)
 
         if hist:
             npoints = self._2d_hist_Er_mw(fig, ax, nbins)
@@ -624,7 +665,8 @@ class Params(object):
         if fit:
             raise NotImplementedError('Fit not implemented yet for Er_mw')
 
-        self._set_plot_title(ax, npoints)
+        extra_text = 'Apparent stress curves'
+        self._set_plot_title(ax, npoints, extra_text)
         self._add_grid(ax_Mo)
         ax_Mo.set_ylabel('Er (N·m)')
         plt.show()
