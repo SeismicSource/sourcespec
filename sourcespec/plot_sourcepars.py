@@ -335,7 +335,7 @@ class Params(object):
             title += f' - runid: {self.runid}'
         ax.set_title(title, y=0.92)
 
-    def _stress_drop_curves_fc_mw(self, vs, ax):
+    def _stress_drop_curves_fc_mw(self, vel, ax):
         """Plot stress-drop curves for different delta_sigma."""
         mag_min, mag_max = ax.get_xlim()
         mw_step = 0.1
@@ -343,7 +343,7 @@ class Params(object):
         fc_min = np.inf
         fc_max = 0.
         for delta_sigma in (0.1, 1., 10., 100.):
-            fc_test = stress_drop_curve_fc_mw(delta_sigma, vs, mw_test)
+            fc_test = stress_drop_curve_fc_mw(delta_sigma, vel, mw_test)
             if fc_test.min() < fc_min:
                 fc_min = fc_test.min()
             if fc_test.max() > fc_max:
@@ -523,7 +523,7 @@ class Params(object):
         annot = Annot(self.mw, self.bsd, self.evids, yformat)
         fig.canvas.mpl_connect('pick_event', annot)
 
-    def _fit_fc_mw(self, vs, ax, slope=False):
+    def _fit_fc_mw(self, vel, ax, slope=False):
         """Plot a linear regression of fc vs mw."""
         mag_min, mag_max = ax.get_xlim()
         mw_step = 0.1
@@ -550,10 +550,10 @@ class Params(object):
         # r2_err = calc_r2(mw, y, yerr, a, b, f)
         print('r2:', r2)
         # print('r2_err:', r2_err)
-        delta_sigma = 1. / ((vs * 1000.)**3.) * 10**(a + 9.1 + 0.935)
+        delta_sigma = 1. / ((vel * 1000.)**3.) * 10**(a + 9.1 + 0.935)
         delta_sigma /= 1e6
         print('delta_sigma', delta_sigma)
-        fc_test = stress_drop_curve_fc_mw(delta_sigma, vs, mw_test, b)
+        fc_test = stress_drop_curve_fc_mw(delta_sigma, vel, mw_test, b)
         ax.plot(
             mw_test, fc_test, color='red', zorder=10, label=f'r2: {r2:.2f}')
         ax.legend()
@@ -579,15 +579,20 @@ class Params(object):
         fig, ax, ax_Mo = self._make_mw_axis()
         ax_Mo.set_yscale('log')
 
-        vs = np.nanmean(self.vs)
-        self._stress_drop_curves_fc_mw(vs, ax)
+        if wave_type == 'P':
+            vel = np.nanmean(self.vp)
+        elif wave_type in ('S', 'SV', 'SH'):
+            vel = np.nanmean(self.vs)
+        else:
+            raise ValueError('Wave type must be "P", "S", "SV" or "SH"')
+        self._stress_drop_curves_fc_mw(vel, ax)
 
         if hist:
             npoints = self._2d_hist_fc_mw(fig, ax, nbins, wave_type)
         else:
             npoints = self._scatter_fc_mw(fig, ax, wave_type)
         if fit:
-            self._fit_fc_mw(vs, ax, slope=slope)
+            self._fit_fc_mw(vel, ax, slope=slope)
         self._set_plot_title(ax, npoints)
         self._add_grid(ax_Mo)
         ax_Mo.set_ylabel('fc (Hz)')
