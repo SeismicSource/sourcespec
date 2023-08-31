@@ -20,6 +20,7 @@ import numpy as np
 import math
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
+from scipy.signal import detrend, find_peaks
 from obspy.core import Stream
 from sourcespec import spectrum
 from sourcespec.ssp_setup import ssp_exit
@@ -525,6 +526,51 @@ def _select_spectra(spec_st, specid):
     return spec_st_sel
 
 
+def _upper_envelope_smoothing(spec, smoothing_factor=0.8):
+    """
+    Smooth the spectrum with its upper envelope.
+
+    :param spec: spectrum to be smoothed
+    :type spec: :class:`sourcespec.spectrum.Spectrum`
+    :param smoothing_factor: smoothing factor for the upper envelope, between
+        0 and 1. A value of 1 means that the spectrum is fully replaced with
+        the upper envelope. A value of 0 means that the spectrum is not
+        smoothed at all.
+    :type smoothing_factor: float
+
+    :return: smoothed spectrum
+    :rtype: :class:`sourcespec.spectrum.Spectrum`
+    """
+    if smoothing_factor == 0:
+        return spec
+    if smoothing_factor < 0 or smoothing_factor > 1:
+        raise ValueError('smoothing_factor must be between 0 and 1')
+    log10_data = np.log10(spec.data_logspaced)
+    # build the upper envelope by finding peaks on the detrended data
+    log10_data_detrend = detrend(log10_data)
+    peaks, _ = find_peaks(log10_data_detrend)
+    # add 0 at the beginning of peaks
+    peaks = np.insert(peaks, 0, 0)
+    # add last index at the end of peaks
+    peaks = np.append(peaks, len(log10_data_detrend) - 1)
+    # reinterpolate the upper envelope to the original frequencies
+    # (in log space)
+    log10_upper_envelope = log10_data[peaks]
+    log10_freqs = np.log10(spec.freq_logspaced[peaks])
+    f = interp1d(
+        log10_freqs, log10_upper_envelope, fill_value='extrapolate')
+    upper_envelope_data_logspaced = 10**f(np.log10(spec.freq_logspaced))
+    upper_envelope_data = 10**f(np.log10(spec.get_freq()))
+    # smooth the spectrum with the upper envelope
+    spec_smooth = spec.copy()
+    data_diff_logspaced = upper_envelope_data_logspaced - spec.data_logspaced
+    spec_smooth.data_logspaced += smoothing_factor * data_diff_logspaced
+    data_diff = upper_envelope_data - spec.data
+    spec_smooth.data += smoothing_factor * data_diff
+    spec_smooth.stats.channel = f'{spec.stats.channel[:-1]}H'
+    return spec_smooth
+
+
 def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
              wave_type='S'):
     """
@@ -543,6 +589,7 @@ def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
             spec_h = _compute_h(
                 spec_st_sel, code, vertical_channel_codes, wave_type)
             if spec_h is not None:
+                spec_h = _upper_envelope_smoothing(spec_h)
                 spec_st.append(spec_h)
             specnoise_h = _compute_h(
                 specnoise_st_sel, code, vertical_channel_codes, wave_type)
