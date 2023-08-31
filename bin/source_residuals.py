@@ -16,11 +16,10 @@ import inspect
 
 MIN_PYTHON_VERSION = (3, 6)
 MIN_PYTHON_VERSION_STR = '{}.{}'.format(*MIN_PYTHON_VERSION)
-PYTHON_VERSION_STR = '{}.{}.{}'.format(*sys.version_info[0:3])
+PYTHON_VERSION_STR = '{}.{}.{}'.format(*sys.version_info[:3])
 if sys.version_info < MIN_PYTHON_VERSION:
-    msg = 'SourceSpec requires Python version >= {}'.format(
-        MIN_PYTHON_VERSION_STR)
-    msg += ' you are using Python version {}'.format(PYTHON_VERSION_STR)
+    msg = f'SourceSpec requires Python version >= {MIN_PYTHON_VERSION_STR}'
+    msg += f' you are using Python version {PYTHON_VERSION_STR}'
     print(msg, file=sys.stderr)
     sys.exit(1)
 
@@ -32,15 +31,15 @@ if __name__ == '__main__':
         sys.path.insert(0, path)
         # Try to import obspy, which requires most of the
         # source_residuals dependencies
-        import obspy #NOQA
+        import obspy  # NOQA
         from sourcespec.source_residuals import main
         main()
     except ImportError as msg:
         mod_name = msg.name
         if mod_name == 'PIL':
             mod_name = 'pillow'
-        s = "Error: module '{}' is required by source_residuals.".format(
-            mod_name)
-        s += " Please install it.\n"
-        sys.stderr.write(s)
+        sys.stderr.write(
+            f"Error: module '{mod_name}' is required by source_residuals. "
+            "Please install it.\n"
+        )
         sys.exit(1)

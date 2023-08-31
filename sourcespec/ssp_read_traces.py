@@ -194,7 +194,7 @@ def _add_coords(trace):
     coords.elevation /= 1e3
     trace.stats.coords = coords
 # list to keep track of skipped traces
-_add_coords.skipped = []  #noqa
+_add_coords.skipped = []  # noqa
 
 
 def _add_event(trace, ssp_event=None):

@@ -37,7 +37,7 @@ def _get_nll_grd(phase, station, type, NLL_time_dir):
             return grd
     raise RuntimeError
 # dictionary to cache NLL grids
-_get_nll_grd.grds = {}  #noqa
+_get_nll_grd.grds = {}  # noqa
 
 
 def _wave_arrival_nll(trace, phase, NLL_time_dir, focmec):
@@ -227,6 +227,6 @@ def add_arrival_to_trace(trace, phase, config):
         trst.travel_times[phase] = travel_time
     add_arrival_to_trace.angle_cache[key] =\
         trst.takeoff_angles[phase] = takeoff_angle
-add_arrival_to_trace.pick_cache = {}  #noqa
-add_arrival_to_trace.travel_time_cache = {}  #noqa
-add_arrival_to_trace.angle_cache = {}  #noqa
+add_arrival_to_trace.pick_cache = {}  # noqa
+add_arrival_to_trace.travel_time_cache = {}  # noqa
+add_arrival_to_trace.angle_cache = {}  # noqa

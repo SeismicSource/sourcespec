@@ -29,7 +29,7 @@ mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
 
 
-class ScalarFormatter(sf):  #NOQA
+class ScalarFormatter(sf):  # NOQA
     def _set_format(self, vmin=None, vmax=None):
         self.format = '%1.1f'
 

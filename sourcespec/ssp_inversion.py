@@ -407,8 +407,10 @@ def _synth_spec(config, spec, station_pars):
         _params[-1] = 0
         spec_synth.data_mag = spectral_model(freq, *_params)
         spec_synth.data = mag_to_moment(spec_synth.data_mag)
-        spec_synth.data_mag_logspaced = spectral_model(freq_logspaced, *_params)
-        spec_synth.data_logspaced = mag_to_moment(spec_synth.data_mag_logspaced)
+        spec_synth.data_mag_logspaced =\
+            spectral_model(freq_logspaced, *_params)
+        spec_synth.data_logspaced =\
+            mag_to_moment(spec_synth.data_mag_logspaced)
         spec_st.append(spec_synth)
 
     # Add an extra spectrum with no corner frequency
@@ -419,8 +421,10 @@ def _synth_spec(config, spec, station_pars):
         _params[1] = 1e999
         spec_synth.data_mag = spectral_model(freq, *_params)
         spec_synth.data = mag_to_moment(spec_synth.data_mag)
-        spec_synth.data_mag_logspaced = spectral_model(freq_logspaced, *_params)
-        spec_synth.data_logspaced = mag_to_moment(spec_synth.data_mag_logspaced)
+        spec_synth.data_mag_logspaced =\
+            spectral_model(freq_logspaced, *_params)
+        spec_synth.data_logspaced =\
+            mag_to_moment(spec_synth.data_mag_logspaced)
         spec_st.append(spec_synth)
     return spec_st
 

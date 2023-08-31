@@ -155,7 +155,7 @@ def _check_cartopy_version():
     cartopy_min_ver = (0, 21, 0)
     try:
         cartopy_ver = None
-        import cartopy  #NOQA
+        import cartopy  # NOQA
         global CARTOPY_VERSION_STR
         CARTOPY_VERSION_STR = cartopy.__version__
         cartopy_ver = tuple(map(int, cartopy.__version__.split('.')[:3]))
@@ -179,7 +179,7 @@ def _check_cartopy_version():
 
 def _check_pyproj_version():
     try:
-        import pyproj  #NOQA
+        import pyproj  # NOQA
     except ImportError as e:
         msg = '\nPlease install pyproj to plot maps.\n'
         raise ImportError(msg) from e
@@ -189,7 +189,7 @@ def _check_nllgrid_version():
     nllgrid_min_ver = (1, 4, 2)
     try:
         nllgrid_ver = None
-        import nllgrid  #NOQA
+        import nllgrid  # NOQA
         nllgrid_ver_str = nllgrid.__version__.split('+')[0]
         nllgrid_ver = tuple(map(int, nllgrid_ver_str.split('.')))
         # nllgrid versions are sometimes X.Y, other times X.Y.Z

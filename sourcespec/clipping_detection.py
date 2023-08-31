@@ -292,7 +292,7 @@ def _get_plotting_axes():
     for backend in mpl_backends:
         try:
             matplotlib.use(backend, force=True)
-            from matplotlib import pyplot  #noqa
+            from matplotlib import pyplot  # noqa
             break
         except Exception:
             continue
