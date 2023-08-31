@@ -714,8 +714,6 @@ def build_spectra(config, st):
     """
     wave_type = config.wave_type
     logger.info(f'Building {wave_type}-wave spectra...')
-    if wave_type[0] == 'P':
-        logger.info('Ignoring horizontal components for P-wave spectra')
     signal_st, noise_st = _build_signal_and_noise_streams(config, st)
     _trim_components(config, signal_st, noise_st, st)
     for trace in signal_st + noise_st:
