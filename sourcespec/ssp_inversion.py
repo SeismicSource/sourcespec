@@ -43,9 +43,9 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
       - Basin-hopping (BH)
       - Grid search (GS)
     """
-    freq_log = spec.freq_log
-    ydata = spec.data_log_mag
-    minimize_func = objective_func(freq_log, ydata, weight)
+    freq_logspaced = spec.freq_logspaced
+    ydata = spec.data_logspaced_mag
+    minimize_func = objective_func(freq_logspaced, ydata, weight)
     if config.inv_algorithm == 'TNC':
         res = minimize(
             minimize_func,
@@ -56,7 +56,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         # trick: use curve_fit() bounded to params_opt
         # to get the covariance
         _, params_cov = curve_fit(
-            spectral_model, freq_log, ydata,
+            spectral_model, freq_logspaced, ydata,
             p0=params_opt, sigma=yerr,
             bounds=(params_opt - (1e-10), params_opt + (1e-10))
         )
@@ -72,7 +72,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
                 'Trust Region Reflective algorithm.'
             )
         params_opt, params_cov = curve_fit(
-            spectral_model, freq_log, ydata,
+            spectral_model, freq_logspaced, ydata,
             p0=initial_values.get_params0(), sigma=yerr,
             bounds=bnds
         )
@@ -88,7 +88,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         # trick: use curve_fit() bounded to params_opt
         # to get the covariance
         _, params_cov = curve_fit(
-            spectral_model, freq_log, ydata,
+            spectral_model, freq_logspaced, ydata,
             p0=params_opt, sigma=yerr,
             bounds=(params_opt - (1e-10), params_opt + (1e-10))
         )
@@ -124,7 +124,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
     return params_opt, params_err, misfit
 
 
-def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_log, statId):
+def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_logspaced, statId):
     """Find the frequency range to compute Mw_0 and, possibly, t_star_0."""
     if config.weighting == 'noise':
         # we start where signal-to-noise becomes strong
@@ -151,7 +151,7 @@ def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_log, statId):
     elif config.weighting == 'frequency':
         idx0 = 0
         # the closest index to f_weight:
-        idx1 = np.where(freq_log <= config.f_weight)[0][-1]
+        idx1 = np.where(freq_logspaced <= config.f_weight)[0][-1]
     elif config.weighting == 'inv_frequency':
         weight_idxs = np.where(weight >= 0.7)[0]
         try:
@@ -181,10 +181,10 @@ def _spec_inversion(config, spec, spec_weight):
     geod = gps2dist_azimuth(evla, evlo, stla, stlo)
     az = geod[1]
 
-    freq_log = spec.freq_log
-    ydata = spec.data_log_mag
+    freq_logspaced = spec.freq_logspaced
+    ydata = spec.data_logspaced_mag
     statId = f'{spec.id} {spec.stats.instrtype}'
-    weight = spec_weight.data_log
+    weight = spec_weight.data_logspaced
 
     # 'curve_fit' interprets 'yerr' as standard deviation array
     # and calculates weights as 1/yerr^2 .
@@ -195,19 +195,20 @@ def _spec_inversion(config, spec, spec_weight):
     # When using noise weighting, idx1 is the first maximum in
     # signal-to-noise ratio
     idx0, idx1 = _freq_ranges_for_Mw0_and_tstar0(
-        config, weight, freq_log, statId)
+        config, weight, freq_logspaced, statId)
 
     # first maximum is a proxy for fc, we use it for fc_0:
-    fc_0 = freq_log[idx1]
+    fc_0 = freq_logspaced[idx1]
 
     t_star_min = t_star_max = None
     if config.invert_t_star_0:
         # fit t_star_0 and Mw on the initial part of the spectrum,
         # corrected for the effect of fc
-        ydata_corr = ydata - spectral_model(freq_log, Mw=0, fc=fc_0, t_star=0)
+        ydata_corr =\
+            ydata - spectral_model(freq_logspaced, Mw=0, fc=fc_0, t_star=0)
         ydata_corr = smooth(ydata_corr, window_len=18)
         slope, Mw_0 = np.polyfit(
-            freq_log[idx0: idx1], ydata_corr[idx0: idx1], deg=1)
+            freq_logspaced[idx0: idx1], ydata_corr[idx0: idx1], deg=1)
         t_star_0 = -3. / 2 * slope / (np.pi * np.log10(np.e))
         t_star_min = t_star_0 * (1 - config.t_star_0_variability)
         t_star_max = t_star_0 * (1 + config.t_star_0_variability)
@@ -348,7 +349,7 @@ def _spec_inversion(config, spec, spec_weight):
     # source radius in meters
     fc_min = fc - fc_err[0]
     if fc_min <= 0:
-        fc_min = freq_log[0]
+        fc_min = freq_logspaced[0]
     fc_max = fc + fc_err[1]
     radius_min = source_radius(fc_max, vel * 1e3)
     radius_max = source_radius(fc_min, vel * 1e3)
@@ -387,15 +388,15 @@ def _synth_spec(config, spec, station_pars):
     chan_no_orientation = spec.stats.channel[:-1]
 
     freq = spec.get_freq()
-    freq_log = spec.freq_log
+    freq_logspaced = spec.freq_logspaced
     spec_synth = spec.copy()
     spec_synth.stats.channel = f'{chan_no_orientation}S'
     spec_synth.stats.par = par
     spec_synth.stats.par_err = par_err
     spec_synth.data_mag = spectral_model(freq, *params_opt)
     spec_synth.data = mag_to_moment(spec_synth.data_mag)
-    spec_synth.data_log_mag = spectral_model(freq_log, *params_opt)
-    spec_synth.data_log = mag_to_moment(spec_synth.data_log_mag)
+    spec_synth.data_logspaced_mag = spectral_model(freq_logspaced, *params_opt)
+    spec_synth.data_logspaced = mag_to_moment(spec_synth.data_logspaced_mag)
     spec_st.append(spec_synth)
 
     # Add an extra spectrum with no attenuation
@@ -406,8 +407,8 @@ def _synth_spec(config, spec, station_pars):
         _params[-1] = 0
         spec_synth.data_mag = spectral_model(freq, *_params)
         spec_synth.data = mag_to_moment(spec_synth.data_mag)
-        spec_synth.data_log_mag = spectral_model(freq_log, *_params)
-        spec_synth.data_log = mag_to_moment(spec_synth.data_log_mag)
+        spec_synth.data_logspaced_mag = spectral_model(freq_logspaced, *_params)
+        spec_synth.data_logspaced = mag_to_moment(spec_synth.data_logspaced_mag)
         spec_st.append(spec_synth)
 
     # Add an extra spectrum with no corner frequency
@@ -418,8 +419,8 @@ def _synth_spec(config, spec, station_pars):
         _params[1] = 1e999
         spec_synth.data_mag = spectral_model(freq, *_params)
         spec_synth.data = mag_to_moment(spec_synth.data_mag)
-        spec_synth.data_log_mag = spectral_model(freq_log, *_params)
-        spec_synth.data_log = mag_to_moment(spec_synth.data_log_mag)
+        spec_synth.data_logspaced_mag = spectral_model(freq_logspaced, *_params)
+        spec_synth.data_logspaced = mag_to_moment(spec_synth.data_logspaced_mag)
         spec_st.append(spec_synth)
     return spec_st
 

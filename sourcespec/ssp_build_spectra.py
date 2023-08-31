@@ -117,14 +117,14 @@ def _compute_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
         if spec_h is None:
             spec_h = spec.copy()
             spec_h.data = np.power(spec_h.data, 2)
-            spec_h.data_log = np.power(spec_h.data_log, 2)
+            spec_h.data_logspaced = np.power(spec_h.data_logspaced, 2)
             spec_h.stats.channel = f'{code}H'
         else:
             spec_h.data += np.power(spec.data, 2)
-            spec_h.data_log += np.power(spec.data_log, 2)
+            spec_h.data_logspaced += np.power(spec.data_logspaced, 2)
     if spec_h is not None:
         spec_h.data = np.sqrt(spec_h.data)
-        spec_h.data_log = np.sqrt(spec_h.data_log)
+        spec_h.data_logspaced = np.sqrt(spec_h.data_logspaced)
     return spec_h
 
 
@@ -341,19 +341,19 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
     _log_freq = np.log10(freq)
     # frequencies in logarithmic spacing
     log_df = _log_freq[-1] - _log_freq[-2]
-    freq_logspace =\
+    freq_logspaced =\
         10**(np.arange(_log_freq[0], _log_freq[-1] + log_df, log_df))
     # 2. Reinterpolate data using log10 frequencies
     # make sure that extrapolation does not create negative values
     f = interp1d(freq, spec.data, fill_value='extrapolate')
-    data_logspace = f(freq_logspace)
-    data_logspace[data_logspace <= 0] = np.min(spec.data)
+    data_logspaced = f(freq_logspaced)
+    data_logspaced[data_logspaced <= 0] = np.min(spec.data)
     # 3. Smooth log10-spaced data points
     npts = max(1, int(round(smooth_width_decades / log_df)))
-    data_logspace = smooth(data_logspace, window_len=npts)
+    data_logspaced = smooth(data_logspaced, window_len=npts)
     # 4. Reinterpolate to linear frequencies
     # make sure that extrapolation does not create negative values
-    f = interp1d(freq_logspace, data_logspace, fill_value='extrapolate')
+    f = interp1d(freq_logspaced, data_logspaced, fill_value='extrapolate')
     data = f(freq)
     data[data <= 0] = np.min(spec.data)
     spec.data = data
@@ -361,12 +361,12 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
     #    based on the width of the smoothing window
     # make sure that extrapolation does not create negative values
     log_df = smooth_width_decades / 5
-    freq_logspace =\
+    freq_logspaced =\
         10**(np.arange(_log_freq[0], _log_freq[-1] + log_df, log_df))
-    spec.freq_log = freq_logspace
-    data_logspace = f(freq_logspace)
-    data_logspace[data_logspace <= 0] = np.min(spec.data)
-    spec.data_log = data_logspace
+    spec.freq_logspaced = freq_logspaced
+    data_logspaced = f(freq_logspaced)
+    data_logspaced[data_logspaced <= 0] = np.min(spec.data)
+    spec.data_logspaced = data_logspaced
 
 
 def _build_spectrum(config, trace):
@@ -402,7 +402,7 @@ def _build_uniform_weight(spec):
     weight = spec.copy()
     weight.snratio = None
     weight.data = np.ones_like(weight.data)
-    weight.data_log = np.ones_like(weight.data_log)
+    weight.data_logspaced = np.ones_like(weight.data_logspaced)
     return weight
 
 
@@ -412,10 +412,10 @@ def _build_weight_from_frequency(config, spec):
     weight.data = np.ones_like(weight.data)
     weight.data[freq <= config.f_weight] = config.weight
     weight.data /= np.max(weight.data)
-    freq_log = weight.freq_log
-    weight.data_log = np.ones_like(weight.data_log)
-    weight.data_log[freq_log <= config.f_weight] = config.weight
-    weight.data_log /= np.max(weight.data_log)
+    freq_logspaced = weight.freq_logspaced
+    weight.data_logspaced = np.ones_like(weight.data_logspaced)
+    weight.data_logspaced[freq_logspaced <= config.f_weight] = config.weight
+    weight.data_logspaced /= np.max(weight.data_logspaced)
     return weight
 
 
@@ -426,7 +426,7 @@ def _build_weight_from_inv_frequency(spec, pow=0.25):
     if pow >= 1:
         raise ValueError('pow must be < 1')
     # Note: weight.data is used for plotting,
-    #       weight.data_log for actual weighting
+    #       weight.data_logspaced for actual weighting
     weight = spec.copy()
     freq = weight.get_freq()
     weight.data *= 0
@@ -440,14 +440,14 @@ def _build_weight_from_inv_frequency(spec, pow=0.25):
     # and to avoid too much weight for very low frequencies
     weight.data[i0: i1 + 1] = 1. / (freq[i0: i1 + 1] - freq[i0] + 0.25)**pow
     weight.data /= np.max(weight.data)
-    freq_log = weight.freq_log
-    weight.data_log *= 0
-    i0 = np.where(freq_log >= snr_fmin)[0][0] if snr_fmin else 0
-    i1 = np.where(freq_log <= snr_fmax)[0][-1] if snr_fmax\
-        else len(freq_log) - 1
-    weight.data_log[i0: i1 + 1] =\
-        1. / (freq_log[i0: i1 + 1] - freq_log[i0] + 0.25)**pow
-    weight.data_log /= np.max(weight.data_log)
+    freq_logspaced = weight.freq_logspaced
+    weight.data_logspaced *= 0
+    i0 = np.where(freq_logspaced >= snr_fmin)[0][0] if snr_fmin else 0
+    i1 = np.where(freq_logspaced <= snr_fmax)[0][-1] if snr_fmax\
+        else len(freq_logspaced) - 1
+    weight.data_logspaced[i0: i1 + 1] =\
+        1. / (freq_logspaced[i0: i1 + 1] - freq_logspaced[i0] + 0.25)**pow
+    weight.data_logspaced /= np.max(weight.data_logspaced)
     return weight
 
 
@@ -485,10 +485,10 @@ def _build_weight_from_noise(config, spec, specnoise):
             spec, specnoise, config.spectral_smooth_width_decades)
     # interpolate to log-frequencies
     f = interp1d(weight.get_freq(), weight.data, fill_value='extrapolate')
-    weight.data_log = f(weight.freq_log)
-    weight.data_log /= np.max(weight.data_log)
+    weight.data_logspaced = f(weight.freq_logspaced)
+    weight.data_logspaced /= np.max(weight.data_logspaced)
     # Make sure weight is positive
-    weight.data_log[weight.data_log <= 0] = 0.001
+    weight.data_logspaced[weight.data_logspaced <= 0] = 0.001
     return weight
 
 
@@ -683,7 +683,7 @@ def _build_signal_and_noise_spectral_streams(
     # convert the spectral amplitudes to moment magnitude
     for spec in spec_st:
         spec.data_mag = moment_to_mag(spec.data)
-        spec.data_log_mag = moment_to_mag(spec.data_log)
+        spec.data_logspaced_mag = moment_to_mag(spec.data_logspaced)
     for specnoise in specnoise_st:
         specnoise.data_mag = moment_to_mag(specnoise.data)
     # apply station correction if a residual file is specified in config

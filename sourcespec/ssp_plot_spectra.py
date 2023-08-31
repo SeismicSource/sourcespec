@@ -560,7 +560,7 @@ def _plot_spec(config, plot_params, spec, spec_noise):
     if plot_type == 'regular':
         zorder = defaultdict(lambda: 20, {'S': 21, 'H': 22})
         ax.loglog(
-            spec.freq_log, spec.data_log, color=color, alpha=alpha,
+            spec.freq_logspaced, spec.data_logspaced, color=color, alpha=alpha,
             linestyle=linestyle, linewidth=linewidth,
             zorder=zorder[orientation])
         special_orientations = ['S', 's', 't', 'H', 'h']
