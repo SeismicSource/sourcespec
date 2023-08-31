@@ -53,10 +53,10 @@ def station_correction(spec_st, config):
         spec_corr.data_mag -= corr.data_mag
         # interpolate the corrected data_mag to logspaced frequencies
         f = interp1d(freq, spec_corr.data_mag, fill_value='extrapolate')
-        spec_corr.data_logspaced_mag = f(spec_corr.freq_logspaced)
+        spec_corr.data_mag_logspaced = f(spec_corr.freq_logspaced)
         # convert mag to moment
         spec_corr.data = mag_to_moment(spec_corr.data_mag)
-        spec_corr.data_logspaced = mag_to_moment(spec_corr.data_logspaced_mag)
+        spec_corr.data_logspaced = mag_to_moment(spec_corr.data_mag_logspaced)
         spec_st.append(spec_corr)
         logger.info(
             f'{spec_corr.id} corrected, frequency range is: '

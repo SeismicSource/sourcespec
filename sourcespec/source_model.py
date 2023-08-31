@@ -53,9 +53,9 @@ def make_synth(config, spec_st, trace_spec=None):
         spec.freq_logspaced = freq_logspaced
         spec.data_mag = spectral_model(freq, mag, fc, t_star, alpha)
         spec.data = mag_to_moment(spec.data_mag)
-        spec.data_logspaced_mag = spectral_model(
+        spec.data_mag_logspaced = spectral_model(
             freq_logspaced, mag, fc, t_star, alpha)
-        spec.data_logspaced = mag_to_moment(spec.data_logspaced_mag)
+        spec.data_logspaced = mag_to_moment(spec.data_mag_logspaced)
         spec_st.append(spec)
 
         if trace_spec:

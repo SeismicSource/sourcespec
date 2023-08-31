@@ -683,7 +683,7 @@ def _build_signal_and_noise_spectral_streams(
     # convert the spectral amplitudes to moment magnitude
     for spec in spec_st:
         spec.data_mag = moment_to_mag(spec.data)
-        spec.data_logspaced_mag = moment_to_mag(spec.data_logspaced)
+        spec.data_mag_logspaced = moment_to_mag(spec.data_logspaced)
     for specnoise in specnoise_st:
         specnoise.data_mag = moment_to_mag(specnoise.data)
     # apply station correction if a residual file is specified in config
