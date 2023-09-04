@@ -15,6 +15,7 @@ import contextlib
 import logging
 import yaml
 import re
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from obspy import UTCDateTime
 from obspy import read_events
@@ -387,6 +388,15 @@ def _parse_source_spec_event_file(event_file, event_id=None):
         events = yaml.safe_load(open(event_file))
     except Exception as e:
         raise TypeError('Not a valid YAML file.') from e
+    # XML is valid YAML, but obviously not a SourceSpec Event File
+    try:
+        root = ET.fromstring(events)
+    except Exception:
+        root = None
+    if root:
+        raise TypeError(
+            'The file is an XML file, not a YAML file. '
+            'Try reading it with the "-q" option (QuakeML format).')
     # raise TypeError if events is not a list
     if not isinstance(events, list):
         raise TypeError(
