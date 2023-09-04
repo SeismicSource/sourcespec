@@ -471,8 +471,8 @@ def spectral_inversion(config, spec_st, weight_st):
     sspec_output.event_info.event_id = event.event_id
     if event.name is not None:
         sspec_output.event_info.event_name = event.name
-    sspec_output.event_info.longitude = event.hypocenter.longitude
-    sspec_output.event_info.latitude = event.hypocenter.latitude
+    sspec_output.event_info.longitude = event.hypocenter.longitude.value_in_deg
+    sspec_output.event_info.latitude = event.hypocenter.latitude.value_in_deg
     sspec_output.event_info.depth_in_km = event.hypocenter.depth.value_in_km
     sspec_output.event_info.origin_time = event.hypocenter.origin_time
     sspec_output.event_info.vp_in_km_s = event.hypocenter.vp
