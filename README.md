@@ -4,6 +4,7 @@
 
 Earthquake source parameters from P- or S-wave displacement spectra
 
+[![changelog-badge]][changelog-link]
 [![PyPI-badge]][PyPI-link]
 [![license-badge]][license-link]
 [![docs-badge]][docs-link]
@@ -452,6 +453,8 @@ You can also cite the following abstract presented at the
 [license-link]: http://www.cecill.info/licences.en.html
 [docs-badge]: https://readthedocs.org/projects/sourcespec/badge/?version=latest
 [docs-link]: https://sourcespec.readthedocs.io/en/latest/?badge=latest
+[changelog-badge]: https://img.shields.io/badge/Changelog-136CB6.svg
+[changelog-link]: https://github.com/SeismicSource/sourcespec/blob/main/CHANGELOG.md
 [DOI-badge]: https://zenodo.org/badge/DOI/10.5281/zenodo.3688587.svg
 [DOI-link]: https://doi.org/10.5281/zenodo.3688587
 [documentation]: https://sourcespec.readthedocs.io
