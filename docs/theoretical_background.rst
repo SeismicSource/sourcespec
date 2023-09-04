@@ -256,7 +256,7 @@ Starting from the inverted parameters :math:`M_0` ( :math:`M_w` ),
 :math:`f^{p|s}_c`, :math:`t^*` and following the equations in :cite:t:`Madariaga2011`
 and :cite:t:`Lancieri2012`, other quantities are computed for each station:
 
--  the Brune static stress drop :math:`\Delta \sigma`
+-  the static stress drop :math:`\Delta \sigma`
 -  the source radius :math:`a`
 -  the radiated energy :math:`E_r`
 -  the apparent stress :math:`\sigma_a`
@@ -270,9 +270,9 @@ based on the `interquartile
 range <https://en.wikipedia.org/wiki/Interquartile_range>`__ rule.
 
 
-Source radius and Brune static stress drop
+Source radius and static stress drop
 ------------------------------------------
-The Brune static stress drop :math:`\Delta \sigma` is computed under the
+The static stress drop :math:`\Delta \sigma` is computed under the
 assumption of a circular rupture of radius :math:`a`. The model of
 :cite:t:`Brune1970` provides an expression for the source radius (equation 31
 in :cite:t:`Madariaga2011`):
@@ -285,7 +285,7 @@ where :math:`c_h` is the P- or S-wave velocity at the hypocenter
 (in :math:`m/s`) and :math:`f^{p|s}_c` is the corner frequency (in :math:`Hz`)
 estimated from the spectral inversion of P or S waves.
 
-The Brune static stress drop is then computed using the circular crack model,
+The static stress drop is then computed using the circular crack model,
 as discussed in :cite:t:`Madariaga2011` (equation 27):
 
 .. math::

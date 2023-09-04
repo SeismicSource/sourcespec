@@ -21,8 +21,8 @@ from scipy.optimize import curve_fit
 import sqlite3
 
 valid_plot_types = [
-    'fc', 'Er', 'bsd', 'ra', 'Mo', 't_star', 'Qo', 'sigma_a',
-    'fc_mw', 'Er_mw', 'bsd_mw']
+    'fc', 'Er', 'ssd', 'ra', 'Mo', 't_star', 'Qo', 'sigma_a',
+    'fc_mw', 'Er_mw', 'ssd_mw']
 
 
 class Annot():
@@ -139,11 +139,11 @@ def parse_args():
         '-M', '--magmax', type=float, default=None,
         help='Maximum magnitude')
     parser.add_argument(
-        '-b', '--bsdmin', type=float, default=None,
-        help='Minimum Brune static stress drop')
+        '-s', '--ssdmin', type=float, default=None,
+        help='Minimum static stress drop')
     parser.add_argument(
-        '-B', '--bsdmax', type=float, default=None,
-        help='Maximum Brune static stress drop')
+        '-S', '--ssdmax', type=float, default=None,
+        help='Maximum static stress drop')
     parser.add_argument(
         '-H', '--hist', default=False, action='store_true',
         help='Draw an histogram instead of a scatter plot (only for 2D plots)')
@@ -151,7 +151,7 @@ def parse_args():
         '-f', '--fit', default=False, action='store_true',
         help='Fit the scatter plot with a linear function (only for 2D plots)')
     parser.add_argument(
-        '-S', '--slope', default=False, action='store_true',
+        '-l', '--slope', default=False, action='store_true',
         help='Fit also the slope of the linear function (only for 2D plots)')
     parser.add_argument(
         '-w', '--wave_type', default='S',
@@ -229,12 +229,12 @@ class Params(object):
             cur, f'Er_{stat}_err_minus', np.float64, query_condition)
         self.Er_err_plus = query_event_params_into_numpy(
             cur, f'Er_{stat}_err_plus', np.float64, query_condition)
-        self.bsd = query_event_params_into_numpy(
-            cur, f'bsd_{stat}', np.float64, query_condition)
-        self.bsd_err_minus = query_event_params_into_numpy(
-            cur, f'bsd_{stat}_err_minus', np.float64, query_condition)
-        self.bsd_err_plus = query_event_params_into_numpy(
-            cur, f'bsd_{stat}_err_plus', np.float64, query_condition)
+        self.ssd = query_event_params_into_numpy(
+            cur, f'ssd_{stat}', np.float64, query_condition)
+        self.ssd_err_minus = query_event_params_into_numpy(
+            cur, f'ssd_{stat}_err_minus', np.float64, query_condition)
+        self.ssd_err_plus = query_event_params_into_numpy(
+            cur, f'ssd_{stat}_err_plus', np.float64, query_condition)
         self.ra = query_event_params_into_numpy(
             cur, f'ra_{stat}', np.float64, query_condition)
         self.ra_err_minus = query_event_params_into_numpy(
@@ -275,9 +275,9 @@ class Params(object):
         self.Er = np.delete(self.Er, idx)
         self.Er_err_minus = np.delete(self.Er_err_minus, idx)
         self.Er_err_plus = np.delete(self.Er_err_plus, idx)
-        self.bsd = np.delete(self.bsd, idx)
-        self.bsd_err_minus = np.delete(self.bsd_err_minus, idx)
-        self.bsd_err_plus = np.delete(self.bsd_err_plus, idx)
+        self.ssd = np.delete(self.ssd, idx)
+        self.ssd_err_minus = np.delete(self.ssd_err_minus, idx)
+        self.ssd_err_plus = np.delete(self.ssd_err_plus, idx)
         self.ra = np.delete(self.ra, idx)
         self.ra_err_minus = np.delete(self.ra_err_minus, idx)
         self.ra_err_plus = np.delete(self.ra_err_plus, idx)
@@ -289,7 +289,7 @@ class Params(object):
         self.Qo_err_plus = np.delete(self.Qo_err_plus, idx)
 
     def filter(self, stamin=None, stamax=None, magmin=None, magmax=None,
-               bsdmin=None, bsdmax=None):
+               ssdmin=None, ssdmax=None):
         """Filter the parameters based on one or more conditions."""
         cond = np.ones(len(self.nsta)).astype(bool)
         if stamin is not None:
@@ -300,10 +300,10 @@ class Params(object):
             cond = np.logical_and(cond, self.mw >= magmin)
         if magmax is not None:
             cond = np.logical_and(cond, self.mw <= magmax)
-        if bsdmin is not None:
-            cond = np.logical_and(cond, self.bsd >= bsdmin)
-        if bsdmax is not None:
-            cond = np.logical_and(cond, self.bsd <= bsdmax)
+        if ssdmin is not None:
+            cond = np.logical_and(cond, self.ssd >= ssdmin)
+        if ssdmax is not None:
+            cond = np.logical_and(cond, self.ssd <= ssdmax)
         self.skip_events(np.where(~cond)[0])
 
     def _make_mw_axis(self):
@@ -474,26 +474,26 @@ class Params(object):
         plt.colorbar(cm, cax=cbaxes, orientation='vertical', label='counts')
         return len(Er)
 
-    def _2d_hist_bsd_mw(self, fig, ax, nbins=None):
-        """Plot a 2d histogram of bsd vs mw."""
+    def _2d_hist_ssd_mw(self, fig, ax, nbins=None):
+        """Plot a 2d histogram of ssd vs mw."""
         mw_min, mw_max = ax.get_xlim()
-        bsd_min, bsd_max = ax.get_ylim()
-        log_bsd_min = np.log10(bsd_min)
-        log_bsd_max = np.log10(bsd_max)
+        ssd_min, ssd_max = ax.get_ylim()
+        log_ssd_min = np.log10(ssd_min)
+        log_ssd_max = np.log10(ssd_max)
         if nbins is None:
             mw_nbins = int((mw_max - mw_min) * 10)
-            bsd_nbins = int((log_bsd_max - log_bsd_min) * 5)
+            ssd_nbins = int((log_ssd_max - log_ssd_min) * 5)
         else:
             mw_nbins = nbins
-            bsd_nbins = nbins
+            ssd_nbins = nbins
         mw_bins = np.linspace(mw_min, mw_max + 0.1, mw_nbins)
-        bsd_bins = 10**np.linspace(log_bsd_min, log_bsd_max + 0.1, bsd_nbins)
+        ssd_bins = 10**np.linspace(log_ssd_min, log_ssd_max + 0.1, ssd_nbins)
         self.nbins_x = mw_nbins
-        self.nbins_y = bsd_nbins
+        self.nbins_y = ssd_nbins
         counts, _, _ = np.histogram2d(
-            self.mw, self.bsd, bins=(mw_bins, bsd_bins))
+            self.mw, self.ssd, bins=(mw_bins, ssd_bins))
         cm = ax.pcolormesh(
-            mw_bins[:-1], bsd_bins[:-1], counts.T,
+            mw_bins[:-1], ssd_bins[:-1], counts.T,
             cmap='magma_r', shading='auto')
         cbaxes = fig.add_axes([0.15, 0.15, 0.02, 0.2])
         plt.colorbar(cm, cax=cbaxes, orientation='vertical', label='counts')
@@ -547,18 +547,18 @@ class Params(object):
         fig.canvas.mpl_connect('pick_event', annot)
         return len(Er)
 
-    def _scatter_bsd_mw(self, fig, ax):
-        """Plot the scatter plot of bsd vs mw."""
+    def _scatter_ssd_mw(self, fig, ax):
+        """Plot the scatter plot of ssd vs mw."""
         alpha = 1
         ax.errorbar(
-            self.mw, self.bsd,
+            self.mw, self.ssd,
             xerr=[self.mw_err_minus, self.mw_err_plus],
-            yerr=[self.bsd_err_minus, self.bsd_err_plus],
+            yerr=[self.ssd_err_minus, self.ssd_err_plus],
             fmt='o', mec='black', mfc='#FCBA25', ecolor='#FCBA25',
             alpha=alpha)
-        ax.scatter(self.mw, self.bsd, alpha=0, picker=True, zorder=20)
-        yformat = 'bsd {:.2e} MPa'
-        annot = Annot(self.mw, self.bsd, self.evids, yformat)
+        ax.scatter(self.mw, self.ssd, alpha=0, picker=True, zorder=20)
+        yformat = 'ssd {:.2e} MPa'
+        annot = Annot(self.mw, self.ssd, self.evids, yformat)
         fig.canvas.mpl_connect('pick_event', annot)
 
     def _fit_fc_mw(self, vel, ax, slope=False):
@@ -671,45 +671,44 @@ class Params(object):
         ax_Mo.set_ylabel('Er (N·m)')
         plt.show()
 
-    def plot_bsd_mw(self, hist=False, fit=False, slope=False, nbins=None):
+    def plot_ssd_mw(self, hist=False, fit=False, slope=False, nbins=None):
         """
-        Plot the logarithm of the Brune static stress drop vs the moment
-        magnitude.
+        Plot the logarithm of static stress drop vs moment magnitude.
 
         Parameters
         ----------
         hist : bool
             If True, plot a 2D histogram instead of a scatter plot.
         fit : bool
-            If True, plot a linear regression of bsd vs mw.
+            If True, plot a linear regression of ssd vs mw.
         slope : bool
             If True, also fit the slope of the linear regression.
         """
         fig, ax, ax_Mo = self._make_mw_axis()
         ax_Mo.set_yscale('log')
 
-        bsd_min = np.min(self.bsd - self.bsd_err_minus)
-        bsd_max = np.max(self.bsd + self.bsd_err_plus)
-        bsd_min = 10**(np.floor(np.log10(bsd_min)))
-        bsd_max = 10**(np.ceil(np.log10(bsd_max)))
-        ax.set_ylim(bsd_min, bsd_max)
+        ssd_min = np.min(self.ssd - self.ssd_err_minus)
+        ssd_max = np.max(self.ssd + self.ssd_err_plus)
+        ssd_min = 10**(np.floor(np.log10(ssd_min)))
+        ssd_max = 10**(np.ceil(np.log10(ssd_max)))
+        ax.set_ylim(ssd_min, ssd_max)
 
         if hist:
-            self._2d_hist_bsd_mw(fig, ax, nbins)
+            self._2d_hist_ssd_mw(fig, ax, nbins)
         else:
-            self._scatter_bsd_mw(fig, ax)
+            self._scatter_ssd_mw(fig, ax)
         if fit:
-            raise NotImplementedError('Fit not implemented yet for bsd_mw')
+            raise NotImplementedError('Fit not implemented yet for ssd_mw')
 
         self._set_plot_title(ax)
         self._add_grid(ax_Mo)
-        ax_Mo.set_ylabel('bsd (MPa)')
+        ax_Mo.set_ylabel('ssd (MPa)')
         plt.show()
 
     def plot_hist(self, param_name, nbins=None, wave_type='S'):
         parameters = {
             'fc': ('Corner Frequency', 'Hz', 'log'),
-            'bsd': ('Brune Static Stress Drop', 'MPa', 'log'),
+            'ssd': ('Static Stress Drop', 'MPa', 'log'),
             'ra': ('Source Radius', 'm', 'lin'),
             'Mo': ('Seismic Moment', 'N·m', 'log'),
             't_star': ('T star', 's', 'lin'),
@@ -782,7 +781,7 @@ def run():
     params.filter(
         stamin=args.stamin, stamax=args.stamax,
         magmin=args.magmin, magmax=args.magmax,
-        bsdmin=args.bsdmin, bsdmax=args.bsdmax
+        ssdmin=args.ssdmin, ssdmax=args.ssdmax
     )
 
     if args.plot_type == 'fc_mw':
@@ -790,8 +789,8 @@ def run():
             args.hist, args.fit, args.slope, args.nbins, args.wave_type)
     elif args.plot_type == 'Er_mw':
         params.plot_Er_mw(args.hist, args.fit, args.slope, args.nbins)
-    elif args.plot_type == 'bsd_mw':
-        params.plot_bsd_mw(args.hist, args.fit, args.slope, args.nbins)
+    elif args.plot_type == 'ssd_mw':
+        params.plot_ssd_mw(args.hist, args.fit, args.slope, args.nbins)
     elif args.plot_type in valid_plot_types:
         params.plot_hist(args.plot_type, args.nbins, args.wave_type)
 

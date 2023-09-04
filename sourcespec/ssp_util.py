@@ -242,9 +242,9 @@ def source_radius(fc_in_hz, vs_in_m_per_s):
     return 0.3724 * vs_in_m_per_s / fc_in_hz
 
 
-def bsd(Mo_in_N_m, ra_in_m):
+def static_stress_drop(Mo_in_N_m, ra_in_m):
     """
-    Compute Brune static stress drop in MPa.
+    Compute static stress drop in MPa.
 
     Madariaga (2009), doi:10.1007/978-1-4419-7695-6_22, eq. 27
     """

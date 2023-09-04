@@ -183,7 +183,8 @@ def write_qml(config, sspec_output):
     ev.extra.t_star = _summary_parameter_tag(summary_parameters['t_star'])
     ev.extra.source_radius = _summary_parameter_tag(
         summary_parameters['radius'])
-    ev.extra.stress_drop = _summary_parameter_tag(summary_parameters['bsd'])
+    ev.extra.static_stress_drop = _summary_parameter_tag(
+        summary_parameters['ssd'])
     if config.set_preferred_magnitude:
         ev.preferred_magnitude_id = mag.resource_id.id
 

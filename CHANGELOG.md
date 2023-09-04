@@ -18,12 +18,14 @@ previous versions. You will need to upgrade your old database manually or using
   (hypocentral location, magnitude, focal mechanism, moment tensor):
   the [SourceSpec Event File].
 - Changes in the YAML output file:
+  - `bsd` (Brune stress drop) parameter renamed to `ssd` (static stress drop)
   - Store in the `event_info` section the values of vp, vs and rho close to
     the hypocenter
   - Store in the `inversion_info` section the type of wave used for the
     inversion (P, S, SV or SH)
 - Changes in the SQLite database (warning: these changes break compatibility
   with previous database versions):
+  - `bsd` (Brune stress drop) parameter renamed to `ssd` (static stress drop)
   - Store the `Stations` table information on whether each parameter is an
     outlier (see [#38])
   - Make place in the `Stations` table for station-level errors on radiated
@@ -100,6 +102,7 @@ previous versions. You will need to upgrade your old database manually or using
 
 - Config parameter `rho` renamed to `rho_source`
 - New config parameter `rho_stations`
+- Config parameter `pi_bsd_min_max` renamed to `pi_ssd_min_max`
 - New option `inv_frequency` for the config parameter `weighting` (see [#37])
 - New parameters, `qml_event_description` and `qml_event_description_regex`,
   to obtain the event name from the QuakeML event "description" tag

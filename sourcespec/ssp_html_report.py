@@ -740,19 +740,19 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
         '{RADIUS_PERC_AND_ERR}': _summary_value_and_err_text(
             ra_perc, ra_perc_error, '{:.3f}'),
     })
-    bsd_mean = means['bsd']
-    bsd_mean_error = mean_errors['bsd']
-    bsd_wmean = wmeans['bsd']
-    bsd_wmean_error = wmean_errors['bsd']
-    bsd_perc = percentiles['bsd']
-    bsd_perc_error = percentile_errors['bsd']
+    ssd_mean = means['ssd']
+    ssd_mean_error = mean_errors['ssd']
+    ssd_wmean = wmeans['ssd']
+    ssd_wmean_error = wmean_errors['ssd']
+    ssd_perc = percentiles['ssd']
+    ssd_perc_error = percentile_errors['ssd']
     replacements.update({
-        '{BSD_MEAN_AND_ERR}': _summary_value_and_err_text(
-            bsd_mean, bsd_mean_error, '{:.3e}'),
-        '{BSD_WMEAN_AND_ERR}': _summary_value_and_err_text(
-            bsd_wmean, bsd_wmean_error, '{:.3e}'),
-        '{BSD_PERC_AND_ERR}': _summary_value_and_err_text(
-            bsd_perc, bsd_perc_error, '{:.3e}'),
+        '{SSD_MEAN_AND_ERR}': _summary_value_and_err_text(
+            ssd_mean, ssd_mean_error, '{:.3e}'),
+        '{SSD_WMEAN_AND_ERR}': _summary_value_and_err_text(
+            ssd_wmean, ssd_wmean_error, '{:.3e}'),
+        '{SSD_PERC_AND_ERR}': _summary_value_and_err_text(
+            ssd_perc, ssd_perc_error, '{:.3e}'),
     })
     Er_mean = means['Er']
     Er_mean_error = mean_errors['Er']
@@ -865,8 +865,8 @@ def _add_station_table_to_html(config, sspec_output, templates, replacements):
             _station_value_and_err_text(par, 't_star', '{:.3f}')
         Qo_text, Qo_err_text = _station_value_and_err_text(par, 'Qo', '{:.1f}')
         Mo_text, Mo_err_text = _station_value_and_err_text(par, 'Mo', '{:.3e}')
-        bsd_text, bsd_err_text =\
-            _station_value_and_err_text(par, 'bsd', '{:.3e}')
+        ssd_text, ssd_err_text =\
+            _station_value_and_err_text(par, 'ssd', '{:.3e}')
         ra_text, ra_err_text =\
             _station_value_and_err_text(par, 'radius', '{:.3f}')
         Er_text, _ = _station_value_and_err_text(par, 'Er', '{:.3e}')
@@ -889,8 +889,8 @@ def _add_station_table_to_html(config, sspec_output, templates, replacements):
             '{STATION_Q0_ERR}': Qo_err_text,
             '{STATION_M0}': Mo_text,
             '{STATION_M0_ERR}': Mo_err_text,
-            '{STATION_BSD}': bsd_text,
-            '{STATION_BSD_ERR}': bsd_err_text,
+            '{STATION_SSD}': ssd_text,
+            '{STATION_SSD_ERR}': ssd_err_text,
             '{STATION_RA}': ra_text,
             '{STATION_RA_ERR}': ra_err_text,
             '{STATION_SIGMA_A}': sigma_a_text,

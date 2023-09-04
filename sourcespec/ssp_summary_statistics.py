@@ -207,11 +207,11 @@ def compute_summary_statistics(config, sspec_output):
             logarithmic=True
         )
 
-    # bsd, Brune static stress drop (MPa)
-    sspec_output.summary_spectral_parameters.bsd =\
+    # static stress drop (MPa)
+    sspec_output.summary_spectral_parameters.ssd =\
         _param_summary_statistics(
             config, sspec_output,
-            id='bsd', name='Brune static stress drop',
+            id='ssd', name='static stress drop',
             units='MPa', format='{:.3e}',
             logarithmic=True
         )

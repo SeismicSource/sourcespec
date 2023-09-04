@@ -66,12 +66,24 @@ def _version_1_to_2(cursor):
     # Stations table:
     # New in version 2:
     #   - primary keys: stid, evid, runid
+    #   - renamed keys:
+    #     bsd -> ssd,
+    #     bsd_err_minus -> ssd_err_minus,
+    #     bsd_err_plus -> ssd_err_plus
     #   - new keys:
     #     Mo_is_outlier, Mw_is_outlier, fc_is_outlier,
-    #     t_star_is_outlier, Qo_is_outlier, bsd_is_outlier, ra_is_outlier,
+    #     t_star_is_outlier, Qo_is_outlier, ssd_is_outlier, ra_is_outlier,
     #     Er_err_minus, Er_err_plus, Er_is_outlier
     #     sigma_a, sigma_a_err_minus, sigma_a_err_plus, sigma_a_is_outlier
-    sql_create_stations_table = (
+    renamed_station_keys = {
+        'bsd': 'ssd',
+        'bsd_err_minus': 'ssd_err_minus',
+        'bsd_err_plus': 'ssd_err_plus'
+    }
+    list_sql_rename_station_keys = [
+        f'ALTER TABLE Stations RENAME COLUMN {key} TO {value};'
+        for key, value in renamed_station_keys.items()]
+    sql_create_new_stations_table = (
         'CREATE TABLE IF NOT EXISTS StationsNew ('
         + '\n'.join(
             [f'{key} {value},' for key, value in STATIONS_TABLE.items()]
@@ -81,23 +93,33 @@ def _version_1_to_2(cursor):
     )
     new_station_keys = [
         'Mo_is_outlier', 'Mw_is_outlier', 'fc_is_outlier', 't_star_is_outlier',
-        'Qo_is_outlier', 'bsd_is_outlier', 'ra_is_outlier',
+        'Qo_is_outlier', 'ssd_is_outlier', 'ra_is_outlier',
         'Er_err_minus', 'Er_err_plus', 'Er_is_outlier',
         'sigma_a', 'sigma_a_err_minus', 'sigma_a_err_plus',
         'sigma_a_is_outlier'
     ]
-    stations_keys = ', '.join([
+    station_keys = ', '.join([
         key for key in STATIONS_TABLE.keys() if key not in new_station_keys])
-    sql_insert_stations = (
-        f'INSERT INTO StationsNew ({stations_keys}) '
-        f'SELECT {stations_keys} FROM Stations;'
+    sql_insert_new_station_keys = (
+        f'INSERT INTO StationsNew ({station_keys}) '
+        f'SELECT {station_keys} FROM Stations;'
     )
-    sql_drop_stations = 'DROP TABLE Stations;'
-    sql_rename_stations = 'ALTER TABLE StationsNew RENAME TO Stations;'
+    sql_drop_old_stations_table = 'DROP TABLE Stations;'
+    sql_rename_new_stations_table = 'ALTER TABLE StationsNew RENAME TO Stations;'
 
     # Events table:
     # New in version 2:
     #   - primary keys: evid, runid
+    #   - renamed keys:
+    #     bsd_mean -> ssd_mean,
+    #     bsd_mean_err_minus -> ssd_mean_err_minus,
+    #     bsd_mean_err_plus -> ssd_mean_err_plus,
+    #     bsd_wmean -> ssd_wmean,
+    #     bsd_wmean_err_minus -> ssd_wmean_err_minus,
+    #     bsd_wmean_err_plus -> ssd_wmean_err_plus,
+    #     bsd_pctl -> ssd_pctl,
+    #     bsd_pctl_err_minus -> ssd_pctl_err_minus,
+    #     bsd_pctl_err_plus -> ssd_pctl_err_plus
     #   - new keys:
     #     vp, vs, rho, wave_type,
     #     Er_wmean, Er_wmean_err_minus, Er_wmean_err_plus,
@@ -105,7 +127,21 @@ def _version_1_to_2(cursor):
     #     sigma_a_mean, sigma_a_mean_err_minus, sigma_a_mean_err_plus,
     #     sigma_a_wmean, sigma_a_wmean_err_minus, sigma_a_wmean_err_plus,
     #     sigma_a_pctl, sigma_a_pctl_err_minus, sigma_a_pctl_err_plus
-    sql_create_events_table = (
+    renamed_event_keys = {
+        'bsd_mean': 'ssd_mean',
+        'bsd_mean_err_minus': 'ssd_mean_err_minus',
+        'bsd_mean_err_plus': 'ssd_mean_err_plus',
+        'bsd_wmean': 'ssd_wmean',
+        'bsd_wmean_err_minus': 'ssd_wmean_err_minus',
+        'bsd_wmean_err_plus': 'ssd_wmean_err_plus',
+        'bsd_pctl': 'ssd_pctl',
+        'bsd_pctl_err_minus': 'ssd_pctl_err_minus',
+        'bsd_pctl_err_plus': 'ssd_pctl_err_plus'
+    }
+    list_sql_rename_event_keys = [
+        f'ALTER TABLE Events RENAME COLUMN {key} TO {value};'
+        for key, value in renamed_event_keys.items()]
+    sql_create_new_events_table = (
         'CREATE TABLE IF NOT EXISTS EventsNew ('
         + '\n'.join(
             [f'{key} {value},' for key, value in EVENTS_TABLE.items()]
@@ -113,7 +149,7 @@ def _version_1_to_2(cursor):
         + 'PRIMARY KEY (' + ', '.join(EVENTS_PRIMARY_KEYS) + ')'
         + ');'
     )
-    new_events_keys = [
+    new_event_keys = [
         'vp', 'vs', 'rho', 'wave_type',
         'Er_wmean', 'Er_wmean_err_minus', 'Er_wmean_err_plus',
         'Ml_wmean', 'Ml_wmean_err_minus', 'Ml_wmean_err_plus',
@@ -121,23 +157,31 @@ def _version_1_to_2(cursor):
         'sigma_a_wmean', 'sigma_a_wmean_err_minus', 'sigma_a_wmean_err_plus',
         'sigma_a_pctl', 'sigma_a_pctl_err_minus', 'sigma_a_pctl_err_plus'
     ]
-    events_keys = ', '.join([
-        key for key in EVENTS_TABLE.keys() if key not in new_events_keys])
-    sql_insert_events = (
-        f'INSERT INTO EventsNew ({events_keys}) '
-        f'SELECT {events_keys} FROM Events;'
+    event_keys = ', '.join([
+        key for key in EVENTS_TABLE.keys() if key not in new_event_keys])
+    sql_insert_new_event_keys = (
+        f'INSERT INTO EventsNew ({event_keys}) '
+        f'SELECT {event_keys} FROM Events;'
     )
-    sql_drop_events = 'DROP TABLE Events;'
-    sql_rename_events = 'ALTER TABLE EventsNew RENAME TO Events;'
+    sql_drop_old_events_table = 'DROP TABLE Events;'
+    sql_rename_new_events_table = 'ALTER TABLE EventsNew RENAME TO Events;'
+
+    # execute SQL statements
     try:
-        cursor.execute(sql_create_stations_table)
-        cursor.execute(sql_insert_stations)
-        cursor.execute(sql_drop_stations)
-        cursor.execute(sql_rename_stations)
-        cursor.execute(sql_create_events_table)
-        cursor.execute(sql_insert_events)
-        cursor.execute(sql_drop_events)
-        cursor.execute(sql_rename_events)
+        # stations table
+        for statement in list_sql_rename_station_keys:
+            cursor.execute(statement)
+        cursor.execute(sql_create_new_stations_table)
+        cursor.execute(sql_insert_new_station_keys)
+        cursor.execute(sql_drop_old_stations_table)
+        cursor.execute(sql_rename_new_stations_table)
+        # events table
+        for statement in list_sql_rename_event_keys:
+            cursor.execute(statement)
+        cursor.execute(sql_create_new_events_table)
+        cursor.execute(sql_insert_new_event_keys)
+        cursor.execute(sql_drop_old_events_table)
+        cursor.execute(sql_rename_new_events_table)
         cursor.execute('PRAGMA user_version = 2;')
     except Exception as db_err:
         sys.stderr.write(f'{db_err}\n')

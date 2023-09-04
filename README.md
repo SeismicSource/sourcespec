@@ -269,7 +269,7 @@ following the equations in [Madariaga (2011)][Madariaga2011] and
 [Lancieri (2012)][Lancieri2012], other quantities are computed for each
 station:
 
-- the Brune static stress drop $\Delta \sigma$
+- the static stress drop $\Delta \sigma$
 - the source radius $a$
 - the radiated energy $E_r$
 - the apparent stress $\sigma_a$

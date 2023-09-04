@@ -98,7 +98,7 @@ def _write_parfile(config, sspec_output):
             '*** Note: outliers are prepended by a star (*) symbol ***\n')
         parkeys = (
             'Mw', 'fc', 't_star', 'Qo', 'Mo',
-            'bsd', 'ra', 'hyp_dist', 'az', 'Er'
+            'ssd', 'ra', 'hyp_dist', 'az', 'Er'
         )
         formats = dict(
             Mo='{:.3e} ',
@@ -107,7 +107,7 @@ def _write_parfile(config, sspec_output):
             az='{:7.3f} ',
             Mw='{:6.3f} ',
             fc='{:6.3f} ',
-            bsd='{:.3e} ',
+            ssd='{:.3e} ',
             ra='{:8.3f} ',
             t_star='{:6.3f} ',
             Qo='{:7.1f} ',
@@ -120,7 +120,7 @@ def _write_parfile(config, sspec_output):
             az='{:>7} ',
             Mw='{:>6} ',
             fc='{:>6} ',
-            bsd='{:>9} ',
+            ssd='{:>9} ',
             ra='{:>8} ',
             t_star='{:>6} ',
             Qo='{:>7} ',
@@ -259,14 +259,14 @@ def _write_parfile(config, sspec_output):
         s = _value_error_str(ra_mean_weight, ra_error_weight, '{:.3f}')
         parfile.write(f'Source radius (weighted): {s} m\n')
 
-        bsd_mean = means['bsd']
-        bsd_error = errors['bsd']
-        s = _value_error_str(bsd_mean, bsd_error, '{:.3e}')
-        parfile.write(f'Brune static stress drop: {s} MPa\n')
-        bsd_mean_weight = means_weight['bsd']
-        bsd_error_weight = errors_weight['bsd']
-        s = _value_error_str(bsd_mean_weight, bsd_error_weight, '{:.3e}')
-        parfile.write(f'Brune static stress drop (weighted): {s} MPa\n')
+        ssd_mean = means['ssd']
+        ssd_error = errors['ssd']
+        s = _value_error_str(ssd_mean, ssd_error, '{:.3e}')
+        parfile.write(f'Static stress drop: {s} MPa\n')
+        ssd_mean_weight = means_weight['ssd']
+        ssd_error_weight = errors_weight['ssd']
+        s = _value_error_str(ssd_mean_weight, ssd_error_weight, '{:.3e}')
+        parfile.write(f'Static stress drop (weighted): {s} MPa\n')
 
         Ml_mean = means.get('Ml', None)
         Ml_error = errors.get('Ml', None)

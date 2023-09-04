@@ -328,6 +328,7 @@ def _update_config_file(config_file, configspec):
         'pre_s_time': 'signal_pre_time',
         'rps_from_focal_mechanism': 'rp_from_focal_mechanism',
         'paz': 'station_metadata',
+        'pi_bsd_min_max': 'pi_ssd_min_max'
     }
     for old_opt, new_opt in migrate_options.items():
         if old_opt in config_obj and config_obj[old_opt] != 'None':

@@ -44,7 +44,7 @@ def box_plots(config, sspec_output):
         'fc': PlotParam('Corner Frequency', 'Hz', '#6FBA6C'),
         't_star': PlotParam('t-star', 's', '#9EBAE2'),
         'radius': PlotParam('Source Radius', 'm', '#FAAC64'),
-        'bsd': PlotParam('Brune Static Stress Drop', 'MPa', '#D4ADD2'),
+        'ssd': PlotParam('Static Stress Drop', 'MPa', '#D4ADD2'),
         'Qo': PlotParam('Quality Factor', None, '#C07131'),
         'Er': PlotParam('Radiated Energy', 'N·m', '#00E3E9'),
         'sigma_a': PlotParam('Apparent Stress', 'MPa', '#943B99'),

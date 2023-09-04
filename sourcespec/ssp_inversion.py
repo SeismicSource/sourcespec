@@ -24,7 +24,7 @@ from obspy.geodetics import gps2dist_azimuth
 from sourcespec.ssp_spectral_model import (
     spectral_model, objective_func, callback)
 from sourcespec.ssp_util import (
-    mag_to_moment, source_radius, bsd, quality_factor, select_trace, smooth)
+    mag_to_moment, source_radius, static_stress_drop, quality_factor, select_trace, smooth)
 from sourcespec.ssp_data_types import (
     InitialValues, Bounds, SpectralParameter, StationParameters,
     SourceSpecOutput)
@@ -320,20 +320,24 @@ def _spec_inversion(config, spec, spec_weight):
     # source radius in meters
     station_pars.radius = SpectralParameter(
         id='radius', value=source_radius(fc, vel * 1e3), format='{:.3f}')
-    # Brune static stress drop in MPa
-    station_pars.bsd = SpectralParameter(
-        id='bsd', value=bsd(station_pars.Mo.value, station_pars.radius.value),
-        format='{:.3e}')
+    # Static stress drop in MPa
+    station_pars.ssd = SpectralParameter(
+        id='ssd',
+        value=static_stress_drop(
+            station_pars.Mo.value, station_pars.radius.value
+        ),
+        format='{:.3e}'
+    )
     # quality factor
     station_pars.Qo = SpectralParameter(
         id='Qo', value=quality_factor(travel_time, t_star), format='{:.1f}')
 
-    # Check post-inversion bounds for bsd
-    pi_bsd_min, pi_bsd_max = config.pi_bsd_min_max or (-np.inf, np.inf)
-    if not (pi_bsd_min <= station_pars.bsd.value <= pi_bsd_max):
+    # Check post-inversion bounds for ssd
+    pi_ssd_min, pi_ssd_max = config.pi_ssd_min_max or (-np.inf, np.inf)
+    if not (pi_ssd_min <= station_pars.ssd.value <= pi_ssd_max):
         raise ValueError(
-            f'{statId}: bsd: {station_pars.bsd.value:.3e} '
-            f'not in allowed range [{pi_bsd_min:.3e}, {pi_bsd_max:.3e}]: '
+            f'{statId}: ssd: {station_pars.ssd.value:.3e} '
+            f'not in allowed range [{pi_ssd_min:.3e}, {pi_ssd_max:.3e}]: '
             'ignoring inversion results'
         )
 
@@ -358,12 +362,12 @@ def _spec_inversion(config, spec, spec_weight):
     station_pars.radius.upper_uncertainty =\
         radius_max - station_pars.radius.value
     station_pars.radius.confidence_level = 68.2
-    # Brune static stress drop in MPa
-    bsd_min = bsd(Mo_min, radius_max)
-    bsd_max = bsd(Mo_max, radius_min)
-    station_pars.bsd.lower_uncertainty = station_pars.bsd.value - bsd_min
-    station_pars.bsd.upper_uncertainty = bsd_max - station_pars.bsd.value
-    station_pars.bsd.confidence_level = 68.2
+    # static stress drop in MPa
+    ssd_min = static_stress_drop(Mo_min, radius_max)
+    ssd_max = static_stress_drop(Mo_max, radius_min)
+    station_pars.ssd.lower_uncertainty = station_pars.ssd.value - ssd_min
+    station_pars.ssd.upper_uncertainty = ssd_max - station_pars.ssd.value
+    station_pars.ssd.confidence_level = 68.2
     # quality factor
     t_star_min = t_star - t_star_err[0]
     if t_star_min <= 0:
