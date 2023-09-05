@@ -314,7 +314,7 @@ Following :cite:t:`Boatwright2002` (equation 1) and :cite:t:`Lancieri2012`
 
 where :math:`\mathcal{G}^2(r)` is the squared geometrical spreading coefficient
 (see above), :math:`C` is a constant discussed below, :math:`\rho_r` and
-:math:`c_r` are, respectively, the density and P- or S-wave velocity 
+:math:`c_r` are, respectively, the density and P- or S-wave velocity
 at the receiver (their product is the seismic impedance), :math:`f_{max}` is
 the maximum frequency used to compute the energy (see
 :ref:`configuration_file:Configuration File` for details on the ``max_freq_Er``
@@ -351,14 +351,16 @@ a noise-corrected energy as:
 
 where the first term is the radiated energy computed from the P- or S-wave
 spectrum and the second term is the radiated energy computed from the noise
-spectrum.
+spectrum. If the above difference is negative, then the measure is rejected,
+since the noise is too large compared to the signal.
 
 Finite bandwidth correction
 +++++++++++++++++++++++++++
 Next step is to correct the radiated energy for the finite bandwidth
 of the observed spectrum. Following :cite:t:`Lancieri2012` (equation 4), and
 :cite:t:`DiBona1988`, the noise-corrected radiated energy is divided by
-the following factor:
+the theoretical ratio :math:`R` between the estimated radiated energy and the
+true radiated energy, defined as:
 
 .. math::
 
@@ -369,13 +371,16 @@ the following factor:
     \right]
 
 where :math:`f^{p|s}_c` is the P- or S-wave corner frequency and
-:math:`f_{max}` is the maximum frequency used to compute the energy.
+:math:`f_{max}` is the maximum frequency used to compute the energy integral.
+
+The values of R range between 0 (for :math:`f_{max}/f^{p|s}_c \to 0`) and 1
+(for :math:`f_{max}/f^{p|s}_c \to \infty`).
 
 Energy partition
 ++++++++++++++++
 The final step is to account for the partition of energy between P and S waves.
 Following :cite:t:`Boatwright1986` (equations 8 and 15) the ratio between the
-radiated energy of measured from S-waves and the radiated energy measured from
+radiated energy measured from S-waves and the radiated energy measured from
 P-waves is:
 
 .. math::
