@@ -366,12 +366,12 @@ true radiated energy, defined as:
 
   R = \frac{2}{\pi}
     \left[
-      \frac{-f_{max}/f^{p|s}_c}{1+(f_{max}/f^{p|s}_c)^2} +
-      \arctan(f_{max}/f^{p|s}_c)
+      \arctan(f_{max}/f^{p|s}_c) -
+      \frac{f_{max}/f^{p|s}_c}{1+(f_{max}/f^{p|s}_c)^2}
     \right]
 
-where :math:`f^{p|s}_c` is the P- or S-wave corner frequency and
-:math:`f_{max}` is the maximum frequency used to compute the energy integral.
+where :math:`f_{max}` is the maximum frequency used to compute the energy
+integral and :math:`f^{p|s}_c` is the P- or S-wave corner frequency.
 
 The values of R range between 0 (for :math:`f_{max}/f^{p|s}_c \to 0`) and 1
 (for :math:`f_{max}/f^{p|s}_c \to \infty`).
