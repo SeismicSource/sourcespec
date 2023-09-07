@@ -38,7 +38,7 @@ and, optionally, to weight the spectral inversion.
   windows.
 
 The component spectra are combined through the root sum of squares
-(e.g., N, S, E):
+(e.g., Z, N, E):
 
 .. math::
 
@@ -176,7 +176,7 @@ Then the spectrum is converted in units of magnitude:
           \left( \log_{10} M^{p|s}_x(f) - 9.1 \right)
 
 And the final data vector :math:`Y^{p|s}(f)` is obtained by combining the
-three components (e.g., N, S, E) through the root sum of squares:
+three components (e.g., Z, N, E) through the root sum of squares:
 
 .. math::
 
