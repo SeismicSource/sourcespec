@@ -82,9 +82,9 @@ previous versions. You will need to upgrade your old database manually or using
   computed from P waves
 - New source parameter: apparent stress
 - For parameters with no station-level uncertainty defined (currently,
-  radiated energy), use simple mean when computing summary weighted averages
-  (the previous behavior was to not compute weighted averages for these
-  parameters)
+  radiated energy and local magnitude), use simple mean when computing summary
+  weighted averages (the previous behavior was to not compute weighted averages
+  for these parameters)
 
 ### Plotting
 
@@ -129,6 +129,8 @@ previous versions. You will need to upgrade your old database manually or using
   was treated as relative (see [#40])
 - Fix bug where paths starting with tilde (~) were not parsed correctly
   (see [#43] and [#44])
+- Fix bug where local magnitude was not written to the HYPO71 output file,
+  when using weighted mean as reference statistics
 
 ### Requirements
 
