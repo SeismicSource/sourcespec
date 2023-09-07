@@ -139,10 +139,10 @@ def parse_args():
         '-M', '--magmax', type=float, default=None,
         help='Maximum magnitude')
     parser.add_argument(
-        '-s', '--ssdmin', type=float, default=None,
+        '-d', '--ssdmin', type=float, default=None,
         help='Minimum static stress drop')
     parser.add_argument(
-        '-S', '--ssdmax', type=float, default=None,
+        '-D', '--ssdmax', type=float, default=None,
         help='Maximum static stress drop')
     parser.add_argument(
         '-H', '--hist', default=False, action='store_true',
