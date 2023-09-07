@@ -309,7 +309,7 @@ Following :cite:t:`Boatwright2002` (equation 1) and :cite:t:`Lancieri2012`
 
 .. math::
 
-   \tilde{E}_r^{p|s} = 8 \pi \mathcal{G}^2(r) C^2 \rho_r c_r
+   \tilde{\tilde{E}}_r^{p|s} = 8 \pi \mathcal{G}^2(r) C^2 \rho_r c_r
             \int_{0}^{f_{max}} e^{2 \pi f t^*} [\dot{S}^{p|s}(f)]^2 df
 
 where :math:`\mathcal{G}^2(r)` is the squared geometrical spreading coefficient
@@ -320,8 +320,9 @@ the maximum frequency used to compute the energy (see
 :ref:`configuration_file:Configuration File` for details on the ``max_freq_Er``
 parameter), and the exponential term in the integrand is the squared correction
 for anelastic attenuation.
-The tilde on top of :math:`\tilde{E}_r^{p|s}` means that the radiated energy
-needs to be further corrected for noise and finite bandwidth (see below).
+The double tilde on top of :math:`\tilde{\tilde{E}}_r^{p|s}` means that the
+radiated energy needs to be further corrected for noise and finite bandwidth
+(see below).
 
 The constant :math:`C` is defined in :cite:t:`Boatwright2002` (equation 2) as:
 
@@ -347,7 +348,7 @@ a noise-corrected energy as:
 
 .. math::
 
-   E^{p|s}_r = \tilde{E}^{p|s}_r - \tilde{E}^{noise}_r
+   \tilde{E}^{p|s}_r = \tilde{\tilde{E}}^{p|s}_r - \tilde{\tilde{E}}^{noise}_r
 
 where the first term is the radiated energy computed from the P- or S-wave
 spectrum and the second term is the radiated energy computed from the noise
@@ -375,6 +376,13 @@ integral and :math:`f^{p|s}_c` is the P- or S-wave corner frequency.
 
 The values of R range between 0 (for :math:`f_{max}/f^{p|s}_c \to 0`) and 1
 (for :math:`f_{max}/f^{p|s}_c \to \infty`).
+
+The corrected radiated energy for P- or S-waves is then:
+
+.. math::
+
+   E^{p|s}_r = \frac{\tilde{E}^{p|s}_r}{R}
+
 
 Energy partition
 ++++++++++++++++
