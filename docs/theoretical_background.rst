@@ -173,7 +173,7 @@ Then the spectrum is converted in units of magnitude:
 
    Y^{p|s}_x(f) \equiv
           \frac{2}{3} \times
-          \left( \log_{10} M^{[p,s]}_x(f) - 9.1 \right)
+          \left( \log_{10} M^{p|s}_x(f) - 9.1 \right)
 
 And the final data vector :math:`Y^{p|s}(f)` is obtained by combining the
 three components (e.g., N, S, E) through the root sum of squares:
