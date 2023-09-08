@@ -137,8 +137,8 @@ def _get_property_from_taup(depth_in_km, property):
     :return: Property value.
     :rtype: float
     """
-    if depth_in_km < 0:
-        depth_in_km = 1e-3
+    # avoid negative depths
+    depth_in_km = max(depth_in_km, 1e-2)
     try:
         prop = {'vp': 'p', 'vs': 's', 'rho': 'r'}[property]
     except KeyError as e:
