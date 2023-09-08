@@ -797,6 +797,8 @@ def run():
         magmin=args.magmin, magmax=args.magmax,
         ssdmin=args.ssdmin, ssdmax=args.ssdmax
     )
+    if len(params.evids) == 0:
+        raise ValueError('No events found')
 
     if args.plot_type == 'fc_mw':
         params.plot_fc_mw(
