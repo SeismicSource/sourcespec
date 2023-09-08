@@ -89,6 +89,7 @@ previous versions. You will need to upgrade your old database manually or using
 ### Plotting
 
 - Show the station radiated energy (Er) value on the station spectra plots
+- Show the summary radiated energy (Er) value on the stacked spectra plot
 - Station maps: exclude outliers when computing colorbar limits
 - Station maps: improved computation of bounding box for regional and
   teleseismic events

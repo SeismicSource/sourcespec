@@ -117,8 +117,13 @@ def _summary_params_text(sspec_output, ax):
     t_star_text = (
         f't*: {t_star_value:.2f} '
         f'[- {t_star_err_left:.2f}, + {t_star_err_right:.2f}] s')
+    Er_value = summary_values['Er']
+    Er_err_left, Er_err_right = summary_uncertainties['Er']
+    Er_text = (
+        f'Er: {Er_value:.1e} [- {Er_err_left:.1e}, + {Er_err_right:.1e}] N·m')
     params_text = (
-        f'Summary parameters:\n{Mo_text}\n{Mw_text}\n{fc_text}\n{t_star_text}'
+        'Summary parameters:\n'
+        f'{Mo_text}\n{Mw_text}\n{fc_text}\n{t_star_text}\n{Er_text}'
     )
     color = 'black'
     # Path effect to contour text in white
