@@ -480,7 +480,11 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
     Mw = spec.stats.par['Mw']
     Mo = mag_to_moment(Mw)
     t_star = spec.stats.par['t_star']
-    Er = spec.stats.par['Er']
+    try:
+        Er = spec.stats.par['Er']
+    except KeyError:
+        # Er might not be computed for noisy spectra
+        Er = None
     if 'par_err' in spec.stats.keys():
         fc_err_left, fc_err_right = spec.stats.par_err['fc']
         Mw_err_left, Mw_err_right = spec.stats.par_err['Mw']
@@ -510,7 +514,7 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
         else f'[-{t_star_err_left:.2f},+{t_star_err_right:.2f}]s'
     )
     t_star_text = f't*: {t_star:.2f}{t_star_err_text}'
-    Er_text = f'Er: {Er:.1e}N·m'
+    Er_text = f'Er: {Er:.1e}N·m' if Er else ''
     if len(fc_text + t_star_text) > 38:
         sep = '\n'
         params_text_ypos -= 0.01
