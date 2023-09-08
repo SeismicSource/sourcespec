@@ -186,6 +186,76 @@ class Params(object):
         """
         self.stat = stat
         self.runid = runid
+        self._open_db(sqlite_file)
+        query_condition = f'where runid="{runid}"' if runid is not None else ''
+        self.evids = query_event_params_into_numpy(
+            self.cur, 'evid', str, query_condition)
+        self.vp = query_event_params_into_numpy(
+            self.cur, 'vp', np.float64, query_condition)
+        self.vs = query_event_params_into_numpy(
+            self.cur, 'vs', np.float64, query_condition)
+        self.rho = query_event_params_into_numpy(
+            self.cur, 'rho', np.float64, query_condition)
+        self.wave_type = query_event_params_into_numpy(
+            self.cur, 'wave_type', str, query_condition)
+        self.nsta = query_event_params_into_numpy(
+            self.cur, 'nobs', np.int32, query_condition)
+        self.Mo = query_event_params_into_numpy(
+            self.cur, f'Mo_{stat}', np.float64, query_condition)
+        self.mw = query_event_params_into_numpy(
+            self.cur, f'Mw_{stat}', np.float64, query_condition)
+        self.mw_err_minus = query_event_params_into_numpy(
+            self.cur, f'Mw_{stat}_err_minus', np.float64, query_condition)
+        self.mw_err_plus = query_event_params_into_numpy(
+            self.cur, f'Mw_{stat}_err_plus', np.float64, query_condition)
+        self.fc = query_event_params_into_numpy(
+            self.cur, f'fc_{stat}', np.float64, query_condition)
+        self.fc_err_minus = query_event_params_into_numpy(
+            self.cur, f'fc_{stat}_err_minus', np.float64, query_condition)
+        self.fc_err_plus = query_event_params_into_numpy(
+            self.cur, f'fc_{stat}_err_plus', np.float64, query_condition)
+        self.Er = query_event_params_into_numpy(
+            self.cur, f'Er_{stat}', np.float64, query_condition)
+        self.Er_err_minus = query_event_params_into_numpy(
+            self.cur, f'Er_{stat}_err_minus', np.float64, query_condition)
+        self.Er_err_plus = query_event_params_into_numpy(
+            self.cur, f'Er_{stat}_err_plus', np.float64, query_condition)
+        self.ssd = query_event_params_into_numpy(
+            self.cur, f'ssd_{stat}', np.float64, query_condition)
+        self.ssd_err_minus = query_event_params_into_numpy(
+            self.cur, f'ssd_{stat}_err_minus', np.float64, query_condition)
+        self.ssd_err_plus = query_event_params_into_numpy(
+            self.cur, f'ssd_{stat}_err_plus', np.float64, query_condition)
+        self.ra = query_event_params_into_numpy(
+            self.cur, f'ra_{stat}', np.float64, query_condition)
+        self.ra_err_minus = query_event_params_into_numpy(
+            self.cur, f'ra_{stat}_err_minus', np.float64, query_condition)
+        self.ra_err_plus = query_event_params_into_numpy(
+            self.cur, f'ra_{stat}_err_plus', np.float64, query_condition)
+        self.sigma_a = query_event_params_into_numpy(
+            self.cur, f'sigma_a_{stat}', np.float64, query_condition)
+        self.sigma_a_err_minus = query_event_params_into_numpy(
+            self.cur, f'sigma_a_{stat}_err_minus', np.float64, query_condition)
+        self.sigma_a_err_plus = query_event_params_into_numpy(
+            self.cur, f'sigma_a_{stat}_err_plus', np.float64, query_condition)
+        self.t_star = query_event_params_into_numpy(
+            self.cur, f't_star_{stat}', np.float64, query_condition)
+        self.t_star_err_minus = query_event_params_into_numpy(
+            self.cur, f't_star_{stat}_err_minus', np.float64, query_condition)
+        self.t_star_err_plus = query_event_params_into_numpy(
+            self.cur, f't_star_{stat}_err_plus', np.float64, query_condition)
+        self.Qo = query_event_params_into_numpy(
+            self.cur, f'Qo_{stat}', np.float64, query_condition)
+        self.Qo_err_minus = query_event_params_into_numpy(
+            self.cur, f'Qo_{stat}_err_minus', np.float64, query_condition)
+        self.Qo_err_plus = query_event_params_into_numpy(
+            self.cur, f'Qo_{stat}_err_plus', np.float64, query_condition)
+        self.cur.close()
+
+    def _open_db(self, sqlite_file):
+        """
+        Open the sqlite file and check that it contains the required tables.
+        """
         if not os.path.isfile(sqlite_file):
             raise FileNotFoundError(f'File "{sqlite_file}" not found')
         if os.stat(sqlite_file).st_size == 0:
@@ -196,77 +266,14 @@ class Params(object):
             cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
         except sqlite3.DatabaseError as e:
             raise ValueError(
-                f'File "{sqlite_file}" is not a sqlite file'
+                f'File "{sqlite_file}" is not a valid sqlite file'
             ) from e
         tables = [t[0] for t in cur.fetchall()]
         for table in 'Events', 'Stations':
             if table not in tables:
                 raise ValueError(
                     f'Table "{table}" not found in file "{sqlite_file}"')
-        query_condition = f'where runid="{runid}"' if runid is not None else ''
-        self.evids = query_event_params_into_numpy(
-            cur, 'evid', str, query_condition)
-        self.vp = query_event_params_into_numpy(
-            cur, 'vp', np.float64, query_condition)
-        self.vs = query_event_params_into_numpy(
-            cur, 'vs', np.float64, query_condition)
-        self.rho = query_event_params_into_numpy(
-            cur, 'rho', np.float64, query_condition)
-        self.wave_type = query_event_params_into_numpy(
-            cur, 'wave_type', str, query_condition)
-        self.nsta = query_event_params_into_numpy(
-            cur, 'nobs', np.int32, query_condition)
-        self.Mo = query_event_params_into_numpy(
-            cur, f'Mo_{stat}', np.float64, query_condition)
-        self.mw = query_event_params_into_numpy(
-            cur, f'Mw_{stat}', np.float64, query_condition)
-        self.mw_err_minus = query_event_params_into_numpy(
-            cur, f'Mw_{stat}_err_minus', np.float64, query_condition)
-        self.mw_err_plus = query_event_params_into_numpy(
-            cur, f'Mw_{stat}_err_plus', np.float64, query_condition)
-        self.fc = query_event_params_into_numpy(
-            cur, f'fc_{stat}', np.float64, query_condition)
-        self.fc_err_minus = query_event_params_into_numpy(
-            cur, f'fc_{stat}_err_minus', np.float64, query_condition)
-        self.fc_err_plus = query_event_params_into_numpy(
-            cur, f'fc_{stat}_err_plus', np.float64, query_condition)
-        self.Er = query_event_params_into_numpy(
-            cur, f'Er_{stat}', np.float64, query_condition)
-        self.Er_err_minus = query_event_params_into_numpy(
-            cur, f'Er_{stat}_err_minus', np.float64, query_condition)
-        self.Er_err_plus = query_event_params_into_numpy(
-            cur, f'Er_{stat}_err_plus', np.float64, query_condition)
-        self.ssd = query_event_params_into_numpy(
-            cur, f'ssd_{stat}', np.float64, query_condition)
-        self.ssd_err_minus = query_event_params_into_numpy(
-            cur, f'ssd_{stat}_err_minus', np.float64, query_condition)
-        self.ssd_err_plus = query_event_params_into_numpy(
-            cur, f'ssd_{stat}_err_plus', np.float64, query_condition)
-        self.ra = query_event_params_into_numpy(
-            cur, f'ra_{stat}', np.float64, query_condition)
-        self.ra_err_minus = query_event_params_into_numpy(
-            cur, f'ra_{stat}_err_minus', np.float64, query_condition)
-        self.ra_err_plus = query_event_params_into_numpy(
-            cur, f'ra_{stat}_err_plus', np.float64, query_condition)
-        self.sigma_a = query_event_params_into_numpy(
-            cur, f'sigma_a_{stat}', np.float64, query_condition)
-        self.sigma_a_err_minus = query_event_params_into_numpy(
-            cur, f'sigma_a_{stat}_err_minus', np.float64, query_condition)
-        self.sigma_a_err_plus = query_event_params_into_numpy(
-            cur, f'sigma_a_{stat}_err_plus', np.float64, query_condition)
-        self.t_star = query_event_params_into_numpy(
-            cur, f't_star_{stat}', np.float64, query_condition)
-        self.t_star_err_minus = query_event_params_into_numpy(
-            cur, f't_star_{stat}_err_minus', np.float64, query_condition)
-        self.t_star_err_plus = query_event_params_into_numpy(
-            cur, f't_star_{stat}_err_plus', np.float64, query_condition)
-        self.Qo = query_event_params_into_numpy(
-            cur, f'Qo_{stat}', np.float64, query_condition)
-        self.Qo_err_minus = query_event_params_into_numpy(
-            cur, f'Qo_{stat}_err_minus', np.float64, query_condition)
-        self.Qo_err_plus = query_event_params_into_numpy(
-            cur, f'Qo_{stat}_err_plus', np.float64, query_condition)
-        cur.close()
+        self.cur = cur
 
     def skip_events(self, idx):
         """Skip events with index idx."""
