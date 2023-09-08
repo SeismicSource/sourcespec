@@ -24,7 +24,8 @@ from obspy.geodetics import gps2dist_azimuth
 from sourcespec.ssp_spectral_model import (
     spectral_model, objective_func, callback)
 from sourcespec.ssp_util import (
-    mag_to_moment, source_radius, static_stress_drop, quality_factor, select_trace, smooth)
+    mag_to_moment, source_radius, static_stress_drop, quality_factor,
+    select_trace, smooth)
 from sourcespec.ssp_data_types import (
     InitialValues, Bounds, SpectralParameter, StationParameters,
     SourceSpecOutput)
