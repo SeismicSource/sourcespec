@@ -474,17 +474,19 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
     if stack_plots:
         params_text_ypos = station_text_ypos - 0.04
     else:
-        params_text_ypos = 0.03
+        params_text_ypos = 0.02
         color = 'black'
     fc = spec.stats.par['fc']
     Mw = spec.stats.par['Mw']
     Mo = mag_to_moment(Mw)
     t_star = spec.stats.par['t_star']
+    Er = spec.stats.par['Er']
     if 'par_err' in spec.stats.keys():
         fc_err_left, fc_err_right = spec.stats.par_err['fc']
         Mw_err_left, Mw_err_right = spec.stats.par_err['Mw']
         t_star_err_left, t_star_err_right =\
             spec.stats.par_err['t_star']
+        # Er has no error
     else:
         fc_err_left = fc_err_right = 0.
         Mw_err_left = Mw_err_right = 0.
@@ -508,13 +510,18 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
         else f'[-{t_star_err_left:.2f},+{t_star_err_right:.2f}]s'
     )
     t_star_text = f't*: {t_star:.2f}{t_star_err_text}'
+    Er_text = f'Er: {Er:.1e}N·m'
     if len(fc_text + t_star_text) > 38:
         sep = '\n'
         params_text_ypos -= 0.01
         station_text_ypos += 0.06
     else:
         sep = ' '
-    params_text = f'{Mo_text} {Mw_text}\n{fc_text}{sep}{t_star_text}'
+    params_text = (
+        f'{Mo_text} {Mw_text}\n'
+        f'{fc_text}{sep}{t_star_text}\n'
+        f'{Er_text}'
+    )
     ax.text(
         0.05, params_text_ypos, params_text,
         horizontalalignment='left',
@@ -616,7 +623,7 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
     if plot_params.stack_plots:
         station_text_ypos = 0.05 + 0.10 * (plotn - 1)
     else:
-        station_text_ypos = 0.15
+        station_text_ypos = 0.20
     # sort specs by orientation letter, so that synthetic is plotted first
     # sort_order[...] gives 10 if the key is not present
     sort_order = defaultdict(lambda: 10, {'S': 0, 's': 1, 't': 2, 'H': 99})

@@ -157,8 +157,11 @@ def radiated_energy_and_apparent_stress(
 
         R = _finite_bandwidth_correction(spec, fc, fmax)
         Er /= R
-        # Store into the StationParameter() object
+        # Store the Er value into the StationParameter() object
         param_Er.value = Er
+        # Store the Er value in the spec_synth stats
+        spec_synth = spec_st.select(id=f'{spec_id[:-1]}S')[0]
+        spec_synth.stats.par['Er'] = Er
 
         # Now compute apparent stress sigma_a
         # (eq. (5) from Lancieri et al. 2012)
