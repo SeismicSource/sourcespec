@@ -188,9 +188,16 @@ class Params(object):
         self.runid = runid
         if not os.path.isfile(sqlite_file):
             raise FileNotFoundError(f'File "{sqlite_file}" not found')
+        if os.stat(sqlite_file).st_size == 0:
+            raise ValueError(f'File "{sqlite_file}" is empty')
         conn = sqlite3.connect(sqlite_file)
         cur = conn.cursor()
-        cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        try:
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        except sqlite3.DatabaseError as e:
+            raise ValueError(
+                f'File "{sqlite_file}" is not a sqlite file'
+            ) from e
         tables = [t[0] for t in cur.fetchall()]
         for table in 'Events', 'Stations':
             if table not in tables:
