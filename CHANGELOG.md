@@ -90,9 +90,11 @@ previous versions. You will need to upgrade your old database manually or using
 
 - Show the station radiated energy (Er) value on the station spectra plots
 - Show the summary radiated energy (Er) value on the stacked spectra plot
-- Station maps: exclude outliers when computing colorbar limits
-- Station maps: improved computation of bounding box for regional and
-  teleseismic events
+- Station maps improvements:
+  - Exclude outliers when computing colorbar limits
+  - Improved computation of bounding box for regional and teleseismic events
+  - Use a global orthographic projection when using stations at large
+    teleseismic epicentral distances (more than 3000 km)
 - Changes to `plot_sourcepars`:
   - Read vp, vs and rho from the SQLite database (previously: vs was hardcoded
     to 3.5 km/s, rho to 2700 kg/m3 and vp was not used)

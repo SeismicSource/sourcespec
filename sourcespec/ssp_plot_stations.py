@@ -258,7 +258,9 @@ def _add_coastlines(config, ax):
         'crude': 'c'
     }
     inv_res_map = {v: k for k, v in res_map.items()}
-    if config.plot_coastline_resolution:
+    if ax.global_projection:
+        coastline_resolution = 'c'
+    elif config.plot_coastline_resolution:
         coastline_resolution = res_map[config.plot_coastline_resolution]
     else:
         coastline_resolution = 'h' if ax.maxdiagonal <= 100 else 'i'
@@ -297,8 +299,6 @@ def _make_basemap(config, maxdist):
     # maxdiagonal is the distance between the two corners of the map
     # (i.e., the diagonal of the bounding box)
     maxdiagonal = g.inv(lonmin, latmin, lonmax, latmax)[2] / 1e3
-    tile_dir = 'maptiles'
-    stamen_terrain = CachedTiler(cimgt.Stamen('terrain-background'), tile_dir)
     # Reduce dpi for vector formats, since the only raster are the maptiles
     if config.plot_save_format in ['pdf', 'pdf_multipage', 'svg']:
         figsize = (8.5, 8.5)
@@ -311,10 +311,26 @@ def _make_basemap(config, maxdist):
     ax0 = fig.add_subplot(111, label='ax0')
     ax0.set_axis_off()
     _add_event_info(config.event, ax0)
-    ax = fig.add_subplot(111, projection=stamen_terrain.crs)
-    ax.set_extent([lonmin, lonmax, latmin, latmax], crs=ccrs.Geodetic())
-    ax.maxdiagonal = maxdiagonal
-    _add_tiles(config, ax, stamen_terrain)
+    if maxdist < 3000:  # km
+        # use Stamen Terrain projection (Mercator?)
+        tile_dir = 'maptiles'
+        stamen_terrain = CachedTiler(
+            cimgt.Stamen('terrain-background'), tile_dir)
+        ax = fig.add_subplot(111, projection=stamen_terrain.crs)
+        ax.set_extent([lonmin, lonmax, latmin, latmax], crs=ccrs.Geodetic())
+        ax.global_projection = False
+        ax.maxdiagonal = maxdiagonal
+        _add_tiles(config, ax, stamen_terrain)
+    else:
+        # use global Orthographic projection
+        ax = fig.add_subplot(
+            111,
+            projection=ccrs.Orthographic(
+                central_longitude=evlo, central_latitude=evla
+            )
+        )
+        ax.global_projection = True
+        ax.stock_img()
     _add_coastlines(config, ax)
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     circles_distances = np.arange(1, ncircles + 1) * circles_step
