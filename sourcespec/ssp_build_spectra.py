@@ -534,6 +534,7 @@ def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
 
 
 def _check_spectral_sn_ratio(config, spec, specnoise):
+    spec_id = spec.get_id()
     weight = _build_weight_from_noise(config, spec, specnoise)
     freqs = weight.get_freq()
     # if no noise window is available, snratio is not computed
@@ -548,6 +549,14 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
     else:
         valid_freqs = freqs
         valid_snratio = weight.snratio
+    if len(valid_snratio) == 0:
+        spec.stats.spectral_snratio = np.nan
+        msg = (
+            f'{spec_id}: no valid frequency to compute spectral S/N: '
+            'ignoring spectrum'
+        )
+        reason = 'no valid frequency'
+        raise SpectrumIgnored(msg, reason)
     spectral_snratio = valid_snratio.mean()
     spec.stats.spectral_snratio = spectral_snratio
     # Save frequency range where SNR > 3 so it can be used for building weights
@@ -559,7 +568,6 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
     except IndexError:
         spec.stats.spectral_snratio_fmin = None
         spec.stats.spectral_snratio_fmax = None
-    spec_id = spec.get_id()
     logger.info(f'{spec_id}: spectral S/N: {spectral_snratio:.2f}')
     ssnmin = config.spectral_sn_min or -np.inf
     if spectral_snratio < ssnmin:
