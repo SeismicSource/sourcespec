@@ -49,8 +49,10 @@ def select_trace(stream, traceid, instrtype):
     """Select trace from stream using traceid and instrument type."""
     return [tr for tr in stream.select(id=traceid)
             if tr.stats.instrtype == instrtype][0]
+# -----------------------------------------------------------------------------
 
 
+# MEDIUM PROPERTIES -----------------------------------------------------------
 def _get_property_from_config(property, where, config):
     """
     Get medium property from config.
@@ -219,6 +221,135 @@ def property_string(property, value):
     if value.is_integer():
         value = int(value)
     return f'{property}: {value} {unit}'
+# -----------------------------------------------------------------------------
+
+
+# GEOMETRICAL SPREADING -------------------------------------------------------
+def geom_spread_r_power_n(hypo_dist_in_km, exponent):
+    """
+    rⁿ geometrical spreading coefficient.
+
+    :param hypo_dist_in_km: Hypocentral distance (km).
+    :type hypo_dist_in_km: float
+    :param exponent: Exponent.
+    :type exponent: float
+    :return: Geometrical spreading correction (in m)
+    :rtype: float
+    """
+    dist = hypo_dist_in_km * 1e3
+    return dist**exponent
+
+
+def _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist):
+    """
+    Geometrical spreading coefficient from Boatwright et al. (2002), eq. 8.
+
+    Except that we take the square root of eq. 8, since we correct amplitude
+    and not energy.
+
+    This is the part of the equation that is valid for distances above the
+    cutoff distance.
+
+    :param freqs: Frequencies (Hz).
+    :type freqs: numpy.ndarray
+    :param cutoff_dist: Cutoff distance (m).
+    :type cutoff_dist: float
+    :param dist: Distance (m).
+    :type dist: float
+    :return: Geometrical spreading correction (in m)
+    :rtype: numpy.ndarray
+    """
+    exponent = np.ones_like(freqs)
+    low_freq = freqs <= 0.2
+    mid_freq = np.logical_and(freqs > 0.2, freqs <= 0.25)
+    high_freq = freqs >= 0.25
+    exponent[low_freq] = 0.5
+    exponent[mid_freq] = 0.5 + 2 * np.log10(5 * freqs[mid_freq])
+    exponent[high_freq] = 0.7
+    return cutoff_dist * (dist / cutoff_dist)**exponent
+
+
+def geom_spread_boatwright(hypo_dist_in_km, cutoff_dist_in_km, freqs):
+    """"
+    Geometrical spreading coefficient from Boatwright et al. (2002), eq. 8.
+
+    Except that we take the square root of eq. 8, since we correct amplitude
+    and not energy.
+
+    :param hypo_dist_in_km: Hypocentral distance (km).
+    :type hypo_dist_in_km: float
+    :param cutoff_dist_in_km: Cutoff distance (km).
+    :type cutoff_dist_in_km: float
+    :param freqs: Frequencies (Hz).
+    :type freqs: numpy.ndarray
+    :return: Geometrical spreading correction (in m)
+    :rtype: numpy.ndarray
+    """
+    dist = hypo_dist_in_km * 1e3
+    cutoff_dist = cutoff_dist_in_km * 1e3
+    if dist <= cutoff_dist:
+        return dist
+    else:
+        return _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist)
+
+
+def geom_spread_teleseismic(
+        angular_distance, source_depth_in_km, station_depth_in_km, phase):
+    """
+    Calculate geometrical spreading coefficient for teleseismic body waves.
+
+    Implements eq (4) in Okal (1992) for a spherically symmetric Earth.
+    This equations is derived from the conservation of the kinetic energy flux
+    along a ray tube between the source and the receiver.
+
+    :param angular_distance: Angular distance (degrees).
+    :type angular_distance: float
+    :param source_depth_in_km: Source depth (km).
+    :type source_depth_in_km: float
+    :param station_depth_in_km: Station depth (km).
+    :type station_depth_in_km: float
+    :param phase: Phase type (``'P'`` or ``'S'``).
+    :type phase: str
+    :return: Geometrical spreading correction (in m)
+    :rtype: float
+    """
+    if phase == 'P':
+        v_source = _get_property_from_taup(source_depth_in_km, 'vp')
+        v_station = _get_property_from_taup(station_depth_in_km, 'vp')
+        phase_list = ['p', 'P', 'pP', 'sP']
+    elif phase == 'S':
+        v_source = _get_property_from_taup(source_depth_in_km, 'vs')
+        v_station = _get_property_from_taup(station_depth_in_km, 'vs')
+        phase_list = ['s', 'S', 'sS', 'pS']
+    else:
+        raise ValueError(f'Invalid phase: {phase}')
+    rho_source = _get_property_from_taup(source_depth_in_km, 'rho')
+    rho_station = _get_property_from_taup(station_depth_in_km, 'rho')
+    delta = np.deg2rad(angular_distance)
+    arrival = model.get_travel_times(
+        source_depth_in_km, angular_distance, phase_list)[0]
+    takeoff_angle = np.deg2rad(arrival.takeoff_angle)
+    incident_angle = np.deg2rad(arrival.incident_angle)
+    # calculate the local derivative of takeoff angle with respect to
+    # angular distance (which defines the ray tube)
+    distances = np.linspace(angular_distance - 0.1, angular_distance + 0.1, 3)
+    takeoff_angles = np.array([
+        model.get_travel_times(
+            source_depth_in_km, d, phase_list)[0].takeoff_angle
+        for d in distances])
+    dtdd = np.gradient(takeoff_angles, distances)[1]
+    # we have now all the ingredients to calculate the spreading coefficient,
+    # eq (4) in Okal, 1992
+    spreading_coeff = (
+        (rho_source * v_source) / (rho_station * v_station) *
+        np.sin(takeoff_angle) / np.sin(delta) *
+        1 / np.cos(incident_angle) *
+        np.abs(dtdd)
+    )**0.5
+    earth_radius = 6371e3  # m
+    # We return the inverse of Okal's coefficient, since we use it to correct
+    # the amplitude
+    return earth_radius / spreading_coeff
 # -----------------------------------------------------------------------------
 
 

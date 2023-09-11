@@ -24,7 +24,8 @@ from obspy.core import Stream
 from sourcespec import spectrum
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
-    smooth, cosine_taper, moment_to_mag, get_property, property_string)
+    smooth, cosine_taper, moment_to_mag, get_property, property_string,
+    geom_spread_r_power_n, geom_spread_boatwright, geom_spread_teleseismic)
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
 from sourcespec.ssp_radiation_pattern import get_radiation_pattern_coefficient
@@ -245,47 +246,28 @@ def _check_noise_level(trace_signal, trace_noise, config):
             'station will be skipped')
 
 
-def _geom_spread_r_power_n(hypo_dist_in_km, exponent):
-    """rⁿ geometrical spreading coefficient."""
-    dist = hypo_dist_in_km * 1e3
-    return dist**exponent
-
-
-def _geom_spread_boatwright(hypo_dist_in_km, cutoff_dist_in_km, freqs):
-    """"
-    Geometrical spreading coefficient from Boatwright et al. (2002), eq. 8.
-
-    Except that we take the square root of eq. 8, since we correct amplitude
-    and not energy.
-    """
-    dist = hypo_dist_in_km * 1e3
-    cutoff_dist = cutoff_dist_in_km * 1e3
-    if dist <= cutoff_dist:
-        return dist
-    else:
-        return _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist)
-
-
-def _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist):
-    exponent = np.ones_like(freqs)
-    low_freq = freqs <= 0.2
-    mid_freq = np.logical_and(freqs > 0.2, freqs <= 0.25)
-    high_freq = freqs >= 0.25
-    exponent[low_freq] = 0.5
-    exponent[mid_freq] = 0.5 + 2 * np.log10(5 * freqs[mid_freq])
-    exponent[high_freq] = 0.7
-    return cutoff_dist * (dist / cutoff_dist)**exponent
-
-
 def _geometrical_spreading_coefficient(config, spec):
+    """
+    Return the geometrical spreading coefficient for the given spectrum.
+    """
     hypo_dist_in_km = spec.stats.hypo_dist
-    if config.geom_spread_model == 'r_power_n':
-        exponent = config.geom_spread_n_exponent
-        return _geom_spread_r_power_n(hypo_dist_in_km, exponent)
-    elif config.geom_spread_model == 'boatwright':
-        cutoff_dist_in_km = config.geom_spread_cutoff_distance
-        return _geom_spread_boatwright(
-            hypo_dist_in_km, cutoff_dist_in_km, spec.get_freq())
+    if hypo_dist_in_km <= config.geom_spread_min_teleseismic_distance:
+        # regional geometrical spreading
+        if config.geom_spread_model == 'r_power_n':
+            exponent = config.geom_spread_n_exponent
+            return geom_spread_r_power_n(hypo_dist_in_km, exponent)
+        elif config.geom_spread_model == 'boatwright':
+            cutoff_dist_in_km = config.geom_spread_cutoff_distance
+            return geom_spread_boatwright(
+                hypo_dist_in_km, cutoff_dist_in_km, spec.get_freq())
+    else:
+        # teleseismic geometrical spreading
+        angular_distance = spec.stats.gcarc
+        source_depth_in_km = spec.stats.event.hypocenter.depth.value_in_km
+        station_depth_in_km = -spec.stats.coords.elevation
+        phase = config.wave_type[0]
+        return geom_spread_teleseismic(
+            angular_distance, source_depth_in_km, station_depth_in_km, phase)
 
 
 # store log messages to avoid duplicates
@@ -376,6 +358,7 @@ def _build_spectrum(config, trace):
     spec.stats.event = trace.stats.event
     spec.stats.hypo_dist = trace.stats.hypo_dist
     spec.stats.epi_dist = trace.stats.epi_dist
+    spec.stats.gcarc = trace.stats.gcarc
     spec.stats.ignore = trace.stats.ignore
     spec.stats.travel_times = trace.stats.travel_times
     # Integrate in frequency domain, if no time-domain
