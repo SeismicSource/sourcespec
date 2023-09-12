@@ -119,15 +119,24 @@ def _make_fig(config, nlines, ncols):
     return fig, axes
 
 
-def _savefig(config, figures):
+# Keep track of saved figure numbers to avoid saving the same figure twice
+saved_figure_numbers = []
+# Bounding box for saving figures
+bbox = None
+
+
+def _savefig(config, figures, force_numbering=False):
+    global saved_figure_numbers
+    global bbox
     evid = config.event.event_id
     figfile_base = os.path.join(config.options.outdir, f'{evid}.traces.')
     fmt = config.plot_save_format
-    pad_inches = matplotlib.rcParams['savefig.pad_inches']
-    bbox = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
-    bbox = bbox.padded(pad_inches)
+    if bbox is None:
+        pad_inches = matplotlib.rcParams['savefig.pad_inches']
+        bbox = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
+        bbox = bbox.padded(pad_inches)
     nfigures = len(figures)
-    if nfigures == 1 or fmt == 'pdf_multipage':
+    if (nfigures == 1 or fmt == 'pdf_multipage') and not force_numbering:
         if fmt == 'pdf_multipage':
             figfile = f'{figfile_base}pdf'
             pdf = PdfPages(figfile)
@@ -137,15 +146,19 @@ def _savefig(config, figures):
     else:
         figfiles = [f'{figfile_base}{n:02d}.{fmt}' for n in range(nfigures)]
     for n in range(nfigures):
+        if n in saved_figure_numbers:
+            continue
         if fmt == 'pdf_multipage':
             pdf.savefig(figures[n], bbox_inches=bbox)
         else:
             savefig(figures[n], figfiles[n], fmt, bbox_inches=bbox)
         if not config.plot_show:
             plt.close(figures[n])
-    for figfile in figfiles:
-        logger.info(f'Trace plots saved to: {figfile}')
-    config.figures['traces'] += figfiles
+            # dereference the figure to free up memory
+            figures[n] = None
+        saved_figure_numbers.append(n)
+        config.figures['traces'].append(figfiles[n])
+        logger.info(f'Trace plots saved to: {figfiles[n]}')
     if fmt == 'pdf_multipage':
         pdf.close()
 
@@ -375,6 +388,13 @@ def plot_traces(config, st, ncols=None, block=True):
         if plotn > nlines * ncols:
             _set_ylim(axes)
             _add_labels(axes, plotn - 1, ncols)
+            if (
+                config.plot_save_asap and
+                config.plot_save and not config.plot_show and
+                config.plot_save_format != 'pdf_multipage'
+            ):
+                # save figure here to free up memory
+                _savefig(config, figures, force_numbering=True)
             fig, axes = _make_fig(config, nlines, ncols)
             figures.append(fig)
             plotn = 1

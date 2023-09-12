@@ -187,7 +187,15 @@ def _make_fig(config, plot_params):
     plot_params.plotn = 0
 
 
-def _savefig(config, plottype, figures):
+# Keep track of saved figure numbers to avoid saving the same figure twice
+saved_figure_numbers = []
+# Bounding box for saving figures
+bbox = None
+
+
+def _savefig(config, plottype, figures, force_numbering=False):
+    global saved_figure_numbers
+    global bbox
     evid = config.event.event_id
     if plottype == 'regular':
         suffix = '.ssp.'
@@ -197,11 +205,12 @@ def _savefig(config, plottype, figures):
         message = 'Weight'
     figfile_base = os.path.join(config.options.outdir, evid + suffix)
     fmt = config.plot_save_format
-    pad_inches = matplotlib.rcParams['savefig.pad_inches']
-    bbox = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
-    bbox = bbox.padded(pad_inches)
+    if bbox is None:
+        pad_inches = matplotlib.rcParams['savefig.pad_inches']
+        bbox = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
+        bbox = bbox.padded(pad_inches)
     nfigures = len(figures)
-    if nfigures == 1 or fmt == 'pdf_multipage':
+    if (nfigures == 1 or fmt == 'pdf_multipage') and not force_numbering:
         if fmt == 'pdf_multipage':
             figfile = f'{figfile_base}pdf'
             pdf = PdfPages(figfile)
@@ -211,15 +220,19 @@ def _savefig(config, plottype, figures):
     else:
         figfiles = [f'{figfile_base}{n:02d}.{fmt}' for n in range(nfigures)]
     for n in range(nfigures):
+        if n in saved_figure_numbers:
+            continue
         if fmt == 'pdf_multipage':
             pdf.savefig(figures[n], bbox_inches=bbox)
         else:
             savefig(figures[n], figfiles[n], fmt, bbox_inches=bbox)
         if not config.plot_show:
             plt.close(figures[n])
-    for figfile in figfiles:
-        logger.info(f'{message} plots saved to: {figfile}')
-    config.figures[f'spectra_{plottype}'] += figfiles
+            # dereference the figure to free up memory
+            figures[n] = None
+        saved_figure_numbers.append(n)
+        config.figures[f'spectra_{plottype}'].append(figfiles[n])
+        logger.info(f'{message} plots saved to: {figfiles[n]}')
     if fmt == 'pdf_multipage':
         pdf.close()
 
@@ -613,6 +626,15 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
         # Add labels and legend before making a new figure
         _add_labels(plot_params)
         _add_legend(config, plot_params, spec_st, specnoise_st)
+        if (
+            config.plot_save_asap and
+            config.plot_save and not config.plot_show and
+            config.plot_save_format != 'pdf_multipage'
+        ):
+            # save figure here to free up memory
+            _savefig(
+                config, plot_params.plot_type, plot_params.figures,
+                force_numbering=True)
         _make_fig(config, plot_params)
         plotn = 1
     plot_params.plotn = plotn
