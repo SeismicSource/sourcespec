@@ -278,6 +278,10 @@ class Params(object):
     def skip_events(self, idx):
         """Skip events with index idx."""
         self.evids = np.delete(self.evids, idx)
+        self.vp = np.delete(self.vp, idx)
+        self.vs = np.delete(self.vs, idx)
+        self.rho = np.delete(self.rho, idx)
+        self.wave_type = np.delete(self.wave_type, idx)
         self.nsta = np.delete(self.nsta, idx)
         self.Mo = np.delete(self.Mo, idx)
         self.mw = np.delete(self.mw, idx)
@@ -295,6 +299,9 @@ class Params(object):
         self.ra = np.delete(self.ra, idx)
         self.ra_err_minus = np.delete(self.ra_err_minus, idx)
         self.ra_err_plus = np.delete(self.ra_err_plus, idx)
+        self.sigma_a = np.delete(self.sigma_a, idx)
+        self.sigma_a_err_minus = np.delete(self.sigma_a_err_minus, idx)
+        self.sigma_a_err_plus = np.delete(self.sigma_a_err_plus, idx)
         self.t_star = np.delete(self.t_star, idx)
         self.t_star_err_minus = np.delete(self.t_star_err_minus, idx)
         self.t_star_err_plus = np.delete(self.t_star_err_plus, idx)
