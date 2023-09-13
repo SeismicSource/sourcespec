@@ -293,6 +293,35 @@ def geom_spread_boatwright(hypo_dist_in_km, cutoff_dist_in_km, freqs):
         return _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist)
 
 
+def _compute_dtdd(angular_distance, aperture, source_depth_in_km, phase_list):
+    """
+    Compute the local derivative of takeoff angle with respect to angular
+    distance.
+
+    This is used to compute the geometrical spreading coefficient for
+    teleseismic body waves, following Okal (1992), eq. 4.
+
+    :param angular_distance: Angular distance (degrees).
+    :type angular_distance: float
+    :param aperture: Aperture of the ray tube (degrees).
+    :type aperture: float
+    :param source_depth_in_km: Source depth (km).
+    :type source_depth_in_km: float
+    :param phase_list: List of phases.
+    :type phase_list: list of str
+    :return: Local derivative of takeoff angle with respect to angular
+             distance.
+    :rtype: float
+    """
+    distances = np.linspace(
+        angular_distance - aperture, angular_distance + aperture, 3)
+    takeoff_angles = np.array([
+        model.get_travel_times(
+            source_depth_in_km, d, phase_list)[0].takeoff_angle
+        for d in distances])
+    return np.gradient(takeoff_angles, distances)[1]
+
+
 def geom_spread_teleseismic(
         angular_distance, source_depth_in_km, station_depth_in_km, phase):
     """
@@ -330,14 +359,21 @@ def geom_spread_teleseismic(
         source_depth_in_km, angular_distance, phase_list)[0]
     takeoff_angle = np.deg2rad(arrival.takeoff_angle)
     incident_angle = np.deg2rad(arrival.incident_angle)
-    # calculate the local derivative of takeoff angle with respect to
-    # angular distance (which defines the ray tube)
-    distances = np.linspace(angular_distance - 0.1, angular_distance + 0.1, 3)
-    takeoff_angles = np.array([
-        model.get_travel_times(
-            source_depth_in_km, d, phase_list)[0].takeoff_angle
-        for d in distances])
-    dtdd = np.gradient(takeoff_angles, distances)[1]
+    # Cmpute the local derivative of the takeoff angle (dt) with respect to the
+    # angular distance (dd, also called the aperture of the ray tube).
+    # We use a finite difference approximation, and we increase the aperture
+    # until we get a non-zero value.
+    aperture = 0.1  # degrees
+    for _ in range(10):
+        dtdd = _compute_dtdd(
+            angular_distance, aperture, source_depth_in_km, phase_list)
+        if dtdd != 0:
+            break
+        aperture *= 2
+    if dtdd == 0:
+        raise ValueError(
+            f'Unable to compute geometrical spreading coefficient for '
+            f'{phase} wave at {angular_distance:.2f} degrees: dt/dd = 0')
     # we have now all the ingredients to calculate the spreading coefficient,
     # eq (4) in Okal, 1992
     spreading_coeff = (

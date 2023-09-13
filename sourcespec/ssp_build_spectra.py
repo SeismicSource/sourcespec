@@ -368,7 +368,13 @@ def _build_spectrum(config, trace):
     # cut the spectrum
     spec = _cut_spectrum(config, spec)
     # correct geometrical spreading
-    geom_spread = _geometrical_spreading_coefficient(config, spec)
+    try:
+        geom_spread = _geometrical_spreading_coefficient(config, spec)
+    except Exception as e:
+        raise RuntimeError(
+            f'{spec.id}: Error computing geometrical spreading: '
+            f'skipping spectrum\n{str(e)}'
+        ) from e
     spec.data *= geom_spread
     # convert to seismic moment
     coeff = _displacement_to_moment(spec.stats, config)
