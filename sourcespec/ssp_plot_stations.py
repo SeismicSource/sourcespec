@@ -48,13 +48,15 @@ with contextlib.suppress(Exception):
 
 def _round_to_base(x, base):
     """Round to base."""
+    sign_x = np.sign(x)
+    x = np.abs(x)
     if x <= base / 2:
         return 0
     round_x = 0
     while round_x == 0:
         round_x = int(base * np.ceil(float(x) / base))
         base = base / 2.
-    return round_x
+    return round_x*sign_x
 
 
 # Source: https://stackoverflow.com/a/20528097
@@ -280,9 +282,41 @@ def _add_coastlines(config, ax):
     ax.add_feature(cfeature.BORDERS, edgecolor='black', facecolor='none')
 
 
+def _add_gridlines_global_projection(ax, lonmin, lonmax, latmin, latmax):
+    """
+    Add gridlines to global projection.
+
+    We need to compute gridlines manually, since Cartopy has occasional
+    bugs with gridlines in global projections.
+
+    The error is the following:
+        shapely.errors.GEOSException:
+        IllegalArgumentException: point array must contain 0 or >1 elements
+    """
+    lonmin_grid = _round_to_base(lonmin, base=10)
+    lonmax_grid = _round_to_base(lonmax, base=10)
+    latmin_grid = _round_to_base(latmin, base=10)
+    latmax_grid = _round_to_base(latmax, base=10)
+    # longitude gridlines, every 30 degrees
+    xticks = np.arange(lonmin_grid, lonmax_grid + 1, 30)
+    # latitude gridlines, every 20 degrees
+    if latmin_grid < 0 and latmax_grid > 0:
+        # make sure 0 is in the yticks
+        yticks_neg = np.arange(latmin_grid, 0, 20)
+        yticks_pos = np.arange(0, latmax_grid + 1, 20)
+        yticks = np.unique(np.concatenate((yticks_neg, yticks_pos)))
+    else:
+        yticks = np.arange(latmin_grid, latmax_grid + 1, 20)
+    ax.gridlines(
+        draw_labels=True, color='#777777', linestyle='--',
+        xlocs=xticks, ylocs=yticks)
+
+
 def _make_basemap(config, maxdist):
-    """Create basemap with tiles, coastlines, hypocenter
-    and distance circles."""
+    """
+    Create basemap with tiles, coastlines, hypocenter
+    and distance circles.
+    """
     g = Geod(ellps='WGS84')
     event = config.event
     hypo = event.hypocenter
@@ -321,18 +355,16 @@ def _make_basemap(config, maxdist):
         ax.global_projection = False
         ax.maxdiagonal = maxdiagonal
         _add_tiles(config, ax, stamen_terrain)
+        ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     else:
         # use global Orthographic projection
-        ax = fig.add_subplot(
-            111,
-            projection=ccrs.Orthographic(
-                central_longitude=evlo, central_latitude=evla
-            )
-        )
+        _projection = ccrs.Orthographic(
+            central_longitude=evlo, central_latitude=evla)
+        ax = fig.add_subplot(111, projection=_projection)
         ax.global_projection = True
         ax.stock_img()
+        _add_gridlines_global_projection(ax, lonmin, lonmax, latmin, latmax)
     _add_coastlines(config, ax)
-    ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     circles_distances = np.arange(1, ncircles + 1) * circles_step
     circle_texts = _plot_circles(ax, evlo, evla, circles_distances)
     try:
