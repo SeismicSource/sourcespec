@@ -100,9 +100,9 @@ where:
 
 Geometrical spreading
 ---------------------
-The geometrical spreading coefficient :math:`\mathcal{G}(r)` can be defined in
-one of the following ways (see the ``geom_spred_model`` option in
-:ref:`configuration_file:Configuration File`):
+The geometrical spreading coefficient :math:`\mathcal{G}(r)` can be defined,
+for local and regional distances, in one of the following ways (see the
+``geom_spred_model`` option in :ref:`configuration_file:Configuration File`):
 
 - :math:`\mathcal{G}(r) = r^n`: :math:`n` can be any positive number.
   :math:`n=1` (default value) is the theoretical value for a body wave in a
@@ -143,6 +143,34 @@ with
 Note that here we use the square root of eq. 8 in :cite:t:`Boatwright2002`,
 since we correct the spectral amplitude and not the energy.
 
+For teleseismic distances (see the option
+``geom_spread_min_teleseismic_distance``
+in :ref:`configuration_file:Configuration File`), the geometrical spreading
+coefficient is defined as in :cite:t:`Okal1992` (eq. 4):
+
+.. math::
+
+   \mathcal{G}(\Delta) = \frac{a}{g(\Delta)}
+
+where :math:`\Delta` is the great circle distance between the source and the
+receiver, :math:`a` is the Earth radius and :math:`g(\Delta)` is defined as:
+
+.. math::
+
+   g(\Delta) = \left(
+      \frac{\rho_h c_h}{\rho_r c_r}
+      \frac{\sin i_h}{\sin \Delta}
+      \frac{1}{\cos i_r}
+      \left| \frac{d i_h}{d \Delta} \right|
+   \right)^{1/2}
+
+where :math:`\rho_h` and :math:`\rho_r` are the medium densities at the
+hypocenter and at the receiver, respectively, :math:`c_h` and :math:`c_r` are
+the P- or S-wave velocities at the hypocenter and at the receiver,
+respectively, :math:`i_h` and :math:`i_r` are the takeoff angle (hypocenter) and
+the incidence angle (receiver), respectively,
+and :math:`\frac{d i_h}{d \Delta}` is the variation of the takeoff angle within
+a ray tube of width :math:`\Delta` (see :cite:t:`Okal1992` for details).
 
 Building spectra
 ================
