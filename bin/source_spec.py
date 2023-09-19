@@ -14,7 +14,7 @@ import sys
 import os
 import inspect
 
-MIN_PYTHON_VERSION = (3, 6)
+MIN_PYTHON_VERSION = (3, 7)
 # pylint: disable=consider-using-f-string
 MIN_PYTHON_VERSION_STR = '{}.{}'.format(*MIN_PYTHON_VERSION)
 PYTHON_VERSION_STR = '{}.{}.{}'.format(*sys.version_info[:3])
