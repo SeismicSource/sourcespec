@@ -118,6 +118,8 @@ previous versions. You will need to upgrade your old database manually or using
   provided in the event file as initial Mw value for the inversion
 - Reintroduced the parameter `Mw_0_variability` to set the variability around
   the initial Mw value
+- New parameter `plot_save_asap` to save plots as soon as they are ready.
+  This uses less memory but slows down the code.
 
 ### Bugfixes
 
