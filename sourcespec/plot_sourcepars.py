@@ -15,10 +15,10 @@ import argparse
 import contextlib
 import sys
 import os
+import sqlite3
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-import sqlite3
 
 valid_plot_types = [
     'fc', 'Er', 'ssd', 'ra', 'Mo', 't_star', 'Qo', 'sigma_a',
@@ -26,6 +26,9 @@ valid_plot_types = [
 
 
 class Annot():
+    """
+    Annotate the plot with the evid, Mw and the value of the parameter.
+    """
     def __init__(self, xdata, ydata, labels, yformat):
         self.xdata = xdata
         self.ydata = ydata
@@ -43,6 +46,7 @@ class Annot():
 
 
 def mag_to_moment(mag):
+    """Convert magnitude to moment."""
     mag = np.asarray(mag)
     return np.power(10, (1.5 * mag + 9.1))
 
@@ -90,10 +94,11 @@ def apparent_stress_curve_Er_mw(sigma_a, mu, mw):
 
 
 def fc_mw_function(mw, a, b):
+    """Function to fit fc vs Mw."""
     return a / 3. + b * mw
 
 
-def calc_r2(x, y, yerr, a, b, f):
+def calc_r2(x, y, yerr, a, b):
     """Coefficient of determination."""
     y_mean = np.mean(y)
     y_calc = fc_mw_function(x, a, b)
@@ -103,6 +108,7 @@ def calc_r2(x, y, yerr, a, b, f):
 
 
 def parse_args():
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser()
     parser.description =\
         '1D or 2D plot of source parameters from a sqlite parameter file'
@@ -171,6 +177,9 @@ def parse_args():
 
 
 def query_event_params_into_numpy(cursor, param, param_type, query_condition):
+    """
+    Query a parameter from the Events table and return it as a numpy array.
+    """
     query = f'select {param} from Events {query_condition} order by evid,runid'
     cursor.execute(query)
     result = np.array(cursor.fetchall())
@@ -179,7 +188,10 @@ def query_event_params_into_numpy(cursor, param, param_type, query_condition):
     return result[:, 0].astype(param_type)
 
 
-class Params(object):
+class Params():
+    """
+    Class to handle the parameters from a sqlite file.
+    """
     def __init__(self, sqlite_file, runid, stat):
         """
         Initialize the class from a sqlite file.
@@ -251,6 +263,9 @@ class Params(object):
         self.Qo_err_plus = query_event_params_into_numpy(
             self.cur, f'Qo_{stat}_err_plus', np.float64, query_condition)
         self.cur.close()
+        # other attributes
+        self.nbins_x = None
+        self.nbins_y = None
 
     def _open_db(self, sqlite_file):
         """
@@ -454,7 +469,7 @@ class Params(object):
         self.nbins_y = fc_nbins
         mw_bins = np.linspace(mw_min, mw_max + 0.1, mw_nbins)
         fc_bins = 10**np.linspace(log_fc_min, log_fc_max + 0.1, fc_nbins)
-        cond = (self.wave_type == wave_type)
+        cond = self.wave_type == wave_type
         mw = self.mw[cond]
         if len(mw) == 0:
             raise ValueError(f'No events found for wave type "{wave_type}"')
@@ -521,7 +536,7 @@ class Params(object):
 
     def _scatter_fc_mw(self, fig, ax, wave_type='S'):
         """Plot the scatter plot of fc vs mw."""
-        cond = (self.wave_type == wave_type)
+        cond = self.wave_type == wave_type
         evids = self.evids[cond]
         if len(evids) == 0:
             raise ValueError(f'No events found for wave type "{wave_type}"')
@@ -593,10 +608,8 @@ class Params(object):
             def f(mw, a):
                 return fc_mw_function(mw, a, -0.5)
         y = np.log10(self.fc)
-        # yerr = np.log10(self.fc_err_max-self.fc_err_min)/2.
-        popt, pcov = curve_fit(f, self.mw, y)
-        # popt, pcov = curve_fit(f, self.mw, y, p0=popt, sigma=yerr)
-        # popt, pcov = curve_fit(f, self.mw, y, sigma=yerr)
+        # pylint: disable=unbalanced-tuple-unpacking
+        popt, _pcov = curve_fit(f, self.mw, y)
         try:
             a, b = popt
         except Exception:
@@ -605,8 +618,7 @@ class Params(object):
         print(f'a: {a:.1f} b {b:.1f}:')
         slope = (3 / 2) / b
         print(f'slope: {slope:.1f}')
-        r2 = calc_r2(self.mw, y, np.ones_like(y), a, b, f)
-        # r2_err = calc_r2(mw, y, yerr, a, b, f)
+        r2 = calc_r2(self.mw, y, np.ones_like(y), a, b)
         print('r2:', r2)
         # print('r2_err:', r2_err)
         delta_sigma = 1. / ((vel * 1000.)**3.) * 10**(a + 9.1 + 0.935)
@@ -658,7 +670,7 @@ class Params(object):
         ax_Mo.set_ylabel('fc (Hz)')
         plt.show()
 
-    def plot_Er_mw(self, hist=False, fit=False, slope=False, nbins=None):
+    def plot_Er_mw(self, hist=False, fit=False, nbins=None):
         """
         Plot the logarithm of the radiated energy vs the moment magnitude.
 
@@ -692,7 +704,7 @@ class Params(object):
         ax_Mo.set_ylabel('Er (N·m)')
         plt.show()
 
-    def plot_ssd_mw(self, hist=False, fit=False, slope=False, nbins=None):
+    def plot_ssd_mw(self, hist=False, fit=False, nbins=None):
         """
         Plot the logarithm of static stress drop vs moment magnitude.
 
@@ -727,6 +739,7 @@ class Params(object):
         plt.show()
 
     def plot_hist(self, param_name, nbins=None, wave_type='S'):
+        """Plot a histogram of the given parameter."""
         parameters = {
             'fc': ('Corner Frequency', 'Hz', 'log'),
             'ssd': ('Static Stress Drop', 'MPa', 'log'),
@@ -738,7 +751,7 @@ class Params(object):
             'sigma_a': ('Apparent Stress', 'MPa', 'log'),
         }
         description, unit, log = parameters[param_name]
-        log = (log == 'log')
+        log = log == 'log'
         values = getattr(self, param_name)
         if param_name == 'fc':
             values = values[self.wave_type == wave_type]
@@ -766,7 +779,7 @@ class Params(object):
             values_mean = np.mean(values)
             maxval = np.max(np.abs(values))
             bins = np.linspace(0, maxval, nbins)
-        fig, ax = plt.subplots()
+        _fig, ax = plt.subplots()
         ax.hist(values, bins=bins)
         ax.axvline(values_mean, color='red')
         txt = (
@@ -794,6 +807,7 @@ class Params(object):
 
 
 def run():
+    """Run the script."""
     args = parse_args()
     params = Params(args.sqlite_file, args.runid, args.statistics)
 
@@ -811,9 +825,9 @@ def run():
         params.plot_fc_mw(
             args.hist, args.fit, args.slope, args.nbins, args.wave_type)
     elif args.plot_type == 'Er_mw':
-        params.plot_Er_mw(args.hist, args.fit, args.slope, args.nbins)
+        params.plot_Er_mw(args.hist, args.fit, args.nbins)
     elif args.plot_type == 'ssd_mw':
-        params.plot_ssd_mw(args.hist, args.fit, args.slope, args.nbins)
+        params.plot_ssd_mw(args.hist, args.fit, args.nbins)
     elif args.plot_type in valid_plot_types:
         params.plot_hist(args.plot_type, args.nbins, args.wave_type)
 
@@ -833,6 +847,7 @@ def _skip_events(params):
 
 
 def main():
+    """Main function."""
     try:
         run()
     except KeyboardInterrupt:

@@ -13,16 +13,16 @@ HYPOINVERSE format.
 import os
 import contextlib
 import logging
-import yaml
 import re
 import xml.etree.ElementTree as ET
 from datetime import datetime
+import yaml
 from obspy import UTCDateTime
 from obspy import read_events
-from sourcespec.ssp_setup import ssp_exit, traceid_map
+from sourcespec.ssp_setup import ssp_exit, TRACEID_MAP
 from sourcespec.ssp_event import SSPEvent
 from sourcespec.ssp_pick import SSPPick
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def parse_qml(config):
@@ -214,7 +214,7 @@ def _parse_hypo71_hypocenter(hypo_file, _):
 
     :return: a tuple of (SSPEvent, picks)
     """
-    with open(hypo_file) as fp:
+    with open(hypo_file, encoding='ascii') as fp:
         line = fp.readline()
         # Skip the first line if it contain characters in the first 10 digits:
         if any(c.isalpha() for c in line[:10]):
@@ -341,35 +341,37 @@ def _parse_hypo2000_file(hypo_file, _):
     hypo_line = False
     station_line = False
     oldpick = None
-    for n, line in enumerate(open(hypo_file), start=1):
-        word = line.split()
-        if not word:
-            continue
-        # skip short lines, which are probably comments
-        if len(line) < 50:
-            continue
-        if hypo_line:
-            ssp_event = _parse_hypo2000_hypo_line(line)
-            evid = os.path.basename(hypo_file)
-            evid = evid.replace('.txt', '')
-            ssp_event.event_id = evid
-        if station_line and not ssp_event:
-            raise TypeError('Could not find hypocenter data.')
-        if station_line:
-            try:
-                pick = _parse_hypo2000_station_line(
-                    line, oldpick, ssp_event.hypocenter.origin_time)
-                oldpick = pick
-                picks.append(pick)
-            except Exception as err:
-                logger.warning(f'Error parsing line {n} in {hypo_file}: {err}')
+    with open(hypo_file, encoding='ascii') as fp:
+        for n, line in enumerate(fp, start=1):
+            word = line.split()
+            if not word:
                 continue
-        if word[0] == 'YEAR':
-            hypo_line = True
-            continue
-        hypo_line = False
-        if word[0] == 'STA':
-            station_line = True
+            # skip short lines, which are probably comments
+            if len(line) < 50:
+                continue
+            if hypo_line:
+                ssp_event = _parse_hypo2000_hypo_line(line)
+                evid = os.path.basename(hypo_file)
+                evid = evid.replace('.txt', '')
+                ssp_event.event_id = evid
+            if station_line and not ssp_event:
+                raise TypeError('Could not find hypocenter data.')
+            if station_line:
+                try:
+                    pick = _parse_hypo2000_station_line(
+                        line, oldpick, ssp_event.hypocenter.origin_time)
+                    oldpick = pick
+                    picks.append(pick)
+                except Exception as err:
+                    logger.warning(
+                        f'Error parsing line {n} in {hypo_file}: {err}')
+                    continue
+            if word[0] == 'YEAR':
+                hypo_line = True
+                continue
+            hypo_line = False
+            if word[0] == 'STA':
+                station_line = True
     if not ssp_event:
         raise TypeError('Could not find hypocenter data.')
     return ssp_event, picks
@@ -385,7 +387,8 @@ def _parse_source_spec_event_file(event_file, event_id=None):
     :return: SSPEvent object
     """
     try:
-        events = yaml.safe_load(open(event_file))
+        with open(event_file, encoding='utf-8') as fp:
+            events = yaml.safe_load(fp)
     except Exception as e:
         raise TypeError('Not a valid YAML file.') from e
     # XML is valid YAML, but obviously not a SourceSpec Event File
@@ -423,6 +426,7 @@ def _parse_source_spec_event_file(event_file, event_id=None):
     return ssp_event, picks
 
 
+# pylint: disable=inconsistent-return-statements
 def parse_hypo_file(hypo_file, event_id=None):
     """
     Parse a SourceSpec Event File, hypo71 or hypo2000 hypocenter file.
@@ -443,12 +447,12 @@ def parse_hypo_file(hypo_file, event_id=None):
         'hypo71': 'hypo71 hypocenter file',
         'hypo2000': 'hypo2000 hypocenter file',
     }
-    for format, parser in parsers.items():
+    for file_format, parser in parsers.items():
         try:
             ssp_event, picks = parser(hypo_file, event_id)
-            return ssp_event, picks, format
+            return ssp_event, picks, file_format
         except Exception as err:
-            format_str = format_strings[format]
+            format_str = format_strings[file_format]
             msg = f'{hypo_file}: Not a {format_str}'
             err_msgs.append(msg)
             msg = f'Parsing error: {err}'
@@ -460,20 +464,21 @@ def parse_hypo_file(hypo_file, event_id=None):
 
 
 def _is_hypo71_picks(pick_file):
-    for line in open(pick_file):
-        # remove newline
-        line = line.replace('\n', '')
-        # skip separator and empty lines
-        stripped_line = line.strip()
-        if stripped_line in ['10', '']:
-            continue
-        # Check if it is a pick line
-        # 6th character should be alpha (phase name: P or S)
-        # other character should be digits (date/time)
-        if not (line[5].isalpha() and
-                line[9].isdigit() and
-                line[20].isdigit()):
-            raise TypeError(f'{pick_file}: Not a hypo71 phase file')
+    with open(pick_file, encoding='ascii') as fp:
+        for line in fp:
+            # remove newline
+            line = line.replace('\n', '')
+            # skip separator and empty lines
+            stripped_line = line.strip()
+            if stripped_line in ['10', '']:
+                continue
+            # Check if it is a pick line
+            # 6th character should be alpha (phase name: P or S)
+            # other character should be digits (date/time)
+            if not (line[5].isalpha() and
+                    line[9].isdigit() and
+                    line[20].isdigit()):
+                raise TypeError(f'{pick_file}: Not a hypo71 phase file')
 
 
 def _correct_station_name(station):
@@ -484,16 +489,16 @@ def _correct_station_name(station):
 
     :return: corrected station name
     """
-    if traceid_map is None:
+    if TRACEID_MAP is None:
         return station
     # get all the keys containing station name in it
-    keys = [key for key in traceid_map if station == key.split('.')[1]]
+    keys = [key for key in TRACEID_MAP if station == key.split('.')[1]]
     # then take just the first one
     try:
         key = keys[0]
     except IndexError:
         return station
-    traceid = traceid_map[key]
+    traceid = TRACEID_MAP[key]
     return traceid.split('.')[1]
 
 
@@ -514,59 +519,60 @@ def parse_hypo71_picks(config):
     except Exception as err:
         logger.error(err)
         ssp_exit(1)
-    for line in open(pick_file):
-        # remove newline
-        line = line.replace('\n', '')
-        # skip separator and empty lines
-        stripped_line = line.strip()
-        if stripped_line in ['10', '']:
-            continue
-        # Check if it is a pick line
-        # 6th character should be alpha (phase name: P or S)
-        # other character should be digits (date/time)
-        if not (line[5].isalpha() and
-                line[9].isdigit() and
-                line[20].isdigit()):
-            continue
-        pick = SSPPick()
-        pick.station = line[:4].strip()
-        pick.station = _correct_station_name(pick.station)
-        pick.flag = line[4:5]
-        pick.phase = line[5:6]
-        pick.polarity = line[6:7]
-        try:
-            pick.quality = int(line[7:8])
-        except ValueError:
-            # If we cannot read pick quality,
-            # we give the pick the lowest quality
-            pick.quality = 4
-        timestr = line[9:24]
-        dt = datetime.strptime(timestr, '%y%m%d%H%M%S.%f')
-        pick.time = UTCDateTime(dt)
-        picks.append(pick)
-        try:
-            stime = line[31:36]
-        except Exception:
-            continue
-        if stime.strip() == '':
-            continue
-        pick2 = SSPPick()
-        pick2.station = pick.station
-        pick2.flag = line[36:37]
-        pick2.phase = line[37:38]
-        pick2.polarity = line[38:39]
-        try:
-            pick2.quality = int(line[39:40])
-        except ValueError:
-            # If we cannot read pick quality,
-            # we give the pick the lowest quality
-            pick2.quality = 4
-        # pick2.time has the same date, hour and minutes
-        # than pick.time
-        # We therefore make a copy of pick.time,
-        # and set seconds and microseconds to 0
-        pick2.time = pick.time.replace(second=0, microsecond=0)
-        # finally we add stime
-        pick2.time += float(stime)
-        picks.append(pick2)
+    with open(pick_file, encoding='ascii') as fp:
+        for line in fp:
+            # remove newline
+            line = line.replace('\n', '')
+            # skip separator and empty lines
+            stripped_line = line.strip()
+            if stripped_line in ['10', '']:
+                continue
+            # Check if it is a pick line
+            # 6th character should be alpha (phase name: P or S)
+            # other character should be digits (date/time)
+            if not (line[5].isalpha() and
+                    line[9].isdigit() and
+                    line[20].isdigit()):
+                continue
+            pick = SSPPick()
+            pick.station = line[:4].strip()
+            pick.station = _correct_station_name(pick.station)
+            pick.flag = line[4:5]
+            pick.phase = line[5:6]
+            pick.polarity = line[6:7]
+            try:
+                pick.quality = int(line[7:8])
+            except ValueError:
+                # If we cannot read pick quality,
+                # we give the pick the lowest quality
+                pick.quality = 4
+            timestr = line[9:24]
+            dt = datetime.strptime(timestr, '%y%m%d%H%M%S.%f')
+            pick.time = UTCDateTime(dt)
+            picks.append(pick)
+            try:
+                stime = line[31:36]
+            except Exception:
+                continue
+            if stime.strip() == '':
+                continue
+            pick2 = SSPPick()
+            pick2.station = pick.station
+            pick2.flag = line[36:37]
+            pick2.phase = line[37:38]
+            pick2.polarity = line[38:39]
+            try:
+                pick2.quality = int(line[39:40])
+            except ValueError:
+                # If we cannot read pick quality,
+                # we give the pick the lowest quality
+                pick2.quality = 4
+            # pick2.time has the same date, hour and minutes
+            # than pick.time
+            # We therefore make a copy of pick.time,
+            # and set seconds and microseconds to 0
+            pick2.time = pick.time.replace(second=0, microsecond=0)
+            # finally we add stime
+            pick2.time += float(stime)
+            picks.append(pick2)
     return picks

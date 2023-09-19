@@ -17,7 +17,7 @@ from sourcespec.ssp_db_definitions import (
     DB_VERSION,
     STATIONS_TABLE, STATIONS_PRIMARY_KEYS, EVENTS_TABLE, EVENTS_PRIMARY_KEYS)
 from sourcespec._version import get_versions
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def _db_file_exists(db_file):
@@ -80,7 +80,7 @@ def _set_db_version(cursor):
     :param cursor: SQLite cursor
     :type cursor: sqlite3.Cursor
     """
-    cursor.execute('PRAGMA user_version = {v:d}'.format(v=DB_VERSION))
+    cursor.execute(f'PRAGMA user_version = {DB_VERSION:d}')
 
 
 def _log_db_write_error(db_err, db_file):

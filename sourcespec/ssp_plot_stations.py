@@ -12,25 +12,25 @@ Station plotting routine.
 import os
 import logging
 import contextlib
-import numpy as np
 import warnings
+import numpy as np
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
 import cartopy.io.shapereader as shpreader
 import cartopy.feature as cfeature
 from obspy.imaging.beachball import beach
-from sourcespec.adjustText import adjust_text
 from pyproj import Geod
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib import colors
+import matplotlib.patheffects as PathEffects
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
+from sourcespec.adjustText import adjust_text
 from sourcespec.cached_tiler import CachedTiler
 from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import matplotlib.colors as colors
-import matplotlib.patheffects as PathEffects
-from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
@@ -300,7 +300,7 @@ def _add_gridlines_global_projection(ax, lonmin, lonmax, latmin, latmax):
     # longitude gridlines, every 30 degrees
     xticks = np.arange(lonmin_grid, lonmax_grid + 1, 30)
     # latitude gridlines, every 20 degrees
-    if latmin_grid < 0 and latmax_grid > 0:
+    if latmin_grid < 0 < latmax_grid:
         # make sure 0 is in the yticks
         yticks_neg = np.arange(latmin_grid, 0, 20)
         yticks_pos = np.arange(0, latmax_grid + 1, 20)
@@ -465,7 +465,7 @@ def _get_cmap_and_norm(values, outliers, vname, vmean, verr):
             vmax = vmean + 0.1
             vmin = vmean - 0.1
         cbar_extend = 'neither'
-        cmap = cm.Spectral_r
+        cmap = cm.Spectral_r  # pylint: disable=no-member
     elif vname == 'fc':
         vmin = np.min(values_no_outliers)
         vmax = np.max(values_no_outliers)
@@ -481,7 +481,8 @@ def _get_cmap_and_norm(values, outliers, vname, vmean, verr):
             vmax = vmean + 1
             vmin = vmean - 1
         midpoint = (vmean - vmin) / (vmax - vmin)
-        cmap = _shiftedColorMap(cm.PRGn, midpoint=midpoint)
+        cmap = _shiftedColorMap(
+            cm.PRGn, midpoint=midpoint)  # pylint: disable=no-member
     # Corner case, when errorbars are larger than vmin or vmax
     if vmin > vmean - verr_minus:
         vmin = vmean - (verr_minus * 1.1)

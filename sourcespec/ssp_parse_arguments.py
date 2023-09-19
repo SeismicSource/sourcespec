@@ -17,6 +17,7 @@ from sourcespec._version import get_versions
 
 def _parse_values(value_str):
     # Lazy-import for speed
+    # pylint: disable=import-outside-toplevel
     import numpy as np
     if value_str[0] == 'i':
         value_str = value_str[1:]

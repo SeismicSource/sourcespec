@@ -15,17 +15,18 @@ Trace processing for sourcespec.
     (http://www.cecill.info/licences.en.html)
 """
 import logging
+import re
 import numpy as np
 from scipy.signal import savgol_filter
-import re
 from obspy.core import Stream
 from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
     remove_instr_response, station_to_event_position)
 from sourcespec.ssp_wave_arrival import add_arrival_to_trace
-from sourcespec.clipping_detection import clipping_score, clipping_peaks
-logger = logging.getLogger(__name__.split('.')[-1])
+from sourcespec.clipping_detection import (
+    compute_clipping_score, clipping_peaks)
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def _get_bandpass_frequencies(config, trace):
@@ -49,6 +50,7 @@ def _get_bandpass_frequencies(config, trace):
 
 
 def filter_trace(config, trace):
+    """Filter trace."""
     bp_freqmin, bp_freqmax = _get_bandpass_frequencies(config, trace)
     nyquist = 1. / (2. * trace.stats.delta)
     if bp_freqmax >= nyquist:
@@ -56,8 +58,11 @@ def filter_trace(config, trace):
         logger.warning(
             f'{trace.id}: maximum frequency for bandpass filtering '
             f'is larger or equal to Nyquist. Setting it to {bp_freqmax} Hz')
-    filter_options = dict(
-        type='bandpass', freqmin=bp_freqmin, freqmax=bp_freqmax)
+    filter_options = {
+        'type': 'bandpass',
+        'freqmin': bp_freqmin,
+        'freqmax': bp_freqmax
+    }
     trace.filter(**filter_options)
     # save filter info to trace stats
     trace.stats.filter = AttribDict(filter_options)
@@ -86,7 +91,7 @@ def _check_clipping(config, trace):
         t2 = trace.stats.arrivals['P2'][1]
     tr = trace.copy().trim(t1, t2)
     if config.clipping_detection_algorithm == 'clipping_score':
-        score = clipping_score(
+        score = compute_clipping_score(
             tr, config.remove_baseline, config.clipping_debug_plot)
         logger.info(f'{tr.stats.info}: clipping score: {score:.1f}%')
         if score > config.clipping_score_threshold:
@@ -390,9 +395,9 @@ def _merge_stream(config, st):
     return st[0]
 
 
-def _skip_ignored(config, id):
+def _skip_ignored(config, traceid):
     """Skip traces ignored from config."""
-    network, station, location, channel = id.split('.')
+    network, station, location, channel = traceid.split('.')
     # build a list of all possible ids, from station only
     # to full net.sta.loc.chan
     ss = [
@@ -406,24 +411,24 @@ def _skip_ignored(config, id):
             "(" + ")|(".join(config.use_traceids) + ")"
         ).replace('.', r'\.')
         if not any(re.match(combined, s) for s in ss):
-            raise RuntimeError(f'{id}: ignored from config file')
+            raise RuntimeError(f'{traceid}: ignored from config file')
     if config.ignore_traceids is not None:
         combined = (
             "(" + ")|(".join(config.ignore_traceids) + ")"
         ).replace('.', r'\.')
         if any(re.match(combined, s) for s in ss):
-            raise RuntimeError(f'{id}: ignored from config file')
+            raise RuntimeError(f'{traceid}: ignored from config file')
 
 
 def process_traces(config, st):
     """Remove mean, deconvolve and ignore unwanted components."""
     logger.info('Processing traces...')
     out_st = Stream()
-    for id in sorted({tr.id for tr in st}):
+    for traceid in sorted({tr.id for tr in st}):
         try:
-            _skip_ignored(config, id)
+            _skip_ignored(config, traceid)
             # We still use a stream, since the trace can have gaps or overlaps
-            st_sel = st.select(id=id)
+            st_sel = st.select(id=traceid)
             for _trace in st_sel:
                 _add_station_to_event_position(_trace)
                 _check_epicentral_distance(config, _trace)
@@ -444,8 +449,8 @@ def process_traces(config, st):
 
     # Rotate traces, if SH or SV is requested
     if config.wave_type in ['SH', 'SV']:
-        for id in sorted({tr.id[:-1] for tr in out_st}):
-            net, sta, loc, chan = id.split('.')
+        for traceid in sorted({tr.id[:-1] for tr in out_st}):
+            net, sta, loc, chan = traceid.split('.')
             st_sel = out_st.select(
                 network=net, station=sta, location=loc, channel=f'{chan}?'
             )

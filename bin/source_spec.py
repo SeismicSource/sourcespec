@@ -15,6 +15,7 @@ import os
 import inspect
 
 MIN_PYTHON_VERSION = (3, 6)
+# pylint: disable=consider-using-f-string
 MIN_PYTHON_VERSION_STR = '{}.{}'.format(*MIN_PYTHON_VERSION)
 PYTHON_VERSION_STR = '{}.{}.{}'.format(*sys.version_info[:3])
 if sys.version_info < MIN_PYTHON_VERSION:
@@ -31,17 +32,17 @@ if __name__ == '__main__':
         sys.path.insert(0, path)
         # Try to import obspy, which requires most of the
         # source_spec dependencies
-        import obspy  # NOQA
+        import obspy  # NOQA  pylint: disable=unused-import
         # Try to import tzlocal, which is required at the end of the run
-        import tzlocal  # NOQA
+        import tzlocal  # NOQA  pylint: disable=unused-import
         from sourcespec.source_spec import main
         main()
     except ImportError as msg:
-        mod_name = msg.name
-        if mod_name == 'PIL':
-            mod_name = 'pillow'
+        MOD_NAME = msg.name
+        if MOD_NAME == 'PIL':
+            MOD_NAME = 'pillow'
         sys.stderr.write(
-            f"Error: module '{mod_name}' is required by source_spec. "
+            f"Error: module '{MOD_NAME}' is required by source_spec. "
             "Please install it.\n"
         )
         sys.exit(1)

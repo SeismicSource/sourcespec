@@ -17,18 +17,19 @@ import warnings
 from math import asin, degrees
 from obspy.taup import TauPyModel
 model = TauPyModel(model='iasp91')
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-def _get_nll_grd(phase, station, type, NLL_time_dir):
+def _get_nll_grd(phase, station, grd_type, NLL_time_dir):
     # Lazy-import here, since nllgrid is not an installation requirement
+    # pylint: disable=import-outside-toplevel
     from nllgrid import NLLGrid
     for _station in station, 'DEFAULT':
-        key = f'{phase}_{_station}_{type}'
+        key = f'{phase}_{_station}_{grd_type}'
         with contextlib.suppress(KeyError):
             return _get_nll_grd.grds[key]
         with contextlib.suppress(IndexError):
-            grdfile = f'*.{phase}.{_station}.{type}.hdr'
+            grdfile = f'*.{phase}.{_station}.{grd_type}.hdr'
             grdfile = os.path.join(NLL_time_dir, grdfile)
             grdfile = glob(grdfile)[0]
             grd = NLLGrid(grdfile)
@@ -46,15 +47,15 @@ def _wave_arrival_nll(trace, phase, NLL_time_dir, focmec):
         raise RuntimeError
     station = trace.stats.station
     travel_time = takeoff_angle = None
-    grdtypes = ['time']
+    grd_types = ['time']
     if focmec:
-        grdtypes.append('angle')
-    for type in grdtypes:
+        grd_types.append('angle')
+    for grd_type in grd_types:
         try:
-            grd = _get_nll_grd(phase, station, type, NLL_time_dir)
+            grd = _get_nll_grd(phase, station, grd_type, NLL_time_dir)
         except RuntimeError as e:
             logger.warning(
-                f'{trace.id}: Cannot find NLL {type} grid. '
+                f'{trace.id}: Cannot find NLL {grd_type} grid. '
                 'Falling back to another method')
             raise RuntimeError from e
         if grd.station == 'DEFAULT':
@@ -65,10 +66,10 @@ def _wave_arrival_nll(trace, phase, NLL_time_dir, focmec):
         lat = trace.stats.event.hypocenter.latitude
         hypo_x, hypo_y = grd.project(lon, lat)
         hypo_z = trace.stats.event.hypocenter.depth.value_in_km
-        if type == 'time':
+        if grd_type == 'time':
             travel_time = grd.get_value(hypo_x, hypo_y, hypo_z)
-        elif type == 'angle':
-            azimuth, takeoff_angle, quality = grd.get_value(
+        elif grd_type == 'angle':
+            _azimuth, takeoff_angle, _quality = grd.get_value(
                 hypo_x, hypo_y, hypo_z)
     return travel_time, takeoff_angle
 
@@ -88,10 +89,11 @@ def _wave_arrival_taup(trace, phase):
     """Travel time and takeoff angle using taup."""
     phase_list = [phase.lower(), phase]
     hypo_depth = trace.stats.event.hypocenter.depth.value_in_km
-    kwargs = dict(
-        source_depth_in_km=hypo_depth,
-        distance_in_degree=trace.stats.gcarc,
-        phase_list=phase_list)
+    kwargs = {
+        'source_depth_in_km': hypo_depth,
+        'distance_in_degree': trace.stats.gcarc,
+        'phase_list': phase_list
+    }
     with warnings.catch_warnings(record=True) as warns:
         try:
             arrivals = model.get_travel_times(**kwargs)
@@ -127,12 +129,10 @@ def _wave_arrival(trace, phase, config):
             _wave_arrival_vel(trace, vel[phase])
         method = f'constant V{phase.lower()}: {vel[phase]:.1f} km/s'
         return travel_time, takeoff_angle, method
-    try:
-        travel_time, takeoff_angle = _wave_arrival_taup(trace, phase)
-        method = 'global velocity model (iasp91)'
-        return travel_time, takeoff_angle, method
-    except RuntimeError:
-        raise
+    # if _wave_arrival_taup() fails, it will raise a RuntimeError
+    travel_time, takeoff_angle = _wave_arrival_taup(trace, phase)
+    method = 'global velocity model (iasp91)'
+    return travel_time, takeoff_angle, method
 
 
 def _validate_pick(pick, theo_pick_time, tolerance, trace_id):

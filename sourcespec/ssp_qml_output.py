@@ -20,7 +20,7 @@ from obspy.core.event import (CreationInfo, FocalMechanism, Magnitude,
                               StationMagnitude, StationMagnitudeContribution,
                               WaveformStreamID)
 from sourcespec._version import get_versions
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def _to_camel_case(snake_str):
@@ -62,6 +62,7 @@ class SSPTag(AttribDict):
 
 
 def write_qml(config, sspec_output):
+    """Write QuakeML output."""
     if not config.options.qml_file:
         config.qml_file_out = None
         return

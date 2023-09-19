@@ -14,11 +14,11 @@ import logging
 import shutil
 import re
 import contextlib
-import numpy as np
 from urllib.parse import urlparse
+import numpy as np
 from sourcespec._version import get_versions
 from sourcespec.ssp_data_types import SpectralParameter
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 VALID_FIGURE_FORMATS = ('.png', '.svg')
 
 
@@ -258,7 +258,10 @@ def _misfit_table_rows(misfit_plot_files):
     )
     misfit_table_column_html = os.path.join(
         template_dir, 'misfit_table_column.html')
-    misfit_table_column = open(misfit_table_column_html).read()
+    with open(
+        misfit_table_column_html, encoding='utf-8'
+    ) as fp:
+        misfit_table_column = fp.read()
     misfit_table_rows = ''
     for n, misfit_plot_file in enumerate(sorted(misfit_plot_files)):
         if n % 3 == 0:
@@ -326,9 +329,10 @@ def _misfit_page(config):
         '{2D_MISFIT_TABLE_ROWS_FC_TSTAR}': two_d_misfit_table_rows_fc_tstar,
         '{2D_MISFIT_TABLE_ROWS_TSTAR_MW}': two_d_misfit_table_rows_tstar_mw
     }
-    misfit = open(misfit_html).read()
+    with open(misfit_html, encoding='utf-8') as fp:
+        misfit = fp.read()
     misfit = _multireplace(misfit, replacements)
-    with open(misfit_html_out, 'w') as fp:
+    with open(misfit_html_out, 'w', encoding='utf-8') as fp:
         fp.write(misfit)
 
 
@@ -431,7 +435,6 @@ def _add_event_info_to_html(config, replacements):
 
 def _add_maps_to_html(config, replacements):
     """Add maps to HTML report."""
-    global VALID_FIGURE_FORMATS
     try:
         station_maps = [
             m for m in config.figures['station_maps']
@@ -470,8 +473,8 @@ def _add_maps_to_html(config, replacements):
 
 def _add_traces_plots_to_html(config, templates, replacements):
     """Add trace plots to HTML report."""
-    global VALID_FIGURE_FORMATS
-    traces_plot = open(templates.traces_plot_html).read()
+    with open(templates.traces_plot_html, encoding='utf-8') as fp:
+        traces_plot = fp.read()
     traces_plot_files = [
         t for t in config.figures['traces']
         if t.endswith(VALID_FIGURE_FORMATS)]
@@ -506,8 +509,8 @@ def _add_traces_plots_to_html(config, templates, replacements):
 
 def _add_spectra_plots_to_html(config, templates, replacements):
     """Add spectra plots to HTML report."""
-    global VALID_FIGURE_FORMATS
-    spectra_plot = open(templates.spectra_plot_html).read()
+    with open(templates.spectra_plot_html, encoding='utf-8') as fp:
+        spectra_plot = fp.read()
     spectra_plot_files = [
         s for s in config.figures['spectra_regular']
         if s.endswith(VALID_FIGURE_FORMATS)]
@@ -811,7 +814,6 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
 
 def _add_box_plots_to_html(config, replacements):
     """Add box plots to HTML report."""
-    global VALID_FIGURE_FORMATS
     box_plots = ''
     with contextlib.suppress(KeyError, IndexError):
         box_plots = [
@@ -832,7 +834,6 @@ def _add_box_plots_to_html(config, replacements):
 
 def _add_stacked_spectra_to_html(config, replacements):
     """Add stacked spectra to HTML report."""
-    global VALID_FIGURE_FORMATS
     stacked_spectra = ''
     with contextlib.suppress(KeyError, IndexError):
         stacked_spectra = [
@@ -853,7 +854,8 @@ def _add_stacked_spectra_to_html(config, replacements):
 
 def _add_station_table_to_html(config, sspec_output, templates, replacements):
     """Add station table to HTML report."""
-    station_table_row = open(templates.station_table_row_html).read()
+    with open(templates.station_table_row_html, encoding='utf-8') as fp:
+        station_table_row = fp.read()
     station_table_rows = ''
     stationpar = sspec_output.station_parameters
     for statId in sorted(stationpar.keys()):
@@ -955,7 +957,8 @@ def _add_downloadable_files_to_html(config, templates, replacements):
     # QuakeML file (if produced)
     if config.qml_file_out is not None:
         quakeml_file = os.path.basename(config.qml_file_out)
-        quakeml_file_link = open(templates.quakeml_file_link_html).read()
+        with open(templates.quakeml_file_link_html, encoding='utf-8') as fp:
+            quakeml_file_link = fp.read()
         quakeml_file_link = quakeml_file_link\
             .replace('{QUAKEML_FILE}', quakeml_file)\
             .replace('{QUAKEML_FILE_BNAME}', quakeml_file)
@@ -967,6 +970,7 @@ def _add_downloadable_files_to_html(config, templates, replacements):
 
 
 class HTMLtemplates:
+    """Class to hold paths to HTML templates."""
     def __init__(self):
         template_dir = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
@@ -1013,11 +1017,12 @@ def html_report(config, sspec_output):
     _add_misfit_plots_to_html(config, replacements)
     _add_downloadable_files_to_html(config, templates, replacements)
 
-    index = open(templates.index_html).read()
+    with open(templates.index_html, encoding='utf-8') as fp:
+        index = fp.read()
     index = _multireplace(index, replacements)
     index = _cleanup_html(index)
     shutil.copy(templates.style_css, config.options.outdir)
     index_html_out = os.path.join(config.options.outdir, 'index.html')
-    with open(index_html_out, 'w') as fp:
+    with open(index_html_out, 'w', encoding='utf-8') as fp:
         fp.write(index)
     logger.info(f'HTML report written to file: {index_html_out}')

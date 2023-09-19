@@ -11,21 +11,22 @@ Plot parameter statistics.
 """
 import os
 import contextlib
+import logging
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as mpe
-import logging
 
 from sourcespec._version import get_versions
 from sourcespec.savefig import savefig
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
 
 
 class PlotParam():
+    """A plot parameter."""
     def __init__(self, name, unit, color):
         self.name = name
         self.unit = unit

@@ -16,23 +16,25 @@ Build spectral objects.
     (http://www.cecill.info/licences.en.html)
 """
 import logging
-import numpy as np
 import math
+import numpy as np
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 from obspy.core import Stream
 from sourcespec import spectrum
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
-    smooth, cosine_taper, moment_to_mag, get_property, property_string,
+    smooth, cosine_taper, moment_to_mag,
+    get_medium_property, medium_property_string,
     geom_spread_r_power_n, geom_spread_boatwright, geom_spread_teleseismic)
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
 from sourcespec.ssp_radiation_pattern import get_radiation_pattern_coefficient
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 class SpectrumIgnored(Exception):
+    """Spectrum ignored exception"""
     def __init__(self, message, reason):
         # Call the base class constructor with the parameters it needs
         super().__init__(message)
@@ -256,7 +258,7 @@ def _geometrical_spreading_coefficient(config, spec):
         if config.geom_spread_model == 'r_power_n':
             exponent = config.geom_spread_n_exponent
             return geom_spread_r_power_n(hypo_dist_in_km, exponent)
-        elif config.geom_spread_model == 'boatwright':
+        if config.geom_spread_model == 'boatwright':
             cutoff_dist_in_km = config.geom_spread_cutoff_distance
             return geom_spread_boatwright(
                 hypo_dist_in_km, cutoff_dist_in_km, spec.get_freq())
@@ -268,10 +270,12 @@ def _geometrical_spreading_coefficient(config, spec):
         phase = config.wave_type[0]
         return geom_spread_teleseismic(
             angular_distance, source_depth_in_km, station_depth_in_km, phase)
+    raise ValueError(
+        f'Unknown geometrical spreading model: {config.geom_spread_model}')
 
 
 # store log messages to avoid duplicates
-property_log_messages = []
+PROPERTY_LOG_MESSAGES = []
 
 
 def _displacement_to_moment(stats, config):
@@ -284,19 +288,19 @@ def _displacement_to_moment(stats, config):
     lon = stats.coords.longitude
     lat = stats.coords.latitude
     depth = -stats.coords.elevation
-    depth_string = property_string('station depth', depth)
+    depth_string = medium_property_string('station depth', depth)
     v_name = f'v{phase.lower()}'
     v_source = config.event.hypocenter[v_name]
-    v_source_string = property_string(f'{v_name}_source', v_source)
-    v_station = get_property(lon, lat, depth, v_name, config)
+    v_source_string = medium_property_string(f'{v_name}_source', v_source)
+    v_station = get_medium_property(lon, lat, depth, v_name, config)
     stats.v_station = v_station
     stats.v_station_type = phase
-    v_station_string = property_string(f'{v_name}_station', v_station)
+    v_station_string = medium_property_string(f'{v_name}_station', v_station)
     rho_source = config.event.hypocenter.rho
-    rho_source_string = property_string('rho_source', rho_source)
-    rho_station = get_property(lon, lat, depth, 'rho', config)
+    rho_source_string = medium_property_string('rho_source', rho_source)
+    rho_station = get_medium_property(lon, lat, depth, 'rho', config)
     stats.rho_station = rho_station
-    rho_station_string = property_string('rho_station', rho_station)
+    rho_station_string = medium_property_string('rho_station', rho_station)
     specid = '.'.join((
         stats.network, stats.station, stats.location, stats.channel))
     msg = (
@@ -304,10 +308,9 @@ def _displacement_to_moment(stats, config):
         f'{v_source_string}, {v_station_string}, '
         f'{rho_source_string}, {rho_station_string}'
     )
-    global property_log_messages
-    if msg not in property_log_messages:
+    if msg not in PROPERTY_LOG_MESSAGES:
         logger.info(msg)
-        property_log_messages.append(msg)
+        PROPERTY_LOG_MESSAGES.append(msg)
     v_source *= 1000.
     v_station *= 1000.
     v3 = v_source**(5. / 2) * v_station**(1. / 2)
@@ -408,11 +411,11 @@ def _build_weight_from_frequency(config, spec):
     return weight
 
 
-def _build_weight_from_inv_frequency(spec, pow=0.25):
+def _build_weight_from_inv_frequency(spec, power=0.25):
     """
     Build spectral weights from inverse frequency (raised to a power < 1)
     """
-    if pow >= 1:
+    if power >= 1:
         raise ValueError('pow must be < 1')
     # Note: weight.data is used for plotting,
     #       weight.data_logspaced for actual weighting
@@ -427,7 +430,7 @@ def _build_weight_from_inv_frequency(spec, pow=0.25):
     # Build weights as if frequencies always start from 0.25 Hz
     # to obtain similar curves regardless of fmin
     # and to avoid too much weight for very low frequencies
-    weight.data[i0: i1 + 1] = 1. / (freq[i0: i1 + 1] - freq[i0] + 0.25)**pow
+    weight.data[i0: i1 + 1] = 1. / (freq[i0: i1 + 1] - freq[i0] + 0.25)**power
     weight.data /= np.max(weight.data)
     freq_logspaced = weight.freq_logspaced
     weight.data_logspaced *= 0
@@ -435,7 +438,7 @@ def _build_weight_from_inv_frequency(spec, pow=0.25):
     i1 = np.where(freq_logspaced <= snr_fmax)[0][-1] if snr_fmax\
         else len(freq_logspaced) - 1
     weight.data_logspaced[i0: i1 + 1] =\
-        1. / (freq_logspaced[i0: i1 + 1] - freq_logspaced[i0] + 0.25)**pow
+        1. / (freq_logspaced[i0: i1 + 1] - freq_logspaced[i0] + 0.25)**power
     weight.data_logspaced /= np.max(weight.data_logspaced)
     return weight
 
@@ -627,13 +630,14 @@ def _trim_components(config, signal_st, noise_st, st):
 
     Recompute time window of the signal and noise traces for correct plotting.
     """
-    for id in sorted({tr.id[:-1] for tr in signal_st}):
-        st_sel = signal_st.select(id=f'{id}*') + noise_st.select(id=f'{id}*')
+    for traceid in sorted({tr.id[:-1] for tr in signal_st}):
+        st_sel = signal_st.select(id=f'{traceid}*') +\
+            noise_st.select(id=f'{traceid}*')
         all_npts = {tr.stats.npts for tr in st_sel}
         if len(all_npts) == 1:
             continue
         logger.warning(
-            f'{id}: components have different window lengths. '
+            f'{traceid}: components have different window lengths. '
             'Trimming signal and noise windows to the shortest one')
         npts = min(all_npts)
         for tr in st_sel:
@@ -641,7 +645,7 @@ def _trim_components(config, signal_st, noise_st, st):
                 tr.data = tr.data[:npts]
             elif tr.stats.type == 'noise':
                 tr.data = tr.data[-npts:]
-        for tr in st.select(id=f'{id}*'):
+        for tr in st.select(id=f'{traceid}*'):
             _recompute_time_window(tr, config.wave_type[0], npts, keep='start')
             _recompute_time_window(tr, 'N', npts, keep='end')
 

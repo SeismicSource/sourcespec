@@ -24,6 +24,7 @@ from scipy.signal import find_peaks
 
 def _get_baseline(signal):
     """Get the signal baseline using a Savitzky-Golay filter."""
+    # pylint: disable=import-outside-toplevel
     from scipy.signal import savgol_filter
     # search for baselines with characteristic length of at least 1/3
     # of the signal
@@ -196,7 +197,7 @@ def clipping_peaks(trace, sensitivity=3, clipping_percentile=10, debug=False):
     return trace_clipped, properties
 
 
-def clipping_score(trace, remove_baseline=False, debug=False):
+def compute_clipping_score(trace, remove_baseline=False, debug=False):
     """
     Compute a trace clipping score based on the shape of the kernel density
     estimation of the trace amplitude values.
@@ -286,6 +287,7 @@ def clipping_score(trace, remove_baseline=False, debug=False):
 
 def _get_plotting_axes():
     """Get matplotlib axes for plotting"""
+    # pylint: disable=import-outside-toplevel unused-import
     # Force loading of a matplotlib GUI backend
     import matplotlib
     mpl_backends = 'macosx', 'qt5agg', 'qt4agg', 'gtk3agg', 'tkagg', 'wxagg'
@@ -300,10 +302,11 @@ def _get_plotting_axes():
     from matplotlib.ticker import ScalarFormatter
 
     class ScalarFormatterForceFormat(ScalarFormatter):
-        def _set_format(self, *args):
+        """ScalarFormatter with forced format"""
+        def _set_format(self, *_args):
             self.format = '%1.1f'
 
-    fig, (ax_trace, ax_density) = plt.subplots(
+    _fig, (ax_trace, ax_density) = plt.subplots(
         1, 2, figsize=(15, 5), sharey=True)
     yfmt = ScalarFormatterForceFormat()
     yfmt.set_powerlimits((0, 0))
@@ -375,6 +378,7 @@ def _plot_clipping_analysis(
 
 def _parse_arguments():
     """Parse command line arguments"""
+    # pylint: disable=import-outside-toplevel
     import sys
     import argparse
     description = """\
@@ -433,10 +437,10 @@ Two methods are implemented:
 
 
 # ainsi codes for fancy output
-reset = "\u001b[0m"
-red = "\u001b[31m"
-green = "\u001b[32m"
-yellow = "\u001b[33m"
+RESET = "\u001b[0m"
+RED = "\u001b[31m"
+GREEN = "\u001b[32m"
+YELLOW = "\u001b[33m"
 
 
 def _run_clipping_peaks(trace, args):
@@ -449,25 +453,26 @@ def _run_clipping_peaks(trace, args):
         f'clipped peaks: {properties["npeaks_clipped"]}'
     )
     if trace_clipped:
-        msg += f' - {red}clipped!{reset}'
+        msg += f' - {RED}clipped!{RESET}'
     print(msg)
 
 
 def _run_clipping_score(trace, args):
     """Run clipping score method and print results"""
-    score = clipping_score(
+    score = compute_clipping_score(
         trace, args.remove_baseline, args.debug)
     if score < 10:
-        color = green
+        color = GREEN
     elif score < 20:
-        color = yellow
+        color = YELLOW
     else:
-        color = red
-    print(f'{trace.id} - clipping score: {color}{score:.2f}%{reset}')
+        color = RED
+    print(f'{trace.id} - clipping score: {color}{score:.2f}%{RESET}')
 
 
 def _command_line_interface():
     """Command line interface"""
+    # pylint: disable=import-outside-toplevel
     from obspy import read, Stream
     args = _parse_arguments()
     st = Stream()
@@ -489,6 +494,8 @@ def _command_line_interface():
 
 
 def main():
+    """Main function"""
+    # pylint: disable=import-outside-toplevel
     import sys
     try:
         _command_line_interface()

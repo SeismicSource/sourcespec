@@ -34,7 +34,7 @@ def _open_sqlite_db(db_file):
         sys.stderr.write(f'{msg}\n')
         sys.stderr.write(
             f'Please check whether "{db_file}" is a valid SQLite file.\n')
-        exit(1)
+        sys.exit(1)
     return conn, conn.cursor()
 
 
@@ -53,7 +53,7 @@ def _get_db_version(cursor, db_file):
         sys.stderr.write(f'{msg}\n')
         sys.stderr.write(
             f'Please check whether "{db_file}" is a valid SQLite file.\n')
-        exit(1)
+        sys.exit(1)
 
 
 def _version_1_to_2(cursor):
@@ -99,13 +99,14 @@ def _version_1_to_2(cursor):
         'sigma_a_is_outlier'
     ]
     station_keys = ', '.join([
-        key for key in STATIONS_TABLE.keys() if key not in new_station_keys])
+        key for key in STATIONS_TABLE if key not in new_station_keys])
     sql_insert_new_station_keys = (
         f'INSERT INTO StationsNew ({station_keys}) '
         f'SELECT {station_keys} FROM Stations;'
     )
     sql_drop_old_stations_table = 'DROP TABLE Stations;'
-    sql_rename_new_stations_table = 'ALTER TABLE StationsNew RENAME TO Stations;'
+    sql_rename_new_stations_table =\
+        'ALTER TABLE StationsNew RENAME TO Stations;'
 
     # Events table:
     # New in version 2:
@@ -158,7 +159,7 @@ def _version_1_to_2(cursor):
         'sigma_a_pctl', 'sigma_a_pctl_err_minus', 'sigma_a_pctl_err_plus'
     ]
     event_keys = ', '.join([
-        key for key in EVENTS_TABLE.keys() if key not in new_event_keys])
+        key for key in EVENTS_TABLE if key not in new_event_keys])
     sql_insert_new_event_keys = (
         f'INSERT INTO EventsNew ({event_keys}) '
         f'SELECT {event_keys} FROM Events;'
@@ -185,7 +186,7 @@ def _version_1_to_2(cursor):
         cursor.execute('PRAGMA user_version = 2;')
     except Exception as db_err:
         sys.stderr.write(f'{db_err}\n')
-        exit(1)
+        sys.exit(1)
 
 
 def _overwrite_ok(db_file):
@@ -198,7 +199,7 @@ def _overwrite_ok(db_file):
     """
     if not os.path.exists(db_file):
         print(f'ERROR: {db_file} does not exist.')
-        exit(1)
+        sys.exit(1)
     answer = input(
         f'Overwrite {db_file}?\n'
         f'(current file will be saved to {db_file}.bak) [y/N] ')
@@ -226,9 +227,9 @@ def update_db_file(db_file):
             f'to version {DB_VERSION}.')
     elif db_version == DB_VERSION:
         print(f'{db_file} is already up-to-date.')
-        exit(0)
+        sys.exit(0)
     else:
         print(f'ERROR: {db_file} has an unsupported version {db_version}.')
-        exit(1)
+        sys.exit(1)
     conn.commit()
     conn.close()

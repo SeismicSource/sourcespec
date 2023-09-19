@@ -18,14 +18,15 @@ from collections import defaultdict
 import pickle
 from argparse import ArgumentParser
 from obspy.core import Stream
-from sourcespec.ssp_util import moment_to_mag, mag_to_moment
-from sourcespec.spectrum import Spectrum
 import matplotlib
 import matplotlib.pyplot as plt
+from sourcespec.ssp_util import moment_to_mag, mag_to_moment
+from sourcespec.spectrum import Spectrum
 matplotlib.use('Agg')  # NOQA
 
 
 def main():
+    """Main function."""
     parser = ArgumentParser(
         description='Compute mean station residuals from source_spec output.')
     parser.add_argument(
@@ -51,7 +52,7 @@ def main():
         sys.exit(1)
 
     resfiles = []
-    for root, dirs, files in os.walk(resfiles_dir):
+    for root, _dirs, files in os.walk(resfiles_dir):
         resfiles.extend(
             os.path.join(root, file)
             for file in files

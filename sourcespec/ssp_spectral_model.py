@@ -61,6 +61,5 @@ def objective_func(xdata, ydata, weight):
     return _objective_func
 
 
-def callback(x):
-    pass
-    # print 'parameters:', x
+def callback(_):
+    """Empty callback function for bounded inversion."""

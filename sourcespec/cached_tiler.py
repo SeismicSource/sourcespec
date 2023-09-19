@@ -12,18 +12,18 @@ https://github.com/SciTools/cartopy/issues/732#issuecomment-191423035
 """
 import os
 import types
+import logging
 import requests
 import PIL
-import logging
 import numpy as np
 from cartopy.io.img_tiles import _merge_tiles
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 logging.getLogger('PIL').setLevel(logging.WARNING)
 logging.getLogger('requests').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 
 
-class CachedTiler(object):
+class CachedTiler():
     """A Cached Tiler for Cartopy."""
 
     def __init__(self, tiler, cache_dir=None):
@@ -72,7 +72,8 @@ class CachedTiler(object):
             cache_dir, '_'.join(str(v) for v in tile) + '.png')
         if not os.path.exists(tile_fname):
             try:
-                response = requests.get(self._image_url(tile), stream=True)
+                response = requests.get(
+                    self._image_url(tile), stream=True, timeout=5)
             except requests.exceptions.RequestException:
                 logger.warning(
                     'Cannot download map tiles. Check internet connection.')

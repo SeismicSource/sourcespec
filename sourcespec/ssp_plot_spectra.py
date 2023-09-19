@@ -21,14 +21,14 @@ import warnings
 import contextlib
 from collections import defaultdict
 from obspy import Stream
-from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
-from sourcespec.savefig import savefig
-from sourcespec._version import get_versions
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.patheffects as PathEffects
-logger = logging.getLogger(__name__.split('.')[-1])
+from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
+from sourcespec.savefig import savefig
+from sourcespec._version import get_versions
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
@@ -42,8 +42,12 @@ synth_colors = [
     '#FC4384',
 ]
 
+STATION_TEXT_YPOS = None
+SNRATIO_TEXT_YPOS = None
+
 
 class PlotParams():
+    """Parameters for plotting spectra."""
 
     def __init__(self):
         self.plot_type = None
@@ -55,7 +59,7 @@ class PlotParams():
         self.mag_minmax = None
         self.plotn = 0
         self.figures = []
-        self.axes = None
+        self.axes = []
         self.ax0 = None
 
     def set_plot_params(self, config, spec_st, specnoise_st):
@@ -188,14 +192,13 @@ def _make_fig(config, plot_params):
 
 
 # Keep track of saved figure numbers to avoid saving the same figure twice
-saved_figure_numbers = []
+SAVED_FIGURE_NUMBERS = []
 # Bounding box for saving figures
-bbox = None
+BBOX = None
 
 
 def _savefig(config, plottype, figures, force_numbering=False):
-    global saved_figure_numbers
-    global bbox
+    global BBOX  # pylint: disable=global-statement
     evid = config.event.event_id
     if plottype == 'regular':
         suffix = '.ssp.'
@@ -205,10 +208,10 @@ def _savefig(config, plottype, figures, force_numbering=False):
         message = 'Weight'
     figfile_base = os.path.join(config.options.outdir, evid + suffix)
     fmt = config.plot_save_format
-    if bbox is None:
+    if BBOX is None:
         pad_inches = matplotlib.rcParams['savefig.pad_inches']
-        bbox = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
-        bbox = bbox.padded(pad_inches)
+        BBOX = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
+        BBOX = BBOX.padded(pad_inches)
     nfigures = len(figures)
     if (nfigures == 1 or fmt == 'pdf_multipage') and not force_numbering:
         if fmt == 'pdf_multipage':
@@ -220,17 +223,17 @@ def _savefig(config, plottype, figures, force_numbering=False):
     else:
         figfiles = [f'{figfile_base}{n:02d}.{fmt}' for n in range(nfigures)]
     for n in range(nfigures):
-        if n in saved_figure_numbers:
+        if n in SAVED_FIGURE_NUMBERS:
             continue
         if fmt == 'pdf_multipage':
-            pdf.savefig(figures[n], bbox_inches=bbox)
+            pdf.savefig(figures[n], bbox_inches=BBOX)
         else:
-            savefig(figures[n], figfiles[n], fmt, bbox_inches=bbox)
+            savefig(figures[n], figfiles[n], fmt, bbox_inches=BBOX)
         if not config.plot_show:
             plt.close(figures[n])
             # dereference the figure to free up memory
             figures[n] = None
-        saved_figure_numbers.append(n)
+        SAVED_FIGURE_NUMBERS.append(n)
         config.figures[f'spectra_{plottype}'].append(figfiles[n])
         logger.info(f'{message} plots saved to: {figfiles[n]}')
     if fmt == 'pdf_multipage':
@@ -452,19 +455,18 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
 
 
 def _snratio_text(spec, ax, color, path_effects):
-    global snratio_text_ypos
+    global SNRATIO_TEXT_YPOS  # pylint: disable=global-statement
     if spec.stats.spectral_snratio is None:
         return
     snratio_text = f'S/N: {spec.stats.spectral_snratio:.1f}'
     ax.text(
-        0.95, snratio_text_ypos, snratio_text, ha='right', va='top',
+        0.95, SNRATIO_TEXT_YPOS, snratio_text, ha='right', va='top',
         fontsize=8, color=color, path_effects=path_effects,
         transform=ax.transAxes, zorder=20)
-    snratio_text_ypos -= 0.05
+    SNRATIO_TEXT_YPOS -= 0.05
 
 
 def _station_text(spec, ax, color, path_effects, stack_plots):
-    global station_text_ypos
     station_text = f'{spec.id[:-1]} {spec.stats.instrtype}'
     if not stack_plots:
         color = 'black'
@@ -472,7 +474,7 @@ def _station_text(spec, ax, color, path_effects, stack_plots):
         f'\n{spec.stats.hypo_dist:.1f} km ({spec.stats.epi_dist:.1f} km)')
     if not ax.has_station_text or stack_plots:
         ax.text(
-            0.05, station_text_ypos, station_text,
+            0.05, STATION_TEXT_YPOS, station_text,
             horizontalalignment='left',
             verticalalignment='bottom',
             color=color,
@@ -483,9 +485,9 @@ def _station_text(spec, ax, color, path_effects, stack_plots):
 
 
 def _params_text(spec, ax, color, path_effects, stack_plots):
-    global station_text_ypos
+    global STATION_TEXT_YPOS  # pylint: disable=global-statement
     if stack_plots:
-        params_text_ypos = station_text_ypos - 0.04
+        params_text_ypos = STATION_TEXT_YPOS - 0.04
     else:
         params_text_ypos = 0.02
         color = 'black'
@@ -531,7 +533,7 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
     if len(fc_text + t_star_text) > 38:
         sep = '\n'
         params_text_ypos -= 0.01
-        station_text_ypos += 0.06
+        STATION_TEXT_YPOS += 0.06
     else:
         sep = ' '
     params_text = (
@@ -643,13 +645,13 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
     # compute the number of instrument components (N, Z, E, 1, 2, ...)
     ncomponents = len(
         [o for o in orientations if o not in special_orientations])
-    global snratio_text_ypos
-    global station_text_ypos
-    snratio_text_ypos = 0.95
+    global SNRATIO_TEXT_YPOS  # pylint: disable=global-statement
+    global STATION_TEXT_YPOS  # pylint: disable=global-statement
+    SNRATIO_TEXT_YPOS = 0.95
     if plot_params.stack_plots:
-        station_text_ypos = 0.05 + 0.10 * (plotn - 1)
+        STATION_TEXT_YPOS = 0.05 + 0.10 * (plotn - 1)
     else:
-        station_text_ypos = 0.20
+        STATION_TEXT_YPOS = 0.20
     # sort specs by orientation letter, so that synthetic is plotted first
     # sort_order[...] gives 10 if the key is not present
     sort_order = defaultdict(lambda: 10, {'S': 0, 's': 1, 't': 2, 'H': 99})

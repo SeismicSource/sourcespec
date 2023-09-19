@@ -15,8 +15,8 @@ import re
 import logging
 from obspy import read_inventory
 from obspy.core.inventory import Inventory, Network, Station, Channel, Response
-from sourcespec.ssp_setup import instr_codes_vel, instr_codes_acc
-logger = logging.getLogger(__name__.split('.')[-1])
+from sourcespec.ssp_setup import INSTR_CODES_VEL, INSTR_CODES_ACC
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 class PAZ():
@@ -30,6 +30,7 @@ class PAZ():
     location = None
     channel = None
     input_units = None
+    linenum = None
 
     def __init__(self, file=None):
         """
@@ -52,6 +53,7 @@ class PAZ():
 
     @property
     def seedID(self):
+        """Return the seedID."""
         return self._seedID
 
     @seedID.setter
@@ -75,18 +77,19 @@ class PAZ():
             return
         instr_code = self.channel[1]
         self.input_units = None
-        if instr_code in instr_codes_vel:
+        if instr_code in INSTR_CODES_VEL:
             band_code = self.channel[0]
             # SEED standard band codes for velocity channels
             # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming
             if band_code in ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'S']:
                 self.input_units = 'M/S'
-        elif instr_code in instr_codes_acc:
+        elif instr_code in INSTR_CODES_ACC:
             self.input_units = 'M/S**2'
 
     def _read(self, file):
         """Read a PAZ file."""
-        self.lines = enumerate(open(file, 'r'), start=1)
+        with open(file, 'r', encoding='ascii') as fp:
+            self.lines = enumerate(fp, start=1)
         while True:
             try:
                 self._parse_paz_file_lines()
@@ -112,7 +115,7 @@ class PAZ():
                 self.linenum, line = next(self.lines)
                 value = complex(*map(float, line.split()))
                 poles_zeros.append(value)
-            self.__setattr__(what, poles_zeros)
+            setattr(self, what, poles_zeros)
         elif what == 'constant':
             self.sensitivity = float(word[1])
 

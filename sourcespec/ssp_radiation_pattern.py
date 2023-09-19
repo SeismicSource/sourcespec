@@ -13,11 +13,12 @@ import contextlib
 import logging
 from math import pi, sin, cos
 from obspy.taup import TauPyModel
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 model = TauPyModel(model='iasp91')
 
 
 def toRad(angle):
+    """Convert angle from degrees to radians."""
     return angle / 180. * pi
 
 
@@ -83,14 +84,13 @@ def _rad_patt_SH(phi, dip, rake, takeoff):
 
 
 # Cache radiation patterns
-rp_cache = {}
+RP_CACHE = {}
 # Cache messages to avoid duplication
-rp_msg_cache = []
+RP_MSG_CACHE = []
 
 
 def get_radiation_pattern_coefficient(stats, config):
-    global rp_cache
-    global rp_msg_cache
+    """Get radiation pattern coefficient."""
     wave_type = config.wave_type  # P, S, SV, SH
     simple_wave_type = wave_type[0].lower()  # p or s
     if not config.rp_from_focal_mechanism:
@@ -106,16 +106,16 @@ def get_radiation_pattern_coefficient(stats, config):
             f'Cannot find focal mechanism. Using "rp{simple_wave_type}" '
             'value from config file'
         )
-        if msg not in rp_msg_cache:
+        if msg not in RP_MSG_CACHE:
             logger.warning(msg)
-            rp_msg_cache.append(msg)
+            RP_MSG_CACHE.append(msg)
         return config[f'rp{simple_wave_type}']
     traceid = '.'.join(
         (stats.network, stats.station, stats.location, stats.channel))
     key = f'{traceid}_{wave_type}'
     # try to get radiation pattern from cache
     with contextlib.suppress(KeyError):
-        return rp_cache[key]
+        return RP_CACHE[key]
     try:
         takeoff_angle = stats.takeoff_angles[simple_wave_type.upper()]
     except Exception:
@@ -123,9 +123,9 @@ def get_radiation_pattern_coefficient(stats, config):
             f'{traceid}: Cannot find takeoff angle. '
             f'Using "rp{simple_wave_type}" value from config file'
         )
-        if msg not in rp_msg_cache:
+        if msg not in RP_MSG_CACHE:
             logger.warning(msg)
-            rp_msg_cache.append(msg)
+            RP_MSG_CACHE.append(msg)
         return config[f'rp{simple_wave_type}']
     rp = radiation_pattern(
         strike, dip, rake, takeoff_angle, stats.azimuth, wave_type)
@@ -136,5 +136,5 @@ def get_radiation_pattern_coefficient(stats, config):
         f'{traceid}: {wave_type} radiation pattern from focal mechanism: '
         f'{rp:.2f}'
     )
-    rp_cache[key] = rp
+    RP_CACHE[key] = rp
     return rp

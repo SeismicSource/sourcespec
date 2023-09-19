@@ -18,7 +18,7 @@ Compute radiated energy from spectral integration.
 import logging
 import numpy as np
 from sourcespec.ssp_data_types import SpectralParameter
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def _spectral_integral(spec, t_star, fmax):
@@ -123,13 +123,13 @@ def radiated_energy_and_apparent_stress(
             param_Er = station_pars.Er
         except KeyError:
             param_Er = SpectralParameter(
-                id='Er', value=np.nan, format='{:.3e}')
+                param_id='Er', value=np.nan, format_spec='{:.3e}')
             station_pars.Er = param_Er
         try:
             param_sigma_a = station_pars.sigma_a
         except KeyError:
             param_sigma_a = SpectralParameter(
-                id='sigma_a', value=np.nan, format='{:.3e}')
+                param_id='sigma_a', value=np.nan, format_spec='{:.3e}')
             station_pars.sigma_a = param_sigma_a
 
         # Compute signal and noise integrals and subtract noise from signal,

@@ -16,7 +16,7 @@ from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_event import SSPEvent
 from sourcespec.ssp_pick import SSPPick
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def compute_sensitivity_from_SAC(trace, config):
@@ -33,7 +33,7 @@ def compute_sensitivity_from_SAC(trace, config):
         except Exception as e:
             raise TypeError(f'{trace.id}: trace must be in SAC format') from e
     try:
-        sensitivity = eval(inp, {}, namespace)
+        sensitivity = eval(inp, {}, namespace)  # pylint: disable=eval-used
     except NameError as msg:
         hdr_field = str(msg).split()[1]
         logger.error(f'SAC header field {hdr_field} does not exist')

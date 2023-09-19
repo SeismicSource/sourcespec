@@ -13,14 +13,14 @@ import os
 import contextlib
 import logging
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.patheffects as PathEffects
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
 from sourcespec.ssp_spectral_model import spectral_model
 from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.patheffects as PathEffects
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)

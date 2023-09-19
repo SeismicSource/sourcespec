@@ -16,8 +16,9 @@ Local magnitude calculation for sourcespec.
 """
 import contextlib
 import logging
-import numpy as np
 from copy import deepcopy
+import numpy as np
+# pylint: disable=no-name-in-module
 from obspy.signal.filter import envelope
 from obspy.signal.invsim import WOODANDERSON
 from obspy.signal.util import smooth
@@ -25,7 +26,7 @@ from obspy.signal.trigger import trigger_onset
 from sourcespec.ssp_data_types import SpectralParameter
 from sourcespec.ssp_util import cosine_taper
 from sourcespec.ssp_util import remove_instr_response
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def _check_nyquist(freqmax, trace):
@@ -174,7 +175,7 @@ def local_magnitude(config, st, proc_st, sspec_output):
             param_Ml = station_pars.Ml
         except KeyError:
             param_Ml = SpectralParameter(
-                id='Ml', value=np.nan, format='{:.2f}')
+                param_id='Ml', value=np.nan, format_spec='{:.2f}')
             station_pars.Ml = param_Ml
 
         # only compute Ml for horizontal components

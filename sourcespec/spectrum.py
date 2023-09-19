@@ -12,8 +12,8 @@ and the low-level function do_fft().
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-import numpy as np
 from copy import copy, deepcopy
+import numpy as np
 from obspy.core import Trace
 
 
@@ -37,7 +37,7 @@ def do_spectrum(trace):
     """Compute the spectrum of an ObsPy Trace object."""
     signal = trace.data
     delta = trace.stats.delta
-    amp, freq = do_fft(signal, delta)
+    amp, _freq = do_fft(signal, delta)
 
     tr = Spectrum()
     # remove DC component (freq=0)
@@ -54,8 +54,12 @@ def do_spectrum(trace):
 
 
 class Spectrum(Trace):
+    """
+    A class to handle spectra.
+    """
 
     def get_freq(self):
+        """Return the frequency axis of the spectrum."""
         fdelta = self.stats.delta
         freq = np.arange(0, self.stats.npts * fdelta, fdelta)
         freq = freq[:self.stats.npts]
@@ -63,6 +67,8 @@ class Spectrum(Trace):
         return freq
 
     def plot(self, **kwargs):
+        """Plot the spectrum."""
+        # pylint: disable=import-outside-toplevel
         freq = self.get_freq()
         import matplotlib.pyplot as plt
         plt.loglog(freq, self.data, **kwargs)

@@ -17,14 +17,14 @@ Output functions for source_spec.
 import os
 import contextlib
 import logging
-import numpy as np
 from collections.abc import Mapping
 from datetime import datetime
 from tzlocal import get_localzone
+import numpy as np
 from sourcespec.ssp_qml_output import write_qml
 from sourcespec.ssp_sqlite_output import write_sqlite
 from sourcespec._version import get_versions
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def _write_author_and_agency_to_parfile(config, parfile):
@@ -76,7 +76,7 @@ def _write_parfile(config, sspec_output):
     evid = config.event.event_id
     parfilename = os.path.join(
         config.options.outdir, f'{evid}.ssp.out')
-    with open(parfilename, 'w') as parfile:
+    with open(parfilename, 'w', encoding='utf-8') as parfile:
         parfile.write(
             '*** Note: this file is deprecated and might not contain all the '
             'output information. ***\n')
@@ -100,32 +100,32 @@ def _write_parfile(config, sspec_output):
             'Mw', 'fc', 't_star', 'Qo', 'Mo',
             'ssd', 'ra', 'hyp_dist', 'az', 'Er'
         )
-        formats = dict(
-            Mo='{:.3e} ',
-            Er='{:.3e} ',
-            hyp_dist='{:7.3f} ',
-            az='{:7.3f} ',
-            Mw='{:6.3f} ',
-            fc='{:6.3f} ',
-            ssd='{:.3e} ',
-            ra='{:8.3f} ',
-            t_star='{:6.3f} ',
-            Qo='{:7.1f} ',
-            Ml='{:6.3f} '
-        )
-        formats_none = dict(
-            Mo='{:>9} ',
-            Er='{:>9} ',
-            hyp_dist='{:>7} ',
-            az='{:>7} ',
-            Mw='{:>6} ',
-            fc='{:>6} ',
-            ssd='{:>9} ',
-            ra='{:>8} ',
-            t_star='{:>6} ',
-            Qo='{:>7} ',
-            Ml='{:>6} '
-        )
+        formats = {
+            'Mo': '{:.3e} ',
+            'Er': '{:.3e} ',
+            'hyp_dist': '{:7.3f} ',
+            'az': '{:7.3f} ',
+            'Mw': '{:6.3f} ',
+            'fc': '{:6.3f} ',
+            'ssd': '{:.3e} ',
+            'ra': '{:8.3f} ',
+            't_star': '{:6.3f} ',
+            'Qo': '{:7.1f} ',
+            'Ml': '{:6.3f} '
+        }
+        formats_none = {
+            'Mo': '{:>9} ',
+            'Er': '{:>9} ',
+            'hyp_dist': '{:>7} ',
+            'az': '{:>7} ',
+            'Mw': '{:>6} ',
+            'fc': '{:>6} ',
+            'ssd': '{:>9} ',
+            'ra': '{:>8} ',
+            't_star': '{:>6} ',
+            'Qo': '{:>7} ',
+            'Ml': '{:>6} '
+        }
         stationpar = sspec_output.station_parameters
         for statId in sorted(stationpar.keys()):
             par = stationpar[statId]
@@ -335,8 +335,8 @@ def _write_yaml(config, sspec_output):
     evid = config.event.event_id
     yamlfilename = os.path.join(config.options.outdir, f'{evid}.ssp.yaml')
     lines = _dict2yaml(sspec_output)
-    with open(yamlfilename, 'w') as fp:
-        comment = sspec_output._comments['begin']
+    with open(yamlfilename, 'w', encoding='utf-8') as fp:
+        comment = sspec_output.comments['begin']
         for line in comment.split('\n'):
             fp.write(f'# {line}\n')
         fp.write(lines)
@@ -348,7 +348,7 @@ def _write_hypo71(config, sspec_output):
         return
     if config.hypo_file_format != 'hypo71':
         return
-    with open(config.options.hypo_file, 'r') as fp:
+    with open(config.options.hypo_file, 'r', encoding='ascii') as fp:
         line = fp.readline()
         # Check if first 10 digits of the line contain characters
         if any(c.isalpha() for c in line[:10]):
@@ -366,7 +366,7 @@ def _write_hypo71(config, sspec_output):
     outline = ''.join(line)
     evid = config.event.event_id
     hypo_file_out = os.path.join(config.options.outdir, f'{evid}.ssp.h')
-    with open(hypo_file_out, 'w') as fp:
+    with open(hypo_file_out, 'w', encoding='ascii') as fp:
         with contextlib.suppress(Exception):
             fp.write(line1)
         fp.write(outline)

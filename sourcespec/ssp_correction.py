@@ -14,10 +14,10 @@ Spectral station correction calculated from ssp_residuals.
 """
 import pickle
 import logging
+from scipy.interpolate import interp1d
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
 from sourcespec.ssp_setup import ssp_exit
-from scipy.interpolate import interp1d
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def station_correction(spec_st, config):
@@ -36,7 +36,7 @@ def station_correction(spec_st, config):
         logger.error(msg)
         ssp_exit(1)
 
-    H_specs = [spec for spec in spec_st if (spec.stats.channel[-1] == 'H')]
+    H_specs = [spec for spec in spec_st if spec.stats.channel[-1] == 'H']
     for spec in H_specs:
         try:
             corr = residual.select(id=spec.id)[0]

@@ -38,22 +38,22 @@ from sourcespec.ssp_update_db import update_db_file
 if sys.stdout.isatty() and sys.platform != 'win32':
     try:
         from IPython.terminal.embed import InteractiveShellEmbed
-        ipshell = InteractiveShellEmbed.instance()
+        IPSHELL = InteractiveShellEmbed.instance()
     except ImportError:
-        ipshell = None
+        IPSHELL = None
 else:
-    ipshell = None
+    IPSHELL = None
 
 # global variables
 OS = os.name
-oldlogfile = None
-logger = None
-ssp_exit_called = False
-traceid_map = None
+OLDLOGFILE = None
+LOGGER = None
+SSP_EXIT_CALLED = False
+TRACEID_MAP = None
 # SEED standard instrument codes:
 # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
-instr_codes_vel = ['H', 'L']
-instr_codes_acc = ['N', ]
+INSTR_CODES_VEL = ['H', 'L']
+INSTR_CODES_ACC = ['N', ]
 OBSPY_VERSION = None
 OBSPY_VERSION_STR = None
 NUMPY_VERSION_STR = None
@@ -64,8 +64,9 @@ PYTHON_VERSION_STR = None
 
 
 def _check_obspy_version():
-    global OBSPY_VERSION, OBSPY_VERSION_STR
+    global OBSPY_VERSION, OBSPY_VERSION_STR  # pylint: disable=global-statement
     # check ObsPy version
+    # pylint: disable=import-outside-toplevel
     import obspy
     MIN_OBSPY_VERSION = (1, 2, 0)
     OBSPY_VERSION_STR = obspy.__version__
@@ -76,7 +77,6 @@ def _check_obspy_version():
     with contextlib.suppress(IndexError):
         # add half version number for development versions
         # check if there is a fourth field in version string:
-        OBSPY_VERSION_STR.split('.')[3]
         OBSPY_VERSION = OBSPY_VERSION[:2] + (OBSPY_VERSION[2] + 0.5,)
     if OBSPY_VERSION < MIN_OBSPY_VERSION:
         MIN_OBSPY_VERSION_STR = '.'.join(map(str, MIN_OBSPY_VERSION))
@@ -90,6 +90,7 @@ def _cartopy_download_gshhs():
     """
     Download GSHHS data for cartopy.
     """
+    # pylint: disable=import-outside-toplevel
     from cartopy.io.shapereader import GSHHSShpDownloader as Downloader
     from cartopy import config as cartopy_config
     from pathlib import Path
@@ -121,6 +122,7 @@ def _cartopy_download_borders():
     Inspired from
     https://github.com/SciTools/cartopy/blob/main/tools/cartopy_feature_download.py
     """
+    # pylint: disable=import-outside-toplevel
     from cartopy.io import Downloader
     from cartopy import config as cartopy_config
     from pathlib import Path
@@ -155,8 +157,8 @@ def _check_cartopy_version():
     cartopy_min_ver = (0, 21, 0)
     try:
         cartopy_ver = None
-        import cartopy  # NOQA
-        global CARTOPY_VERSION_STR
+        import cartopy  # NOQA pylint: disable=import-outside-toplevel
+        global CARTOPY_VERSION_STR  # pylint: disable=global-statement
         CARTOPY_VERSION_STR = cartopy.__version__
         cartopy_ver = tuple(map(int, cartopy.__version__.split('.')[:3]))
         if cartopy_ver < cartopy_min_ver:
@@ -178,14 +180,16 @@ def _check_cartopy_version():
 
 
 def _check_pyproj_version():
+    # pylint: disable=import-outside-toplevel
     try:
-        import pyproj  # NOQA
+        import pyproj # noqa pylint: disable=unused-import
     except ImportError as e:
         msg = '\nPlease install pyproj to plot maps.\n'
         raise ImportError(msg) from e
 
 
 def _check_nllgrid_version():
+    # pylint: disable=import-outside-toplevel
     nllgrid_min_ver = (1, 4, 2)
     try:
         nllgrid_ver = None
@@ -210,6 +214,8 @@ def _check_nllgrid_version():
 
 
 def _check_library_versions():
+    # pylint: disable=import-outside-toplevel
+    # pylint: disable=global-statement
     global PYTHON_VERSION_STR
     global NUMPY_VERSION_STR
     global SCIPY_VERSION_STR
@@ -235,11 +241,17 @@ def _check_library_versions():
 
 
 def _read_config(config_file, configspec=None):
-    kwargs = dict(
-        configspec=configspec, file_error=True, default_encoding='utf8')
+    kwargs = {
+        'configspec': configspec,
+        'file_error': True,
+        'default_encoding': 'utf8'
+    }
     if configspec is None:
-        kwargs.update(
-            dict(interpolation=False, list_values=False, _inspec=True))
+        kwargs.update({
+            'interpolation': False,
+            'list_values': False,
+            '_inspec': True
+        })
     try:
         config_obj = ConfigObj(config_file, **kwargs)
     except IOError as err:
@@ -456,6 +468,7 @@ def _check_deprecated_config_options(config_obj):
 
 
 def _init_plotting(plot_show):
+    # pylint: disable=import-outside-toplevel
     import matplotlib.pyplot as plt
     if not plot_show:
         plt.switch_backend('Agg')
@@ -520,34 +533,32 @@ def _init_instrument_codes(config):
     """
     Initialize instrument codes from config file.
     """
-    global instr_codes_vel
-    global instr_codes_acc
     # User-defined instrument codes:
     instr_code_acc_user = config.instrument_code_acceleration
     instr_code_vel_user = config.instrument_code_velocity
     # Remove user-defined instrument codes if they conflict
     # with another instrument
     with contextlib.suppress(ValueError):
-        instr_codes_vel.remove(instr_code_acc_user)
+        INSTR_CODES_VEL.remove(instr_code_acc_user)
     with contextlib.suppress(ValueError):
-        instr_codes_acc.remove(instr_code_vel_user)
+        INSTR_CODES_ACC.remove(instr_code_vel_user)
     # Add user-defined instrument codes
     if instr_code_vel_user is not None:
-        instr_codes_vel.append(instr_code_vel_user)
+        INSTR_CODES_VEL.append(instr_code_vel_user)
     if instr_code_acc_user is not None:
-        instr_codes_acc.append(instr_code_acc_user)
+        INSTR_CODES_ACC.append(instr_code_acc_user)
 
 
 def _init_traceid_map(traceid_map_file):
     """
     Initialize trace ID map from file.
     """
-    global traceid_map
+    global TRACEID_MAP  # pylint: disable=global-statement
     if traceid_map_file is None:
         return
     try:
-        with open(traceid_map_file, 'r') as fp:
-            traceid_map = json.loads(fp.read())
+        with open(traceid_map_file, 'r', encoding='utf-8') as fp:
+            TRACEID_MAP = json.loads(fp.read())
     except Exception:
         sys.stderr.write(
             f'traceid mapping file "{traceid_map_file}" not found '
@@ -829,14 +840,9 @@ def setup_logging(config, basename=None, progname='source_spec'):
     When called the second time, the previous logfile is renamed using the
     given basename.
     """
-    global oldlogfile
-    global logger
-    global PYTHON_VERSION_STR
-    global OBSPY_VERSION_STR
-    global NUMPY_VERSION_STR
-    global SCIPY_VERSION_STR
-    global MATPLOTLIB_VERSION_STR
-    global CARTOPY_VERSION_STR
+    # pylint: disable=global-statement
+    global OLDLOGFILE
+    global LOGGER
     # Create outdir
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
@@ -848,19 +854,19 @@ def setup_logging(config, basename=None, progname='source_spec'):
         logfile = os.path.join(config.options.outdir, f'{datestring}.ssp.log')
 
     logger_root = logging.getLogger()
-    if oldlogfile:
+    if OLDLOGFILE:
         hdlrs = logger_root.handlers[:]
         for hdlr in hdlrs:
             hdlr.flush()
             hdlr.close()
             logger_root.removeHandler(hdlr)
         # Copy old logfile to new
-        shutil.copyfile(oldlogfile, logfile)
+        shutil.copyfile(OLDLOGFILE, logfile)
         # Remove old logfile from old and new dir
-        os.remove(oldlogfile)
-        oldlogfile = os.path.join(
-            config.options.outdir, os.path.basename(oldlogfile))
-        os.remove(oldlogfile)
+        os.remove(OLDLOGFILE)
+        OLDLOGFILE = os.path.join(
+            config.options.outdir, os.path.basename(OLDLOGFILE))
+        os.remove(OLDLOGFILE)
         filemode = 'a'
     else:
         filemode = 'w'
@@ -884,51 +890,58 @@ def setup_logging(config, basename=None, progname='source_spec'):
         console.emit = _color_handler_emit(console.emit)
     logger_root.addHandler(console)
 
-    logger = logging.getLogger(progname)
+    LOGGER = logging.getLogger(progname)
 
     # Only write these debug infos for a new logfile
-    if not oldlogfile:
-        banner = f'\n{__banner__}\nThis is SourceSpec v{__version__}.\n'
-        logger.info(banner)
-        logger.debug('source_spec START')
-        logger.debug(f'SourceSpec version: {__version__}')
-        uname = platform.uname()
-        uname_str = f'{uname[0]} {uname[2]} {uname[4]}'
-        logger.debug(f'Platform: {uname_str}')
-        logger.debug(f'Python version: {PYTHON_VERSION_STR}')
-        logger.debug(f'ObsPy version: {OBSPY_VERSION_STR}')
-        logger.debug(f'NumPy version: {NUMPY_VERSION_STR}')
-        logger.debug(f'SciPy version: {SCIPY_VERSION_STR}')
-        logger.debug(f'Matplotlib version: {MATPLOTLIB_VERSION_STR}')
-        if CARTOPY_VERSION_STR is not None:
-            logger.debug(f'Cartopy version: {CARTOPY_VERSION_STR}')
-        logger.debug('Running arguments:')
-        logger.debug(' '.join(sys.argv))
-    oldlogfile = logfile
+    if not OLDLOGFILE:
+        _log_debug_information()
+    OLDLOGFILE = logfile
 
     # See if there are warnings to deliver
     for _ in range(len(config.warnings)):
         msg = config.warnings.pop(0)
-        logger.warning(msg)
+        LOGGER.warning(msg)
+
+
+def _log_debug_information():
+    banner = f'\n{__banner__}\nThis is SourceSpec v{__version__}.\n'
+    LOGGER.info(banner)
+    LOGGER.debug('source_spec START')
+    LOGGER.debug(f'SourceSpec version: {__version__}')
+    uname = platform.uname()
+    uname_str = f'{uname[0]} {uname[2]} {uname[4]}'
+    LOGGER.debug(f'Platform: {uname_str}')
+    LOGGER.debug(f'Python version: {PYTHON_VERSION_STR}')
+    LOGGER.debug(f'ObsPy version: {OBSPY_VERSION_STR}')
+    LOGGER.debug(f'NumPy version: {NUMPY_VERSION_STR}')
+    LOGGER.debug(f'SciPy version: {SCIPY_VERSION_STR}')
+    LOGGER.debug(f'Matplotlib version: {MATPLOTLIB_VERSION_STR}')
+    if CARTOPY_VERSION_STR is not None:
+        LOGGER.debug(f'Cartopy version: {CARTOPY_VERSION_STR}')
+    LOGGER.debug('Running arguments:')
+    LOGGER.debug(' '.join(sys.argv))
 
 
 def ssp_exit(retval=0, abort=False):
+    """Exit the program."""
     # ssp_exit might have already been called if multiprocessing
-    global ssp_exit_called
-    if ssp_exit_called:
+    global SSP_EXIT_CALLED  # pylint: disable=global-statement
+    if SSP_EXIT_CALLED:
         return
-    ssp_exit_called = True
+    SSP_EXIT_CALLED = True
     if abort:
         print('\nAborting.')
-        if logger is not None:
-            logger.debug('source_spec ABORTED')
-    elif logger is not None:
-        logger.debug('source_spec END')
+        if LOGGER is not None:
+            LOGGER.debug('source_spec ABORTED')
+    elif LOGGER is not None:
+        LOGGER.debug('source_spec END')
     logging.shutdown()
     sys.exit(retval)
 
 
 def sigint_handler(sig, frame):
+    """Handle SIGINT signal."""
+    # pylint: disable=unused-argument
     ssp_exit(1, abort=True)
 
 

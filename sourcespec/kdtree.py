@@ -15,6 +15,7 @@ from scipy.interpolate import griddata
 
 
 class KDTCell():
+    """A cell of a k-d tree."""
     def __init__(self, extent, calc_pdf, min_cell_prob=0,
                  ndiv=None, maxdiv=None):
         self.extent = extent
@@ -37,6 +38,7 @@ class KDTCell():
         self.maxdiv = maxdiv
 
     def divide(self, parts):
+        """Divide the cell in `parts` parts along every dimension."""
         if not self.is_divisible:
             return [self, ]
         # dim is the dimension of the parameter space
@@ -79,6 +81,7 @@ class KDTCell():
 
 
 class KDTree():
+    """A k-d tree."""
     def __init__(self, extent, init_parts, calc_pdf, min_cell_prob=0.,
                  maxdiv=None):
         # extent defines the size of search hypervolume
@@ -94,8 +97,10 @@ class KDTree():
         self.ncells = len(self.cells)
 
     def divide(self):
-        # find the cell with highest probability and
-        # divide it in 2 parts along every dimension
+        """
+        Find the cell with highest probability and
+        divide it in 2 parts along every dimension
+        """
         # self.cells.sort(key=lambda c: c.prob)
         self.cells.sort(key=lambda c: c.prob_divisible)
         cell0 = self.cells.pop()
@@ -104,6 +109,10 @@ class KDTree():
         self.ncells = len(self.cells)
 
     def get_pdf(self, deltas):
+        """
+        Calculate the probability density function (PDF) on a grid
+        defined by deltas.
+        """
         deltas = np.array(deltas).reshape(-1, 1)
         extent = self.extent.copy()
         ranges = []

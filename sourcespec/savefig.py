@@ -10,9 +10,9 @@ Save Matplotlib figure. Optimize PNG format using PIL.
     (http://www.cecill.info/licences.en.html)
 """
 import io
-import PIL
 import logging
 import warnings
+import PIL
 # Reduce logging level for PIL to avoid DEBUG messages
 pil_logger = logging.getLogger('PIL')
 pil_logger.setLevel(logging.WARNING)

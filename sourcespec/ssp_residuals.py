@@ -18,7 +18,7 @@ import pickle
 from obspy.core import Stream
 from sourcespec.ssp_spectral_model import spectral_model
 from sourcespec.ssp_util import mag_to_moment
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def spectral_residuals(config, spec_st, sspec_output):

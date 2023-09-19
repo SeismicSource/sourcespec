@@ -10,9 +10,9 @@ Classes for spectral inversion routines.
     (http://www.cecill.info/licences.en.html)
 """
 import logging
-import numpy as np
 from collections import OrderedDict
-logger = logging.getLogger(__name__.split('.')[-1])
+import numpy as np
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 class InitialValues():
@@ -32,10 +32,11 @@ class InitialValues():
         )
 
     def get_params0(self):
+        """Get initial values as a tuple."""
         return (self.Mw_0, self.fc_0, self.t_star_0)
 
 
-class Bounds(object):
+class Bounds():
     """Bounds for bounded spectral inversion."""
 
     def __init__(self, config, spec, initial_values):
@@ -54,6 +55,7 @@ class Bounds(object):
 
     def __str__(self):
         """String representation."""
+        # pylint: disable=consider-using-f-string
         s = 'Mw: {}, {}; '.format(
             *[round(x, 4) if x is not None else x for x in self.bounds[0]])
         s += 'fc: {}, {}; '.format(
@@ -168,11 +170,12 @@ class OrderedAttribDict(OrderedDict):
 class SpectralParameter(OrderedAttribDict):
     """A spectral parameter measured at one station."""
 
-    def __init__(self, id, name=None, units=None, value=None, uncertainty=None,
+    def __init__(self, param_id, name=None, units=None, value=None,
+                 uncertainty=None,
                  lower_uncertainty=None, upper_uncertainty=None,
-                 confidence_level=None, format=None):
-        self._id = id
-        self._format = format
+                 confidence_level=None, format_spec=None):
+        self.param_id = param_id
+        self._format_spec = format_spec
         self.name = name
         self.units = units
         self.value = value
@@ -205,49 +208,55 @@ class StationParameters(OrderedAttribDict):
     objects.
     """
 
-    def __init__(self, id, instrument_type=None, latitude=None, longitude=None,
+    def __init__(self, param_id, instrument_type=None,
+                 latitude=None, longitude=None,
                  hypo_dist_in_km=None, epi_dist_in_km=None, azimuth=None):
-        self._id = id
+        self.param_id = param_id
         self.instrument_type = instrument_type
         self.latitude = latitude
         self.longitude = longitude
         self.hypo_dist_in_km = hypo_dist_in_km
         self.epi_dist_in_km = epi_dist_in_km
         self.azimuth = azimuth
-        self._params = {}
-        self._params_err = {}
-        self._is_outlier = {}
+        self.params_dict = {}
+        self.params_err_dict = {}
+        self.is_outlier_dict = {}
 
     def __setattr__(self, attr, value):
         if isinstance(value, SpectralParameter):
             parname = attr
             par = value
-            self._params[parname] = par.value
+            self.params_dict[parname] = par.value
             if par.uncertainty is not None:
-                self._params_err[parname] = (par.uncertainty, par.uncertainty)
+                self.params_err_dict[parname] = (
+                    par.uncertainty, par.uncertainty
+                )
             else:
-                self._params_err[parname] = (
+                self.params_err_dict[parname] = (
                     par.lower_uncertainty, par.upper_uncertainty
                 )
-            self._is_outlier[parname] = par.outlier
+            self.is_outlier_dict[parname] = par.outlier
         self[attr] = value
 
     def rebuild_dictionaries(self):
+        """Rebuild spectral parameters dictionaries."""
         for key, value in self.items():
             if not isinstance(value, SpectralParameter):
                 continue
             parname = key
             par = value
-            self._params[parname] = par.value
+            self.params_dict[parname] = par.value
             if par.uncertainty is not None:
-                self._params_err[parname] = (par.uncertainty, par.uncertainty)
+                self.params_err_dict[parname] = (
+                    par.uncertainty, par.uncertainty
+                )
             elif par.lower_uncertainty is not None:
-                self._params_err[parname] = (
+                self.params_err_dict[parname] = (
                     par.lower_uncertainty, par.upper_uncertainty
                 )
             else:
-                self._params_err[parname] = (np.nan, np.nan)
-            self._is_outlier[parname] = par.outlier
+                self.params_err_dict[parname] = (np.nan, np.nan)
+            self.is_outlier_dict[parname] = par.outlier
 
 
 class SummaryStatistics(OrderedAttribDict):
@@ -256,14 +265,14 @@ class SummaryStatistics(OrderedAttribDict):
     its uncertainty.
     """
 
-    def __init__(self, type, value=None, uncertainty=None,
+    def __init__(self, stat_type, value=None, uncertainty=None,
                  lower_uncertainty=None, upper_uncertainty=None,
                  confidence_level=None, lower_percentage=None,
                  mid_percentage=None, upper_percentage=None,
                  nobs=None, message=None,
-                 format=None):
+                 format_spec=None):
         # type of statistics: e.g., mean, median
-        self._type = type
+        self._stat_type = stat_type
         self.value = value
         self.uncertainty = uncertainty
         if (lower_uncertainty is not None and
@@ -279,14 +288,13 @@ class SummaryStatistics(OrderedAttribDict):
         self.upper_percentage = upper_percentage
         self.nobs = nobs
         self.message = message
-        self._format = format
+        self._format_spec = format_spec
 
     def compact_uncertainty(self):
         """Return uncertainty in a compact form."""
         if self.lower_uncertainty is not None:
             return (self.lower_uncertainty, self.upper_uncertainty)
-        else:
-            return (self.uncertainty, self.uncertainty)
+        return (self.uncertainty, self.uncertainty)
 
 
 class SummarySpectralParameter(OrderedAttribDict):
@@ -294,16 +302,16 @@ class SummarySpectralParameter(OrderedAttribDict):
     A summary spectral parameter comprising one ore more summary statistics.
     """
 
-    def __init__(self, id, name=None, units=None, format=None):
-        self._id = id
+    def __init__(self, param_id, name=None, units=None, format_spec=None):
+        self.param_id = param_id
         self.name = name
         self.units = units
         # number formatting string
-        self._format = format
+        self._format_spec = format_spec
 
     def __setattr__(self, attr, value):
         if isinstance(value, SummaryStatistics):
-            value._format = self._format
+            value._format_spec = self._format_spec
         self[attr] = value
 
 
@@ -316,7 +324,7 @@ class SourceSpecOutput(OrderedAttribDict):
         self.inversion_info = OrderedAttribDict()
         self.summary_spectral_parameters = OrderedAttribDict()
         self.station_parameters = OrderedAttribDict()
-        self._comments = {
+        self.comments = {
             'begin': 'SourceSpec output in YAML format',
             'run_info': 'Information on the SourceSpec run',
             'event_info': 'Information on the event',
@@ -330,8 +338,9 @@ class SourceSpecOutput(OrderedAttribDict):
         }
 
     def value_array(self, key, filter_outliers=False):
+        """Return an array of values for the given key."""
         vals = np.array([
-            x._params.get(key, np.nan)
+            x.params_dict.get(key, np.nan)
             for x in self.station_parameters.values()
         ])
         if filter_outliers:
@@ -340,8 +349,9 @@ class SourceSpecOutput(OrderedAttribDict):
         return vals
 
     def error_array(self, key, filter_outliers=False):
+        """Return an array of errors for the given key."""
         errs = np.array([
-            x._params_err.get(key, np.nan)
+            x.params_err_dict.get(key, np.nan)
             for x in self.station_parameters.values()
         ])
         if filter_outliers:
@@ -350,10 +360,11 @@ class SourceSpecOutput(OrderedAttribDict):
         return errs
 
     def outlier_array(self, key):
+        """Return an array of outliers for the given key."""
         return np.array(
             [
                 # if we cannot find the given key, we assume outlier=True
-                x._is_outlier.get(key, True)
+                x.is_outlier_dict.get(key, True)
                 for x in self.station_parameters.values()
             ]
         )
@@ -459,13 +470,12 @@ class SourceSpecOutput(OrderedAttribDict):
             raise ValueError('No reference statistics defined') from e
         if ref_stat == 'mean':
             return self.mean_values()
-        elif ref_stat == 'percentiles':
+        if ref_stat == 'percentiles':
             return self.percentiles_values()
-        elif ref_stat == 'weighted_mean':
+        if ref_stat == 'weighted_mean':
             return self.weighted_mean_values()
-        else:
-            msg = f'Invalid reference statistics: {ref_stat}'
-            raise ValueError(msg)
+        msg = f'Invalid reference statistics: {ref_stat}'
+        raise ValueError(msg)
 
     def reference_uncertainties(self):
         """Return a dictionary of reference uncertainties."""
@@ -475,13 +485,12 @@ class SourceSpecOutput(OrderedAttribDict):
             raise ValueError('No reference statistics defined') from e
         if ref_stat == 'mean':
             return self.mean_uncertainties()
-        elif ref_stat == 'percentiles':
+        if ref_stat == 'percentiles':
             return self.percentiles_uncertainties()
-        elif ref_stat == 'weighted_mean':
+        if ref_stat == 'weighted_mean':
             return self.weighted_mean_uncertainties()
-        else:
-            msg = f'Invalid reference statistics: {ref_stat}'
-            raise ValueError(msg)
+        msg = f'Invalid reference statistics: {ref_stat}'
+        raise ValueError(msg)
 
     def reference_summary_parameters(self):
         """

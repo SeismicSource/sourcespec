@@ -26,8 +26,8 @@ from obspy import read
 from obspy.core import Stream
 from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import (
-    ssp_exit, instr_codes_vel, instr_codes_acc, traceid_map)
-from sourcespec.ssp_util import get_property, property_string
+    ssp_exit, INSTR_CODES_VEL, INSTR_CODES_ACC, TRACEID_MAP)
+from sourcespec.ssp_util import get_medium_property, medium_property_string
 from sourcespec.ssp_read_station_metadata import (
     read_station_metadata, PAZ)
 from sourcespec.ssp_read_event_metadata import (
@@ -36,15 +36,15 @@ from sourcespec.ssp_read_sac_header import (
     compute_sensitivity_from_SAC,
     get_instrument_from_SAC, get_station_coordinates_from_SAC,
     get_event_from_SAC, get_picks_from_SAC)
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 # TRACE MANIPULATION ----------------------------------------------------------
 def _correct_traceid(trace):
-    if traceid_map is None:
+    if TRACEID_MAP is None:
         return
     with contextlib.suppress(KeyError):
-        traceid = traceid_map[trace.get_id()]
+        traceid = TRACEID_MAP[trace.get_id()]
         net, sta, loc, chan = traceid.split('.')
         trace.stats.network = net
         trace.stats.station = sta
@@ -63,14 +63,14 @@ def _add_instrtype(trace):
     if len(chan) > 2:
         band_code = chan[0]
         instr_code = chan[1]
-    if instr_code in instr_codes_vel:
+    if instr_code in INSTR_CODES_VEL:
         # SEED standard band codes from higher to lower sampling rate
         # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
         if band_code in ['G', 'D', 'E', 'S']:
             instrtype = 'shortp'
         if band_code in ['F', 'C', 'H', 'B']:
             instrtype = 'broadb'
-    if instr_code in instr_codes_acc:
+    if instr_code in INSTR_CODES_ACC:
         instrtype = 'acc'
     if instrtype is None:
         # Let's see if there is an instrument name in SAC header (ISNet format)
@@ -250,16 +250,17 @@ def _complete_picks(st):
 
 # FILE PARSING ----------------------------------------------------------------
 def _hypo_vel(hypo, config):
-    hypo.vp = get_property(
+    hypo.vp = get_medium_property(
         hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'vp', config)
-    hypo.vs = get_property(
+    hypo.vs = get_medium_property(
         hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'vs', config)
-    hypo.rho = get_property(
+    hypo.rho = get_medium_property(
         hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'rho', config)
-    depth_string = property_string('source depth', hypo.depth.value_in_km)
-    vp_string = property_string('vp_source', hypo.vp)
-    vs_string = property_string('vs_source', hypo.vs)
-    rho_string = property_string('rho_source', hypo.rho)
+    depth_string = medium_property_string(
+        'source depth', hypo.depth.value_in_km)
+    vp_string = medium_property_string('vp_source', hypo.vp)
+    vs_string = medium_property_string('vs_source', hypo.vs)
+    rho_string = medium_property_string('rho_source', hypo.rho)
     logger.info(f'{depth_string}, {vp_string}, {vs_string}, {rho_string}')
 
 
@@ -271,14 +272,14 @@ def _build_filelist(path, filelist, tmpdir):
             _build_filelist(fullpath, filelist, tmpdir)
     else:
         try:
+            # pylint: disable=unspecified-encoding consider-using-with
             open(path)
         except IOError as err:
             logger.error(err)
             return
         if tarfile.is_tarfile(path) and tmpdir is not None:
-            tar = tarfile.open(path)
-            tar.extractall(path=tmpdir)
-            tar.close()
+            with tarfile.open(path) as tar:
+                tar.extractall(path=tmpdir)
         else:
             filelist.append(path)
 
@@ -354,9 +355,9 @@ def read_traces(config):
     ssp_event = None
     # parse hypocenter file
     if config.options.hypo_file is not None:
-        ssp_event, picks, format = parse_hypo_file(
+        ssp_event, picks, file_format = parse_hypo_file(
             config.options.hypo_file, config.options.evid)
-        config.hypo_file_format = format
+        config.hypo_file_format = file_format
     # parse pick file
     if config.options.pick_file is not None:
         picks = parse_hypo71_picks(config)

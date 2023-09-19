@@ -16,7 +16,7 @@ from scipy.integrate import quad
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_data_types import (
     SummarySpectralParameter, SummaryStatistics)
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def _avg_and_std(values, errors=None, logarithmic=False):
@@ -100,14 +100,15 @@ def _percentiles(
 
 
 def _param_summary_statistics(
-        config, sspec_output, id, name, format, units=None, logarithmic=False):
+        config, sspec_output, param_id, name, format_spec, units=None,
+        logarithmic=False):
     """Compute summary statistics for one spectral parameter."""
     nIQR = config.nIQR
     summary = SummarySpectralParameter(
-        id=id, name=name, format=format, units=units)
-    sspec_output.find_outliers(id, n=nIQR)
-    values = sspec_output.value_array(id, filter_outliers=True)
-    errors = sspec_output.error_array(id, filter_outliers=True)
+        param_id=param_id, name=name, format_spec=format_spec, units=units)
+    sspec_output.find_outliers(param_id, n=nIQR)
+    values = sspec_output.value_array(param_id, filter_outliers=True)
+    errors = sspec_output.error_array(param_id, filter_outliers=True)
     # put to NaN infinite values and values whose errors are infinite
     values[np.isinf(values)] = np.nan
     _cond_err = np.logical_or(np.isinf(errors[:, 0]), np.isinf(errors[:, 1]))
@@ -120,7 +121,7 @@ def _param_summary_statistics(
     mean_error *= config.n_sigma
     conf_level = _normal_confidence_level(config.n_sigma)
     summary.mean = SummaryStatistics(
-        type='mean', value=mean_value,
+        stat_type='mean', value=mean_value,
         lower_uncertainty=mean_error[0],
         upper_uncertainty=mean_error[1],
         confidence_level=conf_level, nobs=nobs)
@@ -131,11 +132,11 @@ def _param_summary_statistics(
     else:
         # else use an unweighted mean
         logger.info(
-            f'{id} values have no uncertainty: weighted mean cannot be '
+            f'{param_id} values have no uncertainty: weighted mean cannot be '
             'computed. Using unweighted mean instead.')
         wmean_value, wmean_error = mean_value, mean_error
     summary.weighted_mean = SummaryStatistics(
-        type='weighted_mean', value=wmean_value,
+        stat_type='weighted_mean', value=wmean_value,
         lower_uncertainty=wmean_error[0],
         upper_uncertainty=wmean_error[1],
         confidence_level=conf_level, nobs=nobs)
@@ -146,7 +147,7 @@ def _param_summary_statistics(
     conf_level = round(
         (config.upper_percentage - config.lower_percentage), 2)
     summary.percentiles = SummaryStatistics(
-        type='percentiles', value=mid_pctl,
+        stat_type='percentiles', value=mid_pctl,
         lower_uncertainty=mid_pctl - low_pctl,
         upper_uncertainty=up_pctl - mid_pctl,
         confidence_level=conf_level,
@@ -171,7 +172,7 @@ def compute_summary_statistics(config, sspec_output):
     sspec_output.summary_spectral_parameters.Mw =\
         _param_summary_statistics(
             config, sspec_output,
-            id='Mw', name='moment magnitude', format='{:.2f}',
+            param_id='Mw', name='moment magnitude', format_spec='{:.2f}',
             logarithmic=False
         )
 
@@ -179,23 +180,23 @@ def compute_summary_statistics(config, sspec_output):
     sspec_output.summary_spectral_parameters.Mo =\
         _param_summary_statistics(
             config, sspec_output,
-            id='Mo', name='seismic moment', units='N·m', format='{:.3e}',
-            logarithmic=True
+            param_id='Mo', name='seismic moment', units='N·m',
+            format_spec='{:.3e}', logarithmic=True
         )
 
     # fc (Hz)
     sspec_output.summary_spectral_parameters.fc =\
         _param_summary_statistics(
             config, sspec_output,
-            id='fc', name='corner frequency', units='Hz', format='{:.3f}',
-            logarithmic=True
+            param_id='fc', name='corner frequency', units='Hz',
+            format_spec='{:.3f}', logarithmic=True
         )
 
     # t_star (s)
     sspec_output.summary_spectral_parameters.t_star =\
         _param_summary_statistics(
             config, sspec_output,
-            id='t_star', name='t-star', units='s', format='{:.3f}',
+            param_id='t_star', name='t-star', units='s', format_spec='{:.3f}',
             logarithmic=False
         )
 
@@ -203,16 +204,16 @@ def compute_summary_statistics(config, sspec_output):
     sspec_output.summary_spectral_parameters.radius =\
         _param_summary_statistics(
             config, sspec_output,
-            id='radius', name='source radius', units='m', format='{:.3f}',
-            logarithmic=True
+            param_id='radius', name='source radius', units='m',
+            format_spec='{:.3f}', logarithmic=True
         )
 
     # static stress drop (MPa)
     sspec_output.summary_spectral_parameters.ssd =\
         _param_summary_statistics(
             config, sspec_output,
-            id='ssd', name='static stress drop',
-            units='MPa', format='{:.3e}',
+            param_id='ssd', name='static stress drop',
+            units='MPa', format_spec='{:.3e}',
             logarithmic=True
         )
 
@@ -220,7 +221,7 @@ def compute_summary_statistics(config, sspec_output):
     sspec_output.summary_spectral_parameters.Qo =\
         _param_summary_statistics(
             config, sspec_output,
-            id='Qo', name='quality factor', format='{:.1f}',
+            param_id='Qo', name='quality factor', format_spec='{:.1f}',
             logarithmic=False
         )
 
@@ -228,16 +229,16 @@ def compute_summary_statistics(config, sspec_output):
     sspec_output.summary_spectral_parameters.Er =\
         _param_summary_statistics(
             config, sspec_output,
-            id='Er', name='radiated energy', units='N·m', format='{:.3e}',
-            logarithmic=True
+            param_id='Er', name='radiated energy', units='N·m',
+            format_spec='{:.3e}', logarithmic=True
         )
 
     # Apparent stress (MPa)
     sspec_output.summary_spectral_parameters.sigma_a =\
         _param_summary_statistics(
             config, sspec_output,
-            id='sigma_a', name='apparent stress', units='MPa', format='{:.3e}',
-            logarithmic=True
+            param_id='sigma_a', name='apparent stress', units='MPa',
+            format_spec='{:.3e}', logarithmic=True
         )
 
     # Ml
@@ -245,7 +246,7 @@ def compute_summary_statistics(config, sspec_output):
         sspec_output.summary_spectral_parameters.Ml =\
             _param_summary_statistics(
                 config, sspec_output,
-                id='Ml', name='local magnitude', format='{:.2f}',
+                param_id='Ml', name='local magnitude', format_spec='{:.2f}',
                 logarithmic=False
             )
 

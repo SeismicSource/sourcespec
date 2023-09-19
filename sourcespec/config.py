@@ -16,8 +16,8 @@ class Config(dict):
 
     def __setitem__(self, key, value):
         """Make Config keys accessible as attributes."""
-        super(Config, self).__setattr__(key, value)
-        super(Config, self).__setitem__(key, value)
+        super().__setattr__(key, value)
+        super().__setitem__(key, value)
 
     def __getattr__(self, key):
         """Make Config keys accessible as attributes."""

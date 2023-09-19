@@ -14,18 +14,19 @@ The class provides optimal solutions, uncertainties and plotting methods.
     (http://www.cecill.info/licences.en.html)
 """
 import os
-import numpy as np
-from sourcespec.kdtree import KDTree
-from sourcespec.savefig import savefig
-from scipy.signal import peak_widths
-from scipy.signal._peak_finding_utils import PeakPropertyWarning
-import matplotlib.pyplot as plt
 import warnings
 import logging
-logger = logging.getLogger(__name__.split('.')[-1])
+import numpy as np
+from scipy.signal import peak_widths as find_peak_widths
+# pylint: disable=no-name-in-module
+from scipy.signal._peak_finding_utils import PeakPropertyWarning
+import matplotlib.pyplot as plt
+from sourcespec.kdtree import KDTree
+from sourcespec.savefig import savefig
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-def peak_width(x, peak_idx, rel_height, negative=False):
+def find_peak_width(x, peak_idx, rel_height, negative=False):
     """
     Find width of a single peak at a given relative height.
 
@@ -40,7 +41,7 @@ def peak_width(x, peak_idx, rel_height, negative=False):
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', category=PeakPropertyWarning)
         _, width_height, idx_left, idx_right =\
-            peak_widths(sign * x, [peak_idx, ], 1 - rel_height)
+            find_peak_widths(sign * x, [peak_idx, ], 1 - rel_height)
     idx_left = int(idx_left)
     idx_right = int(idx_right)
     width_height = sign * width_height[0]
@@ -114,9 +115,11 @@ class GridSampling():
                 bds = tuple(np.log10(bds))
             self.truebounds.append(bds)
         self.kdt = None
+        self.extent = None
 
     @property
     def values(self):
+        """Return a meshgrid of parameter values."""
         if self._values is not None:
             return self._values
         values = []
@@ -131,13 +134,13 @@ class GridSampling():
 
     @property
     def min_idx(self):
+        """Find the index of the minimum of the misfit function."""
         if self.misfit is None:
             return None
         if self._min_idx is None:
             return np.unravel_index(
                 np.nanargmin(self.misfit), self.misfit.shape)
-        else:
-            return self._min_idx
+        return self._min_idx
 
     @property
     def values_1d(self):
@@ -179,12 +182,14 @@ class GridSampling():
 
     @property
     def params_opt(self):
+        """Return optimal parameters."""
         if self.misfit is None:
             return None
         return np.array([v[self.min_idx] for v in self.values])
 
     @property
     def params_err(self):
+        """Return optimal parameters uncertainties."""
         if self.misfit is None:
             return None
         error = []
@@ -205,7 +210,7 @@ class GridSampling():
         rel_height = np.exp(-0.5)  # height of a gaussian for x=sigma
         for mm, idx, values in zip(
                 self.conditional_misfit, self.min_idx, self.values_1d):
-            width_height, idx_left, idx_right = peak_width(
+            width_height, idx_left, idx_right = find_peak_width(
                 mm, idx, rel_height, negative=True)
             peak_widths.append(
                 (width_height, values[idx_left], values[idx_right]))
@@ -221,6 +226,7 @@ class GridSampling():
         self.misfit = mf(*self.values)
 
     def kdtree_search(self):
+        """Sample the misfit function using kdtree search."""
         # small helper function to transform misfit to pdf and manage logscale
         def mf(args):
             newargs = []

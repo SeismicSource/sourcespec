@@ -15,6 +15,11 @@ Direct spectral modelling.
 
 
 def make_synth(config, spec_st, trace_spec=None):
+    """
+    Make synthetic spectra.
+    """
+    # pylint: disable=import-outside-toplevel
+    # Lazy-import modules for speed
     import math
     import numpy as np
     from copy import deepcopy
@@ -68,13 +73,20 @@ def make_synth(config, spec_st, trace_spec=None):
 
 
 def main():
+    """
+    Main function.
+    """
+    # pylint: disable=import-outside-toplevel
     # Lazy-import modules for speed
     from sourcespec.ssp_parse_arguments import parse_args
     options = parse_args(progname='source_model')
     from sourcespec.ssp_setup import configure, ssp_exit
     plot_show = bool(options.plot)
-    conf_overrides = dict(
-        plot_show=plot_show, plot_save=False, html_report=False)
+    conf_overrides = {
+        'plot_show': plot_show,
+        'plot_save': False,
+        'html_report': False
+    }
     config = configure(
         options, progname='source_model', config_overrides=conf_overrides)
     from sourcespec.ssp_read_traces import read_traces
@@ -89,12 +101,12 @@ def main():
         # Deconvolve, filter, cut traces:
         proc_st = process_traces(config, st)
         # Build spectra (amplitude in magnitude units)
-        spec_st, specnoise_st, weight_st = build_spectra(config, proc_st)
+        spec_st, _specnoise_st, _weight_st = build_spectra(config, proc_st)
         if len(spec_st) == 0:
             ssp_exit()
         # We keep just horizontal component:
         spec_st = Stream([x for x in spec_st.traces
-                          if (x.stats.channel[-1] == 'H')])
+                          if x.stats.channel[-1] == 'H'])
 
         for trace_spec in spec_st:
             orientation = trace_spec.stats.channel[-1]

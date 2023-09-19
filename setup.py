@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: CECILL-2.1
+"""
+Setup script for SourceSpec
+"""
+# pylint: disable=wrong-import-position, consider-using-f-string
 import sys
 
 MIN_PYTHON_VERSION = (3, 7)
 MIN_PYTHON_VERSION_STR = '.'.join(str(n) for n in MIN_PYTHON_VERSION)
 PYTHON_VERSION_STR = '.'.join(str(n) for n in sys.version_info[:3])
 if sys.version_info < MIN_PYTHON_VERSION:
-    msg = (
+    MSG = (
         'SourceSpec requires Python version >= {}'
         ' you are using Python version {}'.format(
             MIN_PYTHON_VERSION_STR, PYTHON_VERSION_STR)
     )
-    sys.exit(msg)
+    sys.exit(MSG)
 
 from setuptools import setup  # noqa
 import versioneer # noqa

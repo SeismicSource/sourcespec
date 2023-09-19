@@ -30,7 +30,7 @@ from sourcespec.ssp_data_types import (
     InitialValues, Bounds, SpectralParameter, StationParameters,
     SourceSpecOutput)
 from sourcespec.ssp_grid_sampling import GridSampling
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
@@ -56,6 +56,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         params_opt = res.x
         # trick: use curve_fit() bounded to params_opt
         # to get the covariance
+        # pylint: disable=unbalanced-tuple-unpacking
         _, params_cov = curve_fit(
             spectral_model, freq_logspaced, ydata,
             p0=params_opt, sigma=yerr,
@@ -72,6 +73,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
                 'algorithm with bounds. Switching to the '
                 'Trust Region Reflective algorithm.'
             )
+        # pylint: disable=unbalanced-tuple-unpacking
         params_opt, params_cov = curve_fit(
             spectral_model, freq_logspaced, ydata,
             p0=initial_values.get_params0(), sigma=yerr,
@@ -88,6 +90,7 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         params_opt = res.x
         # trick: use curve_fit() bounded to params_opt
         # to get the covariance
+        # pylint: disable=unbalanced-tuple-unpacking
         _, params_cov = curve_fit(
             spectral_model, freq_logspaced, ydata,
             p0=params_opt, sigma=yerr,
@@ -277,6 +280,7 @@ def _spec_inversion(config, spec, spec_weight):
     # Check post-inversion bounds for t_star and fc
     pi_t_star_min, pi_t_star_max =\
         config.pi_t_star_min_max or (-np.inf, np.inf)
+    # pylint: disable=superfluous-parens
     if not (pi_t_star_min <= t_star <= pi_t_star_max):
         raise ValueError(
             f'{statId}: t_star: {t_star:.3f} not in allowed range '
@@ -291,23 +295,23 @@ def _spec_inversion(config, spec, spec_weight):
         )
 
     station_pars = StationParameters(
-        id=spec.id, instrument_type=spec.stats.instrtype,
+        param_id=spec.id, instrument_type=spec.stats.instrtype,
         latitude=stla, longitude=stlo,
         hypo_dist_in_km=spec.stats.hypo_dist,
         epi_dist_in_km=spec.stats.epi_dist,
         azimuth=az)
     station_pars.Mw = SpectralParameter(
-        id='Mw', value=Mw,
+        param_id='Mw', value=Mw,
         lower_uncertainty=Mw_err[0], upper_uncertainty=Mw_err[1],
-        confidence_level=68.2, format='{:.2f}')
+        confidence_level=68.2, format_spec='{:.2f}')
     station_pars.fc = SpectralParameter(
-        id='fc', value=fc,
+        param_id='fc', value=fc,
         lower_uncertainty=fc_err[0], upper_uncertainty=fc_err[1],
-        confidence_level=68.2, format='{:.3f}')
+        confidence_level=68.2, format_spec='{:.3f}')
     station_pars.t_star = SpectralParameter(
-        id='t_star', value=t_star,
+        param_id='t_star', value=t_star,
         lower_uncertainty=t_star_err[0], upper_uncertainty=t_star_err[1],
-        confidence_level=68.2, format='{:.3f}')
+        confidence_level=68.2, format_spec='{:.3f}')
 
     # additional parameters, computed from fc, Mw and t_star
     if config.wave_type == 'P':
@@ -317,21 +321,23 @@ def _spec_inversion(config, spec, spec_weight):
     travel_time = spec.stats.travel_times[config.wave_type[0]]
     # seismic moment
     station_pars.Mo = SpectralParameter(
-        id='Mw', value=mag_to_moment(Mw), format='{:.3e}')
+        param_id='Mw', value=mag_to_moment(Mw), format_spec='{:.3e}')
     # source radius in meters
     station_pars.radius = SpectralParameter(
-        id='radius', value=source_radius(fc, vel * 1e3), format='{:.3f}')
+        param_id='radius', value=source_radius(fc, vel * 1e3),
+        format_spec='{:.3f}')
     # Static stress drop in MPa
     station_pars.ssd = SpectralParameter(
-        id='ssd',
+        param_id='ssd',
         value=static_stress_drop(
             station_pars.Mo.value, station_pars.radius.value
         ),
-        format='{:.3e}'
+        format_spec='{:.3e}'
     )
     # quality factor
     station_pars.Qo = SpectralParameter(
-        id='Qo', value=quality_factor(travel_time, t_star), format='{:.1f}')
+        param_id='Qo', value=quality_factor(travel_time, t_star),
+        format_spec='{:.1f}')
 
     # Check post-inversion bounds for ssd
     pi_ssd_min, pi_ssd_max = config.pi_ssd_min_max or (-np.inf, np.inf)
@@ -385,8 +391,8 @@ def _spec_inversion(config, spec, spec_weight):
 
 def _synth_spec(config, spec, station_pars):
     """Return a stream with one or more synthetic spectra."""
-    par = station_pars._params
-    par_err = station_pars._params_err
+    par = station_pars.params_dict
+    par_err = station_pars.params_err_dict
     spec_st = Stream()
     params_opt = [par[key] for key in ('Mw', 'fc', 't_star')]
 
@@ -499,7 +505,7 @@ def spectral_inversion(config, spec_st, weight_st):
             logger.warning(msg)
             continue
         spec_st += _synth_spec(config, spec, station_pars)
-        sspec_output.station_parameters[station_pars._id] = station_pars
+        sspec_output.station_parameters[station_pars.param_id] = station_pars
 
     logger.info('Inverting spectra: done')
     logger.info('---------------------------------------------------')

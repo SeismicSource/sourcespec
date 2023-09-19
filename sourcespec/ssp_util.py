@@ -19,11 +19,12 @@ from obspy.geodetics import gps2dist_azimuth, kilometers2degrees
 from obspy.taup import TauPyModel
 model = TauPyModel(model='iasp91')
 v_model = model.model.s_mod.v_mod
-logger = logging.getLogger(__name__.split('.')[-1])
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 # MISC ------------------------------------------------------------------------
 def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
+    """Get minimum and maximum values of spectral amplitude and frequency."""
     amp_min = amp.min()
     amp_max = amp.max()
     if amp_minmax is None:
@@ -53,13 +54,13 @@ def select_trace(stream, traceid, instrtype):
 
 
 # MEDIUM PROPERTIES -----------------------------------------------------------
-def _get_property_from_config(property, where, config):
+def _get_medium_property_from_config(medium_property, where, config):
     """
     Get medium property from config.
 
-    :param property: Property to be retrieved
+    :param medium_property: Property to be retrieved
                      (``'vp'``, ``'vs'`` or ``'rho'``).
-    :type property: str
+    :type medium_property: str
     :param where: Location type (``'source'`` or ``'stations'``).
     :type where: str
     :param config: Configuration object.
@@ -67,14 +68,14 @@ def _get_property_from_config(property, where, config):
     :return: Property value.
     :rtype: float
     """
-    if property not in ['vp', 'vs', 'rho']:
-        raise ValueError(f'Invalid property: {property}')
+    if medium_property not in ['vp', 'vs', 'rho']:
+        raise ValueError(f'Invalid property: {medium_property}')
     if where not in ['source', 'stations']:
         raise ValueError(f'Invalid location type: {where}')
-    value = config[f'{property}_{where}']
+    value = config[f'{medium_property}_{where}']
     # Use source property if stations property is not defined
     if where == 'stations' and value is None:
-        value = config[f'{property}_source']
+        value = config[f'{medium_property}_source']
     return value
 
 
@@ -96,6 +97,7 @@ def _get_vel_from_NLL(lon, lat, depth_in_km, wave, config):
     :rtype: float
     """
     # Lazy-import here, since nllgrid is not an installation requirement
+    # pylint: disable=import-outside-toplevel
     from nllgrid import NLLGrid
     grdfile = f'*.{wave}.mod.hdr'
     grdfile = os.path.join(config.NLL_model_dir, grdfile)
@@ -126,32 +128,32 @@ def _get_vel_from_NLL(lon, lat, depth_in_km, wave, config):
     return vel
 
 
-def _get_property_from_taup(depth_in_km, property):
+def _get_medium_property_from_taup(depth_in_km, medium_property):
     """
     Get medium property (P- or S-wave velocity, density) at a given depth
     from taup model.
 
     :param depth_in_km: Depth (km).
     :type depth_in_km: float
-    :param property: Property to be retrieved
+    :param medium_property: Property to be retrieved
                      (``'vp'``, ``'vs'`` or ``'rho'``).
-    :type property: str
+    :type medium_property: str
     :return: Property value.
     :rtype: float
     """
     # avoid negative depths
     depth_in_km = max(depth_in_km, 1e-2)
     try:
-        prop = {'vp': 'p', 'vs': 's', 'rho': 'r'}[property]
+        prop = {'vp': 'p', 'vs': 's', 'rho': 'r'}[medium_property]
     except KeyError as e:
-        raise ValueError(f'Invalid property: {property}') from e
+        raise ValueError(f'Invalid property: {medium_property}') from e
     value = v_model.evaluate_above(depth_in_km, prop)[0]
-    if property == 'rho':
+    if medium_property == 'rho':
         value *= 1e3  # convert g/cm**3 to kg/m**3
     return value
 
 
-def get_property(lon, lat, depth_in_km, property, config):
+def get_medium_property(lon, lat, depth_in_km, medium_property, config):
     """
     Get medium property (P- or S-wave velocity, density) at a given point
     from NLL grid, config or taup model.
@@ -162,40 +164,42 @@ def get_property(lon, lat, depth_in_km, property, config):
     :type lat: float
     :param depth_in_km: Depth (km).
     :type depth_in_km: float
-    :param property: Property to be retrieved
+    :param medium_property: Property to be retrieved
                      (``'vp'``, ``'vs'`` or ``'rho'``).
-    :type property: str
+    :type medium_property: str
     :param config: Configuration object.
     :type config: :class:`~sourcespec.config.Config`
     :return: Property value.
     :rtype: float
     """
-    if property not in ['vp', 'vs', 'rho']:
-        raise ValueError(f'Invalid property: {property}')
+    if medium_property not in ['vp', 'vs', 'rho']:
+        raise ValueError(f'Invalid property: {medium_property}')
     try:
         depth_in_km = float(depth_in_km)
     except Exception as e:
         raise ValueError(f'Invalid depth: {depth_in_km}') from e
     # If depth is large, we assume that we are close to the source
     if depth_in_km >= 2:
-        value = _get_property_from_config(property, 'source', config)
+        value = _get_medium_property_from_config(
+            medium_property, 'source', config)
     else:
-        value = _get_property_from_config(property, 'stations', config)
-    if config.NLL_model_dir is not None and property in ['vp', 'vs']:
-        wave = 'P' if property == 'vp' else 'S'
+        value = _get_medium_property_from_config(
+            medium_property, 'stations', config)
+    if config.NLL_model_dir is not None and medium_property in ['vp', 'vs']:
+        wave = 'P' if medium_property == 'vp' else 'S'
         try:
             value = _get_vel_from_NLL(lon, lat, depth_in_km, wave, config)
         except Exception as msg:
             logger.warning(msg)
             logger.warning(f'Using {wave} velocity from config')
     if value is None:
-        value = _get_property_from_taup(depth_in_km, property)
+        value = _get_medium_property_from_taup(depth_in_km, medium_property)
         logger.info(
-            f'Using {property} from global model (iasp91)')
+            f'Using {medium_property} from global model (iasp91)')
     return value
 
 
-def property_string(property, value):
+def medium_property_string(medium_property, value):
     """
     Return a string with the property name and value.
 
@@ -207,20 +211,20 @@ def property_string(property, value):
     :return: Property string.
     :rtype: str
     """
-    if 'vp' in property or 'vs' in property:
+    if 'vp' in medium_property or 'vs' in medium_property:
         value = round(value, 2)
         unit = 'km/s'
-    elif 'rho' in property:
+    elif 'rho' in medium_property:
         value = round(value, 1)
         unit = 'kg/m3'
-    elif 'depth' in property:
+    elif 'depth' in medium_property:
         value = round(value, 1)
         unit = 'km'
     else:
-        raise ValueError(f'Invalid property: {property}')
+        raise ValueError(f'Invalid property: {medium_property}')
     if value.is_integer():
         value = int(value)
-    return f'{property}: {value} {unit}'
+    return f'{medium_property}: {value} {unit}'
 # -----------------------------------------------------------------------------
 
 
@@ -289,8 +293,7 @@ def geom_spread_boatwright(hypo_dist_in_km, cutoff_dist_in_km, freqs):
     cutoff_dist = cutoff_dist_in_km * 1e3
     if dist <= cutoff_dist:
         return dist
-    else:
-        return _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist)
+    return _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist)
 
 
 def _compute_dtdd(angular_distance, aperture, source_depth_in_km, phase_list):
@@ -315,6 +318,7 @@ def _compute_dtdd(angular_distance, aperture, source_depth_in_km, phase_list):
     """
     distances = np.linspace(
         angular_distance - aperture, angular_distance + aperture, 3)
+    # pylint: disable=no-member
     takeoff_angles = np.array([
         model.get_travel_times(
             source_depth_in_km, d, phase_list)[0].takeoff_angle
@@ -343,20 +347,21 @@ def geom_spread_teleseismic(
     :rtype: float
     """
     if phase == 'P':
-        v_source = _get_property_from_taup(source_depth_in_km, 'vp')
-        v_station = _get_property_from_taup(station_depth_in_km, 'vp')
+        v_source = _get_medium_property_from_taup(source_depth_in_km, 'vp')
+        v_station = _get_medium_property_from_taup(station_depth_in_km, 'vp')
         phase_list = ['p', 'P', 'pP', 'sP']
     elif phase == 'S':
-        v_source = _get_property_from_taup(source_depth_in_km, 'vs')
-        v_station = _get_property_from_taup(station_depth_in_km, 'vs')
+        v_source = _get_medium_property_from_taup(source_depth_in_km, 'vs')
+        v_station = _get_medium_property_from_taup(station_depth_in_km, 'vs')
         phase_list = ['s', 'S', 'sS', 'pS']
     else:
         raise ValueError(f'Invalid phase: {phase}')
-    rho_source = _get_property_from_taup(source_depth_in_km, 'rho')
-    rho_station = _get_property_from_taup(station_depth_in_km, 'rho')
+    rho_source = _get_medium_property_from_taup(source_depth_in_km, 'rho')
+    rho_station = _get_medium_property_from_taup(station_depth_in_km, 'rho')
     delta = np.deg2rad(angular_distance)
     arrival = model.get_travel_times(
         source_depth_in_km, angular_distance, phase_list)[0]
+    # pylint: disable=no-member
     takeoff_angle = np.deg2rad(arrival.takeoff_angle)
     incident_angle = np.deg2rad(arrival.incident_angle)
     # Cmpute the local derivative of the takeoff angle (dt) with respect to the
@@ -426,6 +431,7 @@ def quality_factor(travel_time_in_s, t_star_in_s):
 
 # SIGNAL ANALYSIS -------------------------------------------------------------
 def cosine_taper(signal, width, left_taper=False):
+    """Apply a cosine taper to the signal."""
     # TODO: this taper looks more like a hanning...
     npts = len(signal)
     p = 2 * width
@@ -436,30 +442,31 @@ def cosine_taper(signal, width, left_taper=False):
 
 
 # modified from: http://stackoverflow.com/q/5515720
-def smooth(x, window_len=11, window='hanning'):
-    if x.ndim != 1:
+def smooth(signal, window_len=11, window='hanning'):
+    """Smooth the signal using a window with requested size."""
+    if signal.ndim != 1:
         raise ValueError('smooth only accepts 1 dimension arrays.')
-    if x.size < window_len:
+    if signal.size < window_len:
         raise ValueError('Input vector needs to be bigger than window size.')
     if window_len < 3:
-        return x
+        return signal
     if window not in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
         raise ValueError("Window is one of 'flat', 'hanning', 'hamming', "
                          "'bartlett', 'blackman'")
     s = np.r_[
-        2 * x[0] - x[window_len - 1::-1],
-        x,
-        2 * x[-1] - x[-1:-window_len:-1]
+        2 * signal[0] - signal[window_len - 1::-1],
+        signal,
+        2 * signal[-1] - signal[-1:-window_len:-1]
     ]
     if window == 'flat':  # moving average
         w = np.ones(window_len, 'd')
     else:
-        w = eval(f'np.{window}(window_len)')
+        w = eval(f'np.{window}(window_len)')  # pylint: disable=eval-used
     y = np.convolve(w / w.sum(), s, mode='same')
     yy = y[window_len:-window_len + 1]
     # check if there are NaN values
     nanindexes = np.where(np.isnan(yy))
-    yy[nanindexes] = x[nanindexes]
+    yy[nanindexes] = signal[nanindexes]
     return yy
 
 
@@ -507,10 +514,12 @@ def remove_instr_response(trace, pre_filt=(0.5, 0.6, 40., 45.)):
 
 # GEODETICS AND COORDINATES ---------------------------------------------------
 def toRad(degrees):
+    """Convert degrees to radians."""
     return math.pi * degrees / 180
 
 
 def toDeg(radians):
+    """Convert radians to degrees."""
     return 180 * radians / math.pi
 
 

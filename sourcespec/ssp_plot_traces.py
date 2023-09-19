@@ -11,26 +11,28 @@ Trace plotting routine.
 """
 import os
 import contextlib
-import numpy as np
 import logging
+import numpy as np
 from obspy.core import Stream
-from sourcespec.savefig import savefig
-from sourcespec._version import get_versions
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-import matplotlib.transforms as transforms
-import matplotlib.patches as patches
+from matplotlib import transforms
+from matplotlib import patches
 import matplotlib.patheffects as PathEffects
 from matplotlib.ticker import ScalarFormatter as sf
-logger = logging.getLogger(__name__.split('.')[-1])
+from sourcespec.savefig import savefig
+from sourcespec._version import get_versions
+logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')
 mpl_logger.setLevel(logging.WARNING)
 
 
-class ScalarFormatter(sf):  # NOQA
+class ScalarFormatter(sf):
+    """A ScalarFormatter with a custom format."""
     def _set_format(self, vmin=None, vmax=None):
+        # pylint: disable=unused-argument
         self.format = '%1.1f'
 
 
@@ -120,21 +122,20 @@ def _make_fig(config, nlines, ncols):
 
 
 # Keep track of saved figure numbers to avoid saving the same figure twice
-saved_figure_numbers = []
+SAVED_FIGURE_NUMBERS = []
 # Bounding box for saving figures
-bbox = None
+BBOX = None
 
 
 def _savefig(config, figures, force_numbering=False):
-    global saved_figure_numbers
-    global bbox
+    global BBOX  # pylint: disable=global-statement
     evid = config.event.event_id
     figfile_base = os.path.join(config.options.outdir, f'{evid}.traces.')
     fmt = config.plot_save_format
-    if bbox is None:
+    if BBOX is None:
         pad_inches = matplotlib.rcParams['savefig.pad_inches']
-        bbox = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
-        bbox = bbox.padded(pad_inches)
+        BBOX = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
+        BBOX = BBOX.padded(pad_inches)
     nfigures = len(figures)
     if (nfigures == 1 or fmt == 'pdf_multipage') and not force_numbering:
         if fmt == 'pdf_multipage':
@@ -146,17 +147,17 @@ def _savefig(config, figures, force_numbering=False):
     else:
         figfiles = [f'{figfile_base}{n:02d}.{fmt}' for n in range(nfigures)]
     for n in range(nfigures):
-        if n in saved_figure_numbers:
+        if n in SAVED_FIGURE_NUMBERS:
             continue
         if fmt == 'pdf_multipage':
-            pdf.savefig(figures[n], bbox_inches=bbox)
+            pdf.savefig(figures[n], bbox_inches=BBOX)
         else:
-            savefig(figures[n], figfiles[n], fmt, bbox_inches=bbox)
+            savefig(figures[n], figfiles[n], fmt, bbox_inches=BBOX)
         if not config.plot_show:
             plt.close(figures[n])
             # dereference the figure to free up memory
             figures[n] = None
-        saved_figure_numbers.append(n)
+        SAVED_FIGURE_NUMBERS.append(n)
         config.figures['traces'].append(figfiles[n])
         logger.info(f'Trace plots saved to: {figfiles[n]}')
     if fmt == 'pdf_multipage':
@@ -190,23 +191,22 @@ def _plot_min_max(ax, x_vals, y_vals, linewidth, color, alpha, zorder):
 
 def _freq_string(freq):
     """Return a string representing the rounded frequency."""
+    # int or float notation for frequencies between 0.01 and 100
     if 1e-2 <= freq <= 1e2:
-        # int or float notation for frequencies between 0.01 and 100
         int_freq = int(round(freq))
         return (
             f'{int_freq}' if np.abs(int_freq - freq) < 1e-1
             else f'{freq:.1f}'
         )
-    else:
-        # scientific notation for frequencies outside of 0.01 and 100
-        freq_str = f'{freq:.1e}'
-        m, n = map(float, freq_str.split('e'))
-        n = int(n)
-        int_m = int(round(m))
-        return (
-            f'{int_m}e{n}' if np.abs(int_m - m) < 1e-1
-            else f'{m:.1f}e{n}'
-        )
+    # scientific notation for frequencies outside of 0.01 and 100
+    freq_str = f'{freq:.1e}'
+    m, n = map(float, freq_str.split('e'))
+    n = int(n)
+    int_m = int(round(m))
+    return (
+        f'{int_m}e{n}' if np.abs(int_m - m) < 1e-1
+        else f'{m:.1f}e{n}'
+    )
 
 
 def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
@@ -333,8 +333,8 @@ def _set_ylim(axes):
 
 def _trim_traces(config, st):
     for trace in st:
-        t1 = (trace.stats.arrivals['P'][1] - config.noise_pre_time)
-        t2 = (trace.stats.arrivals['S'][1] + 3 * config.win_length)
+        t1 = trace.stats.arrivals['P'][1] - config.noise_pre_time
+        t2 = trace.stats.arrivals['S'][1] + 3 * config.win_length
         trace.trim(starttime=t1, endtime=t2)
     # compute time offset for correctly aligning traces when plotting
     min_starttime = min(tr.stats.starttime for tr in st)
@@ -406,7 +406,7 @@ def plot_traces(config, st, ncols=None, block=True):
         else:
             instrtype = config.trace_units
         if instrtype in ['acc']:
-            ax.set_ylabel(u'Acceleration (m/s²)', fontsize=8, labelpad=0)
+            ax.set_ylabel('Acceleration (m/s²)', fontsize=8, labelpad=0)
         elif instrtype in ['broadb', 'shortp', 'vel']:
             ax.set_ylabel('Velocity (m/s)', fontsize=8, labelpad=0)
         elif instrtype in ['disp']:

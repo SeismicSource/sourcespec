@@ -9,8 +9,8 @@ SourceSpec event class and supporting classes.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-import numpy as np
 import contextlib
+import numpy as np
 from obspy import UTCDateTime
 from obspy.imaging.scripts import mopad
 
@@ -35,7 +35,7 @@ def _dyne_cm_to_N_m(value):
     return None if value is None else value * 1e-7
 
 
-class SSPCoordinate(object):
+class SSPCoordinate():
     """
     SourceSpec coordinate class.
 
@@ -61,7 +61,7 @@ class SSPCoordinate(object):
             return 'Incomplete coordinate data'
 
 
-class SSPDepth(object):
+class SSPDepth():
     """
     SourceSpec depth class.
     """
@@ -86,10 +86,9 @@ class SSPDepth(object):
             return None
         if self.units == 'm':
             return self.value
-        elif self.units == 'km':
+        if self.units == 'km':
             return _km_to_m(self.value)
-        else:
-            raise ValueError('depth units must be m or km')
+        raise ValueError('depth units must be m or km')
 
     @property
     def value_in_km(self):
@@ -98,13 +97,12 @@ class SSPDepth(object):
             return None
         if self.units == 'km':
             return self.value
-        elif self.units == 'm':
+        if self.units == 'm':
             return _m_to_km(self.value)
-        else:
-            raise ValueError('depth units must be m or km')
+        raise ValueError('depth units must be m or km')
 
 
-class SSPHypocenter(object):
+class SSPHypocenter():
     """
     SourceSpec hypocenter class.
     """
@@ -140,13 +138,13 @@ class SSPHypocenter(object):
             return 'Incomplete hypocenter data'
 
 
-class SSPMagnitude(object):
+class SSPMagnitude():
     """
     SourceSpec magnitude class.
     """
-    def __init__(self, value=None, type=None):
+    def __init__(self, value=None, mag_type=None):
         self.value = _float(value)
-        self.type = type
+        self.mag_type = mag_type
         self.computed = False
 
     # make the class subscriptable
@@ -156,7 +154,7 @@ class SSPMagnitude(object):
     def __str__(self):
         try:
             return (
-                f'Magnitude: {self.type} {self.value:.1f}'
+                f'Magnitude: {self.mag_type} {self.value:.1f}'
             )
         except TypeError:
             return 'Incomplete magnitude data'
@@ -176,11 +174,11 @@ class SSPMagnitude(object):
         elif scalar_moment.units != 'N-m':
             raise ValueError('scalar_moment units must be N-m or dyne-cm')
         self.value = 2 / 3 * (np.log10(moment) - 9.1)
-        self.type = 'Mw'
+        self.mag_type = 'Mw'
         self.computed = True
 
 
-class SSPScalarMoment(object):
+class SSPScalarMoment():
     """
     SourceSpec scalar moment class.
     """
@@ -227,7 +225,7 @@ class SSPScalarMoment(object):
         self.to_N_m()
 
 
-class SSPFocalMechanism(object):
+class SSPFocalMechanism():
     """
     SourceSpec focal mechanism class.
     """
@@ -266,7 +264,7 @@ class SSPFocalMechanism(object):
         self.strike, self.dip, self.rake = _fps1
 
 
-class SSPMomentTensor(object):
+class SSPMomentTensor():
     """
     SourceSpec moment tensor class.
     """
@@ -312,7 +310,7 @@ class SSPMomentTensor(object):
             self.units = 'N-m'
 
 
-class SSPEvent(object):
+class SSPEvent():
     """
     SourceSpec event class.
     """
