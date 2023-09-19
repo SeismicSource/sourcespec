@@ -328,11 +328,16 @@ def _update_config_file(config_file, configspec):
         'pre_s_time': 'signal_pre_time',
         'rps_from_focal_mechanism': 'rp_from_focal_mechanism',
         'paz': 'station_metadata',
-        'pi_bsd_min_max': 'pi_ssd_min_max'
+        'pi_bsd_min_max': 'pi_ssd_min_max',
+        'max_epi_dist': 'epi_dist_ranges'
     }
     for old_opt, new_opt in migrate_options.items():
         if old_opt in config_obj and config_obj[old_opt] != 'None':
-            config_new[new_opt] = config_obj[old_opt]
+            # max_epi_dist needs to be converted to a list
+            if old_opt == 'max_epi_dist':
+                config_new[new_opt] = [0, config_obj[old_opt]]
+            else:
+                config_new[new_opt] = config_obj[old_opt]
     shutil.copyfile(config_file, config_file_old)
     with open(config_file, 'wb') as fp:
         config_new.write(fp)
@@ -431,6 +436,11 @@ def _check_deprecated_config_options(config_obj):
         deprecation_msgs.append(
             '> "paz" config parameter has been removed and merged with '
             '"station_metadata".\n'
+        )
+    if 'max_epi_dist' in config_obj:
+        deprecation_msgs.append(
+            '> "max_epi_dist" config parameter has been removed and replaced '
+            'by "epi_dist_ranges".\n'
         )
     if deprecation_msgs:
         sys.stderr.write(

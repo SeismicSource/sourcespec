@@ -213,10 +213,11 @@ def _process_trace(config, trace):
     return trace_process
 
 
-def _add_station_to_event_position(config, trace):
+def _add_station_to_event_position(trace):
     """
     Add to ``trace.stats`` station-to-event distance (hypocentral and
     epicentral), great-circle distance, azimuth and backazimuth.
+    Raise RuntimeError if unable to compute distances.
     """
     try:
         station_to_event_position(trace)
@@ -225,15 +226,30 @@ def _add_station_to_event_position(config, trace):
             f'{trace.id}: Unable to compute hypocentral distance: {e}. '
             'Skipping trace'
         ) from e
-    if (
-        config.max_epi_dist is not None and
-        trace.stats.epi_dist > config.max_epi_dist
-    ):
+
+
+def _check_epicentral_distance(config, trace):
+    """
+    Reject traces with hypocentral distance outside the range specified
+    in the configuration file.
+    """
+    if config.epi_dist_ranges is None:
+        return
+    # transform integers to true integers, for better string representation
+    edr = [int(r) if r.is_integer() else r for r in config.epi_dist_ranges]
+    # if edr has an odd number of elements, add one last element
+    if len(edr) % 2 == 1:
+        edr.append(999999)
+    # reshape edr to a list of pairs
+    edr = [[edr[i], edr[i+1]] for i in range(0, len(edr), 2)]
+    # string representation of edr
+    edr_str = ', '.join(f'{ed[0]}-{ed[1]} km' for ed in edr)
+    epi_dist = trace.stats.epi_dist
+    # check if epi_dist is in one of the ranges
+    if not any(ed[0] <= epi_dist <= ed[1] for ed in edr):
         raise RuntimeError(
-            f'{trace.id}: Epicentral distance '
-            f'({trace.stats.epi_dist:.1f} km) '
-            f'larger than max_epi_dist ({config.max_epi_dist:.1f} km): '
-            'skipping trace')
+            f'{trace.id}: Epicentral distance ({epi_dist:.1f} km) '
+            f'not in the selected range ({edr_str}): skipping trace')
 
 
 def _add_arrivals(config, trace):
@@ -409,7 +425,8 @@ def process_traces(config, st):
             # We still use a stream, since the trace can have gaps or overlaps
             st_sel = st.select(id=id)
             for _trace in st_sel:
-                _add_station_to_event_position(config, _trace)
+                _add_station_to_event_position(_trace)
+                _check_epicentral_distance(config, _trace)
                 _add_arrivals(config, _trace)
                 _define_signal_and_noise_windows(config, _trace)
             _check_signal_window(config, st_sel)

@@ -105,6 +105,9 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Config file
 
+- New config parameter `epi_dist_ranges` to select stations within one or
+  more ranges of epicentral distances. It replaces the old parameter
+  `max_epi_dist`.
 - Config parameter `rho` renamed to `rho_source`
 - New config parameter `rho_stations`
 - New config parameter `geom_spread_min_teleseismic_distance` to set the
