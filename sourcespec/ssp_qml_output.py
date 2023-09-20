@@ -39,16 +39,17 @@ class SSPExtra(AttribDict):
         key = _to_camel_case(key)
         return super(AttribDict, self).__setattr__(key, value)
 
-    def __getattr__(self, key):
+    def __getattr__(self, key, default=None):
         """Get class attribute."""
         key = _to_camel_case(key)
-        return self.__dict__[key]
+        return super(AttribDict, self).__getattr__(key, default)
 
 
 class SSPContainerTag(AttribDict):
     """Container for nested custom tags."""
 
     def __init__(self):
+        super().__init__()
         self.namespace = 'https://sourcespec.seismicsource.org'
         self.value = SSPExtra()
 
@@ -57,6 +58,7 @@ class SSPTag(AttribDict):
     """Custom tag object."""
 
     def __init__(self, value=None):
+        super().__init__()
         self.namespace = 'https://sourcespec.seismicsource.org'
         self.value = value
 
