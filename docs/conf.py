@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-#
-# SourceSpec documentation build configuration file, created by
-# sphinx-quickstart on Fri Oct 25 17:47:32 2013.
+"""Sphinx configuration file."""
+# pylint: disable=wrong-import-position,invalid-name
 import sys
 import os
 
@@ -10,7 +9,7 @@ import os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.join(os.path.abspath('..'), 'sourcespec'))
-from sourcespec._version import get_versions #NOQA
+from sourcespec._version import get_versions  # NOQA
 __version__ = get_versions()['version']
 
 # -- General configuration ----------------------------------------------------
@@ -75,8 +74,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'SourceSpec'
-copyright = u'2013-2023, Claudio Satriano'
+project = 'SourceSpec'
+copyright = '2013-2023, Claudio Satriano'  # pylint: disable=redefined-builtin
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -228,10 +227,10 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author,
 #  documentclass [howto/manual]).
-latex_documents = [(
-    'index', 'SourceSpec.tex', u'SourceSpec Documentation',
-    u'Claudio Satriano', 'manual'
-),]
+latex_documents = [
+    ('index', 'SourceSpec.tex', 'SourceSpec Documentation',
+     'Claudio Satriano', 'manual'),
+]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -259,8 +258,8 @@ latex_logo = '../imgs/SourceSpec_logo.png'
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'sourcespec', u'SourceSpec Documentation',
-     [u'Claudio Satriano'], 1)
+    ('index', 'sourcespec', 'SourceSpec Documentation',
+     ['Claudio Satriano'], 1),
 ]
 
 # If true, show URL addresses after external links.
@@ -293,8 +292,10 @@ texinfo_documents = [(
 
 
 # -- Custom functions for SourceSpec ------------------------------------------
-def update_configfile(app):
-    with open('configuration_file.rst', 'w') as fp:
+def write_configfile(app):
+    """Write configuration file documentation page."""
+    # pylint: disable=unused-argument
+    with open('configuration_file.rst', 'w', encoding='utf-8') as fp:
         fp.write('''.. _configuration_file:
 
 ##################
@@ -310,7 +311,7 @@ Here is the default config file, generated through ``source_spec -S``::
 ''')
         configspec = os.path.join(
             '..', 'sourcespec', 'config_files', 'configspec.conf')
-        for line in open(configspec):
+        for line in open(configspec, encoding='utf-8'):
             if '=' in line and line[0] != '#':
                 key, val = line.split(' = ')
                 val = val.split('default=')[1]
@@ -323,5 +324,6 @@ Here is the default config file, generated through ``source_spec -S``::
 
 
 def setup(app):
-    app.connect('builder-inited', update_configfile)
+    """Add custom functions to Sphinx."""
+    app.connect('builder-inited', write_configfile)
     app.add_js_file('version-alert.js')
