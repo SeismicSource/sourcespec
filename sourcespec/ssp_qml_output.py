@@ -188,6 +188,10 @@ def write_qml(config, sspec_output):
         summary_parameters['radius'])
     ev.extra.static_stress_drop = _summary_parameter_tag(
         summary_parameters['ssd'])
+    ev.extra.radiated_energy = _summary_parameter_tag(
+        summary_parameters['Er'])
+    ev.extra.apparent_stress = _summary_parameter_tag(
+        summary_parameters['sigma_a'])
     if config.set_preferred_magnitude:
         ev.preferred_magnitude_id = mag.resource_id.id
 
