@@ -25,6 +25,7 @@ import uuid
 import json
 import contextlib
 import warnings
+from copy import copy
 from datetime import datetime
 from collections import defaultdict
 from sourcespec import __version__, __banner__
@@ -364,7 +365,10 @@ def _write_config(config_obj, progname, outdir):
     if not os.path.exists(outdir):
         os.makedirs(outdir)
     with open(configfile, 'wb') as fp:
-        config_obj.write(fp)
+        # create a copy of config_obj and remove the basemap API key
+        _tmp_config_obj = copy(config_obj)
+        _tmp_config_obj['plot_map_api_key'] = None
+        _tmp_config_obj.write(fp)
 
 
 def _check_deprecated_config_options(config_obj):

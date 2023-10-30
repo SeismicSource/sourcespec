@@ -92,6 +92,8 @@ previous versions. You will need to upgrade your old database manually or using
 - Show the station radiated energy (Er) value on the station spectra plots
 - Show the summary radiated energy (Er) value on the stacked spectra plot
 - Station maps improvements:
+  - Possibility of choosing a basemap style or no basemap
+  - Possibility of not plotting the coastlines
   - Exclude outliers when computing colorbar limits
   - Improved computation of bounding box for regional and teleseismic events
   - Use a global orthographic projection when using stations at large
@@ -123,6 +125,10 @@ previous versions. You will need to upgrade your old database manually or using
   the initial Mw value
 - New parameter `plot_save_asap` to save plots as soon as they are ready.
   This uses less memory but slows down the code.
+- New parameter `plot_map_style` to choose the map style
+- New parameter `plot_map_api_key` to provide a Stadia Maps
+  api key for Stamen Terrain basemap
+- New option for the parameter `plot_coastline_resolution`: `no_coastline`
 
 ### Bugfixes
 
@@ -144,6 +150,7 @@ previous versions. You will need to upgrade your old database manually or using
   (see [#43] and [#44])
 - Fix bug where local magnitude was not written to the HYPO71 output file,
   when using weighted mean as reference statistics
+- Fix for Stamen Terrain basemap now requiring an API key from Stadia Maps
 
 ### Requirements
 

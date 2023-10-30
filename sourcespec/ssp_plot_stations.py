@@ -15,7 +15,6 @@ import contextlib
 import warnings
 import numpy as np
 import cartopy.crs as ccrs
-import cartopy.io.img_tiles as cimgt
 import cartopy.io.shapereader as shpreader
 import cartopy.feature as cfeature
 from obspy.imaging.beachball import beach
@@ -28,6 +27,13 @@ import matplotlib.patheffects as PathEffects
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 from sourcespec.adjustText import adjust_text
 from sourcespec.cached_tiler import CachedTiler
+from sourcespec.map_tiles import (
+    EsriHillshade,
+    EsriHillshadeDark,
+    EsriOcean,
+    EsriImagery,
+    StamenTerrain,
+)
 from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
@@ -40,6 +46,20 @@ with contextlib.suppress(Exception):
     # Ignore Shapely deprecation warnings, since they depend on Cartopy
     from shapely.errors import ShapelyDeprecationWarning
     warnings.filterwarnings('ignore', category=ShapelyDeprecationWarning)
+TILER = {
+    'hillshade': EsriHillshade,
+    'hillshade_dark': EsriHillshadeDark,
+    'ocean': EsriOcean,
+    'satellite': EsriImagery,
+    'stamen_terrain': StamenTerrain,
+}
+ZORDER_BASEMAP = 1
+ZORDER_TILES = 2
+ZORDER_COASTLINES = 5
+ZORDER_CIRCLES = 10
+ZORDER_EPICENTER = 20
+ZORDER_STATIONS = 20
+ZORDER_STATION_TEXTS = 30
 
 
 # TODO:
@@ -136,7 +156,8 @@ def _plot_circles(ax, evlo, evla, distances):
         ax.plot(
             circle[:, 0], circle[:, 1],
             color='#777777', linestyle='--',
-            transform=geodetic_transform)
+            transform=geodetic_transform,
+            zorder=ZORDER_CIRCLES)
         dist_text = (
             f'{int(dist * 1000)} m' if maxdist < 1
             else
@@ -147,7 +168,7 @@ def _plot_circles(ax, evlo, evla, distances):
             verticalalignment='center',
             horizontalalignment='center',
             clip_on=True,
-            transform=geodetic_transform, zorder=10)
+            transform=geodetic_transform, zorder=ZORDER_CIRCLES)
         t.set_path_effects([
             PathEffects.Stroke(linewidth=0.8, foreground='white'),
             PathEffects.Normal()
@@ -188,7 +209,7 @@ def _plot_epicenter_as_beachball(ax, event):
         width=width,
         linewidth=1,
         facecolor='k',
-        zorder=10,
+        zorder=ZORDER_EPICENTER,
     )
     ax.add_collection(meca)
 
@@ -202,7 +223,7 @@ def _plot_epicenter_as_star(ax, event):
         evlo, evla, marker='*', markersize=20,
         markeredgewidth=1, markeredgecolor='white',
         color='k', transform=geodetic_transform,
-        zorder=10
+        zorder=ZORDER_EPICENTER
     )
 
 
@@ -225,7 +246,7 @@ def _add_event_info(event, ax):
         ha='left', va='top', linespacing=1.5, transform=ax.transAxes)
 
 
-def _add_tiles(config, ax, stamen_terrain):
+def _add_tiles(config, ax, tiler, alpha=1):
     """Add map tiles to basemap."""
     if config.plot_map_tiles_zoom_level:
         tile_zoom_level = config.plot_map_tiles_zoom_level
@@ -236,7 +257,7 @@ def _add_tiles(config, ax, stamen_terrain):
         if tile_zoom_level == 0:
             logger.warning('No map tiles found. Map will be blank.')
             break
-        ax.add_image(stamen_terrain, tile_zoom_level)
+        ax.add_image(tiler, tile_zoom_level, alpha=alpha, zorder=ZORDER_TILES)
         try:
             # draw tiles to check if they exist
             ax.get_figure().canvas.draw()
@@ -251,6 +272,8 @@ def _add_tiles(config, ax, stamen_terrain):
 
 def _add_coastlines(config, ax):
     """Add coastlines and borders to basemap."""
+    if config.plot_coastline_resolution == 'no_coastline':
+        return
     # add coastlines from GSHHS
     res_map = {
         'full': 'f',
@@ -278,8 +301,11 @@ def _add_coastlines(config, ax):
         warnings.simplefilter('ignore')
         ax.add_geometries(
             shp.geometries(), ccrs.PlateCarree(),
-            edgecolor='black', facecolor='none')
-    ax.add_feature(cfeature.BORDERS, edgecolor='black', facecolor='none')
+            edgecolor='black', facecolor='none',
+            zorder=ZORDER_COASTLINES)
+    ax.add_feature(
+        cfeature.BORDERS, edgecolor='black', facecolor='none',
+        zorder=ZORDER_COASTLINES)
 
 
 def _add_gridlines_global_projection(ax, lonmin, lonmax, latmin, latmax):
@@ -346,15 +372,34 @@ def _make_basemap(config, maxdist):
     ax0.set_axis_off()
     _add_event_info(config.event, ax0)
     if maxdist < 3000:  # km
-        # use Stamen Terrain projection (Mercator?)
-        tile_dir = 'maptiles'
-        stamen_terrain = CachedTiler(
-            cimgt.Stamen('terrain-background'), tile_dir)
-        ax = fig.add_subplot(111, projection=stamen_terrain.crs)
+        land_10m = cfeature.NaturalEarthFeature(
+            'physical', 'land', '10m',
+            edgecolor='face',
+            facecolor=cfeature.COLORS['land'])
+        ocean_10m = cfeature.NaturalEarthFeature(
+            'physical', 'ocean', '10m',
+            edgecolor='face',
+            facecolor=cfeature.COLORS['water'])
+        map_style = config.plot_map_style
+        api_key = config.plot_map_api_key
+        if map_style == 'no_basemap':
+            ax = fig.add_subplot(111, projection=ccrs.Mercator())
+            ax.add_feature(land_10m, zorder=ZORDER_BASEMAP)
+            ax.add_feature(ocean_10m, zorder=ZORDER_BASEMAP)
+        else:
+            tile_dir = 'maptiles'
+            tiler = CachedTiler(
+                TILER[map_style](apikey=api_key),
+                tile_dir
+            )
+            ax = fig.add_subplot(111, projection=tiler.crs)
         ax.set_extent([lonmin, lonmax, latmin, latmax], crs=ccrs.Geodetic())
         ax.global_projection = False
         ax.maxdiagonal = maxdiagonal
-        _add_tiles(config, ax, stamen_terrain)
+        if map_style != 'no_basemap':
+            if map_style in ['hillshade', 'hillshade_dark']:
+                ax.add_feature(ocean_10m, zorder=ZORDER_TILES+1)
+            _add_tiles(config, ax, tiler)
         ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     else:
         # use global Orthographic projection
@@ -503,7 +548,7 @@ def _plot_stations_scatter(
         lonlat[:, 0], lonlat[:, 1],
         marker='^', s=100,
         color=cmap(norm(values)), edgecolor='k',
-        zorder=99, transform=trans)
+        zorder=ZORDER_STATIONS, transform=trans)
     texts = []
     if config.plot_station_names_on_map:
         for _lonlat, _statid in zip(lonlat, st_ids):
@@ -513,7 +558,7 @@ def _plot_stations_scatter(
             t = ax.text(
                 _lonlat[0], _lonlat[1], _statid,
                 size=station_text_size, weight='bold',
-                va='center', zorder=999, transform=trans)
+                va='center', zorder=ZORDER_STATION_TEXTS, transform=trans)
             t.set_path_effects([
                 PathEffects.Stroke(linewidth=0.8, foreground='white'),
                 PathEffects.Normal()
