@@ -378,7 +378,7 @@ class Params():
             'pctl': 'percentiles',
         }
         title = f'{nevs} events'
-        with contextlib.suppress(AttributeError):
+        if None not in (self.nbins_x, self.nbins_y):
             title += f', {self.nbins_x}x{self.nbins_y} bins'
         title += f' - {stat_descr[self.stat]}'
         if self.runid is not None:
