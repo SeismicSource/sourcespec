@@ -62,8 +62,7 @@ ZORDER_STATIONS = 20
 ZORDER_STATION_TEXTS = 30
 
 
-# TODO:
-# add table with values
+# TODO: add table with values
 
 
 def _round_to_base(x, base):
@@ -308,9 +307,9 @@ def _add_coastlines(config, ax):
         zorder=ZORDER_COASTLINES)
 
 
-def _add_gridlines_global_projection(ax, lonmin, lonmax, latmin, latmax):
+def _add_gridlines_to_orthographic_axes(ax, bounding_box):
     """
-    Add gridlines to global projection.
+    Add gridlines to global orthographic GeoAxes.
 
     We need to compute gridlines manually, since Cartopy has occasional
     bugs with gridlines in global projections.
@@ -319,6 +318,7 @@ def _add_gridlines_global_projection(ax, lonmin, lonmax, latmin, latmax):
         shapely.errors.GEOSException:
         IllegalArgumentException: point array must contain 0 or >1 elements
     """
+    lonmin, lonmax, latmin, latmax = bounding_box
     lonmin_grid = _round_to_base(lonmin, base=10)
     lonmax_grid = _round_to_base(lonmax, base=10)
     latmin_grid = _round_to_base(latmin, base=10)
@@ -338,6 +338,58 @@ def _add_gridlines_global_projection(ax, lonmin, lonmax, latmin, latmax):
         xlocs=xticks, ylocs=yticks)
 
 
+def _make_geoaxes_mercator(config, fig, buonding_box, maxdiagonal):
+    """
+    Create a GeoAxes with Mercator projection and optionally add map tiles.
+    """
+    land_10m = cfeature.NaturalEarthFeature(
+        'physical', 'land', '10m',
+        edgecolor='face',
+        facecolor=cfeature.COLORS['land'])
+    ocean_10m = cfeature.NaturalEarthFeature(
+        'physical', 'ocean', '10m',
+        edgecolor='face',
+        facecolor=cfeature.COLORS['water'])
+    map_style = config.plot_map_style
+    api_key = config.plot_map_api_key
+    if map_style == 'no_basemap':
+        ax = fig.add_subplot(111, projection=ccrs.Mercator())
+        ax.add_feature(land_10m, zorder=ZORDER_BASEMAP)
+        ax.add_feature(ocean_10m, zorder=ZORDER_BASEMAP)
+    else:
+        tile_dir = 'maptiles'
+        tiler = CachedTiler(
+            TILER[map_style](apikey=api_key),
+            tile_dir
+        )
+        ax = fig.add_subplot(111, projection=tiler.crs)
+    ax.set_extent(buonding_box, crs=ccrs.Geodetic())
+    ax.global_projection = False
+    ax.maxdiagonal = maxdiagonal
+    if map_style != 'no_basemap':
+        if map_style in ['hillshade', 'hillshade_dark']:
+            # add a sea mask to the hillshade map
+            ax.add_feature(ocean_10m, zorder=ZORDER_TILES+1)
+        _add_tiles(config, ax, tiler)
+    ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
+    return ax
+
+
+def _make_geoaxes_orthographic(fig, evlo, evla, bounding_box):
+    """
+    Create a GeoAxes with global Orthographic projection.
+
+    The basemap is the Earth stock image from Cartopy.
+    """
+    _projection = ccrs.Orthographic(
+        central_longitude=evlo, central_latitude=evla)
+    ax = fig.add_subplot(111, projection=_projection)
+    ax.global_projection = True
+    ax.stock_img()
+    _add_gridlines_to_orthographic_axes(ax, bounding_box)
+    return ax
+
+
 def _make_basemap(config, maxdist):
     """
     Create basemap with tiles, coastlines, hypocenter
@@ -345,9 +397,8 @@ def _make_basemap(config, maxdist):
     """
     g = Geod(ellps='WGS84')
     event = config.event
-    hypo = event.hypocenter
-    evlo = hypo.longitude.value_in_deg
-    evla = hypo.latitude.value_in_deg
+    evlo = event.hypocenter.longitude.value_in_deg
+    evla = event.hypocenter.latitude.value_in_deg
     ncircles = 5
     circles_step = _get_circles_step(maxdist, ncircles)
     # compute bounding box, adding 0.2 to ncircles to have some padding
@@ -356,6 +407,7 @@ def _make_basemap(config, maxdist):
     lonmax = g.fwd(evlo, evla, 90, maxdist * 1e3)[0]
     latmin = g.fwd(evlo, evla, 180, maxdist * 1e3)[1]
     latmax = g.fwd(evlo, evla, 0, maxdist * 1e3)[1]
+    bounding_box = [lonmin, lonmax, latmin, latmax]
     # maxdiagonal is the distance between the two corners of the map
     # (i.e., the diagonal of the bounding box)
     maxdiagonal = g.inv(lonmin, latmin, lonmax, latmax)[2] / 1e3
@@ -372,43 +424,9 @@ def _make_basemap(config, maxdist):
     ax0.set_axis_off()
     _add_event_info(config.event, ax0)
     if maxdist < 3000:  # km
-        land_10m = cfeature.NaturalEarthFeature(
-            'physical', 'land', '10m',
-            edgecolor='face',
-            facecolor=cfeature.COLORS['land'])
-        ocean_10m = cfeature.NaturalEarthFeature(
-            'physical', 'ocean', '10m',
-            edgecolor='face',
-            facecolor=cfeature.COLORS['water'])
-        map_style = config.plot_map_style
-        api_key = config.plot_map_api_key
-        if map_style == 'no_basemap':
-            ax = fig.add_subplot(111, projection=ccrs.Mercator())
-            ax.add_feature(land_10m, zorder=ZORDER_BASEMAP)
-            ax.add_feature(ocean_10m, zorder=ZORDER_BASEMAP)
-        else:
-            tile_dir = 'maptiles'
-            tiler = CachedTiler(
-                TILER[map_style](apikey=api_key),
-                tile_dir
-            )
-            ax = fig.add_subplot(111, projection=tiler.crs)
-        ax.set_extent([lonmin, lonmax, latmin, latmax], crs=ccrs.Geodetic())
-        ax.global_projection = False
-        ax.maxdiagonal = maxdiagonal
-        if map_style != 'no_basemap':
-            if map_style in ['hillshade', 'hillshade_dark']:
-                ax.add_feature(ocean_10m, zorder=ZORDER_TILES+1)
-            _add_tiles(config, ax, tiler)
-        ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
+        ax = _make_geoaxes_mercator(config, fig, bounding_box, maxdiagonal)
     else:
-        # use global Orthographic projection
-        _projection = ccrs.Orthographic(
-            central_longitude=evlo, central_latitude=evla)
-        ax = fig.add_subplot(111, projection=_projection)
-        ax.global_projection = True
-        ax.stock_img()
-        _add_gridlines_global_projection(ax, lonmin, lonmax, latmin, latmax)
+        ax = _make_geoaxes_orthographic(fig, evlo, evla, bounding_box)
     _add_coastlines(config, ax)
     circles_distances = np.arange(1, ncircles + 1) * circles_step
     circle_texts = _plot_circles(ax, evlo, evla, circles_distances)
