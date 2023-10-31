@@ -305,7 +305,13 @@ def _displacement_to_moment(stats, config):
         stats.network, stats.station, stats.location, stats.channel))
     msg = (
         f'{specid}: {depth_string}, '
-        f'{v_source_string}, {v_station_string}, '
+        f'{v_source_string}, {v_station_string}'
+    )
+    if msg not in PROPERTY_LOG_MESSAGES:
+        logger.info(msg)
+        PROPERTY_LOG_MESSAGES.append(msg)
+    msg = (
+        f'{specid}: {depth_string}, '
         f'{rho_source_string}, {rho_station_string}'
     )
     if msg not in PROPERTY_LOG_MESSAGES:
