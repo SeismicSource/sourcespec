@@ -371,6 +371,12 @@ def _make_geoaxes_mercator(config, fig, buonding_box, maxdiagonal):
             # add a sea mask to the hillshade map
             ax.add_feature(ocean_10m, zorder=ZORDER_TILES+1)
         _add_tiles(config, ax, tiler)
+    if map_style in ['hillshade', 'hillshade_dark', 'ocean', 'satellite']:
+        ax.attribution_text = 'Map powered by Esri and Natural Earth'
+    elif map_style == 'stamen_terrain':
+        ax.attribution_text = 'Map powered by Stamen Design and Natural Earth'
+    else:
+        ax.attribution_text = 'Map powered by Natural Earth'
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     return ax
 
@@ -386,6 +392,7 @@ def _make_geoaxes_orthographic(fig, evlo, evla, bounding_box):
     ax = fig.add_subplot(111, projection=_projection)
     ax.global_projection = True
     ax.stock_img()
+    ax.attribution_text = 'Map powered by Natural Earth'
     _add_gridlines_to_orthographic_axes(ax, bounding_box)
     return ax
 
@@ -437,7 +444,7 @@ def _make_basemap(config, maxdist):
     return ax0, ax, circle_texts
 
 
-def _add_footer(config, ax):
+def _add_footer(config, ax, attribution_text=None):
     """
     Add code and author information at the figure footer.
     """
@@ -459,6 +466,10 @@ def _add_footer(config, ax):
         if textstr2 != '':
             textstr2 += ' - '
         textstr2 += config.agency_full_name
+    if attribution_text is not None:
+        if textstr2 != '':
+            textstr2 += ' - '
+        textstr2 += attribution_text
     if textstr2 != '':
         textstr = f'{textstr}\n{textstr2} '
     ax.text(
@@ -677,7 +688,7 @@ def _make_station_map(
     station_texts = _plot_stations_scatter(
         config, ax, lonlat_dist, st_ids, values, cmap, norm)
     _add_colorbar(ax, cmap, norm, vmean, verr, vname, cbar_extend)
-    _add_footer(config, ax0)
+    _add_footer(config, ax0, ax.attribution_text)
     _adjust_text_labels(station_texts, circle_texts, ax)
     _savefig(config, ax0.get_figure(), vname)
 
