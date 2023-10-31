@@ -67,7 +67,7 @@ def _check_db_version(cursor, db_file):
             f'"{db_version}" Current supported version is "{DB_VERSION}".'
         )
         logger.info(
-            'Use "source_spec --updatedb" to update your database. '
+            f'Use "source_spec --updatedb {db_file}" to update your database. '
             'The current database will be backed up.'
         )
         ssp_exit(1)
@@ -95,7 +95,7 @@ def _log_db_write_error(db_err, db_file):
     logger.error(f'Unable to insert values: {db_err}')
     logger.info('Maybe your sqlite database has an old format.')
     logger.info(
-        'Use "source_spec --updatedb" to update your database. '
+        f'Use "source_spec --updatedb {db_file}" to update your database. '
         'The current database will be backed up.'
     )
     logger.info(f'(Current database file: {db_file})')
