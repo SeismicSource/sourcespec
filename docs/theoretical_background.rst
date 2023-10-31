@@ -298,23 +298,101 @@ based on the `interquartile
 range <https://en.wikipedia.org/wiki/Interquartile_range>`__ rule.
 
 
-Source radius and static stress drop
-------------------------------------------
-The static stress drop :math:`\Delta \sigma` is computed under the
-assumption of a circular rupture of radius :math:`a`. The model of
-:cite:t:`Brune1970` provides an expression for the source radius (equation 31
-in :cite:t:`Madariaga2011`):
+Source radius
+-------------
+The source radius is computed, assuming a circular rupture model, from the
+corner frequency :math:`f^{p|s}_c` (:cite:t:`Kaneko2014`, equation 2):
 
 .. math::
 
-   a = \frac{2.34 \; c_h}{2 \pi f^{p|s}_c} = 0.3724 \frac{c_h}{f^{p|s}_c}
+   a = k^{p|s} \frac{\beta_h}{f^{p|s}_c}
 
-where :math:`c_h` is the P- or S-wave velocity at the hypocenter
-(in :math:`m/s`) and :math:`f^{p|s}_c` is the corner frequency (in :math:`Hz`)
-estimated from the spectral inversion of P or S waves.
+where :math:`\beta_h` is the shear wave speed at the hypocenter (in :math:`m/s`),
+:math:`f^{p|s}_c` is the corner frequency (in :math:`Hz`) estimated from the
+spectral inversion of P or S waves and :math:`k^{p|s}` is a constant which
+depends on the source model.
 
-The static stress drop is then computed using the circular crack model,
-as discussed in :cite:t:`Madariaga2011` (equation 27):
+:cite:t:`Brune1970` provides an expression for :math:`k^s` in the case of a
+static circular crack (equation 31 in :cite:t:`Madariaga2011`):
+
+.. math::
+
+   k^s_{Brune} = 0.3724
+
+:cite:t:`Kaneko2014` compiled a table including their own values for
+:math:`k^p` and :math:`k^s` as well as values obtained from other authors.
+The values are given as a function of the rupture velocity :math:`V_r` of a
+dynamic circular crack (or a static crack, when :math:`V_r` is infinite):
+
+.. list-table:: Table 1 of :cite:t:`Kaneko2014`
+   :header-rows: 1
+
+   * - :math:`V_r/\beta_h`
+     - :math:`k^p_{K\&S}`
+     - :math:`k^s_{K\&S}`
+     - :math:`k^p_{Mada}`
+     - :math:`k^s_{Mada}`
+     - :math:`k^s_{Brune}`
+     - :math:`k^p_{S\&H}`
+     - :math:`k^s_{S\&H}`
+   * - Infinite
+     -
+     -
+     -
+     -
+     - 0.3724
+     -
+     -
+   * - 0.9
+     - 0.38
+     - 0.26
+     - 0.32
+     - 0.21
+     -
+     - 0.42
+     - 0.29
+   * - 0.8
+     - 0.35
+     - 0.26
+     -
+     -
+     -
+     - 0.39
+     - 0.28
+   * - 0.7
+     - 0.32
+     - 0.26
+     -
+     -
+     -
+     - 0.36
+     - 0.27
+   * - 0.6
+     - 0.30
+     - 0.25
+     -
+     -
+     -
+     - 0.34
+     - 0.27
+   * - 0.5
+     - 0.28
+     - 0.22
+     -
+     -
+     -
+     - 0.31
+     - 0.24
+
+Where "K\&S" stands for :cite:t:`Kaneko2014`,
+"Mada" for :cite:t:`Madariaga1976`, and "S\&H" for :cite:t:`Sato1973`.
+
+
+Static stress drop
+------------------
+The static stress drop :math:`\Delta \sigma` is computed under the
+assumption of a circular rupture of radius :math:`a`, as discussed in
+:cite:t:`Madariaga2011` (equation 27):
 
 .. math::
 

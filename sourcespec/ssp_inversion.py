@@ -314,17 +314,15 @@ def _spec_inversion(config, spec, spec_weight):
         confidence_level=68.2, format_spec='{:.3f}')
 
     # additional parameters, computed from fc, Mw and t_star
-    if config.wave_type == 'P':
-        vel = config.event.hypocenter.vp
-    else:
-        vel = config.event.hypocenter.vs
+    k_coeff = config.k_p if config.wave_type == 'P' else config.k_s
+    beta = config.event.hypocenter.vs * 1e3  # shear wave velocity in m/s
     travel_time = spec.stats.travel_times[config.wave_type[0]]
     # seismic moment
     station_pars.Mo = SpectralParameter(
         param_id='Mw', value=mag_to_moment(Mw), format_spec='{:.3e}')
     # source radius in meters
     station_pars.radius = SpectralParameter(
-        param_id='radius', value=source_radius(fc, vel * 1e3),
+        param_id='radius', value=source_radius(fc, beta, k_coeff),
         format_spec='{:.3f}')
     # Static stress drop in MPa
     station_pars.ssd = SpectralParameter(
@@ -362,8 +360,8 @@ def _spec_inversion(config, spec, spec_weight):
     if fc_min <= 0:
         fc_min = freq_logspaced[0]
     fc_max = fc + fc_err[1]
-    radius_min = source_radius(fc_max, vel * 1e3)
-    radius_max = source_radius(fc_min, vel * 1e3)
+    radius_min = source_radius(fc_max, beta, k_coeff)
+    radius_max = source_radius(fc_min, beta, k_coeff)
     station_pars.radius.lower_uncertainty =\
         station_pars.radius.value - radius_min
     station_pars.radius.upper_uncertainty =\

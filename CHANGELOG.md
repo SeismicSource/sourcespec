@@ -78,6 +78,8 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Post-Inversion
 
+- Possibility of choosing the k coefficient to compute source radius from
+  corner frequency (Kaneko and Shearer, 2014)
 - Take into account for energy partition when computing radiated energy
   (Boatwright and Choy, 1986). This affects mostly the radiated energy
   computed from P waves
@@ -115,6 +117,8 @@ previous versions. You will need to upgrade your old database manually or using
 - New config parameter `geom_spread_min_teleseismic_distance` to set the
   minimum epicentral distance for using the teleseismic geometrical
   spreading model
+- New config parameters `k_p` and `k_s` to set the k coefficient for
+  computing source radius from corner frequency
 - Config parameter `pi_bsd_min_max` renamed to `pi_ssd_min_max`
 - New option `inv_frequency` for the config parameter `weighting` (see [#37])
 - New parameters, `qml_event_description` and `qml_event_description_regex`,

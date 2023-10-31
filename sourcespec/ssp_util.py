@@ -405,13 +405,14 @@ def mag_to_moment(magnitude):
     return np.power(10, (1.5 * magnitude + 9.1))
 
 
-def source_radius(fc_in_hz, vs_in_m_per_s):
+def source_radius(fc_in_hz, vs_in_m_per_s, k_coeff=0.3724):
     """
     Compute source radius in meters.
 
     Madariaga (2009), doi:10.1007/978-1-4419-7695-6_22, eq. 31
+    Kaneko and Shearer (2014), doi:10.1093/gji/ggu030, eq. 2, 15, 16
     """
-    return 0.3724 * vs_in_m_per_s / fc_in_hz
+    return k_coeff * vs_in_m_per_s / fc_in_hz
 
 
 def static_stress_drop(Mo_in_N_m, ra_in_m):
