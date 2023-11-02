@@ -483,6 +483,8 @@ def spectral_inversion(config, spec_st, weight_st):
     sspec_output.event_info.vp_in_km_s = event.hypocenter.vp
     sspec_output.event_info.vs_in_km_s = event.hypocenter.vs
     sspec_output.event_info.rho_in_kg_m3 = event.hypocenter.rho
+    sspec_output.event_info.k_p = config.k_p
+    sspec_output.event_info.k_s = config.k_s
     if config.Mw_0_from_event_file and event.magnitude.value is not None:
         msg = (
             f'Setting Mw_0 to the value provided in the event file: '
