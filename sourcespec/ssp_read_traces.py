@@ -371,8 +371,8 @@ def read_traces(config):
     logger.info('Reading traces: done')
     logger.info('---------------------------------------------------')
     if len(st) == 0:
-        logger.info('No trace loaded')
-        ssp_exit()
+        logger.error('No trace loaded')
+        ssp_exit(1)
     _complete_picks(st)
 
     # if ssp_event is still None, get it from first trace
