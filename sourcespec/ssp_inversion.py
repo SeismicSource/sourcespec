@@ -314,7 +314,7 @@ def _spec_inversion(config, spec, spec_weight):
         confidence_level=68.2, format_spec='{:.3f}')
 
     # additional parameters, computed from fc, Mw and t_star
-    k_coeff = config.k_p if config.wave_type == 'P' else config.k_s
+    k_coeff = config.kp if config.wave_type == 'P' else config.ks
     beta = config.event.hypocenter.vs * 1e3  # shear wave velocity in m/s
     travel_time = spec.stats.travel_times[config.wave_type[0]]
     # seismic moment
@@ -483,8 +483,8 @@ def spectral_inversion(config, spec_st, weight_st):
     sspec_output.event_info.vp_in_km_s = event.hypocenter.vp
     sspec_output.event_info.vs_in_km_s = event.hypocenter.vs
     sspec_output.event_info.rho_in_kg_m3 = event.hypocenter.rho
-    sspec_output.event_info.k_p = config.k_p
-    sspec_output.event_info.k_s = config.k_s
+    sspec_output.event_info.kp = config.kp
+    sspec_output.event_info.ks = config.ks
     if config.Mw_0_from_event_file and event.magnitude.value is not None:
         msg = (
             f'Setting Mw_0 to the value provided in the event file: '
