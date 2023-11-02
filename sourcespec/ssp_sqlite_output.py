@@ -235,6 +235,8 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
     ev_vp = event.hypocenter.vp
     ev_vs = event.hypocenter.vs
     ev_rho = event.hypocenter.rho
+    kp = config.kp
+    ks = config.ks
     t = (
         # Event info
         evid,
@@ -246,6 +248,8 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
         float(ev_vp),
         float(ev_vs),
         float(ev_rho),
+        kp,
+        ks,
         # Statistical info
         wave_type,
         nobs,
