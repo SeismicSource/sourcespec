@@ -61,16 +61,24 @@ def _check_db_version(cursor, db_file):
     :type db_file: str
     """
     db_version = cursor.execute('PRAGMA user_version').fetchone()[0]
-    if db_version < DB_VERSION:
+    if db_version == DB_VERSION:
+        return
+    if db_version > DB_VERSION:
         logger.error(
-            f'"{db_file}" has an old database version: '
+            f'"{db_file}" has a newer database version: '
             f'"{db_version}" Current supported version is "{DB_VERSION}".'
         )
-        logger.info(
-            f'Use "source_spec --updatedb {db_file}" to update your database. '
-            'The current database will be backed up.'
-        )
         ssp_exit(1)
+    logger.error(
+        f'"{db_file}" has an old database version: '
+        f'"{db_version}" Current supported version is "{DB_VERSION}".'
+    )
+    logger.info(
+        'Use the following command to update your database '
+        '(the current database will be backed up):\n\n'
+        f'  source_spec --updatedb {db_file}\n'
+    )
+    ssp_exit(1)
 
 
 def _set_db_version(cursor):
@@ -95,10 +103,10 @@ def _log_db_write_error(db_err, db_file):
     logger.error(f'Unable to insert values: {db_err}')
     logger.info('Maybe your sqlite database has an old format.')
     logger.info(
-        f'Use "source_spec --updatedb {db_file}" to update your database. '
-        'The current database will be backed up.'
+        'Use the following command to update your database '
+        '(the current database will be backed up):\n\n'
+        f'  source_spec --updatedb {db_file}\n'
     )
-    logger.info(f'(Current database file: {db_file})')
     ssp_exit(1)
 
 
