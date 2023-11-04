@@ -20,6 +20,7 @@ import os
 import logging
 import shutil
 import tarfile
+import zipfile
 import tempfile
 import contextlib
 from obspy import read
@@ -279,7 +280,18 @@ def _build_filelist(path, filelist, tmpdir):
             return
         if tarfile.is_tarfile(path) and tmpdir is not None:
             with tarfile.open(path) as tar:
-                tar.extractall(path=tmpdir)
+                try:
+                    tar.extractall(path=tmpdir)
+                except Exception as msg:
+                    logger.warning(
+                        f'{path}: Unable to fully extract tar archive: {msg}')
+        elif zipfile.is_zipfile(path) and tmpdir is not None:
+            with zipfile.ZipFile(path) as zipf:
+                try:
+                    zipf.extractall(path=tmpdir)
+                except Exception as msg:
+                    logger.warning(
+                        f'{path}: Unable to fully extract zip archive: {msg}')
         else:
             filelist.append(path)
 
