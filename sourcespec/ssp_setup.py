@@ -587,7 +587,7 @@ def _write_sample_ssp_event_file():
         print(f'Sample SourceSpec Event File written to: {ssp_event_file}')
 
 
-def fix_and_expand_path(path):
+def _fix_and_expand_path(path):
     """
     Fix any path issues and expand it.
 
@@ -632,7 +632,7 @@ def configure(options, progname, config_overrides=None):
         sys.exit(0)
 
     if options.config_file:
-        options.config_file = fix_and_expand_path(options.config_file)
+        options.config_file = _fix_and_expand_path(options.config_file)
     config_obj = _read_config(options.config_file, configspec)
 
     # Apply overrides
@@ -650,11 +650,14 @@ def configure(options, progname, config_overrides=None):
 
     val = Validator()
     test = config_obj.validate(val)
+    # test is:
+    # - True if everything is ok
+    # - False if no config value is provided
+    # - A dict if invalid values are present, with the invalid values as False
     if isinstance(test, dict):
-        for entry in test:
-            if not test[entry]:
-                sys.stderr.write(
-                    f'Invalid value for "{entry}": "{config_obj[entry]}"\n')
+        for entry in [e for e in test if not test[e]]:
+            sys.stderr.write(
+                f'Invalid value for "{entry}": "{config_obj[entry]}"\n')
         sys.exit(1)
     if not test:
         sys.stderr.write('No configuration value present!\n')
@@ -664,17 +667,17 @@ def configure(options, progname, config_overrides=None):
     _check_mandatory_config_params(config_obj)
 
     # Fix and expand paths in options
-    options.outdir = fix_and_expand_path(options.outdir)
+    options.outdir = _fix_and_expand_path(options.outdir)
     if options.trace_path:
         # trace_path is a list
         options.trace_path = [
-            fix_and_expand_path(path) for path in options.trace_path]
+            _fix_and_expand_path(path) for path in options.trace_path]
     if options.qml_file:
-        options.qml_file = fix_and_expand_path(options.qml_file)
+        options.qml_file = _fix_and_expand_path(options.qml_file)
     if options.hypo_file:
-        options.hypo_file = fix_and_expand_path(options.hypo_file)
+        options.hypo_file = _fix_and_expand_path(options.hypo_file)
     if options.pick_file:
-        options.pick_file = fix_and_expand_path(options.pick_file)
+        options.pick_file = _fix_and_expand_path(options.pick_file)
 
     # Create a 'no_evid_' subdir into outdir.
     # The random hex string will make it sure that this name is unique
@@ -705,14 +708,14 @@ def configure(options, progname, config_overrides=None):
 
     # Fix and expand paths in config
     if config.database_file:
-        config.database_file = fix_and_expand_path(config.database_file)
+        config.database_file = _fix_and_expand_path(config.database_file)
     if config.traceid_mapping_file:
-        config.traceid_mapping_file = fix_and_expand_path(
+        config.traceid_mapping_file = _fix_and_expand_path(
             config.traceid_mapping_file)
     if config.station_metadata:
-        config.station_metadata = fix_and_expand_path(config.station_metadata)
+        config.station_metadata = _fix_and_expand_path(config.station_metadata)
     if config.residuals_filepath:
-        config.residuals_filepath = fix_and_expand_path(
+        config.residuals_filepath = _fix_and_expand_path(
             config.residuals_filepath)
 
     # A list of warnings to be issued when logger is set up
