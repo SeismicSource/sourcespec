@@ -604,6 +604,33 @@ def _fix_and_expand_path(path):
     return fixed_path
 
 
+def _float_list(input_list):
+    """
+    Convert an input list to a list of floats.
+
+    :param list input_list: Input list or None
+    :return: A list of floats or None
+    :rtype: list
+    """
+    if input_list is None:
+        return None
+    try:
+        return [float(val) for val in input_list]
+    except ValueError as e:
+        raise ValueError('Cannot parse all values as float') from e
+
+
+def _none_lenght(input_list):
+    """
+    Return the length of input list, or 1 if input list is None
+
+    :param list input_list: Input list or None
+    :return: List length or 1
+    :rtype: int
+    """
+    return 1 if input_list is None else len(input_list)
+
+
 def configure(options, progname, config_overrides=None):
     """
     Parse command line arguments and read config file.
@@ -717,6 +744,25 @@ def configure(options, progname, config_overrides=None):
     if config.residuals_filepath:
         config.residuals_filepath = _fix_and_expand_path(
             config.residuals_filepath)
+
+    # Parse force_list options into lists of float
+    try:
+        for param in [
+                'vp_source', 'vs_source', 'rho_source', 'layer_top_depths']:
+            config[param] = _float_list(config[param])
+    except ValueError as msg:
+        sys.exit(f'Error parsing parameter "{param}": {msg}')
+    n_vp_source = _none_lenght(config.vp_source)
+    n_vs_source = _none_lenght(config.vs_source)
+    n_rho_source = _none_lenght(config.rho_source)
+    n_layer_top_depths = _none_lenght(config.layer_top_depths)
+    try:
+        assert n_vp_source == n_vs_source == n_rho_source == n_layer_top_depths
+    except AssertionError:
+        sys.exit(
+            'Error: "vp_source", "vs_source", "rho_source", and '
+            '"layer_top_depths" must have the same length.'
+        )
 
     # A list of warnings to be issued when logger is set up
     config.warnings = []

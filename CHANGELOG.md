@@ -55,6 +55,8 @@ previous versions. You will need to upgrade your old database manually or using
 
 - Use all the available components to compute P-wave spectra (previously,
   only the vertical component was used)
+- Possibility of specifying a layered velocity and density model for the
+  source
 - Possibility of specifying a different density for the source and for the
   stations
 - If density is not provided (i.e., it is `None`), use the density from the
@@ -112,6 +114,11 @@ previous versions. You will need to upgrade your old database manually or using
 - New config parameter `epi_dist_ranges` to select stations within one or
   more ranges of epicentral distances. It replaces the old parameter
   `max_epi_dist`.
+- New config parameter `layer_top_depths` to specify the depth of the top of
+  the layers in a layered velocity and density model
+- The config parameters `vp_source`, `vs_source` and `rho_source` can now be
+  lists of values, to specify a layered velocity and density model for the
+  source
 - Config parameter `rho` renamed to `rho_source`
 - New config parameter `rho_stations`
 - New config parameter `geom_spread_min_teleseismic_distance` to set the

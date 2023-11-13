@@ -28,7 +28,7 @@ from obspy.core import Stream
 from obspy.core.util import AttribDict
 from sourcespec.ssp_setup import (
     ssp_exit, INSTR_CODES_VEL, INSTR_CODES_ACC, TRACEID_MAP)
-from sourcespec.ssp_util import get_medium_property, medium_property_string
+from sourcespec.ssp_util import MediumProperties
 from sourcespec.ssp_read_station_metadata import (
     read_station_metadata, PAZ)
 from sourcespec.ssp_read_event_metadata import (
@@ -251,17 +251,16 @@ def _complete_picks(st):
 
 # FILE PARSING ----------------------------------------------------------------
 def _hypo_vel(hypo, config):
-    hypo.vp = get_medium_property(
-        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'vp', config)
-    hypo.vs = get_medium_property(
-        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'vs', config)
-    hypo.rho = get_medium_property(
-        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, 'rho', config)
-    depth_string = medium_property_string(
+    medium_properties = MediumProperties(
+        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, config)
+    hypo.vp = medium_properties.get(mproperty='vp', where='source')
+    hypo.vs = medium_properties.get(mproperty='vs', where='source')
+    hypo.rho = medium_properties.get(mproperty='rho', where='source')
+    depth_string = medium_properties.to_string(
         'source depth', hypo.depth.value_in_km)
-    vp_string = medium_property_string('vp_source', hypo.vp)
-    vs_string = medium_property_string('vs_source', hypo.vs)
-    rho_string = medium_property_string('rho_source', hypo.rho)
+    vp_string = medium_properties.to_string('vp_source', hypo.vp)
+    vs_string = medium_properties.to_string('vs_source', hypo.vs)
+    rho_string = medium_properties.to_string('rho_source', hypo.rho)
     logger.info(f'{depth_string}, {vp_string}, {vs_string}, {rho_string}')
 
 

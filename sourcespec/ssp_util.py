@@ -54,34 +54,9 @@ def select_trace(stream, traceid, instrtype):
 
 
 # MEDIUM PROPERTIES -----------------------------------------------------------
-def _get_medium_property_from_config(medium_property, where, config):
+class MediumProperties():
     """
-    Get medium property from config.
-
-    :param medium_property: Property to be retrieved
-                     (``'vp'``, ``'vs'`` or ``'rho'``).
-    :type medium_property: str
-    :param where: Location type (``'source'`` or ``'stations'``).
-    :type where: str
-    :param config: Configuration object.
-    :type config: :class:`~sourcespec.config.Config`
-    :return: Property value.
-    :rtype: float
-    """
-    if medium_property not in ['vp', 'vs', 'rho']:
-        raise ValueError(f'Invalid property: {medium_property}')
-    if where not in ['source', 'stations']:
-        raise ValueError(f'Invalid location type: {where}')
-    value = config[f'{medium_property}_{where}']
-    # Use source property if stations property is not defined
-    if where == 'stations' and value is None:
-        value = config[f'{medium_property}_source']
-    return value
-
-
-def _get_vel_from_NLL(lon, lat, depth_in_km, wave, config):
-    """
-    Get velocity from NLL model.
+    Class to retrieve medium properties from config.
 
     :param lon: Longitude (degrees).
     :type lon: float
@@ -89,142 +64,189 @@ def _get_vel_from_NLL(lon, lat, depth_in_km, wave, config):
     :type lat: float
     :param depth_in_km: Depth (km).
     :type depth_in_km: float
-    :param wave: Wave type (``'P'`` or ``'S'``).
-    :type wave: str
     :param config: Configuration object.
     :type config: :class:`~sourcespec.config.Config`
-    :return: Velocity (km/s).
-    :rtype: float
     """
-    # Lazy-import here, since nllgrid is not an installation requirement
-    # pylint: disable=import-outside-toplevel
-    from nllgrid import NLLGrid
-    grdfile = f'*.{wave}.mod.hdr'
-    grdfile = os.path.join(config.NLL_model_dir, grdfile)
-    try:
-        grdfile = glob(grdfile)[0]
-    except IndexError as e:
-        raise FileNotFoundError(f'Unable to find model file {grdfile}') from e
-    grd = NLLGrid(grdfile)
-    x, y = grd.project(lon, lat)
-    value = grd.get_value(x, y, depth_in_km)
-    if grd.type == 'VELOCITY':
-        vel = value
-    elif grd.type == 'VELOCITY_METERS':
-        vel = value / 1e3
-    elif grd.type == 'SLOWNESS':
-        vel = 1. / value
-    elif grd.type == 'SLOW_LEN':
-        vel = grd.dx / value
-    elif grd.type == 'VEL2':
-        vel = value**0.5
-    elif grd.type == 'SLOW2':
-        vel = 1. / (value**0.5)
-    elif grd.type == 'SLOW2_METERS':
-        vel = (1. / (value**0.5)) / 1e3
-    else:
-        raise ValueError(f'Unsupported grid type: {grd.type}')
-    logger.info(f'Using {wave} velocity from NLL model')
-    return vel
 
+    def __init__(self, lon, lat, depth_in_km, config):
+        self.lon = lon
+        self.lat = lat
+        self.depth_in_km = depth_in_km
+        self.config = config
 
-def _get_medium_property_from_taup(depth_in_km, medium_property):
-    """
-    Get medium property (P- or S-wave velocity, density) at a given depth
-    from taup model.
+    def get_from_config_param_source(self, mproperty):
+        """
+        Get medium property at the source from config parameter.
 
-    :param depth_in_km: Depth (km).
-    :type depth_in_km: float
-    :param medium_property: Property to be retrieved
-                     (``'vp'``, ``'vs'`` or ``'rho'``).
-    :type medium_property: str
-    :return: Property value.
-    :rtype: float
-    """
-    # avoid negative depths
-    depth_in_km = max(depth_in_km, 1e-2)
-    try:
-        prop = {'vp': 'p', 'vs': 's', 'rho': 'r'}[medium_property]
-    except KeyError as e:
-        raise ValueError(f'Invalid property: {medium_property}') from e
-    value = v_model.evaluate_above(depth_in_km, prop)[0]
-    if medium_property == 'rho':
-        value *= 1e3  # convert g/cm**3 to kg/m**3
-    return value
-
-
-def get_medium_property(lon, lat, depth_in_km, medium_property, config):
-    """
-    Get medium property (P- or S-wave velocity, density) at a given point
-    from NLL grid, config or taup model.
-
-    :param lon: Longitude (degrees).
-    :type lon: float
-    :param lat: Latitude (degrees).
-    :type lat: float
-    :param depth_in_km: Depth (km).
-    :type depth_in_km: float
-    :param medium_property: Property to be retrieved
-                     (``'vp'``, ``'vs'`` or ``'rho'``).
-    :type medium_property: str
-    :param config: Configuration object.
-    :type config: :class:`~sourcespec.config.Config`
-    :return: Property value.
-    :rtype: float
-    """
-    if medium_property not in ['vp', 'vs', 'rho']:
-        raise ValueError(f'Invalid property: {medium_property}')
-    try:
-        depth_in_km = float(depth_in_km)
-    except Exception as e:
-        raise ValueError(f'Invalid depth: {depth_in_km}') from e
-    # If depth is large, we assume that we are close to the source
-    if depth_in_km >= 2:
-        value = _get_medium_property_from_config(
-            medium_property, 'source', config)
-    else:
-        value = _get_medium_property_from_config(
-            medium_property, 'stations', config)
-    if config.NLL_model_dir is not None and medium_property in ['vp', 'vs']:
-        wave = 'P' if medium_property == 'vp' else 'S'
+        :param mproperty: Property to be retrieved
+            (``'vp'``, ``'vs'`` or ``'rho'``).
+        :type mproperty: str
+        :return: Property value.
+        :rtype: float
+        """
+        if mproperty not in ['vp', 'vs', 'rho']:
+            raise ValueError(f'Invalid property: {mproperty}')
+        values = self.config[f'{mproperty}_source']
+        if values is None:
+            return None
+        if self.config.layer_top_depths is None:
+            return values[0]
+        values = np.array(values)
+        depths = np.array(self.config.layer_top_depths)
         try:
-            value = _get_vel_from_NLL(lon, lat, depth_in_km, wave, config)
-        except Exception as msg:
-            logger.warning(msg)
-            logger.warning(f'Using {wave} velocity from config')
-    if value is None:
-        value = _get_medium_property_from_taup(depth_in_km, medium_property)
-        logger.info(
-            f'Using {medium_property} from global model (iasp91)')
-    return value
+            # find the last value that is smaller than the source depth
+            value = values[depths <= self.depth_in_km][-1]
+        except IndexError:
+            value = values[0]
+        return value
 
+    def get_from_config_param_station(self, mproperty):
+        """
+        Get medium property at the station from config parameter.
 
-def medium_property_string(medium_property, value):
-    """
-    Return a string with the property name and value.
+        :param mproperty: Property to be retrieved
+            (``'vp'``, ``'vs'`` or ``'rho'``).
+        :type mproperty: str
+        :return: Property value.
+        :rtype: float
+        """
+        if mproperty not in ['vp', 'vs', 'rho']:
+            raise ValueError(f'Invalid property: {mproperty}')
+        value = self.config[f'{mproperty}_stations']
+        if value is None:
+            value = self.get_from_config_param_source(
+                mproperty)
+        return value
 
-    :param property: Property name. Must contain one of the following:
-                     ``'vp'``, ``'vs'``, ``'rho'``, ``'depth'``
-    :type property: str
-    :param value: Property value.
-    :type value: float
-    :return: Property string.
-    :rtype: str
-    """
-    if 'vp' in medium_property or 'vs' in medium_property:
-        value = round(value, 2)
-        unit = 'km/s'
-    elif 'rho' in medium_property:
-        value = round(value, 1)
-        unit = 'kg/m3'
-    elif 'depth' in medium_property:
-        value = round(value, 1)
-        unit = 'km'
-    else:
-        raise ValueError(f'Invalid property: {medium_property}')
-    if value.is_integer():
-        value = int(value)
-    return f'{medium_property}: {value} {unit}'
+    def get_vel_from_NLL(self, wave):
+        """
+        Get velocity from NLL model.
+
+        :param wave: Wave type (``'P'`` or ``'S'``).
+        :type wave: str
+        :return: Velocity (km/s).
+        :rtype: float
+        """
+        # Lazy-import here, since nllgrid is not an installation requirement
+        # pylint: disable=import-outside-toplevel
+        from nllgrid import NLLGrid
+        grdfile = f'*.{wave}.mod.hdr'
+        grdfile = os.path.join(self.config.NLL_model_dir, grdfile)
+        try:
+            grdfile = glob(grdfile)[0]
+        except IndexError as e:
+            raise FileNotFoundError(
+                f'Unable to find model file {grdfile}') from e
+        grd = NLLGrid(grdfile)
+        x, y = grd.project(self.lon, self.lat)
+        value = grd.get_value(x, y, self.depth_in_km)
+        if grd.type == 'VELOCITY':
+            vel = value
+        elif grd.type == 'VELOCITY_METERS':
+            vel = value / 1e3
+        elif grd.type == 'SLOWNESS':
+            vel = 1. / value
+        elif grd.type == 'SLOW_LEN':
+            vel = grd.dx / value
+        elif grd.type == 'VEL2':
+            vel = value**0.5
+        elif grd.type == 'SLOW2':
+            vel = 1. / (value**0.5)
+        elif grd.type == 'SLOW2_METERS':
+            vel = (1. / (value**0.5)) / 1e3
+        else:
+            raise ValueError(f'Unsupported grid type: {grd.type}')
+        logger.info(f'Using {wave} velocity from NLL model')
+        return vel
+
+    def get_from_taup(self, mproperty):
+        """
+        Get medium property (P- or S-wave velocity, density) at a given depth
+        from taup model.
+
+        :param mproperty: Property to be retrieved
+            (``'vp'``, ``'vs'`` or ``'rho'``).
+        :type mproperty: str
+        :return: Property value.
+        :rtype: float
+        """
+        # avoid negative depths
+        depth_in_km = max(self.depth_in_km, 1e-2)
+        try:
+            prop = {'vp': 'p', 'vs': 's', 'rho': 'r'}[mproperty]
+        except KeyError as e:
+            raise ValueError(f'Invalid property: {mproperty}') from e
+        value = v_model.evaluate_above(depth_in_km, prop)[0]
+        if mproperty == 'rho':
+            value *= 1e3  # convert g/cm**3 to kg/m**3
+        return value
+
+    def get(self, mproperty, where):
+        """
+        Get medium property (P- or S-wave velocity, density) at a given point
+        from NLL grid, config or taup model.
+
+        :param mproperty: Property to be retrieved
+            (``'vp'``, ``'vs'`` or ``'rho'``).
+        :type mproperty: str
+        :param where: Where to retrieve medium property
+            (``'source'`` or ``'stations'``).
+        :type where: str
+        :return: Property value.
+        :rtype: float
+        """
+        if mproperty not in ['vp', 'vs', 'rho']:
+            raise ValueError(f'Invalid property: {mproperty}')
+        if where == 'source':
+            value = self.get_from_config_param_source(
+                mproperty)
+        elif where == 'stations':
+            value = self.get_from_config_param_station(
+                mproperty)
+        else:
+            raise ValueError(f'Invalid location: {where}')
+        if (
+            self.config.NLL_model_dir is not None and
+            mproperty in ['vp', 'vs']
+        ):
+            wave = 'P' if mproperty == 'vp' else 'S'
+            try:
+                value = self.get_vel_from_NLL(wave)
+            except Exception as msg:
+                logger.warning(msg)
+                logger.warning(f'Using {wave} velocity from config')
+        if value is None:
+            value = self.get_from_taup(mproperty)
+            logger.info(
+                f'Using {mproperty} from global model (iasp91)')
+        return value
+
+    def to_string(self, mproperty, value):
+        """
+        Return a string with the property name and value.
+
+        :param mproperty: Property name. Must contain one of the following:
+                        ``'vp'``, ``'vs'``, ``'rho'``, ``'depth'``
+        :type mproperty: str
+        :param value: Property value.
+        :type value: float
+        :return: Property string.
+        :rtype: str
+        """
+        if 'vp' in mproperty or 'vs' in mproperty:
+            value = round(value, 2)
+            unit = 'km/s'
+        elif 'rho' in mproperty:
+            value = round(value, 1)
+            unit = 'kg/m3'
+        elif 'depth' in mproperty:
+            value = round(value, 1)
+            unit = 'km'
+        else:
+            raise ValueError(f'Invalid property: {mproperty}')
+        if value.is_integer():
+            value = int(value)
+        return f'{mproperty}: {value} {unit}'
 # -----------------------------------------------------------------------------
 
 
@@ -346,18 +368,25 @@ def geom_spread_teleseismic(
     :return: Geometrical spreading correction (in m)
     :rtype: float
     """
+    # Don't need to specify coordinates, since we use a spherically symmetric
+    # Earth; don't need to specify a config object, since we use the global
+    # model (iasp91)
+    medium_properties_source = MediumProperties(
+        0, 0, source_depth_in_km, None)
+    medium_properties_station = MediumProperties(
+        0, 0, station_depth_in_km, None)
     if phase == 'P':
-        v_source = _get_medium_property_from_taup(source_depth_in_km, 'vp')
-        v_station = _get_medium_property_from_taup(station_depth_in_km, 'vp')
+        v_source = medium_properties_source.get_from_taup('vp')
+        v_station = medium_properties_station.get_from_taup('vp')
         phase_list = ['p', 'P', 'pP', 'sP']
     elif phase == 'S':
-        v_source = _get_medium_property_from_taup(source_depth_in_km, 'vs')
-        v_station = _get_medium_property_from_taup(station_depth_in_km, 'vs')
+        v_source = medium_properties_source.get_from_taup('vs')
+        v_station = medium_properties_station.get_from_taup('vs')
         phase_list = ['s', 'S', 'sS', 'pS']
     else:
         raise ValueError(f'Invalid phase: {phase}')
-    rho_source = _get_medium_property_from_taup(source_depth_in_km, 'rho')
-    rho_station = _get_medium_property_from_taup(station_depth_in_km, 'rho')
+    rho_source = medium_properties_source.get_from_taup('rho')
+    rho_station = medium_properties_station.get_from_taup('rho')
     delta = np.deg2rad(angular_distance)
     arrival = model.get_travel_times(
         source_depth_in_km, angular_distance, phase_list)[0]

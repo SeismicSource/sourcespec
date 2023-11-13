@@ -24,8 +24,7 @@ from obspy.core import Stream
 from sourcespec import spectrum
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
-    smooth, cosine_taper, moment_to_mag,
-    get_medium_property, medium_property_string,
+    smooth, cosine_taper, moment_to_mag, MediumProperties,
     geom_spread_r_power_n, geom_spread_boatwright, geom_spread_teleseismic)
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
@@ -288,19 +287,22 @@ def _displacement_to_moment(stats, config):
     lon = stats.coords.longitude
     lat = stats.coords.latitude
     depth = -stats.coords.elevation
-    depth_string = medium_property_string('station depth', depth)
+    medium_properties = MediumProperties(lon, lat, depth, config)
+    depth_string = medium_properties.to_string('station depth', depth)
     v_name = f'v{phase.lower()}'
     v_source = config.event.hypocenter[v_name]
-    v_source_string = medium_property_string(f'{v_name}_source', v_source)
-    v_station = get_medium_property(lon, lat, depth, v_name, config)
+    v_source_string = medium_properties.to_string(f'{v_name}_source', v_source)
+    v_station = medium_properties.get(mproperty=v_name, where='stations')
     stats.v_station = v_station
     stats.v_station_type = phase
-    v_station_string = medium_property_string(f'{v_name}_station', v_station)
+    v_station_string = medium_properties.to_string(
+        f'{v_name}_station', v_station)
     rho_source = config.event.hypocenter.rho
-    rho_source_string = medium_property_string('rho_source', rho_source)
-    rho_station = get_medium_property(lon, lat, depth, 'rho', config)
+    rho_source_string = medium_properties.to_string('rho_source', rho_source)
+    rho_station = medium_properties.get(mproperty='rho', where='stations')
     stats.rho_station = rho_station
-    rho_station_string = medium_property_string('rho_station', rho_station)
+    rho_station_string = medium_properties.to_string(
+        'rho_station', rho_station)
     specid = '.'.join((
         stats.network, stats.station, stats.location, stats.channel))
     msg = (
