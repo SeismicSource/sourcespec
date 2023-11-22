@@ -85,6 +85,10 @@ def _get_event_from_qml(qml_file, event_id=None):
                 f'Event {event_id} not found in {qml_file}') from e
     else:
         qml_event = cat[0]
+        if len(cat) > 1:
+            logger.warning(
+                f'Found {len(cat)} events in {qml_file}. '
+                'Using the first one.')
     return qml_event
 
 
@@ -410,6 +414,10 @@ def _parse_source_spec_event_file(event_file, event_id=None):
                 f'Event {event_id} not found in {event_file}') from e
     else:
         event = events[0]
+        if len(events) > 1:
+            logger.warning(
+                f'Found {len(events)} events in {event_file}. '
+                'Using the first one.')
     try:
         ssp_event = SSPEvent(event)
     except Exception as e:
