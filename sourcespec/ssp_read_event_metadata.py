@@ -54,7 +54,6 @@ def parse_qml(config):
     log_messages = []
     with contextlib.suppress(Exception):
         _parse_moment_tensor_from_qml_event(qml_event, ssp_event)
-        log_messages.append('Found moment tensor in QuakeML file')
         # Compute focal mechanism, scalar moment and magnitude.
         # They will be overwritten later on, if they are found in the
         # QuakeML file.
@@ -63,16 +62,13 @@ def parse_qml(config):
         ssp_event.magnitude.from_scalar_moment(ssp_event.scalar_moment)
     with contextlib.suppress(Exception):
         _parse_scalar_moment_from_qml_event(qml_event, ssp_event)
-        log_messages.append('Found scalar moment in QuakeML file')
         # Compute magnitude from scalar moment. It will be overwritten later
         # on, if it is found in the QuakeML file.
         ssp_event.magnitude.from_scalar_moment(ssp_event.scalar_moment)
     with contextlib.suppress(Exception):
         _parse_magnitude_from_qml_event(qml_event, ssp_event)
-        log_messages.append('Found magnitude value in QuakeML file')
     with contextlib.suppress(Exception):
         _parse_focal_mechanism_from_qml_event(qml_event, ssp_event)
-        log_messages.append('Found focal mechanism in QuakeML file')
     for msg in log_messages:
         logger.info(msg)
     return ssp_event, picks
@@ -147,7 +143,7 @@ def _parse_qml_event(
 def _parse_magnitude_from_qml_event(qml_event, ssp_event):
     mag = qml_event.preferred_magnitude() or qml_event.magnitudes[0]
     ssp_event.magnitude.value = mag.mag
-    ssp_event.magnitude.type = mag.magnitude_type
+    ssp_event.magnitude.mag_type = mag.magnitude_type
 
 
 def _parse_scalar_moment_from_qml_event(qml_event, ssp_event):

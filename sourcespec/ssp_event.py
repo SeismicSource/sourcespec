@@ -57,8 +57,8 @@ class SSPCoordinate():
     def __str__(self):
         try:
             return f'{self.value_in_deg:.4f}°'
-        except TypeError:
-            return 'Incomplete coordinate data'
+        except TypeError as e:
+            raise TypeError('Incomplete coordinate data') from e
 
 
 class SSPDepth():
@@ -77,7 +77,7 @@ class SSPDepth():
         try:
             return f'{self.value:.1f} {self.units}'
         except TypeError:
-            return 'Incomplete depth data'
+            raise TypeError('Incomplete depth data') from e
 
     @property
     def value_in_m(self):
@@ -129,13 +129,13 @@ class SSPHypocenter():
     def __str__(self):
         try:
             return (
-                f'Longitude: {self.longitude:.4f}°, '
-                f'Latitude: {self.latitude:.4f}°, '
-                f'Depth: {self.depth.value:.1f} {self.depth.units}, '
+                f'Longitude: {self.longitude}, '
+                f'Latitude: {self.latitude}, '
+                f'Depth: {self.depth}, '
                 f'Origin time: {self.origin_time}'
             )
-        except TypeError:
-            return 'Incomplete hypocenter data'
+        except TypeError as e:
+            raise TypeError('Incomplete hypocenter data') from e
 
 
 class SSPMagnitude():
@@ -153,11 +153,12 @@ class SSPMagnitude():
 
     def __str__(self):
         try:
+            mag_type = self.mag_type or 'M'
             return (
-                f'Magnitude: {self.mag_type} {self.value:.1f}'
+                f'{mag_type} {self.value:.1f}'
             )
-        except TypeError:
-            return 'Incomplete magnitude data'
+        except TypeError as e:
+            raise TypeError('Incomplete magnitude data') from e
 
     def from_scalar_moment(self, scalar_moment):
         """
@@ -196,8 +197,8 @@ class SSPScalarMoment():
             return (
                 f'Scalar moment: {self.value:.1e} {self.units}'
             )
-        except TypeError:
-            return 'Incomplete scalar moment data'
+        except TypeError as e:
+            raise TypeError('Incomplete scalar moment data') from e
 
     def to_N_m(self):
         """Convert the scalar moment to N-m, if necessary."""
@@ -246,8 +247,8 @@ class SSPFocalMechanism():
                 f'Dip: {self.dip:.1f} {self.units}, '
                 f'Rake: {self.rake:.1f} {self.units}'
             )
-        except TypeError:
-            return 'Incomplete focal mechanism data'
+        except TypeError as e:
+            raise TypeError('Incomplete focal mechanism data') from e
 
     def from_moment_tensor(self, moment_tensor):
         """
@@ -294,8 +295,8 @@ class SSPMomentTensor():
                 f'm_rp: {self.m_rp:.1e}, '
                 f'm_tp: {self.m_tp:.1e}'
             )
-        except TypeError:
-            return 'Incomplete moment tensor data'
+        except TypeError as e:
+            raise TypeError('Incomplete moment tensor data') from e
 
     def to_N_m(self):
         """Convert the moment tensor to N-m, if necessary."""
@@ -336,15 +337,20 @@ class SSPEvent():
         return getattr(self, key)
 
     def __str__(self):
-        return (
-            f'Event ID: {self.event_id}\n'
-            f'Name: {self.name}\n'
-            f'Hypocenter:\n  {self.hypocenter}\n'
-            f'Magnitude:\n  {self.magnitude}\n'
-            f'Scalar moment:\n  {self.scalar_moment}\n'
-            f'Focal mechanism:\n  {self.focal_mechanism}\n'
-            f'Moment tensor:\n  {self.moment_tensor}'
-        )
+        outstr = ''
+        if self.event_id is not None:
+            outstr += f'\nEvent ID: {self.event_id}'
+        if self.name is not None:
+            outstr += f'\nName: {self.name}'
+        with contextlib.suppress(TypeError):
+            outstr += f'\nHypocenter:\n  {self.hypocenter}'
+        with contextlib.suppress(TypeError):
+            outstr += f'\nMagnitude: {self.magnitude}'
+        with contextlib.suppress(TypeError):
+            outstr += f'\nScalar moment:\n  {self.scalar_moment}'
+        with contextlib.suppress(TypeError):
+            outstr += f'\nFocal mechanism:\n  {self.focal_mechanism}'
+        return outstr.strip()
 
     def from_event_dict(self, event_dict):
         """

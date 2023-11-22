@@ -356,6 +356,12 @@ def _read_trace_files(config, inventory, ssp_event, picks):
 # -----------------------------------------------------------------------------
 
 
+def _log_event_info(ssp_event):
+    for line in str(ssp_event).splitlines():
+        logger.info(line)
+    logger.info('---------------------------------------------------')
+
+
 # Public interface:
 def read_traces(config):
     """Read traces, store waveforms and metadata."""
@@ -375,6 +381,8 @@ def read_traces(config):
     # parse QML file
     if config.options.qml_file is not None:
         ssp_event, picks = parse_qml(config)
+    if ssp_event is not None:
+        _log_event_info(ssp_event)
 
     # finally, read trace files
     logger.info('Reading traces...')
@@ -390,6 +398,7 @@ def read_traces(config):
     if ssp_event is None:
         try:
             ssp_event = st[0].stats.event
+            _log_event_info(ssp_event)
         except AttributeError:
             logger.error('No hypocenter information found.')
             sys.stderr.write(

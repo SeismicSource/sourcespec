@@ -44,6 +44,7 @@ previous versions. You will need to upgrade your old database manually or using
   of the output directory (not implemented for Windows)
 - New command line option (`-R` or `--run_id_subdir`) to use `run_id`
   (if defined) as a subdirectory of the event directory
+- Print event info to console and to log file
 - HTML report improvements:
   - Event name in the summary table, if available
   - Author, agency and run completion date in the summary table
