@@ -229,12 +229,13 @@ class SSPScalarMoment():
 class SSPFocalMechanism():
     """
     SourceSpec focal mechanism class.
+
+    Angles are in degrees.
     """
     def __init__(self, strike=None, dip=None, rake=None, units=None):
         self.strike = _float(strike)
         self.dip = _float(dip)
         self.rake = _float(rake)
-        self.units = units
 
     # make the class subscriptable
     def __getitem__(self, key):
@@ -243,9 +244,9 @@ class SSPFocalMechanism():
     def __str__(self):
         try:
             return (
-                f'Strike: {self.strike:.1f} {self.units}, '
-                f'Dip: {self.dip:.1f} {self.units}, '
-                f'Rake: {self.rake:.1f} {self.units}'
+                f'Strike: {self.strike:.1f}°, '
+                f'Dip: {self.dip:.1f}°, '
+                f'Rake: {self.rake:.1f}°'
             )
         except TypeError as e:
             raise TypeError('Incomplete focal mechanism data') from e
