@@ -195,7 +195,7 @@ class SSPScalarMoment():
     def __str__(self):
         try:
             return (
-                f'Scalar moment: {self.value:.1e} {self.units}'
+                f'{self.value:.1e} {self.units}'
             )
         except TypeError as e:
             raise TypeError('Incomplete scalar moment data') from e
@@ -348,7 +348,7 @@ class SSPEvent():
         with contextlib.suppress(TypeError):
             outstr += f'\nMagnitude: {self.magnitude}'
         with contextlib.suppress(TypeError):
-            outstr += f'\nScalar moment:\n  {self.scalar_moment}'
+            outstr += f'\nScalar moment: {self.scalar_moment}'
         with contextlib.suppress(TypeError):
             outstr += f'\nFocal mechanism:\n  {self.focal_mechanism}'
         return outstr.strip()
