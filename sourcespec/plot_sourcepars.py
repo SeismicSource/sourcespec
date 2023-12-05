@@ -192,13 +192,15 @@ class Params():
     """
     Class to handle the parameters from a sqlite file.
     """
-    def __init__(self, sqlite_file, runid, stat):
+    def __init__(self, args):
         """
         Initialize the class from a sqlite file.
         """
-        self.stat = stat
-        self.runid = runid
-        self._open_db(sqlite_file)
+        self.args = args
+        self.sqlite_file = args.sqlite_file
+        self.runid = runid = args.runid
+        self.stat = stat = args.statistics
+        self._open_db(self.sqlite_file)
         query_condition = f'where runid="{runid}"' if runid is not None else ''
         self.evids = query_event_params_into_numpy(
             self.cur, 'evid', str, query_condition)
@@ -344,10 +346,14 @@ class Params():
 
     def _make_mw_axis(self):
         """Make the magnitude axis."""
-        mag_min = np.min(self.mw - self.mw_err_minus)
-        mag_max = np.max(self.mw + self.mw_err_plus)
-        mag_min = np.floor(mag_min)
-        mag_max = np.ceil(mag_max)
+        if self.args.magmin is not None:
+            mag_min = self.args.magmin
+        else:
+            mag_min = np.floor(np.min(self.mw - self.mw_err_minus))
+        if self.args.magmax is not None:
+            mag_max = self.args.magmax
+        else:
+            mag_max = np.ceil(np.max(self.mw + self.mw_err_plus))
         xlim_mag = (mag_min, mag_max)
         fig = plt.figure(figsize=(10, 6))
         ax_Mo = fig.add_subplot(111)
@@ -687,8 +693,6 @@ class Params():
         ax_Mo.set_yscale('log')
 
         mu = np.nanmean((self.vs * 1e3)**2 * self.rho)
-        print(f'mu: {mu:.2e} Pa')
-        # self._stress_drop_curves_Er_mw(mu, ax)
         self._apparent_stress_curves_Er_mw(mu, ax)
 
         if hist:
@@ -809,7 +813,7 @@ class Params():
 def run():
     """Run the script."""
     args = parse_args()
-    params = Params(args.sqlite_file, args.runid, args.statistics)
+    params = Params(args)
 
     if os.path.exists('problems.txt'):
         _skip_events(params)
