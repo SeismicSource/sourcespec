@@ -151,6 +151,12 @@ def parse_args():
         '-D', '--ssdmax', type=float, default=None,
         help='Maximum static stress drop')
     parser.add_argument(
+        '-a', '--sigmaamin', type=float, default=None,
+        help='Minimum apparent stress drop')
+    parser.add_argument(
+        '-A', '--sigmaamax', type=float, default=None,
+        help='Maximum apparent stress drop')
+    parser.add_argument(
         '-H', '--hist', default=False, action='store_true',
         help='Draw an histogram instead of a scatter plot (only for 2D plots)')
     parser.add_argument(
@@ -327,7 +333,7 @@ class Params():
         self.Qo_err_plus = np.delete(self.Qo_err_plus, idx)
 
     def filter(self, stamin=None, stamax=None, magmin=None, magmax=None,
-               ssdmin=None, ssdmax=None):
+               ssdmin=None, ssdmax=None, sigmaamin=None, sigmaamax=None):
         """Filter the parameters based on one or more conditions."""
         cond = np.ones(len(self.nsta)).astype(bool)
         if stamin is not None:
@@ -342,6 +348,10 @@ class Params():
             cond = np.logical_and(cond, self.ssd >= ssdmin)
         if ssdmax is not None:
             cond = np.logical_and(cond, self.ssd <= ssdmax)
+        if sigmaamin is not None:
+            cond = np.logical_and(cond, self.sigma_a >= sigmaamin)
+        if sigmaamax is not None:
+            cond = np.logical_and(cond, self.sigma_a <= sigmaamax)
         self.skip_events(np.where(~cond)[0])
 
     def _make_mw_axis(self):
@@ -820,7 +830,8 @@ def run():
     params.filter(
         stamin=args.stamin, stamax=args.stamax,
         magmin=args.magmin, magmax=args.magmax,
-        ssdmin=args.ssdmin, ssdmax=args.ssdmax
+        ssdmin=args.ssdmin, ssdmax=args.ssdmax,
+        sigmaamin=args.sigmaamin, sigmaamax=args.sigmaamax,
     )
     if len(params.evids) == 0:
         raise ValueError('No events found')

@@ -111,6 +111,7 @@ previous versions. You will need to upgrade your old database manually or using
   - New command line option `--wave_type` to select the wave type (P, S, SV
     or SH) for plots involving the corner frequency
   - Possibility of plotting histogram of apparent stress
+  - Option to filter events by apparent stress
 
 ### Config file
 
