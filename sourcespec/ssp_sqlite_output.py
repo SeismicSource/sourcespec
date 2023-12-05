@@ -230,10 +230,13 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
     wave_type = config.wave_type
     means = sspec_output.mean_values()
     mean_errors = sspec_output.mean_uncertainties()
+    mean_nobs = sspec_output.mean_nobs()
     wmeans = sspec_output.weighted_mean_values()
     wmean_errors = sspec_output.weighted_mean_uncertainties()
+    wmean_nobs = sspec_output.weighted_mean_nobs()
     percentiles = sspec_output.percentiles_values()
     percentile_errors = sspec_output.percentiles_uncertainties()
+    percentile_nobs = sspec_output.percentiles_nobs()
     run_completed = f'{config.end_of_run} {config.end_of_run_tz}'
     ssp_version = get_versions()['version']
     ev_lon = event.hypocenter.longitude.value_in_deg
@@ -268,73 +271,103 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
         # Seismic moment
         means['Mo'],
         *mean_errors['Mo'],
+        mean_nobs['Mo'],
         wmeans['Mo'],
         *wmean_errors['Mo'],
+        wmean_nobs['Mo'],
         percentiles['Mo'],
         *percentile_errors['Mo'],
+        percentile_nobs['Mo'],
         # Moment magnitude
         means['Mw'],
         *mean_errors['Mw'],
+        mean_nobs['Mw'],
         wmeans['Mw'],
         *wmean_errors['Mw'],
+        wmean_nobs['Mw'],
         percentiles['Mw'],
         *percentile_errors['Mw'],
+        percentile_nobs['Mw'],
         # Corner frequency
         means['fc'],
         *mean_errors['fc'],
+        mean_nobs['fc'],
         wmeans['fc'],
         *wmean_errors['fc'],
+        wmean_nobs['fc'],
         percentiles['fc'],
         *percentile_errors['fc'],
+        percentile_nobs['fc'],
         # t-star
         means['t_star'],
         *mean_errors['t_star'],
+        mean_nobs['t_star'],
         wmeans['t_star'],
         *wmean_errors['t_star'],
+        wmean_nobs['t_star'],
         percentiles['t_star'],
         *percentile_errors['t_star'],
+        percentile_nobs['t_star'],
         # Qo
         means['Qo'],
         *mean_errors['Qo'],
+        mean_nobs['Qo'],
         wmeans['Qo'],
         *wmean_errors['Qo'],
+        wmean_nobs['Qo'],
         percentiles['Qo'],
         *percentile_errors['Qo'],
+        percentile_nobs['Qo'],
         # Source radius
         means['radius'],
         *mean_errors['radius'],
+        mean_nobs['radius'],
         wmeans['radius'],
         *wmean_errors['radius'],
+        wmean_nobs['radius'],
         percentiles['radius'],
         *percentile_errors['radius'],
+        percentile_nobs['radius'],
         # Static stress drop
         means['ssd'],
         *mean_errors['ssd'],
+        mean_nobs['ssd'],
         wmeans['ssd'],
         *wmean_errors['ssd'],
+        wmean_nobs['ssd'],
         percentiles['ssd'],
         *percentile_errors['ssd'],
+        percentile_nobs['ssd'],
         # Radiated energy
         means['Er'],
         *mean_errors['Er'],
+        mean_nobs['Er'],
         wmeans['Er'],
         *wmean_errors['Er'],
+        wmean_nobs['Er'],
         percentiles['Er'],
         *percentile_errors['Er'],
+        percentile_nobs['Er'],
         # Apparent stress
         means['sigma_a'],
         *mean_errors['sigma_a'],
+        mean_nobs['sigma_a'],
         wmeans['sigma_a'],
         *wmean_errors['sigma_a'],
+        wmean_nobs['sigma_a'],
         percentiles['sigma_a'],
         *percentile_errors['sigma_a'],
+        percentile_nobs['sigma_a'],
         # Local magnitude
         means.get('Ml', None),
         *mean_errors.get('Ml', (None, None)),
+        mean_nobs.get('Ml', None),
         wmeans.get('Ml', None),
         *wmean_errors.get('Ml', (None, None)),
+        wmean_nobs.get('Ml', None),
         percentiles.get('Ml', None),
         *percentile_errors.get('Ml', (None, None)),
+        percentile_nobs.get('Ml', None),
         # Run info
         run_completed,
         ssp_version,

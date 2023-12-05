@@ -124,11 +124,21 @@ def _version_1_to_2(cursor):
     #   - new keys:
     #     vp, vs, rho, wave_type,
     #     kp, ks,
+    #     Mo_mean_nobs, Mo_wmean_nobs, Mo_pctl_nobs,
+    #     Mw_mean_nobs, Mw_wmean_nobs, Mw_pctl_nobs,
+    #     fc_mean_nobs, fc_wmean_nobs, fc_pctl_nobs,
+    #     t_star_mean_nobs, t_star_wmean_nobs, t_star_pctl_nobs,
+    #     Qo_mean_nobs, Qo_wmean_nobs, Qo_pctl_nobs,
+    #     ra_mean_nobs, ra_wmean_nobs, ra_pctl_nobs,
+    #     ssd_mean_nobs, ssd_wmean_nobs, ssd_pctl_nobs,
     #     Er_wmean, Er_wmean_err_minus, Er_wmean_err_plus,
-    #     Ml_wmean, Ml_wmean_err_minus, Ml_wmean_err_plus,
+    #     Er_mean_nobs, Er_wmean_nobs, Er_pctl_nobs,
     #     sigma_a_mean, sigma_a_mean_err_minus, sigma_a_mean_err_plus,
     #     sigma_a_wmean, sigma_a_wmean_err_minus, sigma_a_wmean_err_plus,
     #     sigma_a_pctl, sigma_a_pctl_err_minus, sigma_a_pctl_err_plus
+    #     sigma_a_mean_nobs, sigma_a_wmean_nobs, sigma_a_pctl_nobs,
+    #     Ml_wmean, Ml_wmean_err_minus, Ml_wmean_err_plus,
+    #     Ml_mean_nobs, Ml_wmean_nobs, Ml_pctl_nobs,
     renamed_event_keys = {
         'bsd_mean': 'ssd_mean',
         'bsd_mean_err_minus': 'ssd_mean_err_minus',
@@ -154,11 +164,21 @@ def _version_1_to_2(cursor):
     new_event_keys = [
         'vp', 'vs', 'rho', 'wave_type',
         'kp', 'ks',
+        'Mo_mean_nobs', 'Mo_wmean_nobs', 'Mo_pctl_nobs',
+        'Mw_mean_nobs', 'Mw_wmean_nobs', 'Mw_pctl_nobs',
+        'fc_mean_nobs', 'fc_wmean_nobs', 'fc_pctl_nobs',
+        't_star_mean_nobs', 't_star_wmean_nobs', 't_star_pctl_nobs',
+        'Qo_mean_nobs', 'Qo_wmean_nobs', 'Qo_pctl_nobs',
+        'ra_mean_nobs', 'ra_wmean_nobs', 'ra_pctl_nobs',
+        'ssd_mean_nobs', 'ssd_wmean_nobs', 'ssd_pctl_nobs',
         'Er_wmean', 'Er_wmean_err_minus', 'Er_wmean_err_plus',
-        'Ml_wmean', 'Ml_wmean_err_minus', 'Ml_wmean_err_plus',
+        'Er_mean_nobs', 'Er_wmean_nobs', 'Er_pctl_nobs',
         'sigma_a_mean', 'sigma_a_mean_err_minus', 'sigma_a_mean_err_plus',
         'sigma_a_wmean', 'sigma_a_wmean_err_minus', 'sigma_a_wmean_err_plus',
-        'sigma_a_pctl', 'sigma_a_pctl_err_minus', 'sigma_a_pctl_err_plus'
+        'sigma_a_pctl', 'sigma_a_pctl_err_minus', 'sigma_a_pctl_err_plus',
+        'sigma_a_mean_nobs', 'sigma_a_wmean_nobs', 'sigma_a_pctl_nobs',
+        'Ml_wmean', 'Ml_wmean_err_minus', 'Ml_wmean_err_plus',
+        'Ml_mean_nobs', 'Ml_wmean_nobs', 'Ml_pctl_nobs',
     ]
     event_keys = ', '.join([
         key for key in EVENTS_TABLE if key not in new_event_keys])

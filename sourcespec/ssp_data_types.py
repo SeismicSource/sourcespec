@@ -426,6 +426,17 @@ class SourceSpecOutput(OrderedAttribDict):
             and 'mean' in par
         }
 
+    def mean_nobs(self):
+        """
+        Return a dictionary of number of observations used for computing mean.
+        """
+        return {
+            parname: par.mean.nobs
+            for parname, par in self.summary_spectral_parameters.items()
+            if isinstance(par, SummarySpectralParameter)
+            and 'mean' in par
+        }
+
     def weighted_mean_values(self):
         """Return a dictionary of weighted mean values."""
         return {
@@ -444,6 +455,18 @@ class SourceSpecOutput(OrderedAttribDict):
             and 'weighted_mean' in par
         }
 
+    def weighted_mean_nobs(self):
+        """
+        Return a dictionary of number of observations used for computing
+        weighted mean.
+        """
+        return {
+            parname: par.weighted_mean.nobs
+            for parname, par in self.summary_spectral_parameters.items()
+            if isinstance(par, SummarySpectralParameter)
+            and 'weighted_mean' in par
+        }
+
     def percentiles_values(self):
         """Return a dictionary of percentile values."""
         return {
@@ -457,6 +480,18 @@ class SourceSpecOutput(OrderedAttribDict):
         """Return a dictionary of percentile uncertainties."""
         return {
             parname: par.percentiles.compact_uncertainty()
+            for parname, par in self.summary_spectral_parameters.items()
+            if isinstance(par, SummarySpectralParameter)
+            and 'percentiles' in par
+        }
+
+    def percentiles_nobs(self):
+        """
+        Return a dictionary of number of observations used for computing
+        percentiles.
+        """
+        return {
+            parname: par.percentiles.nobs
             for parname, par in self.summary_spectral_parameters.items()
             if isinstance(par, SummarySpectralParameter)
             and 'percentiles' in par

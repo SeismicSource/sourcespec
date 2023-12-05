@@ -30,6 +30,8 @@ previous versions. You will need to upgrade your old database manually or using
     outlier (see [#38])
   - Make place in the `Stations` table for station-level errors on radiated
     energy (even if they are currently not computed)
+  - Store in the `Events` table the number of observations used for computing
+    each summary parameter
   - Store in the `Events` table weighted means for radiated energy and local
     magnitude, even if those means are currently the same as the simple means,
     since those parameters do not have station-level errors defined
