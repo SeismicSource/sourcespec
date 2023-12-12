@@ -10,6 +10,7 @@ SourceSpec event class and supporting classes.
     (http://www.cecill.info/licences.en.html)
 """
 import contextlib
+import warnings
 import numpy as np
 from obspy import UTCDateTime
 from obspy.imaging.scripts import mopad
@@ -42,7 +43,9 @@ class SSPCoordinate():
     Stores a longitude or latitude value.
     Currently only degrees are supported.
     """
-    def __init__(self, value=None, units=None):
+    def __init__(self, value=None, units=None, **kwargs):
+        for key in kwargs:
+            warnings.warn(f'Ignoring unknown coordinate field "{key}"')
         if units == 'deg':
             self.value_in_deg = _float(value)
         elif units is None:
@@ -65,7 +68,9 @@ class SSPDepth():
     """
     SourceSpec depth class.
     """
-    def __init__(self, value=None, units=None):
+    def __init__(self, value=None, units=None, **kwargs):
+        for key in kwargs:
+            warnings.warn(f'Ignoring unknown depth field "{key}"')
         self.value = _float(value)
         self.units = units
 
@@ -107,7 +112,9 @@ class SSPHypocenter():
     SourceSpec hypocenter class.
     """
     def __init__(self, longitude=None, latitude=None, depth=None,
-                 origin_time=None):
+                 origin_time=None, **kwargs):
+        for key in kwargs:
+            warnings.warn(f'Ignoring unknown hypocenter field "{key}"')
         longitude = {} if longitude is None else longitude
         if not hasattr(longitude, 'keys'):
             raise ValueError('longitude must be a dictionary-like object')
@@ -142,7 +149,9 @@ class SSPMagnitude():
     """
     SourceSpec magnitude class.
     """
-    def __init__(self, value=None, mag_type=None):
+    def __init__(self, value=None, mag_type=None, **kwargs):
+        for key in kwargs:
+            warnings.warn(f'Ignoring unknown magnitude field "{key}"')
         self.value = _float(value)
         self.mag_type = mag_type
         self.computed = False
@@ -183,7 +192,9 @@ class SSPScalarMoment():
     """
     SourceSpec scalar moment class.
     """
-    def __init__(self, value=None, units=None):
+    def __init__(self, value=None, units=None, **kwargs):
+        for key in kwargs:
+            warnings.warn(f'Ignoring unknown scalar moment field "{key}"')
         self.value = _float(value)
         self.units = units
         self.to_N_m()
@@ -232,10 +243,13 @@ class SSPFocalMechanism():
 
     Angles are in degrees.
     """
-    def __init__(self, strike=None, dip=None, rake=None, units=None):
+    def __init__(self, strike=None, dip=None, rake=None, units=None, **kwargs):
+        for key in kwargs:
+            warnings.warn(f'Ignoring unknown focal mechanism field "{key}"')
         self.strike = _float(strike)
         self.dip = _float(dip)
         self.rake = _float(rake)
+        self.units = units  # currently not used
 
     # make the class subscriptable
     def __getitem__(self, key):
@@ -271,7 +285,9 @@ class SSPMomentTensor():
     SourceSpec moment tensor class.
     """
     def __init__(self, units=None, m_rr=None, m_tt=None, m_pp=None, m_rt=None,
-                 m_rp=None, m_tp=None):
+                 m_rp=None, m_tp=None, **kwargs):
+        for key in kwargs:
+            warnings.warn(f'Ignoring unknown moment tensor field "{key}"')
         self.units = units
         self.m_rr = _float(m_rr)
         self.m_tt = _float(m_tt)

@@ -11,6 +11,7 @@ HYPOINVERSE format.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import warnings
 import contextlib
 import logging
 import re
@@ -419,7 +420,12 @@ def _parse_source_spec_event_file(event_file, event_id=None):
                 f'Found {len(events)} events in {event_file}. '
                 'Using the first one.')
     try:
-        ssp_event = SSPEvent(event)
+        with warnings.catch_warnings(record=True) as w:
+            ssp_event = SSPEvent(event)
+            if len(w) > 0:
+                logger.warning(f'Warnings while parsing {event_file}:')
+            for warning in w:
+                logger.warning(warning.message)
     except Exception as e:
         raise TypeError(
             'This is a valid YAML file, but the following error occurred: '
