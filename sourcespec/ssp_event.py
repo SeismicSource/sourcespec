@@ -20,7 +20,7 @@ def _float(value):
 
 
 def _time(value):
-    return None if value is None else UTCDateTime(value)
+    return None if value is None else UTCDateTime(str(value))
 
 
 def _km_to_m(value):
