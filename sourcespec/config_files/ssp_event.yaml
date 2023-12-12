@@ -39,7 +39,7 @@
   magnitude:
     value:
     # magnitude type is a free string, e.g. Mw, mb, Ms, etc.
-    type:
+    mag_type:
   # Optional scalar moment.
   # If a moment tensor is given, the scalar moment will be (re)computed
   # from it
