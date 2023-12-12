@@ -21,7 +21,12 @@ def _float(value):
 
 
 def _time(value):
-    return None if value is None else UTCDateTime(str(value))
+    if value is None:
+        return None
+    try:
+        return UTCDateTime(str(value))
+    except TypeError as e:
+        raise ValueError(f'Cannot parse time string: {value}') from e
 
 
 def _km_to_m(value):
