@@ -17,15 +17,17 @@ The following properties can be specified:
 
 *   ``hypocenter`` (**mandatory**): hypocentral location and origin time
 
-*   ``magnitude`` (*optional*): the event magnitude (used for constrained
-    inversion --**not yet implemented**).
+*   ``magnitude`` (*optional*): the event magnitude (used when
+    ``Mw_0_from_event_file`` in the
+    :ref:`configuration_file:Configuration File` is set to ``True``)
 
     .. note::
         If a scalar moment or a moment tensor is given, a Mw magnitude will be
         (re)computed from it.
 
-*   ``scalar moment`` (*optional*): event scalar moment (used for constrained
-    inversion --**not yet implemented**).
+*   ``scalar moment`` (*optional*): event scalar moment (used when
+    ``Mw_0_from_event_file`` in the
+    :ref:`configuration_file:Configuration File` is set to ``True``)
 
     .. note::
         If a moment tensor is given, the scalar moment will be (re)computed
@@ -40,10 +42,11 @@ The following properties can be specified:
         from it.
 
 *   ``moment_tensor`` (*optional*): event moment tensor (used for computing
-    focal planes and radiation pattern when the option ``rp_from_moment_tensor``
-    in the :ref:`configuration_file:Configuration File` is set to ``True``;
-    also used for computing magnitude for constrained inversion
-    --**not yet implemented**).
+    focal planes and radiation pattern when the option
+    ``rp_from_focal_mechanism`` in the
+    :ref:`configuration_file:Configuration File` is set to ``True``;
+    also used for computing moment magnitude, to be used when
+    ``Mw_0_from_event_file`` is set to ``True``)
 
 See the sample SourceSpec Event File below for more details on the
 format.
