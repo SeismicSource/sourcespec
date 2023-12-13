@@ -488,7 +488,7 @@ def spectral_inversion(config, spec_st, weight_st):
     if config.Mw_0_from_event_file and event.magnitude.value is not None:
         msg = (
             f'Setting Mw_0 to the value provided in the event file: '
-            f'{event.magnitude.type} '
+            f'{event.magnitude.mag_type} '
             f'{event.magnitude.value:.4f}')
         if event.magnitude.computed:
             msg += ' (computed from scalar moment)'
