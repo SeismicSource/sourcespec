@@ -23,8 +23,13 @@ def _float(value):
 def _time(value):
     if value is None:
         return None
+    # Convert pure numbers to strings.
+    # This should cover origin time values
+    # like 20160102042209.1 instead of 2016-01-02T04:22:09.1
+    if isinstance(value, (int, float)):
+        value = str(value)
     try:
-        return UTCDateTime(str(value))
+        return UTCDateTime(value)
     except TypeError as e:
         raise ValueError(f'Cannot parse time string: {value}') from e
 
