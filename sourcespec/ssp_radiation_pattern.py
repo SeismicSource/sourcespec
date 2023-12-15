@@ -118,7 +118,7 @@ def get_radiation_pattern_coefficient(stats, config):
         return RP_CACHE[key]
     try:
         takeoff_angle = stats.takeoff_angles[simple_wave_type.upper()]
-    except Exception:
+    except KeyError:
         msg = (
             f'{traceid}: Cannot find takeoff angle. '
             f'Using "rp{simple_wave_type}" value from config file'

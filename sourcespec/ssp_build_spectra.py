@@ -370,8 +370,10 @@ def _build_spectrum(config, trace):
     spec.stats.hypo_dist = trace.stats.hypo_dist
     spec.stats.epi_dist = trace.stats.epi_dist
     spec.stats.gcarc = trace.stats.gcarc
-    spec.stats.ignore = trace.stats.ignore
+    spec.stats.azimuth = trace.stats.azimuth
     spec.stats.travel_times = trace.stats.travel_times
+    spec.stats.takeoff_angles = trace.stats.takeoff_angles
+    spec.stats.ignore = trace.stats.ignore
     # Integrate in frequency domain, if no time-domain
     # integration has been performed
     if not config.time_domain_int:
