@@ -646,13 +646,13 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
     percentile_errors = sspec_output.percentiles_uncertainties()
 
     n_sigma = config.n_sigma
-    n_sigma = int(n_sigma) if n_sigma.is_integer() else n_sigma
+    n_sigma = int(n_sigma) if float(n_sigma).is_integer() else n_sigma
     n_sigma = f'{n_sigma} sigma'
     mid_pct, lower_pct, upper_pct =\
         config.mid_percentage, config.lower_percentage, config.upper_percentage
-    mid_pct = int(mid_pct) if mid_pct.is_integer() else mid_pct
-    lower_pct = int(lower_pct) if lower_pct.is_integer() else lower_pct
-    upper_pct = int(upper_pct) if upper_pct.is_integer() else upper_pct
+    mid_pct = int(mid_pct) if float(mid_pct).is_integer() else mid_pct
+    lower_pct = int(lower_pct) if float(lower_pct).is_integer() else lower_pct
+    upper_pct = int(upper_pct) if float(upper_pct).is_integer() else upper_pct
     percentages = f'{mid_pct}%, [{lower_pct}%, {upper_pct}%]'
     replacements.update({
         '{N_SIGMA}': n_sigma,

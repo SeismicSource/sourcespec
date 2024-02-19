@@ -241,7 +241,8 @@ def _check_epicentral_distance(config, trace):
     if config.epi_dist_ranges is None:
         return
     # transform integers to true integers, for better string representation
-    edr = [int(r) if r.is_integer() else r for r in config.epi_dist_ranges]
+    edr = [
+        int(r) if float(r).is_integer() else r for r in config.epi_dist_ranges]
     # if edr has an odd number of elements, add one last element
     if len(edr) % 2 == 1:
         edr.append(999999)
