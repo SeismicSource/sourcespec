@@ -91,7 +91,7 @@ class SSPDepth():
     def __str__(self):
         try:
             return f'{self.value:.1f} {self.units}'
-        except TypeError:
+        except TypeError as e:
             raise TypeError('Incomplete depth data') from e
 
     @property
