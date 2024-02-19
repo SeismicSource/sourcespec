@@ -244,7 +244,8 @@ class MediumProperties():
             unit = 'km'
         else:
             raise ValueError(f'Invalid property: {mproperty}')
-        if value.is_integer():
+        # we need to use float(value) to be sure that is_integer() is defined
+        if float(value).is_integer():
             value = int(value)
         return f'{mproperty}: {value} {unit}'
 # -----------------------------------------------------------------------------
