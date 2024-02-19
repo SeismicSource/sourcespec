@@ -12,7 +12,7 @@ Save Matplotlib figure. Optimize PNG format using PIL.
 import io
 import logging
 import warnings
-import PIL
+from PIL import Image
 # Reduce logging level for PIL to avoid DEBUG messages
 pil_logger = logging.getLogger('PIL')
 pil_logger.setLevel(logging.WARNING)
@@ -30,9 +30,10 @@ def savefig(fig, figfile, fmt, quantize_colors=True, **kwargs):
         buf = io.BytesIO()
         fig.savefig(buf, format='png', **kwargs)
         buf.seek(0)
-        img = PIL.Image.open(buf)
+        img = Image.open(buf)
         if quantize_colors:
-            img = img.convert('P', palette=PIL.Image.ADAPTIVE, colors=256)
+            # pylint: disable=maybe-no-member
+            img = img.convert('P', palette=Image.ADAPTIVE, colors=256)
         else:
             # just remove the alpha channel
             img = img.convert('RGB')
