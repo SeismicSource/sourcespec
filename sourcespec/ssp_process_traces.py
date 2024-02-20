@@ -293,17 +293,25 @@ def _define_signal_and_noise_windows(config, trace):
     t1 = s_arrival_time - s_pre_time
     t1 = max(trace.stats.starttime, t1)
     t2 = t1 + config.win_length
+    t2 = min(trace.stats.endtime, t2)
+    win_length_s = t2 - t1
     trace.stats.arrivals['S1'] = ('S1', t1)
     trace.stats.arrivals['S2'] = ('S2', t2)
     # Signal window for spectral analysis (P phase)
     t1 = p_arrival_time - config.signal_pre_time
     t1 = max(trace.stats.starttime, t1)
     t2 = t1 + min(config.win_length, s_minus_p + s_pre_time)
+    t2 = min(trace.stats.endtime, t2)
+    win_length_p = t2 - t1
     trace.stats.arrivals['P1'] = ('P1', t1)
     trace.stats.arrivals['P2'] = ('P2', t2)
     # Noise window for spectral analysis
+    if config.wave_type[0] == 'P':
+        win_length = win_length_p
+    elif config.wave_type[0] == 'S':
+        win_length = win_length_s
     t1 = max(trace.stats.starttime, p_arrival_time - config.noise_pre_time)
-    t2 = t1 + config.win_length
+    t2 = t1 + win_length
     if t2 >= p_arrival_time:
         logger.warning(f'{trace.id}: noise window ends after P-wave arrival')
         # Note: maybe we should also take into account signal_pre_time here
