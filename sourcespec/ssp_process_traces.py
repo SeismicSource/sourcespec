@@ -310,12 +310,12 @@ def _define_signal_and_noise_windows(config, trace):
         win_length = win_length_p
     elif config.wave_type[0] == 'S':
         win_length = win_length_s
-    t1 = max(trace.stats.starttime, p_arrival_time - config.noise_pre_time)
+    t1 = max(trace.stats.starttime,
+            p_arrival_time - config.noise_pre_time - config.signal_pre_time)
     t2 = t1 + win_length
-    if t2 >= p_arrival_time:
+    if t2 >= (p_arrival_time - config.signal_pre_time):
         logger.warning(f'{trace.id}: noise window ends after P-wave arrival')
-        # Note: maybe we should also take into account signal_pre_time here
-        t2 = p_arrival_time
+        t2 = p_arrival_time - config.signal_pre_time
         t1 = min(t1, t2)
     trace.stats.arrivals['N1'] = ('N1', t1)
     trace.stats.arrivals['N2'] = ('N2', t2)
