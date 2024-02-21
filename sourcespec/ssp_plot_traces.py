@@ -333,8 +333,8 @@ def _set_ylim(axes):
 
 def _trim_traces(config, st):
     for trace in st:
-        t1 = trace.stats.arrivals['P'][1] - config.noise_pre_time
-        t2 = trace.stats.arrivals['S'][1] + 3 * config.win_length
+        t1 = trace.stats.arrivals['N1'][1]
+        t2 = trace.stats.arrivals['S2'][1] + 2 * config.win_length
         trace.trim(starttime=t1, endtime=t2)
     # compute time offset for correctly aligning traces when plotting
     min_starttime = min(tr.stats.starttime for tr in st)
