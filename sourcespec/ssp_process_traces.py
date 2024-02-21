@@ -316,6 +316,8 @@ def _define_signal_and_noise_windows(config, trace):
         win_length = win_length_p
     elif config.wave_type[0] == 'S':
         win_length = win_length_s
+    if config.variable_win_length_factor:
+        logger.info(f'{trace.id}: window length {win_length:.3f} seconds')
     # use win_length if noise_pre_time is None
     noise_pre_time = config.noise_pre_time or win_length
     t1 = max(
