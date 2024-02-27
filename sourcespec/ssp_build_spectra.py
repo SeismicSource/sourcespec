@@ -561,12 +561,10 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
         spec.stats.spectral_snratio = None
         return
     if config.spectral_sn_freq_range is not None:
-        sn_fmin, sn_fmax = config.spectral_sn_freq_range
+        sn_fmin, sn_fmax = config.spectral_sn_freq_range[:2]
         valid_freqs_idx = np.where((sn_fmin <= freqs) * (freqs <= sn_fmax))
-        valid_freqs = freqs[valid_freqs_idx]
         valid_snratio = weight.snratio[valid_freqs_idx]
     else:
-        valid_freqs = freqs
         valid_snratio = weight.snratio
     if len(valid_snratio) == 0:
         spec.stats.spectral_snratio = np.nan
@@ -580,7 +578,7 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
     spec.stats.spectral_snratio = spectral_snratio
     # Save frequency range where SNR > 3 so it can be used for building weights
     # Note: not sure if we could use config.spectral_sn_min here instead of 3
-    snr_valid_freqs = valid_freqs[valid_snratio >= 3]
+    snr_valid_freqs = freqs[weight.snratio >= 3]
     try:
         spec.stats.spectral_snratio_fmin = snr_valid_freqs[0]
         spec.stats.spectral_snratio_fmax = snr_valid_freqs[-1]
