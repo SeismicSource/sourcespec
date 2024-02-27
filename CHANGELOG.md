@@ -85,6 +85,8 @@ previous versions. You will need to upgrade your old database manually or using
 
 - Possibility of choosing the "k" coefficient to compute source radius from
   corner frequency (Kaneko and Shearer, 2014)
+- Better control on the frequency range used for computing radiated energy
+  (see [#49])
 - Take into account for energy partition when computing radiated energy
   (Boatwright and Choy, 1986). This affects mostly the radiated energy
   computed from P waves
@@ -132,6 +134,7 @@ previous versions. You will need to upgrade your old database manually or using
   computing source radius from corner frequency
 - Config parameter `pi_bsd_min_max` renamed to `pi_ssd_min_max`
 - New option `inv_frequency` for the config parameter `weighting` (see [#37])
+- Config parameter `max_freq_Er` replaced by `Er_freq_range` (see [#49])
 - New parameters, `qml_event_description` and `qml_event_description_regex`,
   to obtain the event name from the QuakeML event "description" tag
 - New parameter `Mw_0_from_event_file` to use the magnitude (or scalar moment)
@@ -697,3 +700,4 @@ Initial Python port.
 [#40]: https://github.com/SeismicSource/sourcespec/issues/40
 [#43]: https://github.com/SeismicSource/sourcespec/issues/43
 [#44]: https://github.com/SeismicSource/sourcespec/issues/44
+[#49]: https://github.com/SeismicSource/sourcespec/issues/49
