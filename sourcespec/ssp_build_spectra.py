@@ -587,7 +587,7 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
     except IndexError:
         spec.stats.spectral_snratio_fmin = None
         spec.stats.spectral_snratio_fmax = None
-    logger.info(f'{spec_id}: spectral S/N: {spectral_snratio:.2f}')
+    logger.info(f'{spec_id}: average spectral S/N: {spectral_snratio:.2f}')
     ssnmin = config.spectral_sn_min or -np.inf
     if spectral_snratio < ssnmin:
         msg = (
