@@ -15,13 +15,14 @@ Compute radiated energy from spectral integration.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
+import contextlib
 import logging
 import numpy as np
 from sourcespec.ssp_data_types import SpectralParameter
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-def _spectral_integral(spec, t_star, fmax):
+def _spectral_integral(spec, t_star, fmin=None, fmax=None):
     """Compute spectral integral in eq. (3) from Lancieri et al. (2012)."""
     # Note: eq. (3) from Lancieri et al. (2012) is the same as
     # eq. (1) in Boatwright et al. (2002), but expressed in frequency,
@@ -39,7 +40,9 @@ def _spectral_integral(spec, t_star, fmax):
     data *= (2 * np.pi * freq)
     # Correct data for attenuation:
     data *= np.exp(np.pi * t_star * freq)
-    # Compute the energy integral, up to fmax:
+    # Compute the energy integral, between fmin and fmax
+    if fmin is not None:
+        data[freq < fmin] = 0.
     if fmax is not None:
         data[freq > fmax] = 0.
     # Returned value has units of (m^2)^2 * Hz = m^4/s
@@ -92,6 +95,34 @@ def _finite_bandwidth_correction(spec, fc, fmax):
     )
 
 
+def _get_frequency_range(config, spec):
+    """Get frequency range for spectral integration."""
+    fmin, fmax = config.Er_freq_range
+    if fmin == 'noise':
+        fmin = spec.stats.spectral_snratio_fmin
+    if fmax == 'noise':
+        fmax = spec.stats.spectral_snratio_fmax
+    # test if fmin and fmax are valid
+    # we need to suppress TypeError in case fmin or fmax is None
+    valid_range = True
+    with contextlib.suppress(TypeError):
+        valid_range = fmin < fmax
+    if not valid_range:
+        logger.warning(
+            f'{spec.id} {spec.stats.instrtype}: invalid frequency range for '
+            f'spectral integration: fmin={fmin:.1f} Hz, fmax={fmax:.1f} Hz. '
+            'Using the whole frequency range.')
+        fmin, fmax = None, None
+    if fmin is None:
+        fmin = spec.get_freq()[0]
+    if fmax is None:
+        fmax = spec.get_freq()[-1]
+    logger.info(
+        f'{spec.id} {spec.stats.instrtype}: frequency range for '
+        f'spectral integration: {fmin:.1f}-{fmax:.1f} Hz')
+    return fmin, fmax
+
+
 def radiated_energy_and_apparent_stress(
         config, spec_st, specnoise_st, sspec_output):
     """
@@ -108,7 +139,6 @@ def radiated_energy_and_apparent_stress(
         :class:`sourcespec.ssp_data_types.SourceSpecOutput`
     """
     logger.info('Computing radiated energy and apparent stress...')
-    fmax = config.max_freq_Er
     rho = config.event.hypocenter.rho
     vs_hypo = config.event.hypocenter.vs * 1e3
     mu = rho * vs_hypo**2
@@ -145,8 +175,9 @@ def radiated_energy_and_apparent_stress(
 
         # Compute signal and noise integrals and subtract noise from signal,
         # under the hypothesis that energy is additive and noise is stationary
-        signal_integral = _spectral_integral(spec, t_star, fmax)
-        noise_integral = _spectral_integral(specnoise, t_star, fmax)
+        fmin, fmax = _get_frequency_range(config, spec)
+        signal_integral = _spectral_integral(spec, t_star, fmin, fmax)
+        noise_integral = _spectral_integral(specnoise, t_star, fmin, fmax)
         rho = spec.stats.rho_station
         vel = spec.stats.v_station * 1e3
         coeff = _radiated_energy_coefficient(rho, vel)

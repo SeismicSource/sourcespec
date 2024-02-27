@@ -458,6 +458,11 @@ def _check_deprecated_config_options(config_obj):
             '> "max_epi_dist" config parameter has been removed and replaced '
             'by "epi_dist_ranges".\n'
         )
+    if 'max_freq_Er' in config_obj:
+        deprecation_msgs.append(
+            '> "max_freq_Er" config parameter has been removed and replaced '
+            'by "Er_freq_min_max".\n'
+        )
     if deprecation_msgs:
         sys.stderr.write(
             'Error: your config file contains deprecated parameters:\n\n')
@@ -604,7 +609,7 @@ def _fix_and_expand_path(path):
     return fixed_path
 
 
-def _float_list(input_list):
+def _float_list(input_list, max_length=None, accepted_values=None):
     """
     Convert an input list to a list of floats.
 
@@ -614,10 +619,17 @@ def _float_list(input_list):
     """
     if input_list is None:
         return None
+    if accepted_values is None:
+        accepted_values = []
+
+    def _parse_float(val):
+        val = None if val == 'None' else val
+        return val if val in accepted_values else float(val)
+
     try:
-        return [float(val) for val in input_list]
+        return [_parse_float(val) for val in input_list[:max_length]]
     except ValueError as e:
-        raise ValueError('Cannot parse all values as float') from e
+        raise ValueError('Cannot parse all values in list') from e
 
 
 def _none_lenght(input_list):
@@ -763,6 +775,16 @@ def configure(options, progname, config_overrides=None):
             'Error: "vp_source", "vs_source", "rho_source", and '
             '"layer_top_depths" must have the same length.'
         )
+
+    # Check the Er_freq_range parameter
+    if config.Er_freq_range is None:
+        config.Er_freq_range = [None, None]
+    try:
+        config.Er_freq_range = _float_list(
+            config.Er_freq_range, max_length=2,
+            accepted_values=[None, 'noise'])
+    except ValueError as msg:
+        sys.exit(f'Error parsing parameter "Er_freq_range": {msg}')
 
     # A list of warnings to be issued when logger is set up
     config.warnings = []
