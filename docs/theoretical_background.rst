@@ -416,16 +416,16 @@ Following :cite:t:`Boatwright2002` (equation 1) and :cite:t:`Lancieri2012`
 .. math::
 
    \tilde{\tilde{E}}_r^{p|s} = 8 \pi \mathcal{G}^2(r) C^2 \rho_r c_r
-            \int_{0}^{f_{max}} e^{2 \pi f t^*} [\dot{S}^{p|s}(f)]^2 df
+            \int_{f_{min}}^{f_{max}} e^{2 \pi f t^*} [\dot{S}^{p|s}(f)]^2 df
 
 where :math:`\mathcal{G}^2(r)` is the squared geometrical spreading coefficient
 (see above), :math:`C` is a constant discussed below, :math:`\rho_r` and
 :math:`c_r` are, respectively, the density and P- or S-wave velocity
-at the receiver (their product is the seismic impedance), :math:`f_{max}` is
-the maximum frequency used to compute the energy (see
-:ref:`configuration_file:Configuration File` for details on the ``max_freq_Er``
-parameter), and the exponential term in the integrand is the squared correction
-for anelastic attenuation.
+at the receiver (their product is the seismic impedance), :math:`f_{min}` and
+:math:`f_{max}` are the minimum and maximum frequency used to compute the
+energy (see :ref:`configuration_file:Configuration File` for details on the
+``Er_freq_range`` parameter), and the exponential term in the integrand is the
+squared correction for anelastic attenuation.
 The double tilde on top of :math:`\tilde{\tilde{E}}_r^{p|s}` means that the
 radiated energy needs to be further corrected for noise and finite bandwidth
 (see below).
@@ -463,11 +463,12 @@ since the noise is too large compared to the signal.
 
 Finite bandwidth correction
 +++++++++++++++++++++++++++
-Next step is to correct the radiated energy for the finite bandwidth
-of the observed spectrum. Following :cite:t:`Lancieri2012` (equation 4), and
-:cite:t:`DiBona1988`, the noise-corrected radiated energy is divided by
-the theoretical ratio :math:`R` between the estimated radiated energy and the
-true radiated energy, defined as:
+Next step is to correct the radiated energy for the missing energy above
+:math:`f_{max}`, not taken into account in the integral of the squared velocity
+amplitude spectrum (finite bandwidth correction).
+Following :cite:t:`Lancieri2012` (equation 4), and :cite:t:`DiBona1988`, the
+noise-corrected radiated energy is divided by the theoretical ratio :math:`R`
+between the estimated radiated energy and the true radiated energy, defined as:
 
 .. math::
 
