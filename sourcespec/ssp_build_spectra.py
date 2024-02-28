@@ -252,23 +252,27 @@ def _geometrical_spreading_coefficient(config, spec):
     Return the geometrical spreading coefficient for the given spectrum.
     """
     hypo_dist_in_km = spec.stats.hypo_dist
-    if hypo_dist_in_km <= config.geom_spread_min_teleseismic_distance:
-        # regional geometrical spreading
-        if config.geom_spread_model == 'r_power_n':
-            exponent = config.geom_spread_n_exponent
-            return geom_spread_r_power_n(hypo_dist_in_km, exponent)
-        if config.geom_spread_model == 'boatwright':
-            cutoff_dist_in_km = config.geom_spread_cutoff_distance
-            return geom_spread_boatwright(
-                hypo_dist_in_km, cutoff_dist_in_km, spec.get_freq())
-    else:
-        # teleseismic geometrical spreading
+    epi_dist_in_km = spec.stats.epi_dist
+    # set geometrical spreading distance to a very large value if it is None
+    geom_spread_min_dist = config.geom_spread_min_teleseismic_distance or 1e99
+    geom_spread_model =\
+        'teleseismic' if epi_dist_in_km >= geom_spread_min_dist\
+        else config.geom_spread_model
+    logger.info(f'{spec.id}: geometrical spreading model: {geom_spread_model}')
+    if geom_spread_model == 'teleseismic':
         angular_distance = spec.stats.gcarc
         source_depth_in_km = spec.stats.event.hypocenter.depth.value_in_km
         station_depth_in_km = -spec.stats.coords.elevation
         phase = config.wave_type[0]
         return geom_spread_teleseismic(
             angular_distance, source_depth_in_km, station_depth_in_km, phase)
+    if config.geom_spread_model == 'r_power_n':
+        exponent = config.geom_spread_n_exponent
+        return geom_spread_r_power_n(hypo_dist_in_km, exponent)
+    if config.geom_spread_model == 'boatwright':
+        cutoff_dist_in_km = config.geom_spread_cutoff_distance
+        return geom_spread_boatwright(
+            hypo_dist_in_km, cutoff_dist_in_km, spec.get_freq())
     raise ValueError(
         f'Unknown geometrical spreading model: {config.geom_spread_model}')
 
