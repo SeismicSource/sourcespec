@@ -87,6 +87,8 @@ previous versions. You will need to upgrade your old database manually or using
   corner frequency (Kaneko and Shearer, 2014)
 - Better control on the frequency range used for computing radiated energy
   (see [#49])
+- Use station-specific radiation pattern (when available) for computing
+  radiated energy
 - Take into account for energy partition when computing radiated energy
   (Boatwright and Choy, 1986). This affects mostly the radiated energy
   computed from P waves

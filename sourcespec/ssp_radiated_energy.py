@@ -33,7 +33,7 @@ def _spectral_integral(spec, t_star, fmin=None, fmax=None):
     # Fourier transform of the ground displacement (m * s) multiplied by the
     # units of the geometrical spreading correction (m).
     # The result is threfore in units of m^2*s
-    data = spec.data / spec.coeff
+    data = spec.data / spec.stats.coeff
     # Then a derivative with respect to time is performed (to go from
     # displacement to velocity) through multiplication by 2*pi*freq.
     # The result is in units of m^2.
@@ -49,7 +49,7 @@ def _spectral_integral(spec, t_star, fmin=None, fmax=None):
     return np.sum(data**2) * deltaf
 
 
-def _radiated_energy_coefficient(rho, vel):
+def _radiated_energy_coefficient(rho, vel, rp, average_rp):
     """
     Compute coefficient in eq. (3) from Lancieri et al. (2012).
 
@@ -64,15 +64,19 @@ def _radiated_energy_coefficient(rho, vel):
     From Boatwright et al. (2002), eq. (2), C = <Fs>/(Fs * S),
     where <Fs> is the average radiation pattern in the focal sphere
     and Fs is the radiation pattern for the given angle between source
-    and receiver. Here we put <Fs>/Fs = 1, meaning that we rely on the
-    averaging between measurements at different stations, instead of
-    precise measurements at a single station.
+    and receiver.
+
+    When not using a station specific radiation pattern, then Fs=<Fs> and
+    <Fs>/Fs = 1, meaning that we rely on the averaging between measurements at
+    different stations, instead of precise measurements at a single station.
 
     S is the free-surface amplification factor, which we put = 2
 
     The output coefficient has units of kg/m^3 * m/s = kg/(m^2 * s)
     """
-    return 8 * np.pi * (1. / 2.)**2 * rho * vel
+    free_surf_ampl = 2
+    c_coeff = average_rp / (rp * free_surf_ampl)
+    return 8 * np.pi * c_coeff**2 * rho * vel
 
 
 def _finite_bandwidth_correction(spec, fc, fmax):
@@ -145,6 +149,9 @@ def radiated_energy_and_apparent_stress(
     logger.info(
         'Rigidity value close to the source (mu_h) for apparent stress: '
         f'{mu:.3e} Pa')
+    wave_type = config.wave_type  # P, S, SV, SH
+    simple_wave_type = wave_type[0].lower()  # p or s
+    average_rp = config[f'rp{simple_wave_type}']
     # Select specids with channel code: '??H'
     spec_ids = [spec.id for spec in spec_st if spec.id[-1] == 'H']
     for spec_id in spec_ids:
@@ -180,10 +187,11 @@ def radiated_energy_and_apparent_stress(
         noise_integral = _spectral_integral(specnoise, t_star, fmin, fmax)
         rho = spec.stats.rho_station
         vel = spec.stats.v_station * 1e3
-        coeff = _radiated_energy_coefficient(rho, vel)
+        coeff = _radiated_energy_coefficient(
+            rho, vel, average_rp, spec.stats.radiation_pattern)
         # Total radiated energy is the sum of Er_p and Er_s, and Er_s/Er_p=15.6
         # (Boatwright & Choy, 1986, eq. 8 & 15)
-        if config.wave_type == 'P':
+        if wave_type == 'P':
             coeff *= (1 + 15.6)
         else:
             coeff *= (1 + 1. / 15.6)

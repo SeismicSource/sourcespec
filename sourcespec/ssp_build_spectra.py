@@ -323,8 +323,7 @@ def _displacement_to_moment(stats, config):
     v_station *= 1000.
     v3 = v_source**(5. / 2) * v_station**(1. / 2)
     rho = rho_source**0.5 * rho_station**0.5
-    rp = get_radiation_pattern_coefficient(stats, config)
-    return 4 * math.pi * v3 * rho / (2 * rp)
+    return 4 * math.pi * v3 * rho / (2 * stats.radiation_pattern)
 
 
 def _smooth_spectrum(spec, smooth_width_decades=0.2):
@@ -389,12 +388,15 @@ def _build_spectrum(config, trace):
             f'skipping spectrum\n{str(e)}'
         ) from e
     spec.data *= geom_spread
+    # store the radiation pattern coefficient in the spectrum stats
+    spec.stats.radiation_pattern =\
+        get_radiation_pattern_coefficient(spec.stats, config)
     # convert to seismic moment
     coeff = _displacement_to_moment(spec.stats, config)
     spec.data *= coeff
     # store coeff to correct back data in displacement units
     # for radiated_energy()
-    spec.coeff = coeff
+    spec.stats.coeff = coeff
     # smooth
     _smooth_spectrum(spec, config.spectral_smooth_width_decades)
     return spec
