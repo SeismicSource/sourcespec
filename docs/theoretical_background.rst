@@ -72,7 +72,7 @@ propagation term (geometric and anelastic attenuation of body waves):
    S^{p|s}(f) =
           \frac{1}{\mathcal{G}(r)}
           \times
-          \frac{2 R_{\Theta\Phi}}
+          \frac{F R_{\Theta\Phi}}
                {4 \pi \rho_h^{1/2} \rho_r^{1/2} c_h^{5/2} c_r^{1/2}}
           \times
           M_O
@@ -85,7 +85,8 @@ where:
 
 - :math:`\mathcal{G}(r)` is the geometrical spreading coefficient (see below)
   and :math:`r` is the hypocentral distance;
-- the coefficient :math:`2` is the free surface amplification factor;
+- :math:`F` is the free surface amplification factor (generally assumed to be
+  :math:`2`);
 - :math:`R_{\Theta\Phi}` is the radiation pattern coefficient for P- or S-waves
   (average or computed from focal mechanism, if available);
 - :math:`\rho_h` and :math:`\rho_r` are the medium densities at the hypocenter
@@ -440,9 +441,10 @@ where :math:`\left<R_{\Theta\Phi}\right>` is the root mean square P- or S-wave
 radiation pattern computed on the focal sphere, :math:`R_{\Theta\Phi}` is the
 radiation pattern coefficient for the given station, and :math:`F` is the
 free surface amplification factor.
-Here we assume :math:`F = 2` and :math:`\left<R_{\Theta\Phi}\right> = 1`
-(hence, :math:`C = 1/2`).
-The latter assumption means that we rely on the averaging between measurements
+If a focal mechanism is not available, then it is assumed
+:math:`R_{\Theta\Phi} = \left<R_{\Theta\Phi}\right>` and, hence,
+:math:`C = 1/F`.
+This assumption means that we rely on the averaging between measurements
 of radiated energy at different stations, instead of precise measurements at a
 single station.
 
