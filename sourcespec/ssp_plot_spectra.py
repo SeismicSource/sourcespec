@@ -191,8 +191,8 @@ def _make_fig(config, plot_params):
     plot_params.plotn = 0
 
 
-# Keep track of saved figure numbers to avoid saving the same figure twice
-SAVED_FIGURE_NUMBERS = []
+# Keep track of saved figure codes to avoid saving the same figure twice
+SAVED_FIGURE_CODES = []
 # Bounding box for saving figures
 BBOX = None
 
@@ -223,7 +223,8 @@ def _savefig(config, plottype, figures, force_numbering=False):
     else:
         figfiles = [f'{figfile_base}{n:02d}.{fmt}' for n in range(nfigures)]
     for n in range(nfigures):
-        if n in SAVED_FIGURE_NUMBERS:
+        figcode = f'{plottype}_{n}'
+        if figcode in SAVED_FIGURE_CODES:
             continue
         if fmt == 'pdf_multipage':
             pdf.savefig(figures[n], bbox_inches=BBOX)
@@ -233,7 +234,7 @@ def _savefig(config, plottype, figures, force_numbering=False):
             plt.close(figures[n])
             # dereference the figure to free up memory
             figures[n] = None
-        SAVED_FIGURE_NUMBERS.append(n)
+        SAVED_FIGURE_CODES.append(figcode)
         config.figures[f'spectra_{plottype}'].append(figfiles[n])
         logger.info(f'{message} plots saved to: {figfiles[n]}')
     if fmt == 'pdf_multipage':
