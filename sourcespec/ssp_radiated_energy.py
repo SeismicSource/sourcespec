@@ -49,11 +49,33 @@ def _spectral_integral(spec, t_star, fmin=None, fmax=None):
     return np.sum(data**2) * deltaf
 
 
-def _radiated_energy_coefficient(rho, vel, rp, average_rp):
+def _radiated_energy_coefficient(rho, vel, free_surf_ampl, rp, average_rp):
     """
     Compute coefficient in eq. (3) from Lancieri et al. (2012).
 
-    Note: eq. (3) from Lancieri et al. (2012) is the same as
+    Parameters
+    ----------
+    rho : float
+        Density at the receiver (kg/m^3)
+    vel : float
+        Velocity at the receiver (m/s)
+    free_surf_ampl : float
+        Free-surface amplification factor
+    rp : float
+        Station-specific radiation pattern
+    average_rp : float
+        Average radiation pattern
+
+    Returns
+    -------
+    float
+        Coefficient in eq. (3) from Lancieri et al. (2012) in units of
+        kg/(m^2 * s)
+
+    Notes
+    -----
+
+    Eq. (3) from Lancieri et al. (2012) is the same as
     eq. (1) in Boatwright et al. (2002), but expressed in frequency,
     instead of angular frequency (2pi factor).
     In the original eq. (3) from Lancieri et al. (2012), eq. (3),
@@ -70,11 +92,15 @@ def _radiated_energy_coefficient(rho, vel, rp, average_rp):
     <Fs>/Fs = 1, meaning that we rely on the averaging between measurements at
     different stations, instead of precise measurements at a single station.
 
-    S is the free-surface amplification factor, which we put = 2
+    S is the free-surface amplification factor, provided as a function
+    parameter.
 
     The output coefficient has units of kg/m^3 * m/s = kg/(m^2 * s)
     """
-    free_surf_ampl = 2
+    if average_rp != rp:
+        logger.info(
+            f'Using station specific radiation pattern for computing Er: '
+            f'{rp:.2f} (average: {average_rp:.2f})')
     c_coeff = average_rp / (rp * free_surf_ampl)
     return 8 * np.pi * c_coeff**2 * rho * vel
 
@@ -188,7 +214,8 @@ def radiated_energy_and_apparent_stress(
         rho = spec.stats.rho_station
         vel = spec.stats.v_station * 1e3
         coeff = _radiated_energy_coefficient(
-            rho, vel, average_rp, spec.stats.radiation_pattern)
+            rho, vel, config.free_surface_amplification,
+            spec.stats.radiation_pattern, average_rp)
         # Total radiated energy is the sum of Er_p and Er_s, and Er_s/Er_p=15.6
         # (Boatwright & Choy, 1986, eq. 8 & 15)
         if wave_type == 'P':

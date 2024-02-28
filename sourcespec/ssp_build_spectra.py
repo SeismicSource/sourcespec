@@ -323,7 +323,8 @@ def _displacement_to_moment(stats, config):
     v_station *= 1000.
     v3 = v_source**(5. / 2) * v_station**(1. / 2)
     rho = rho_source**0.5 * rho_station**0.5
-    return 4 * math.pi * v3 * rho / (2 * stats.radiation_pattern)
+    fsa = config.free_surface_amplification
+    return 4 * math.pi * v3 * rho / (fsa * stats.radiation_pattern)
 
 
 def _smooth_spectrum(spec, smooth_width_decades=0.2):

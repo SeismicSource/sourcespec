@@ -58,6 +58,8 @@ previous versions. You will need to upgrade your old database manually or using
 
 - Use all the available components to compute P-wave spectra (previously,
   only the vertical component was used)
+- Possibility of specifying a free surface amplification factor different
+  from 2
 - Possibility of specifying a layered velocity and density model for the
   source
 - Possibility of specifying a different density for the source and for the
@@ -122,6 +124,8 @@ previous versions. You will need to upgrade your old database manually or using
 - New config parameter `epi_dist_ranges` to select stations within one or
   more ranges of epicentral distances. It replaces the old parameter
   `max_epi_dist`.
+- New config parameter `free_surface_amplification` to specify the free surface
+  amplification factor (default: 2)
 - New config parameter `layer_top_depths` to specify the depth of the top of
   the layers in a layered velocity and density model
 - The config parameters `vp_source`, `vs_source` and `rho_source` can now be
