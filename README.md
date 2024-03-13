@@ -446,6 +446,13 @@ You can also cite the following abstract presented at the
   Events", pp. 364–383, [doi: 10.1007/978-1-4419-7695-6_22]. Available on
   [ResearchGate][Madariaga2011].
 
+## Citing literature
+
+A, probably incomplete, list of papers that used SourceSpec can be found in
+the [Citing Literature][citing_literature] section of the documentation.
+If you have used SourceSpec in a publication and would like to have it listed,
+please let me know.
+
 <!-- Badges and project links -->
 [PyPI-badge]: http://img.shields.io/pypi/v/sourcespec.svg
 [PyPI-link]: https://pypi.python.org/pypi/sourcespec
@@ -461,6 +468,7 @@ You can also cite the following abstract presented at the
 [Discussions]: https://github.com/SeismicSource/sourcespec/discussions
 [Issues]: https://github.com/SeismicSource/sourcespec/issues
 [Anaconda]: https://www.anaconda.com/products/individual
+[citing_literature]: https://sourcespec.readthedocs.io/en/latest/citing_literature.html
 
 <!-- File formats -->
 [obspy_trace_formats]: https://docs.obspy.org/packages/autogen/obspy.core.stream.read.html

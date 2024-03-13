@@ -63,6 +63,7 @@ Contents:
    api
    changelog
    bibliography
+   citing_literature
 
 
 Indices and tables
