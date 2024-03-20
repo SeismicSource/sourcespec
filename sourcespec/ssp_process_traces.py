@@ -318,11 +318,13 @@ def _define_signal_and_noise_windows(config, trace):
         win_length = win_length_s
     if config.variable_win_length_factor:
         logger.info(f'{trace.id}: window length {win_length:.3f} seconds')
-    # use win_length if noise_pre_time is None
-    noise_pre_time = config.noise_pre_time or win_length
+    if config.noise_pre_time is None:
+        noise_pre_time = win_length + config.signal_pre_time
+    else:
+        noise_pre_time = config.noise_pre_time
     t1 = max(
         trace.stats.starttime,
-        p_arrival_time - noise_pre_time - config.signal_pre_time
+        p_arrival_time - noise_pre_time
     )
     t2 = t1 + win_length
     if t2 > (p_arrival_time - config.signal_pre_time):
