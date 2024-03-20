@@ -539,9 +539,10 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
         sep = ' '
     params_text = (
         f'{Mo_text} {Mw_text}\n'
-        f'{fc_text}{sep}{t_star_text}\n'
-        f'{Er_text}'
+        f'{fc_text}{sep}{t_star_text}'
     )
+    if Er_text:
+        params_text += f'\n{Er_text}'
     ax.text(
         0.05, params_text_ypos, params_text,
         horizontalalignment='left',
