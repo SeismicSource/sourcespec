@@ -7,7 +7,7 @@ Spectral station correction calculated from ssp_residuals.
     2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Agnes Chounet <chounet@ipgp.fr>
 
-    2015-2023 Claudio Satriano <satriano@ipgp.fr>
+    2015-2024 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
@@ -42,7 +42,7 @@ def station_correction(spec_st, config):
             corr = residual.select(id=spec.id)[0]
         except IndexError:
             continue
-        freq = spec.get_freq()
+        freq = spec.freq
         fmin = freq.min()
         fmax = freq.max()
         corr = corr.slice(fmin, fmax)
