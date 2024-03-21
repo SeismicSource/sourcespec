@@ -10,7 +10,7 @@ Spectral inversion routines for sourcespec.
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnes Chounet <chounet@ipgp.fr>
 
-    2015-2023 Claudio Satriano <satriano@ipgp.fr>
+    2015-2024 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
@@ -19,8 +19,8 @@ import logging
 import numpy as np
 from scipy.optimize import curve_fit, minimize, basinhopping
 from scipy.signal import argrelmax
-from obspy import Stream
 from obspy.geodetics import gps2dist_azimuth
+from sourcespec.spectrum import SpectrumStream
 from sourcespec.ssp_spectral_model import (
     spectral_model, objective_func, callback)
 from sourcespec.ssp_util import (
@@ -397,12 +397,11 @@ def _synth_spec(config, spec, station_pars):
         x.param_id: x.compact_uncertainty()
         for x in station_pars.get_spectral_parameters().values()
     }
-    spec_st = Stream()
     params_opt = [par[key] for key in ('Mw', 'fc', 't_star')]
-
     chan_no_orientation = spec.stats.channel[:-1]
+    spec_st = SpectrumStream()
 
-    freq = spec.get_freq()
+    freq = spec.freq
     freq_logspaced = spec.freq_logspaced
     spec_synth = spec.copy()
     spec_synth.stats.channel = f'{chan_no_orientation}S'

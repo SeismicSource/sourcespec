@@ -10,7 +10,7 @@ Build spectral objects.
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnes Chounet <chounet@ipgp.fr>
 
-    2015-2023 Claudio Satriano <satriano@ipgp.fr>
+    2015-2024 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
@@ -21,7 +21,7 @@ import numpy as np
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 from obspy.core import Stream
-from sourcespec import spectrum
+from sourcespec.spectrum import Spectrum, SpectrumStream
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
     smooth, cosine_taper, moment_to_mag, MediumProperties,
@@ -70,7 +70,7 @@ def _time_integrate(config, trace):
 def _frequency_integrate(config, spec):
     nint = _get_nint(config, spec)
     for _ in range(nint):
-        spec.data /= (2 * math.pi * spec.get_freq())
+        spec.data /= (2 * math.pi * spec.freq)
 
 
 def _cut_spectrum(config, spec):
@@ -101,7 +101,7 @@ def _compute_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
     if vertical_channel_codes is None:
         vertical_channel_codes = ['Z']
     spec_h = None
-    for spec in spec_st.traces:
+    for spec in spec_st:
         # this avoids taking a component from co-located station:
         # ('code' is band+instrument code)
         channel = spec.stats.channel
@@ -272,7 +272,7 @@ def _geometrical_spreading_coefficient(config, spec):
     if config.geom_spread_model == 'boatwright':
         cutoff_dist_in_km = config.geom_spread_cutoff_distance
         return geom_spread_boatwright(
-            hypo_dist_in_km, cutoff_dist_in_km, spec.get_freq())
+            hypo_dist_in_km, cutoff_dist_in_km, spec.freq)
     raise ValueError(
         f'Unknown geometrical spreading model: {config.geom_spread_model}')
 
@@ -334,7 +334,7 @@ def _displacement_to_moment(stats, config):
 def _smooth_spectrum(spec, smooth_width_decades=0.2):
     """Smooth spectrum in a log10-freq space."""
     # 1. Generate log10-spaced frequencies
-    freq = spec.get_freq()
+    freq = spec.freq
     _log_freq = np.log10(freq)
     # frequencies in logarithmic spacing
     log_df = _log_freq[-1] - _log_freq[-2]
@@ -367,7 +367,7 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
 
 
 def _build_spectrum(config, trace):
-    spec = spectrum.do_spectrum(trace)
+    spec = Spectrum(obspy_trace=trace)
     spec.stats.instrtype = trace.stats.instrtype
     spec.stats.coords = trace.stats.coords
     spec.stats.event = trace.stats.event
@@ -417,7 +417,7 @@ def _build_uniform_weight(spec):
 
 def _build_weight_from_frequency(config, spec):
     weight = spec.copy()
-    freq = weight.get_freq()
+    freq = weight.freq
     weight.data = np.ones_like(weight.data)
     weight.data[freq <= config.f_weight] = config.weight
     weight.data /= np.max(weight.data)
@@ -437,7 +437,7 @@ def _build_weight_from_inv_frequency(spec, power=0.25):
     # Note: weight.data is used for plotting,
     #       weight.data_logspaced for actual weighting
     weight = spec.copy()
-    freq = weight.get_freq()
+    freq = weight.freq
     weight.data *= 0
     # Limit non-zero weights to fmin/fmax from spectral_snratio if available
     snr_fmin = getattr(spec.stats, 'spectral_snratio_fmin', None)
@@ -493,7 +493,7 @@ def _build_weight_from_noise(config, spec, specnoise):
         weight = _build_weight_from_ratio(
             spec, specnoise, config.spectral_smooth_width_decades)
     # interpolate to log-frequencies
-    f = interp1d(weight.get_freq(), weight.data, fill_value='extrapolate')
+    f = interp1d(weight.freq, weight.data, fill_value='extrapolate')
     weight.data_logspaced = f(weight.freq_logspaced)
     weight.data_logspaced /= np.max(weight.data_logspaced)
     # Make sure weight is positive
@@ -504,7 +504,7 @@ def _build_weight_from_noise(config, spec, specnoise):
 def _build_weight_spectral_stream(config, spec_st, specnoise_st):
     """Build a stream of weights from a stream of spectra and a stream of
     noise spectra."""
-    weight_st = Stream()
+    weight_st = SpectrumStream()
     spec_ids = {sp.id[:-1] for sp in spec_st if not sp.stats.ignore}
     for specid in spec_ids:
         try:
@@ -530,7 +530,8 @@ def _select_spectra(spec_st, specid):
     channel = channel + '?' * (3 - len(channel))
     spec_st_sel = spec_st.select(
         network=network, station=station, location=location, channel=channel)
-    spec_st_sel = Stream(sp for sp in spec_st_sel if not sp.stats.ignore)
+    spec_st_sel = SpectrumStream(
+        sp for sp in spec_st_sel if not sp.stats.ignore)
     return spec_st_sel
 
 
@@ -562,7 +563,7 @@ def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
 def _check_spectral_sn_ratio(config, spec, specnoise):
     spec_id = spec.get_id()
     weight = _build_weight_from_noise(config, spec, specnoise)
-    freqs = weight.get_freq()
+    freqs = weight.freq
     # if no noise window is available, snratio is not computed
     if weight.snratio is None:
         spec.stats.spectral_snratio = None
@@ -672,8 +673,8 @@ def _build_signal_and_noise_spectral_streams(
 
     Note: original_st is only used to keep track of ignored traces.
     """
-    spec_st = Stream()
-    specnoise_st = Stream()
+    spec_st = SpectrumStream()
+    specnoise_st = SpectrumStream()
     for trace_signal in sorted(signal_st, key=lambda tr: tr.id):
         trace_noise = noise_st.select(id=trace_signal.id)[0]
         try:

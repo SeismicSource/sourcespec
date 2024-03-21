@@ -9,7 +9,7 @@ Spectral plotting routine.
     2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>
 
-    2015-2023 Claudio Satriano <satriano@ipgp.fr>
+    2015-2024 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
@@ -84,7 +84,7 @@ class PlotParams():
                     spec_st_sel += specnoise_sel
             for spec in spec_st_sel:
                 moment_minmax, freq_minmax = spec_minmax(
-                    spec.data, spec.get_freq(), moment_minmax, freq_minmax)
+                    spec.data, spec.freq, moment_minmax, freq_minmax)
             # increment the number of plots,
             # based on the number of uniqs band+instrument codes
             nplots += len({x.stats.channel[:-1] for x in spec_st_sel})
@@ -600,14 +600,13 @@ def _plot_spec(config, plot_params, spec, spec_noise):
             _plot_fc_and_mw(spec, ax, ax2)
     elif plot_type == 'weight':
         ax.semilogx(
-            spec.get_freq(), spec.data, color=color, alpha=alpha,
-            zorder=20)
+            spec.freq, spec.data, color=color, alpha=alpha, zorder=20)
     else:
         raise ValueError(f'Unknown plot type: {plot_type}')
 
     if spec_noise:
         ax.loglog(
-            spec_noise.get_freq(), spec_noise.data,
+            spec_noise.freq, spec_noise.data,
             linestyle=':', linewidth=linewidth,
             color=color, alpha=alpha, zorder=20)
     if orientation == 'S':

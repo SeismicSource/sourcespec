@@ -7,7 +7,7 @@ Compute mean station residuals from source_spec output.
     2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Agnes Chounet <chounet@ipgp.fr>
 
-    2015-2023 Claudio Satriano <satriano@ipgp.fr>
+    2015-2024 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
@@ -17,11 +17,10 @@ import os
 from collections import defaultdict
 import pickle
 from argparse import ArgumentParser
-from obspy.core import Stream
 import matplotlib
 import matplotlib.pyplot as plt
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
-from sourcespec.spectrum import Spectrum
+from sourcespec.spectrum import SpectrumStream
 matplotlib.use('Agg')  # NOQA
 
 
@@ -77,7 +76,7 @@ def read_residuals(resfiles_dir):
         )
     if not resfiles:
         sys.exit(f'No residual file found in directory: {resfiles_dir}')
-    residual_dict = defaultdict(Stream)
+    residual_dict = defaultdict(SpectrumStream)
     for resfile in resfiles:
         print(f'Found residual file: {resfile}')
         with open(resfile, 'rb') as fp:
@@ -100,10 +99,10 @@ def compute_mean_residuals(residual_dict, min_spectra=20):
 
     Returns
     -------
-    residual_mean : Stream
+    residual_mean : SpectrumStream
         Stream containing mean residuals for each station.
     """
-    residual_mean = Stream()
+    residual_mean = SpectrumStream()
     for stat_id in sorted(residual_dict.keys()):
         if len(residual_dict[stat_id]) < min_spectra:
             continue
@@ -111,23 +110,19 @@ def compute_mean_residuals(residual_dict, min_spectra=20):
 
         res = residual_dict[stat_id]
 
-        freqs_min = [spec.get_freq().min() for spec in res]
-        freqs_max = [spec.get_freq().max() for spec in res]
+        freqs_min = [spec.freq.min() for spec in res]
+        freqs_max = [spec.freq.max() for spec in res]
         freq_min = min(freqs_min)
         freq_max = max(freqs_max)
 
-        spec_mean = Spectrum()
-        spec_mean.id = stat_id
-        spec_mean.stats.begin = freq_min
-        spec_mean.stats.delta = res[0].stats.delta
-        spec_mean.data_mag = None
+        spec_mean = None
         for spec in res:
             spec_slice = spec.slice(freq_min, freq_max, pad=True,
                                     fill_value=mag_to_moment(0))
             spec_slice.data_mag = moment_to_mag(spec_slice.data)
             norm = (spec_slice.data_mag != 0).astype(int)
-            if spec_mean.data_mag is None:
-                spec_mean.data_mag = spec_slice.data_mag
+            if spec_mean is None:
+                spec_mean = spec_slice
                 norm_mean = norm
             else:
                 try:
@@ -150,8 +145,8 @@ def plot_residuals(residual_dict, residual_mean, outdir):
     ----------
     residual_dict : dict
         Dictionary containing residuals for each station.
-    residual_mean : Stream
-        Stream containing mean residuals for each station.
+    residual_mean : SpectrumStream
+        SpectrumStream containing mean residuals for each station.
     outdir : str
         Output directory.
     """
@@ -161,8 +156,8 @@ def plot_residuals(residual_dict, residual_mean, outdir):
         figurefile = os.path.join(outdir, f'{stat_id}-res.png')
         fig = plt.figure(dpi=160)
         for spec in res:
-            plt.semilogx(spec.get_freq(), spec.data_mag, 'b-')
-        plt.semilogx(spec_mean.get_freq(), spec_mean.data_mag, 'r-')
+            plt.semilogx(spec.freq, spec.data_mag, 'b-')
+        plt.semilogx(spec_mean.freq, spec_mean.data_mag, 'r-')
         plt.xlabel('frequency (Hz)')
         plt.ylabel('residual amplitude (obs - synth) in magnitude units')
         plt.title(f'residuals: {stat_id} – {len(res)} records')
