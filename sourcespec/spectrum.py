@@ -12,6 +12,7 @@ similar to ObsPy's Trace and Stream.
 """
 import copy
 import fnmatch
+import math
 import numpy as np
 
 
@@ -63,6 +64,23 @@ class AttributeDict(dict):
         return new_dict
 
 
+def _n_significant_digits(x):
+    """
+    Helper function to compute the number of significant digits of a number.
+
+    - If the number is greater than 1, the number of significant digits is
+      zero.
+    - If the number is less than 1, the number of significant digits is
+      the number of digits after the decimal point.
+    - If the number is zero, the number of significant digits is zero.
+    """
+    try:
+        x = math.fabs(x)
+    except TypeError as e:
+        raise ValueError('x must be a number') from e
+    return 0 if x == 0 or x > 1 else -int(math.floor(math.log10(x)))
+
+
 class Spectrum():
     """
     A class to handle amplitude spectra.
@@ -92,6 +110,33 @@ class Spectrum():
         self.stats.channel = ''
         if obspy_trace is not None:
             self.from_obspy_trace(obspy_trace)
+
+    def __str__(self):
+        delta = self.stats.delta
+        ndigits = _n_significant_digits(delta)
+        delta_str = f'{delta:.{ndigits}f}'
+        fmin_str = f'{self.freq[0]:.{ndigits}f}' if self.freq.size else '...'
+        fmax_str = f'{self.freq[-1]:.{ndigits}f}' if self.freq.size else '...'
+        delta_logspaced = self.stats.delta_logspaced
+        ndigits = _n_significant_digits(delta_logspaced)
+        delta_logspaced_str = f'{delta_logspaced:.{ndigits}f}'
+        fmin_logspaced_str =\
+            f'{self.freq_logspaced[0]:.{ndigits}f}'\
+            if self.freq_logspaced.size else '...'
+        fmax_logspaced_str =\
+            f'{self.freq_logspaced[-1]:.{ndigits}f}'\
+            if self.freq_logspaced.size else '...'
+        return (
+            f'{self.id} | '
+            f'{self.stats.npts} samples, {fmin_str}-{fmax_str} Hz | '
+            f'{delta_str} Hz sample interval | '
+            f'{self.stats.npts_logspaced} samples logspaced, '
+            f'{fmin_logspaced_str}-{fmax_logspaced_str} Hz | '
+            f'{delta_logspaced_str} log10([Hz]) sample interval logspaced '
+        )
+
+    def __repr__(self):
+        return f'Spectrum {self}'
 
     @property
     def id(self):
@@ -328,6 +373,15 @@ class SpectrumStream(list):
     """
     A class to handle a collection of amplitude spectra.
     """
+    def __str__(self):
+        return (
+            f'SpectrumStream with {len(self)} Spectrum objects:\n'
+            + '\n'.join(f'{s}' for s in self)
+        )
+
+    def __repr__(self):
+        return self.__str__()
+
     def append(self, spectrum):
         """Append a spectrum to the collection."""
         if not isinstance(spectrum, Spectrum):
