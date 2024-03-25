@@ -4,18 +4,45 @@
 Define Spectrum and SpectrumStream classes,
 similar to ObsPy's Trace and Stream.
 
+Provides the high-level function read_spectra() to read
+SpectrumStream objects from HDF5 or TEXT files.
+
 :copyright:
     2012-2024 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
+import os
 import copy
 import fnmatch
 import warnings
 import math
 import h5py
+import yaml
 import numpy as np
+
+
+# Set default YAML representer for unsupported types
+def _default_yaml_representer(dumper, data):
+    return dumper.represent_scalar('tag:yaml.org,2002:str', str(data))
+# flake8: noqa
+yaml.representer.SafeRepresenter.add_representer(
+    None, _default_yaml_representer)
+
+
+def _normalize_value_for_yaml(value):
+    """
+    Normalize a value to a type supported by YAML serialization.
+
+    :param value: The value to normalize.
+    :return: A dictionary or the original value.
+    """
+    if hasattr(value, 'items'):
+        return {
+            key: _normalize_value_for_yaml(val) for key, val in value.items()
+        }
+    return value
 
 
 def signal_fft(signal, delta):
@@ -431,14 +458,62 @@ class Spectrum():
         group.create_dataset(
             'data_mag_logspaced', data=self.data_mag_logspaced)
 
+    def _write_text(self, filename):
+        """
+        Write the spectrum to a TEXT file.
+
+        :param filename: The name of the file to write to.
+        """
+        with open(filename, 'w', encoding='utf-8') as fp:
+            fp.write('# %SOURCESPEC TEXT SPECTRUM FORMAT 1.0\n')
+            fp.write('# %BEGIN STATS YAML\n')
+            # make sure all dict-like values in stats are converted to dicts
+            stats = _normalize_value_for_yaml(self.stats)
+            stats_str = yaml.safe_dump(
+                stats,
+                sort_keys=False
+            ).rstrip()
+            for line in stats_str.split('\n'):
+                fp.write(f'# {line}\n')
+            fp.write(
+                '# %END STATS YAML\n'
+                '# %BEGIN LINSPACED DATA\n'
+                '# frequency(Hz) data data_mag\n'
+            )
+            if self.data_mag.size:
+                data_mag = self.data_mag
+            else:
+                data_mag = np.ones_like(self.data) * np.nan
+            for freq, data, data_mag in zip(self.freq, self.data, data_mag):
+                fp.write(f'{freq:.6f} {data:.6f} {data_mag:.6f}\n')
+            fp.write(
+                '# %END LINSPACED DATA\n'
+                '# %BEGIN LOGSPACED DATA\n'
+                '# frequency_logspaced(Hz) data_logspaced data_mag_logspaced\n'
+            )
+            if self.data_mag_logspaced.size:
+                data_mag_logspaced = self.data_mag_logspaced
+            else:
+                data_mag_logspaced = np.ones_like(self.data_logspaced) * np.nan
+            for freq_logspaced, data_logspaced, data_mag_logspaced in zip(
+                    self.freq_logspaced, self.data_logspaced,
+                    data_mag_logspaced):
+                fp.write(
+                    f'{freq_logspaced:.6f} {data_logspaced:.6f} '
+                    f'{data_mag_logspaced:.6f}\n'
+                )
+            fp.write('# %END LOGSPACED DATA\n')
+
     # pylint: disable=redefined-builtin
     def write(self, filename, format='HDF5', append=False):
         """
         Write the spectrum to a file.
 
         :param filename: The name of the file to write to.
-        :param format: The format to use. Currently, only 'HDF5' is supported.
+        :param format: The format to use. One of 'HDF5' or 'TEXT'.
+            Default is 'HDF5'.
         :param append: If True, append the spectrum to an existing file.
+            Only valid for HDF5 format.
         """
         if format == 'HDF5':
             if append:
@@ -453,6 +528,10 @@ class Spectrum():
                 newgroup = 'spectrum_0000'
             self._write_hdf5(fp.create_group(newgroup))
             fp.close()
+        elif format == 'TEXT':
+            if append:
+                raise ValueError('Cannot append to a TEXT file')
+            self._write_text(filename)
         else:
             raise ValueError(f'Unsupported format: {format}')
 
@@ -501,13 +580,21 @@ class SpectrumStream(list):
         Write the SpectrumStream to a file.
 
         :param filename: The name of the file to write to.
-        :param format: The format to use. Currently, only 'HDF5' is supported.
+        :param format: The format to use. One of 'HDF5' or 'TEXT'. 
         """
         if format == 'HDF5':
             append = False
             for spectrum in self:
                 spectrum.write(filename, format, append)
                 append = True
+        elif format == 'TEXT':
+            if len(self) == 1:
+                self[0].write(filename, format)
+            else:
+                for n, spectrum in enumerate(self):
+                    _root, _ext = os.path.splitext(filename)
+                    _filename = f'{_root}_{n:04d}{_ext}'
+                    spectrum.write(_filename, format)
         else:
             raise ValueError(f'Unsupported format: {format}')
 
@@ -546,13 +633,89 @@ def _read_spectrum_from_hdf5_group(group):
     return spectrum
 
 
+def _read_stats_from_text_lines(lines):
+    """
+    Read the stats block from a TEXT file.
+
+    :param lines: The lines to read from.
+    :return: The stats block.
+    """
+    _stats_lines = []
+    _stats_block = False
+    for line in lines:
+        if line.startswith('# %BEGIN STATS YAML'):
+            _stats_block = True
+        elif line.startswith('# %END STATS YAML'):
+            _stats_block = False
+            break
+        elif _stats_block:
+            _stats_lines.append(line[2:])
+    return yaml.safe_load(''.join(_stats_lines))
+
+
+def _read_data_block_from_text_lines(lines, start_string, end_string):
+    """
+    Read a data block from a TEXT file.
+
+    :param lines: The lines to read from.
+    :param start_string: The string marking the start of the data block.
+    :param end_string: The string marking the end of the data block.
+    :return: The data block.
+    """
+    _data_lines = []
+    _data_block = False
+    for line in lines:
+        if line.startswith(start_string):
+            _data_block = True
+        elif line.startswith(end_string):
+            _data_block = False
+            break
+        elif _data_block:
+            if line.startswith('#'):
+                continue
+            _data_lines.append(line.split())
+    freq, data, data_mag = np.array(_data_lines, dtype=float).T
+    return freq, data, data_mag
+
+
+def _read_spectrum_from_text_file(filename):
+    """
+    Read a Spectrum object from a TEXT file.
+
+    :param filename: The name of the file to read from.
+    :return: The Spectrum object.
+    """
+    with open(filename, 'r', encoding='utf-8') as fp:
+        lines = fp.readlines()
+        stats = _read_stats_from_text_lines(lines)
+        freq, data, data_mag = _read_data_block_from_text_lines(
+            lines, '# %BEGIN LINSPACED DATA', '# %END LINSPACED DATA'
+        )
+        freq_logspaced, data_logspaced, data_mag_logspaced =\
+            _read_data_block_from_text_lines(
+                lines, '# %BEGIN LOGSPACED DATA', '# %END LOGSPACED DATA'
+            )
+    spectrum = Spectrum()
+    spectrum.stats = AttributeDict(stats)
+    spectrum.freq = freq
+    spectrum.data = data
+    if not np.isnan(data_mag).all():
+        spectrum.data_mag = data_mag
+    spectrum.freq_logspaced = freq_logspaced
+    spectrum.data_logspaced = data_logspaced
+    if not np.isnan(data_mag_logspaced).all():
+        spectrum.data_mag_logspaced = data_mag_logspaced
+    return spectrum
+
+
 # pylint: disable=redefined-builtin
 def read_spectra(filename, format='HDF5'):
     """
     Read a SpectrumStream from a file.
 
     :param filename: The name of the file to read from.
-    :param format: The format to use. Currently, only 'HDF5' is supported.
+    :param format: The format to use. One of 'HDF5' or 'TEXT'.
+        Default is 'HDF5'.
     :return: The SpectrumStream object.
     """
     if format == 'HDF5':
@@ -560,6 +723,10 @@ def read_spectra(filename, format='HDF5'):
             spectra = SpectrumStream()
             for group in fp.values():
                 spectra.append(_read_spectrum_from_hdf5_group(group))
+        return spectra
+    elif format == 'TEXT':
+        spectra = SpectrumStream()
+        spectra.append(_read_spectrum_from_text_file(filename))
         return spectra
     else:
         raise ValueError(f'Unsupported format: {format}')
