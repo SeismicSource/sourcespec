@@ -13,6 +13,7 @@ dependencies:
   - pyproj
   - tzlocal
   - pyyaml
+  - h5py
   - cartopy
   - nllgrid
   - pip

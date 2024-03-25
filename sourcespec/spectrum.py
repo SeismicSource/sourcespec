@@ -12,7 +12,9 @@ similar to ObsPy's Trace and Stream.
 """
 import copy
 import fnmatch
+import warnings
 import math
+import h5py
 import numpy as np
 
 
@@ -380,6 +382,80 @@ class Spectrum():
         self.stats.location = trace.stats.location
         self.stats.channel = trace.stats.channel
 
+    def _write_hdf5(self, group):
+        """
+        Write the spectrum to an HDF5 group.
+
+        :param group: The HDF5 group to write to.
+        """
+        for attr, value in self.stats.items():
+            # check if value is dict-like
+            if hasattr(value, 'items'):
+                # basic support for dict-like attributes, no nested dicts
+                _keys = list(value.keys())
+                _values = list(value.values())
+                try:
+                    group.attrs[f'_dict_{attr}_keys'] = _keys
+                    group.attrs[f'_dict_{attr}_values'] = _values
+                except TypeError:
+                    warnings.warn(
+                        f'Attribute "{attr}" is not a supported type and will '
+                        'be ignored'
+                    )
+                    continue
+            # check if it is a list-like
+            elif hasattr(value, '__iter__'):
+                if len(value) > 0:
+                    type0 = type(value[0])
+                    if not all(isinstance(v, type0) for v in value):
+                        raise ValueError(
+                            f'All values of attribute "{attr}" must be of the '
+                            'same type'
+                        )
+                group.attrs[attr] = value
+            # check if it is a number
+            elif isinstance(value, (int, float)):
+                group.attrs[attr] = value
+            # ignore other types
+            else:
+                warnings.warn(
+                    f'Attribute "{attr}" is not a supported type and will be '
+                    'ignored'
+                )
+                continue
+        group.create_dataset('freq', data=self.freq)
+        group.create_dataset('data', data=self.data)
+        group.create_dataset('data_mag', data=self.data_mag)
+        group.create_dataset('freq_logspaced', data=self.freq_logspaced)
+        group.create_dataset('data_logspaced', data=self.data_logspaced)
+        group.create_dataset(
+            'data_mag_logspaced', data=self.data_mag_logspaced)
+
+    # pylint: disable=redefined-builtin
+    def write(self, filename, format='HDF5', append=False):
+        """
+        Write the spectrum to a file.
+
+        :param filename: The name of the file to write to.
+        :param format: The format to use. Currently, only 'HDF5' is supported.
+        :param append: If True, append the spectrum to an existing file.
+        """
+        if format == 'HDF5':
+            if append:
+                fp = h5py.File(filename, 'a')
+                try:
+                    lastgroup = sorted(fp.keys())[-1]
+                    newgroup = f'spectrum_{int(lastgroup[-4:])+1:04d}'
+                except IndexError:
+                    newgroup = 'spectrum_0000'
+            else:
+                fp = h5py.File(filename, 'w')
+                newgroup = 'spectrum_0000'
+            self._write_hdf5(fp.create_group(newgroup))
+            fp.close()
+        else:
+            raise ValueError(f'Unsupported format: {format}')
+
 
 class SpectrumStream(list):
     """
@@ -418,3 +494,72 @@ class SpectrumStream(list):
             else:
                 selected.append(spectrum)
         return selected
+
+    # pylint: disable=redefined-builtin
+    def write(self, filename, format='HDF5'):
+        """
+        Write the SpectrumStream to a file.
+
+        :param filename: The name of the file to write to.
+        :param format: The format to use. Currently, only 'HDF5' is supported.
+        """
+        if format == 'HDF5':
+            append = False
+            for spectrum in self:
+                spectrum.write(filename, format, append)
+                append = True
+        else:
+            raise ValueError(f'Unsupported format: {format}')
+
+
+def _read_spectrum_from_hdf5_group(group):
+    """
+    Read a Spectrum object from an HDF5 group.
+
+    :param group: The HDF5 group to read from.
+    :return: The Spectrum object.
+    """
+    spectrum = Spectrum()
+    for attr, value in group.attrs.items():
+        # basic support for dict-like attributes, no nested dicts
+        if attr.startswith('_dict_'):
+            dict_attr = attr.split('_')[2]
+            if dict_attr in spectrum.stats:
+                # already processed
+                continue
+            _keys_attr = f'_dict_{dict_attr}_keys'
+            _values_attr = f'_dict_{dict_attr}_values'
+            if _keys_attr not in group.attrs or\
+                    _values_attr not in group.attrs:
+                continue
+            keys = group.attrs[_keys_attr]
+            values = group.attrs[_values_attr]
+            spectrum.stats[dict_attr] = dict(zip(keys, values))
+            continue
+        spectrum.stats[attr] = value
+    spectrum.freq = group['freq']
+    spectrum.data = group['data']
+    spectrum.data_mag = group['data_mag']
+    spectrum.freq_logspaced = group['freq_logspaced']
+    spectrum.data_logspaced = group['data_logspaced']
+    spectrum.data_mag_logspaced = group['data_mag_logspaced']
+    return spectrum
+
+
+# pylint: disable=redefined-builtin
+def read_spectra(filename, format='HDF5'):
+    """
+    Read a SpectrumStream from a file.
+
+    :param filename: The name of the file to read from.
+    :param format: The format to use. Currently, only 'HDF5' is supported.
+    :return: The SpectrumStream object.
+    """
+    if format == 'HDF5':
+        with h5py.File(filename, 'r') as fp:
+            spectra = SpectrumStream()
+            for group in fp.values():
+                spectra.append(_read_spectrum_from_hdf5_group(group))
+        return spectra
+    else:
+        raise ValueError(f'Unsupported format: {format}')
