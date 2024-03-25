@@ -46,7 +46,34 @@ def _dyne_cm_to_N_m(value):
     return None if value is None else value * 1e-7
 
 
-class SSPCoordinate():
+class _SSPEventBaseClass():
+    """
+    SourceSpec event base class.
+    """
+    # make the class subscriptable
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def keys(self):
+        """
+        Return the event attribute names as a list.
+        """
+        return self.__dict__.keys()
+
+    def values(self):
+        """
+        Return the event attributes as a list.
+        """
+        return self.__dict__.values()
+
+    def items(self):
+        """
+        Return the event attributes as a list of tuples.
+        """
+        return self.__dict__.items()
+
+
+class SSPCoordinate(_SSPEventBaseClass):
     """
     SourceSpec coordinate class.
 
@@ -63,10 +90,6 @@ class SSPCoordinate():
         else:
             raise ValueError('coordinate units must be deg')
 
-    # make the class subscriptable
-    def __getitem__(self, key):
-        return getattr(self, key)
-
     def __str__(self):
         try:
             return f'{self.value_in_deg:.4f}°'
@@ -74,7 +97,7 @@ class SSPCoordinate():
             raise TypeError('Incomplete coordinate data') from e
 
 
-class SSPDepth():
+class SSPDepth(_SSPEventBaseClass):
     """
     SourceSpec depth class.
     """
@@ -83,10 +106,6 @@ class SSPDepth():
             warnings.warn(f'Ignoring unknown depth field "{key}"')
         self.value = _float(value)
         self.units = units
-
-    # make the class subscriptable
-    def __getitem__(self, key):
-        return getattr(self, key)
 
     def __str__(self):
         try:
@@ -117,7 +136,7 @@ class SSPDepth():
         raise ValueError('depth units must be m or km')
 
 
-class SSPHypocenter():
+class SSPHypocenter(_SSPEventBaseClass):
     """
     SourceSpec hypocenter class.
     """
@@ -139,10 +158,6 @@ class SSPHypocenter():
         self.depth = SSPDepth(**depth)
         self.origin_time = _time(origin_time)
 
-    # make the class subscriptable
-    def __getitem__(self, key):
-        return getattr(self, key)
-
     def __str__(self):
         try:
             return (
@@ -155,7 +170,7 @@ class SSPHypocenter():
             raise TypeError('Incomplete hypocenter data') from e
 
 
-class SSPMagnitude():
+class SSPMagnitude(_SSPEventBaseClass):
     """
     SourceSpec magnitude class.
     """
@@ -165,10 +180,6 @@ class SSPMagnitude():
         self.value = _float(value)
         self.mag_type = mag_type
         self.computed = False
-
-    # make the class subscriptable
-    def __getitem__(self, key):
-        return getattr(self, key)
 
     def __str__(self):
         try:
@@ -198,7 +209,7 @@ class SSPMagnitude():
         self.computed = True
 
 
-class SSPScalarMoment():
+class SSPScalarMoment(_SSPEventBaseClass):
     """
     SourceSpec scalar moment class.
     """
@@ -208,10 +219,6 @@ class SSPScalarMoment():
         self.value = _float(value)
         self.units = units
         self.to_N_m()
-
-    # make the class subscriptable
-    def __getitem__(self, key):
-        return getattr(self, key)
 
     def __str__(self):
         try:
@@ -247,7 +254,7 @@ class SSPScalarMoment():
         self.to_N_m()
 
 
-class SSPFocalMechanism():
+class SSPFocalMechanism(_SSPEventBaseClass):
     """
     SourceSpec focal mechanism class.
 
@@ -260,10 +267,6 @@ class SSPFocalMechanism():
         self.dip = _float(dip)
         self.rake = _float(rake)
         self.units = units  # currently not used
-
-    # make the class subscriptable
-    def __getitem__(self, key):
-        return getattr(self, key)
 
     def __str__(self):
         try:
@@ -290,7 +293,7 @@ class SSPFocalMechanism():
         self.strike, self.dip, self.rake = _fps1
 
 
-class SSPMomentTensor():
+class SSPMomentTensor(_SSPEventBaseClass):
     """
     SourceSpec moment tensor class.
     """
@@ -306,10 +309,6 @@ class SSPMomentTensor():
         self.m_rp = _float(m_rp)
         self.m_tp = _float(m_tp)
         self.to_N_m()
-
-    # make the class subscriptable
-    def __getitem__(self, key):
-        return getattr(self, key)
 
     def __str__(self):
         try:
@@ -338,7 +337,7 @@ class SSPMomentTensor():
             self.units = 'N-m'
 
 
-class SSPEvent():
+class SSPEvent(_SSPEventBaseClass):
     """
     SourceSpec event class.
     """
@@ -358,10 +357,6 @@ class SSPEvent():
         self.moment_tensor = SSPMomentTensor()
         if event_dict is not None:
             self.from_event_dict(event_dict)
-
-    # make the class subscriptable
-    def __getitem__(self, key):
-        return getattr(self, key)
 
     def __str__(self):
         outstr = ''
