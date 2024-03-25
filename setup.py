@@ -92,7 +92,7 @@ setup(
         'obspy>=1.2.0',
         'pyproj',
         'tzlocal',
-        'pyyaml',
+        'pyyaml>=5.1',
         'h5py'
     ]
 )
