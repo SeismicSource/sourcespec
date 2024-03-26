@@ -23,28 +23,6 @@ import yaml
 import numpy as np
 
 
-# Set default YAML representer for unsupported types
-def _default_yaml_representer(dumper, data):
-    return dumper.represent_scalar('tag:yaml.org,2002:str', str(data))
-# flake8: noqa
-yaml.representer.SafeRepresenter.add_representer(
-    None, _default_yaml_representer)
-
-
-def _normalize_value_for_yaml(value):
-    """
-    Normalize a value to a type supported by YAML serialization.
-
-    :param value: The value to normalize.
-    :return: A dictionary or the original value.
-    """
-    if hasattr(value, 'items'):
-        return {
-            key: _normalize_value_for_yaml(val) for key, val in value.items()
-        }
-    return value
-
-
 def signal_fft(signal, delta):
     """
     Compute the complex Fourier transform of a signal.
@@ -91,23 +69,6 @@ class AttributeDict(dict):
         for key, value in self.items():
             new_dict[key] = copy.copy(value)
         return new_dict
-
-
-def _n_significant_digits(x):
-    """
-    Helper function to compute the number of significant digits of a number.
-
-    - If the number is greater than 1, the number of significant digits is
-      zero.
-    - If the number is less than 1, the number of significant digits is
-      the number of digits after the decimal point.
-    - If the number is zero, the number of significant digits is zero.
-    """
-    try:
-        x = math.fabs(x)
-    except TypeError as e:
-        raise ValueError('x must be a number') from e
-    return 0 if x == 0 or x > 1 else -int(math.floor(math.log10(x)))
 
 
 class Spectrum():
@@ -597,6 +558,53 @@ class SpectrumStream(list):
                     spectrum.write(_filename, format)
         else:
             raise ValueError(f'Unsupported format: {format}')
+
+
+# ---- Reading/writing functions and helper functions ----
+
+def _n_significant_digits(x):
+    """
+    Helper function to compute the number of significant digits of a number.
+
+    - If the number is greater than 1, the number of significant digits is
+      zero.
+    - If the number is less than 1, the number of significant digits is
+      the number of digits after the decimal point.
+    - If the number is zero, the number of significant digits is zero.
+    """
+    try:
+        x = math.fabs(x)
+    except TypeError as e:
+        raise ValueError('x must be a number') from e
+    return 0 if x == 0 or x > 1 else -int(math.floor(math.log10(x)))
+
+
+def _default_yaml_representer(dumper, data):
+    """
+    Default YAML representer for unsupported types.
+
+    :param dumper: The YAML dumper.
+    :param data: The data to represent.
+    :return: The YAML representation of the data.
+    """
+    return dumper.represent_scalar('tag:yaml.org,2002:str', str(data))
+# flake8: noqa
+yaml.representer.SafeRepresenter.add_representer(
+    None, _default_yaml_representer)
+
+
+def _normalize_value_for_yaml(value):
+    """
+    Normalize a value to a type supported by YAML serialization.
+
+    :param value: The value to normalize.
+    :return: A dictionary or the original value.
+    """
+    if hasattr(value, 'items'):
+        return {
+            key: _normalize_value_for_yaml(val) for key, val in value.items()
+        }
+    return value
 
 
 def _read_spectrum_from_hdf5_group(group):
