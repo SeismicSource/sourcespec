@@ -14,6 +14,7 @@ SpectrumStream objects from HDF5 or TEXT files.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import glob
 import copy
 import fnmatch
 import warnings
@@ -737,24 +738,26 @@ def _read_spectrum_from_text_file(filename):
 
 
 # pylint: disable=redefined-builtin
-def read_spectra(filename, format='HDF5'):
+def read_spectra(pathname, format='HDF5'):
     """
-    Read a SpectrumStream from a file.
+    Read a SpectrumStream from one ore more files.
 
-    :param filename: The name of the file to read from.
+    :param pathname: The pathname of the files to read. Can contain wildcards.
     :param format: The format to use. One of 'HDF5' or 'TEXT'.
         Default is 'HDF5'.
     :return: The SpectrumStream object.
     """
-    if format == 'HDF5':
-        with h5py.File(filename, 'r') as fp:
-            spectra = SpectrumStream()
-            for group in fp.values():
-                spectra.append(_read_spectrum_from_hdf5_group(group))
-        return spectra
-    elif format == 'TEXT':
-        spectra = SpectrumStream()
-        spectra.append(_read_spectrum_from_text_file(filename))
-        return spectra
-    else:
-        raise ValueError(f'Unsupported format: {format}')
+    filelist = glob.glob(pathname)
+    if not filelist:
+        raise FileNotFoundError(f'No files found matching "{pathname}"')
+    spectra = SpectrumStream()
+    for fname in filelist:
+        if format == 'HDF5':
+            with h5py.File(fname, 'r') as fp:
+                for group in fp.values():
+                    spectra.append(_read_spectrum_from_hdf5_group(group))
+        elif format == 'TEXT':
+            spectra.append(_read_spectrum_from_text_file(fname))
+        else:
+            raise ValueError(f'Unsupported format: {format}')
+    return spectra
