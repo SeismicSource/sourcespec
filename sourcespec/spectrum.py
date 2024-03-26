@@ -376,41 +376,32 @@ class Spectrum():
 
         :param group: The HDF5 group to write to.
         """
-        for attr, value in self.stats.items():
-            # check if value is dict-like
+        stats = _normalize_metadata_object(self.stats)
+        for attr, value in stats.items():
+            # convert dictionaries to strings using YAML
             if hasattr(value, 'items'):
-                # basic support for dict-like attributes, no nested dicts
-                _keys = list(value.keys())
-                _values = list(value.values())
-                try:
-                    group.attrs[f'_dict_{attr}_keys'] = _keys
-                    group.attrs[f'_dict_{attr}_values'] = _values
-                except TypeError:
-                    warnings.warn(
-                        f'Attribute "{attr}" is not a supported type and will '
-                        'be ignored'
+                value = yaml.dump(
+                    value,
+                    Dumper=_HDF5HeaderDumper,
+                    default_flow_style=True
+                ).replace('\n', '')
+            # if value is a list-like,
+            # check if all elements are of the same type
+            elif hasattr(value, '__iter__') and len(value) > 0:
+                type0 = type(value[0])
+                if not all(isinstance(v, type0) for v in value):
+                    raise ValueError(
+                        f'All values of attribute "{attr}" must be of the '
+                        'same type'
                     )
-                    continue
-            # check if it is a list-like
-            elif hasattr(value, '__iter__'):
-                if len(value) > 0:
-                    type0 = type(value[0])
-                    if not all(isinstance(v, type0) for v in value):
-                        raise ValueError(
-                            f'All values of attribute "{attr}" must be of the '
-                            'same type'
-                        )
-                group.attrs[attr] = value
-            # check if it is a number
-            elif isinstance(value, (int, float)):
-                group.attrs[attr] = value
-            # ignore other types
-            else:
+            # ignore unsupported types
+            elif not isinstance(value, (int, float, bool, str)):
                 warnings.warn(
-                    f'Attribute "{attr}" is not a supported type and will be '
-                    'ignored'
+                    f'Attribute "{attr}" is not a supported type '
+                    f'({type(value)}) and will be ignored'
                 )
                 continue
+            group.attrs[attr] = value
         group.create_dataset('freq', data=self.freq)
         group.create_dataset('data', data=self.data)
         group.create_dataset('data_mag', data=self.data_mag)
@@ -428,8 +419,7 @@ class Spectrum():
         with open(filename, 'w', encoding='utf-8') as fp:
             fp.write('# %SOURCESPEC TEXT SPECTRUM FORMAT 1.0\n')
             fp.write('# %BEGIN STATS YAML\n')
-            # make sure all dict-like values in stats are converted to dicts
-            stats = _normalize_value_for_yaml(self.stats)
+            stats = _normalize_metadata_object(self.stats)
             stats_str = yaml.safe_dump(
                 stats,
                 sort_keys=False
@@ -479,6 +469,9 @@ class Spectrum():
         if format == 'HDF5':
             if append:
                 fp = h5py.File(filename, 'a')
+                fp.attrs['format'] = 'SourceSpec SpectrumStream HDF5'
+                fp.attrs['version'] = '1.0'
+                fp.attrs['url'] = 'https://sourcespec.seismicsource.org'
                 try:
                     lastgroup = sorted(fp.keys())[-1]
                     newgroup = f'spectrum_{int(lastgroup[-4:])+1:04d}'
@@ -541,7 +534,7 @@ class SpectrumStream(list):
         Write the SpectrumStream to a file.
 
         :param filename: The name of the file to write to.
-        :param format: The format to use. One of 'HDF5' or 'TEXT'. 
+        :param format: The format to use. One of 'HDF5' or 'TEXT'.
         """
         if format == 'HDF5':
             append = False
@@ -579,6 +572,12 @@ def _n_significant_digits(x):
     return 0 if x == 0 or x > 1 else -int(math.floor(math.log10(x)))
 
 
+class _HDF5HeaderDumper(yaml.SafeDumper):
+    """
+    A YAML dumper used for writing the HDF5 header.
+    """
+
+
 def _default_yaml_representer(dumper, data):
     """
     Default YAML representer for unsupported types.
@@ -588,23 +587,47 @@ def _default_yaml_representer(dumper, data):
     :return: The YAML representation of the data.
     """
     return dumper.represent_scalar('tag:yaml.org,2002:str', str(data))
-# flake8: noqa
+
+
+def _quoted_representer(dumper, data):
+    """
+    YAML representer for strings, with quotes.
+
+    :param dumper: The YAML dumper.
+    :param data: The data to represent.
+    :return: The YAML representation of the data.
+    """
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style="'")
+
+
+# register the representers
 yaml.representer.SafeRepresenter.add_representer(
     None, _default_yaml_representer)
+_HDF5HeaderDumper.add_representer(str, _quoted_representer)
+_HDF5HeaderDumper.add_representer(None, _default_yaml_representer)
 
 
-def _normalize_value_for_yaml(value):
+def _normalize_metadata_object(obj):
     """
-    Normalize a value to a type supported by YAML serialization.
+    Normalize a metadata object to use:
+    - dictionaries instead of custom objects;
+    - standard floats instead of numpy floats;
+    - standard booleans instead of numpy booleans.
 
-    :param value: The value to normalize.
+    All the other types are left unchanged.
+
+    :param obj: The object to normalize.
     :return: A dictionary or the original value.
     """
-    if hasattr(value, 'items'):
+    if hasattr(obj, 'items'):
         return {
-            key: _normalize_value_for_yaml(val) for key, val in value.items()
+            key: _normalize_metadata_object(val) for key, val in obj.items()
         }
-    return value
+    if isinstance(obj, (np.float64, np.float32)):
+        obj = float(obj)
+    if isinstance(obj, np.bool_):
+        obj = bool(obj)
+    return obj
 
 
 def _read_spectrum_from_hdf5_group(group):
@@ -616,21 +639,18 @@ def _read_spectrum_from_hdf5_group(group):
     """
     spectrum = Spectrum()
     for attr, value in group.attrs.items():
-        # basic support for dict-like attributes, no nested dicts
-        if attr.startswith('_dict_'):
-            dict_attr = attr.split('_')[2]
-            if dict_attr in spectrum.stats:
-                # already processed
-                continue
-            _keys_attr = f'_dict_{dict_attr}_keys'
-            _values_attr = f'_dict_{dict_attr}_values'
-            if _keys_attr not in group.attrs or\
-                    _values_attr not in group.attrs:
-                continue
-            keys = group.attrs[_keys_attr]
-            values = group.attrs[_values_attr]
-            spectrum.stats[dict_attr] = dict(zip(keys, values))
-            continue
+        # convert strings back to dictionaries, using YAML
+        if (
+            isinstance(value, str)
+            and value.startswith('{') and value.endswith('}')
+        ):
+            try:
+                value = yaml.safe_load(value)
+            except yaml.YAMLError:
+                warnings.warn(
+                    f'Attribute "{attr}" is not a supported type and will be '
+                    'ignored'
+                )
         spectrum.stats[attr] = value
     spectrum.freq = group['freq']
     spectrum.data = group['data']
