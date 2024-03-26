@@ -15,10 +15,10 @@ Compute mean station residuals from source_spec output.
 import sys
 import os
 from collections import defaultdict
-import pickle
 from argparse import ArgumentParser
 import matplotlib
 import matplotlib.pyplot as plt
+from sourcespec.spectrum import read_spectra
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
 from sourcespec.spectrum import SpectrumStream
 matplotlib.use('Agg')  # NOQA
@@ -44,19 +44,19 @@ def parse_args():
     parser.add_argument(
         'residual_files_dir',
         help='directory containing source_spec residual files '
-             'in pickle format. Residual files can be in subdirectories '
+             'in HDF5 format. Residual files can be in subdirectories '
              '(e.g., a subdirectory for each event).')
     return parser.parse_args()
 
 
 def read_residuals(resfiles_dir):
     """
-    Read residuals from pickle files in resfiles_dir.
+    Read residuals from HDF5 files in resfiles_dir.
 
     Parameters
     ----------
     resfiles_dir : str
-        Directory containing source_spec residual files in pickle format.
+        Directory containing source_spec residual files in HDF5 format.
         Residual files can be in subdirectories (e.g., a subdirectory for
         each event).
 
@@ -72,15 +72,14 @@ def read_residuals(resfiles_dir):
         resfiles.extend(
             os.path.join(root, file)
             for file in files
-            if file.endswith('residuals.pickle')
+            if file.endswith('residuals.hdf5')
         )
     if not resfiles:
         sys.exit(f'No residual file found in directory: {resfiles_dir}')
     residual_dict = defaultdict(SpectrumStream)
     for resfile in resfiles:
         print(f'Found residual file: {resfile}')
-        with open(resfile, 'rb') as fp:
-            residual_st = pickle.load(fp)
+        residual_st = read_spectra(resfile)
         for spec in residual_st:
             residual_dict[spec.id].append(spec)
     return residual_dict
@@ -153,7 +152,7 @@ def plot_residuals(residual_dict, residual_mean, outdir):
     for spec_mean in residual_mean:
         stat_id = spec_mean.id
         res = residual_dict[stat_id]
-        figurefile = os.path.join(outdir, f'{stat_id}-res.png')
+        figurefile = os.path.join(outdir, f'{stat_id}.res.png')
         fig = plt.figure(dpi=160)
         for spec in res:
             plt.semilogx(spec.freq, spec.data_mag, 'b-')
@@ -182,9 +181,8 @@ def main():
     if args.plot:
         plot_residuals(residual_dict, residual_mean, outdir)
 
-    # writes the mean residuals (the stations corrections)
-    res_mean_file = 'residual_mean.pickle'
+    # write the mean residuals (the stations corrections)
+    res_mean_file = 'residual_mean.hdf5'
     res_mean_file = os.path.join(outdir, res_mean_file)
-    with open(res_mean_file, 'wb') as fp:
-        pickle.dump(residual_mean, fp)
+    residual_mean.write(res_mean_file, format='HDF5')
     print(f'Mean station residuals saved to: {res_mean_file}')
