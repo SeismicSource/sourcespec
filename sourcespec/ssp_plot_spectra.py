@@ -20,6 +20,7 @@ import logging
 import warnings
 import contextlib
 from collections import defaultdict
+import numpy as np
 from obspy import Stream
 import matplotlib
 import matplotlib.pyplot as plt
@@ -496,10 +497,9 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
     Mw = spec.stats.par['Mw']
     Mo = mag_to_moment(Mw)
     t_star = spec.stats.par['t_star']
-    try:
-        Er = spec.stats.par['Er']
-    except KeyError:
-        # Er might not be computed for noisy spectra
+    Er = spec.stats.par['Er']
+    # Er might not be computed for noisy spectra
+    if np.isnan(Er):
         Er = None
     if 'par_err' in spec.stats.keys():
         fc_err_left, fc_err_right = spec.stats.par_err['fc']
