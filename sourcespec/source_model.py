@@ -55,11 +55,16 @@ def make_synth(config, spec_st, trace_spec=None):
         freq = spec.freq
         freq_logspaced = trace_spec.freq_logspaced
         spec.freq_logspaced = freq_logspaced
-        spec.data_mag = spectral_model(freq, mag, fc, t_star, alpha)
-        spec.data = mag_to_moment(spec.data_mag)
-        spec.data_mag_logspaced = spectral_model(
+        # spec.data and spec.data_logspaced have to be set before
+        # spec.data_mag and spec.data_mag_logspaced, so that the Spectrum
+        # object can check for consistency
+        data_mag = spectral_model(freq, mag, fc, t_star, alpha)
+        spec.data = mag_to_moment(data_mag)
+        spec.data_mag = data_mag
+        data_mag_logspaced = spectral_model(
             freq_logspaced, mag, fc, t_star, alpha)
-        spec.data_logspaced = mag_to_moment(spec.data_mag_logspaced)
+        spec.data_logspaced = mag_to_moment(data_mag_logspaced)
+        spec.data_mag_logspaced = data_mag_logspaced
         spec_st.append(spec)
 
         if trace_spec:
