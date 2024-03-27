@@ -91,6 +91,7 @@ output files (``EVID`` is replaced by the actual event ID):
    arguments, for `reproducibility`_)
 -  ``EVID.ssp.conf``: the input config file (for `reproducibility`_)
 -  ``EVID.residuals.hdf5``: station residuals in `HDF5`_ format
+-  ``EVID.spectra.hdf5``: (optional) spectra in `HDF5`_ format
 -  ``EVID.ssp.h``: hypocenter file in `HYPO71`_ format with the estimated
    moment magnitude (only if an input HYPO71 file is provided)
 -  ``EVID.xml``: updated `QuakeML`_ file with the results of the SourceSpec

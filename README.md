@@ -194,6 +194,7 @@ The SourceSpec main code, `source_spec` will produce the following output files
   for [reproducibility])
 - `EVID.ssp.conf`: the input config file (for [reproducibility])
 - `EVID.residuals.hdf5`: station residuals in [HDF5] format
+- `EVID.spectra.hdf5`: (optional) spectra in [HDF5] format
 - `EVID.ssp.h`: hypocenter file in [HYPO71] format with the estimated moment
   magnitude (only if an input HYPO71 file is provided)
 - `EVID.xml`: updated [QuakeML] file with the results of the SourceSpec
