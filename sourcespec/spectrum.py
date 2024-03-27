@@ -601,11 +601,24 @@ def _quoted_representer(dumper, data):
     return dumper.represent_scalar('tag:yaml.org,2002:str', data, style="'")
 
 
+def _dict_constructor(loader, node):
+    """
+    YAML constructor for dictionaries.
+
+    :param loader: The YAML loader.
+    :param node: The node to construct.
+    :return: The dictionary constructed from the node.
+    """
+    return AttributeDict(loader.construct_mapping(node))
+
+
 # register the representers
 yaml.representer.SafeRepresenter.add_representer(
     None, _default_yaml_representer)
 _HDF5HeaderDumper.add_representer(str, _quoted_representer)
 _HDF5HeaderDumper.add_representer(None, _default_yaml_representer)
+# register the constructor
+yaml.SafeLoader.add_constructor('tag:yaml.org,2002:map', _dict_constructor)
 
 
 def _normalize_metadata_object(obj):
