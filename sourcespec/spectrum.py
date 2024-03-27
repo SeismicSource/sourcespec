@@ -618,7 +618,7 @@ def _normalize_metadata_object(obj):
     All the other types are left unchanged.
 
     :param obj: The object to normalize.
-    :return: A dictionary or the original value.
+    :return: A dictionary, a float, or the original value.
     """
     if hasattr(obj, 'items'):
         return {

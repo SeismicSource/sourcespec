@@ -171,9 +171,14 @@ def _add_coords(trace):
         raise RuntimeError()
     coords = None
     with contextlib.suppress(Exception):
-        coords = AttribDict(
-            trace.stats.inventory.get_coordinates(
-                trace.id, trace.stats.starttime))
+        # Inventory.get_coordinates() raises a generic Exception
+        # if coordinates are not found
+        coords = trace.stats.inventory.get_coordinates(
+                    trace.id, trace.stats.starttime)
+    if coords is not None:
+        # Build an AttribDict and make sure that coordinates are floats
+        coords = AttribDict({
+            key: float(value) for key, value in coords.items()})
         coords = (
             None if (
                 coords.longitude == 0 and coords.latitude == 0 and
