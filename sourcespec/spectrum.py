@@ -138,6 +138,18 @@ class Spectrum():
     def __repr__(self):
         return f'Spectrum {self}'
 
+    def __gt__(self, other):
+        return self.id > other.id
+
+    def __lt__(self, other):
+        return self.id < other.id
+
+    def __ge__(self, other):
+        return self.id >= other.id
+
+    def __le__(self, other):
+        return self.id <= other.id
+
     @property
     def id(self):
         """Return the id of the spectrum."""
@@ -381,6 +393,10 @@ class SpectrumStream(list):
 
     def __repr__(self):
         return self.__str__()
+
+    def sort(self, reverse=False):
+        """Sort the SpectrumStream in place."""
+        super().sort(reverse=reverse)
 
     def append(self, spectrum):
         """Append a spectrum to the collection."""
