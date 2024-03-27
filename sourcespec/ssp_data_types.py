@@ -324,7 +324,9 @@ class SourceSpecOutput(OrderedAttribDict):
         self.inversion_info = OrderedAttribDict()
         self.summary_spectral_parameters = OrderedAttribDict()
         self.station_parameters = OrderedAttribDict()
-        self.comments = {
+        # comments for each section
+        # do not remove the underscore from the attribute name!
+        self._comments = {
             'begin': 'SourceSpec output in YAML format',
             'run_info': 'Information on the SourceSpec run',
             'event_info': 'Information on the event',

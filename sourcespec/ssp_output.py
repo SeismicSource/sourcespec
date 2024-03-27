@@ -335,10 +335,12 @@ def _write_yaml(config, sspec_output):
     evid = config.event.event_id
     yamlfilename = os.path.join(config.options.outdir, f'{evid}.ssp.yaml')
     lines = _dict2yaml(sspec_output)
+    comments = sspec_output.get('_comments', {})
     with open(yamlfilename, 'w', encoding='utf-8') as fp:
-        comment = sspec_output.comments['begin']
-        for line in comment.split('\n'):
-            fp.write(f'# {line}\n')
+        begin_comment = comments.get('begin', None)
+        if begin_comment is not None:
+            for line in begin_comment.split('\n'):
+                fp.write(f'# {line}\n')
         fp.write(lines)
     logger.info(f'Output written to file: {yamlfilename}')
 
