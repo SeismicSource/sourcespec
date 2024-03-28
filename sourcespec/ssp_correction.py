@@ -7,14 +7,14 @@ Spectral station correction calculated from ssp_residuals.
     2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Agnes Chounet <chounet@ipgp.fr>
 
-    2015-2023 Claudio Satriano <satriano@ipgp.fr>
+    2015-2024 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-import pickle
 import logging
 from scipy.interpolate import interp1d
+from sourcespec.spectrum import read_spectra
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
 from sourcespec.ssp_setup import ssp_exit
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
@@ -30,8 +30,7 @@ def station_correction(spec_st, config):
     if res_filepath is None:
         return spec_st
     try:
-        with open(res_filepath, 'rb') as fp:
-            residual = pickle.load(fp)
+        residual = read_spectra(res_filepath)
     except Exception as msg:
         logger.error(msg)
         ssp_exit(1)
@@ -42,7 +41,7 @@ def station_correction(spec_st, config):
             corr = residual.select(id=spec.id)[0]
         except IndexError:
             continue
-        freq = spec.get_freq()
+        freq = spec.freq
         fmin = freq.min()
         fmax = freq.max()
         corr = corr.slice(fmin, fmax)

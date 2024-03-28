@@ -10,7 +10,7 @@ Compute radiated energy from spectral integration.
               Emanuela Matrullo <matrullo@geologie.ens.fr>,
               Agnes Chounet <chounet@ipgp.fr>
 
-    2015-2023 Claudio Satriano <satriano@ipgp.fr>
+    2015-2024 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
@@ -28,7 +28,7 @@ def _spectral_integral(spec, t_star, fmin=None, fmax=None):
     # eq. (1) in Boatwright et al. (2002), but expressed in frequency,
     # instead of angular frequency (2pi factor).
     deltaf = spec.stats.delta
-    freq = spec.get_freq()
+    freq = spec.freq
     # Data is in moment units. By dividing by coeff, we get the units of the
     # Fourier transform of the ground displacement (m * s) multiplied by the
     # units of the geometrical spreading correction (m).
@@ -118,7 +118,7 @@ def _finite_bandwidth_correction(spec, fc, fmax):
     - Lancieri et al. (2012), eq. 4 (note, missing parenthesis in the paper)
     """
     if fmax is None:
-        fmax = spec.get_freq()[-1]
+        fmax = spec.freq[-1]
     return (
         2. / np.pi *
         (np.arctan2(fmax, fc) - (fmax / fc) / (1 + (fmax / fc)**2.))
@@ -144,9 +144,9 @@ def _get_frequency_range(config, spec):
             'Using the whole frequency range.')
         fmin, fmax = None, None
     if fmin is None:
-        fmin = spec.get_freq()[0]
+        fmin = spec.freq[0]
     if fmax is None:
-        fmax = spec.get_freq()[-1]
+        fmax = spec.freq[-1]
     logger.info(
         f'{spec.id} {spec.stats.instrtype}: frequency range for '
         f'spectral integration: {fmin:.1f}-{fmax:.1f} Hz')

@@ -7,7 +7,7 @@ Direct spectral modelling.
     2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Agnes Chounet <chounet@ipgp.fr>
 
-    2015-2023 Claudio Satriano <satriano@ipgp.fr>
+    2015-2024 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
@@ -37,10 +37,9 @@ def make_synth(config, spec_st, trace_spec=None):
         spec = Spectrum()
         if trace_spec:
             spec.stats = deepcopy(trace_spec.stats)
+            spec.freq = trace_spec.freq.copy()
         else:
-            spec.stats.begin = fmin
-            spec.stats.delta = fdelta
-            spec.stats.npts = int((fmax - fmin) / fdelta)
+            spec.freq = np.arange(fmin, fmax, fdelta)
 
         if math.isnan(Mo):
             Mo = mag_to_moment(mag)
@@ -53,14 +52,19 @@ def make_synth(config, spec_st, trace_spec=None):
         spec.stats.par = {
             'Mw': mag, 'fc': fc, 't_star': t_star, 'alpha': alpha}
 
-        freq = spec.get_freq()
+        freq = spec.freq
         freq_logspaced = trace_spec.freq_logspaced
         spec.freq_logspaced = freq_logspaced
-        spec.data_mag = spectral_model(freq, mag, fc, t_star, alpha)
-        spec.data = mag_to_moment(spec.data_mag)
-        spec.data_mag_logspaced = spectral_model(
+        # spec.data and spec.data_logspaced have to be set before
+        # spec.data_mag and spec.data_mag_logspaced, so that the Spectrum
+        # object can check for consistency
+        data_mag = spectral_model(freq, mag, fc, t_star, alpha)
+        spec.data = mag_to_moment(data_mag)
+        spec.data_mag = data_mag
+        data_mag_logspaced = spectral_model(
             freq_logspaced, mag, fc, t_star, alpha)
-        spec.data_logspaced = mag_to_moment(spec.data_mag_logspaced)
+        spec.data_logspaced = mag_to_moment(data_mag_logspaced)
+        spec.data_mag_logspaced = data_mag_logspaced
         spec_st.append(spec)
 
         if trace_spec:
@@ -89,10 +93,10 @@ def main():
     }
     config = configure(
         options, progname='source_model', config_overrides=conf_overrides)
+    from sourcespec.spectrum import SpectrumStream
     from sourcespec.ssp_read_traces import read_traces
     from sourcespec.ssp_process_traces import process_traces
     from sourcespec.ssp_build_spectra import build_spectra
-    from obspy.core import Stream
 
     # We don't use weighting in source_model
     config.weighting = 'no_weight'
@@ -105,8 +109,8 @@ def main():
         if len(spec_st) == 0:
             ssp_exit()
         # We keep just horizontal component:
-        spec_st = Stream([x for x in spec_st.traces
-                          if x.stats.channel[-1] == 'H'])
+        spec_st = SpectrumStream(
+            [x for x in spec_st if x.stats.channel[-1] == 'H'])
 
         for trace_spec in spec_st:
             orientation = trace_spec.stats.channel[-1]
@@ -114,7 +118,7 @@ def main():
                 continue
             make_synth(config, spec_st, trace_spec)
     else:
-        spec_st = Stream()
+        spec_st = SpectrumStream()
         make_synth(config, spec_st)
 
     from sourcespec.ssp_plot_spectra import plot_spectra

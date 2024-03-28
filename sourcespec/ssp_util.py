@@ -219,7 +219,7 @@ class MediumProperties():
             value = self.get_from_taup(mproperty)
             logger.info(
                 f'Using {mproperty} from global model (iasp91)')
-        return value
+        return float(value)
 
     def to_string(self, mproperty, value):
         """

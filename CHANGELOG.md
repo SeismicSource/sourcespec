@@ -17,6 +17,11 @@ previous versions. You will need to upgrade your old database manually or using
 - Introducing a new file format for providing event information
   (hypocentral location, magnitude, focal mechanism, moment tensor):
   the [SourceSpec Event File].
+- New HDF5 and TEXT file formats to store spectra
+- Station residuals are now saved in an HDF5 spectrum file, instead of a
+  pickle file
+- New config file option `save_spectra` to save the spectra to an HDF5 file
+  in the output directory
 - Changes in the YAML output file:
   - `bsd` (Brune stress drop) parameter renamed to `ssd` (static stress drop)
   - Store in the `event_info` section the values of vp, vs and rho close to
