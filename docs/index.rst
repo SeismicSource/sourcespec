@@ -55,6 +55,7 @@ Contents:
    configuration_file
    file_formats
    source_spec_event_file
+   spectral_file_formats
    installation
    sample_runs
    getting_help
