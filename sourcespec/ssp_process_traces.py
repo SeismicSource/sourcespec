@@ -292,22 +292,44 @@ def _define_signal_and_noise_windows(config, trace):
             'Using (Ts-Tp)/2 instead')
     t1 = s_arrival_time - s_pre_time
     t1 = max(trace.stats.starttime, t1)
-    t2 = t1 + config.win_length
+    tt_s = trace.stats.travel_times['S']
+    # manage case where variable_win_length_factor is None:
+    variable_win_length_factor = config.variable_win_length_factor or 0
+    win_length_s = max(config.win_length, variable_win_length_factor * tt_s)
+    t2 = t1 + win_length_s
+    t2 = min(trace.stats.endtime, t2)
+    win_length_s = t2 - t1
     trace.stats.arrivals['S1'] = ('S1', t1)
     trace.stats.arrivals['S2'] = ('S2', t2)
     # Signal window for spectral analysis (P phase)
     t1 = p_arrival_time - config.signal_pre_time
     t1 = max(trace.stats.starttime, t1)
-    t2 = t1 + min(config.win_length, s_minus_p + s_pre_time)
+    tt_p = trace.stats.travel_times['P']
+    win_length_p = max(config.win_length, variable_win_length_factor * tt_p)
+    t2 = t1 + min(win_length_p, s_minus_p + s_pre_time)
+    t2 = min(trace.stats.endtime, t2)
+    win_length_p = t2 - t1
     trace.stats.arrivals['P1'] = ('P1', t1)
     trace.stats.arrivals['P2'] = ('P2', t2)
     # Noise window for spectral analysis
-    t1 = max(trace.stats.starttime, p_arrival_time - config.noise_pre_time)
-    t2 = t1 + config.win_length
-    if t2 >= p_arrival_time:
-        logger.warning(f'{trace.id}: noise window ends after P-wave arrival')
-        # Note: maybe we should also take into account signal_pre_time here
-        t2 = p_arrival_time
+    if config.wave_type[0] == 'P':
+        win_length = win_length_p
+    elif config.wave_type[0] == 'S':
+        win_length = win_length_s
+    if config.variable_win_length_factor:
+        logger.info(f'{trace.id}: window length {win_length:.3f} seconds')
+    if config.noise_pre_time is None:
+        noise_pre_time = win_length + config.signal_pre_time
+    else:
+        noise_pre_time = config.noise_pre_time
+    t1 = max(
+        trace.stats.starttime,
+        p_arrival_time - noise_pre_time
+    )
+    t2 = t1 + win_length
+    if t2 > (p_arrival_time - config.signal_pre_time):
+        logger.warning(f'{trace.id}: noise window ends after P-window start')
+        t2 = p_arrival_time - config.signal_pre_time
         t1 = min(t1, t2)
     trace.stats.arrivals['N1'] = ('N1', t1)
     trace.stats.arrivals['N2'] = ('N2', t2)

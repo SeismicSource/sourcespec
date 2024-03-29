@@ -73,6 +73,8 @@ previous versions. You will need to upgrade your old database manually or using
 - For weights computed from spectral S/N ratio (noise weighting), set to zero
   all the weights below 20% of the maximum weight, so that these weakly
   constrained parts of the spectrum are ignored in the inversion
+- Possibility of using variable signal window lengths for each station
+  as a function of the travel time of the P or S wave (see [#48])
 
 ### Inversion
 
@@ -153,6 +155,8 @@ previous versions. You will need to upgrade your old database manually or using
 - New parameter `plot_map_api_key` to provide a Stadia Maps
   api key for Stamen Terrain basemap
 - New option for the parameter `plot_coastline_resolution`: `no_coastline`
+- New config parameter `variable_win_length_factor` to specify window
+  length as a fraction of the travel time of the P/S wave (see [#48])
 
 ### Bugfixes
 
@@ -706,4 +710,5 @@ Initial Python port.
 [#40]: https://github.com/SeismicSource/sourcespec/issues/40
 [#43]: https://github.com/SeismicSource/sourcespec/issues/43
 [#44]: https://github.com/SeismicSource/sourcespec/issues/44
+[#48]: https://github.com/SeismicSource/sourcespec/issues/48
 [#49]: https://github.com/SeismicSource/sourcespec/issues/49
