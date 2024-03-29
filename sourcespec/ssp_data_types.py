@@ -190,13 +190,13 @@ class SpectralParameter(OrderedAttribDict):
         self.confidence_level = confidence_level
         self.outlier = False
 
-    def value_uncertainty(self):
-        """Return value and uncertainty as 3-element tuple."""
+    def compact_uncertainty(self):
+        """Return uncertainty in a compact form."""
         if self.lower_uncertainty is not None:
-            uncertainty = (self.lower_uncertainty, self.upper_uncertainty)
-        else:
-            uncertainty = (self.uncertainty, self.uncertainty)
-        return (self.value, *uncertainty)
+            return (self.lower_uncertainty, self.upper_uncertainty)
+        if self.uncertainty is not None:
+            return (self.uncertainty, self.uncertainty)
+        return (np.nan, np.nan)
 
 
 class StationParameters(OrderedAttribDict):
@@ -208,55 +208,34 @@ class StationParameters(OrderedAttribDict):
     objects.
     """
 
-    def __init__(self, param_id, instrument_type=None,
+    def __init__(self, station_id, instrument_type=None,
                  latitude=None, longitude=None,
                  hypo_dist_in_km=None, epi_dist_in_km=None, azimuth=None):
-        self.param_id = param_id
+        self.station_id = station_id
         self.instrument_type = instrument_type
         self.latitude = latitude
         self.longitude = longitude
         self.hypo_dist_in_km = hypo_dist_in_km
         self.epi_dist_in_km = epi_dist_in_km
         self.azimuth = azimuth
-        self.params_dict = {}
-        self.params_err_dict = {}
-        self.is_outlier_dict = {}
+        self.Mw = None
+        self.fc = None
+        self.t_star = None
+        self.Mo = None
+        self.radius = None
+        self.ssd = None
+        self.Qo = None
+        self.Er = None
+        self.sigma_a = None
+        self.Ml = None
 
-    def __setattr__(self, attr, value):
-        if isinstance(value, SpectralParameter):
-            parname = attr
-            par = value
-            self.params_dict[parname] = par.value
-            if par.uncertainty is not None:
-                self.params_err_dict[parname] = (
-                    par.uncertainty, par.uncertainty
-                )
-            else:
-                self.params_err_dict[parname] = (
-                    par.lower_uncertainty, par.upper_uncertainty
-                )
-            self.is_outlier_dict[parname] = par.outlier
-        self[attr] = value
-
-    def rebuild_dictionaries(self):
-        """Rebuild spectral parameters dictionaries."""
-        for key, value in self.items():
-            if not isinstance(value, SpectralParameter):
-                continue
-            parname = key
-            par = value
-            self.params_dict[parname] = par.value
-            if par.uncertainty is not None:
-                self.params_err_dict[parname] = (
-                    par.uncertainty, par.uncertainty
-                )
-            elif par.lower_uncertainty is not None:
-                self.params_err_dict[parname] = (
-                    par.lower_uncertainty, par.upper_uncertainty
-                )
-            else:
-                self.params_err_dict[parname] = (np.nan, np.nan)
-            self.is_outlier_dict[parname] = par.outlier
+    def get_spectral_parameters(self):
+        """Return a dictionary of spectral parameters."""
+        return {
+            key: value
+            for key, value in self.items()
+            if isinstance(value, SpectralParameter)
+        }
 
 
 class SummaryStatistics(OrderedAttribDict):
@@ -294,7 +273,9 @@ class SummaryStatistics(OrderedAttribDict):
         """Return uncertainty in a compact form."""
         if self.lower_uncertainty is not None:
             return (self.lower_uncertainty, self.upper_uncertainty)
-        return (self.uncertainty, self.uncertainty)
+        if self.uncertainty is not None:
+            return (self.uncertainty, self.uncertainty)
+        return (np.nan, np.nan)
 
 
 class SummarySpectralParameter(OrderedAttribDict):
@@ -342,8 +323,10 @@ class SourceSpecOutput(OrderedAttribDict):
     def value_array(self, key, filter_outliers=False):
         """Return an array of values for the given key."""
         vals = np.array([
-            x.params_dict.get(key, np.nan)
-            for x in self.station_parameters.values()
+            stat_par[key].value
+            if key in stat_par and stat_par[key] is not None
+            else np.nan
+            for stat_par in self.station_parameters.values()
         ])
         if filter_outliers:
             outliers = self.outlier_array(key)
@@ -351,10 +334,12 @@ class SourceSpecOutput(OrderedAttribDict):
         return vals
 
     def error_array(self, key, filter_outliers=False):
-        """Return an array of errors for the given key."""
+        """Return an array of errors (two columns) for the given key."""
         errs = np.array([
-            x.params_err_dict.get(key, np.nan)
-            for x in self.station_parameters.values()
+            stat_par[key].compact_uncertainty()
+            if key in stat_par and stat_par[key] is not None
+            else (np.nan, np.nan)
+            for stat_par in self.station_parameters.values()
         ])
         if filter_outliers:
             outliers = self.outlier_array(key)
@@ -365,9 +350,11 @@ class SourceSpecOutput(OrderedAttribDict):
         """Return an array of outliers for the given key."""
         return np.array(
             [
+                stat_par[key].outlier
+                if key in stat_par
                 # if we cannot find the given key, we assume outlier=True
-                x.is_outlier_dict.get(key, True)
-                for x in self.station_parameters.values()
+                else True
+                for stat_par in self.station_parameters.values()
             ]
         )
 
@@ -408,7 +395,6 @@ class SourceSpecOutput(OrderedAttribDict):
         for stat_id, outl in zip(station_ids, outliers):
             stat_par = self.station_parameters[stat_id]
             stat_par[key].outlier = outl
-            stat_par.rebuild_dictionaries()
 
     def mean_values(self):
         """Return a dictionary of mean values."""

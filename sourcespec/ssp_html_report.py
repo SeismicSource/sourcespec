@@ -223,9 +223,10 @@ def _summary_value_and_err_text(value, error, fmt):
 
 def _station_value_and_err_text(par, key, fmt):
     """Format station value and error text."""
-    try:
-        _par = par[key]
-    except KeyError:
+    # par[key] can be None even if key is in par (e.g., if key is 'Ml' and
+    # local magnitude is not computed)
+    _par = par[key] if key in par else None
+    if _par is None:
         return '', ''
     if isinstance(_par, SpectralParameter):
         value = _par.value

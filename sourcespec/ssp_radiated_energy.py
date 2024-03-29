@@ -193,15 +193,13 @@ def radiated_energy_and_apparent_stress(
         # Make sure that the param_Er and param_sigma_a objects are always
         # defined, even when Er and/or sigma_a are not computed
         # (i.e., "continue" below)
-        try:
-            param_Er = station_pars.Er
-        except KeyError:
+        param_Er = station_pars.Er
+        if param_Er is None:
             param_Er = SpectralParameter(
                 param_id='Er', value=np.nan, format_spec='{:.3e}')
             station_pars.Er = param_Er
-        try:
-            param_sigma_a = station_pars.sigma_a
-        except KeyError:
+        sigma_a = station_pars.sigma_a
+        if sigma_a is None:
             param_sigma_a = SpectralParameter(
                 param_id='sigma_a', value=np.nan, format_spec='{:.3e}')
             station_pars.sigma_a = param_sigma_a

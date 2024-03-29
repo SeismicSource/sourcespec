@@ -295,7 +295,7 @@ def _spec_inversion(config, spec, spec_weight):
         )
 
     station_pars = StationParameters(
-        param_id=spec.id, instrument_type=spec.stats.instrtype,
+        station_id=spec.id, instrument_type=spec.stats.instrtype,
         latitude=stla, longitude=stlo,
         hypo_dist_in_km=spec.stats.hypo_dist,
         epi_dist_in_km=spec.stats.epi_dist,
@@ -319,7 +319,7 @@ def _spec_inversion(config, spec, spec_weight):
     travel_time = spec.stats.travel_times[config.wave_type[0]]
     # seismic moment
     station_pars.Mo = SpectralParameter(
-        param_id='Mw', value=mag_to_moment(Mw), format_spec='{:.3e}')
+        param_id='Mo', value=mag_to_moment(Mw), format_spec='{:.3e}')
     # source radius in meters
     station_pars.radius = SpectralParameter(
         param_id='radius', value=source_radius(fc, beta, k_coeff),
@@ -389,8 +389,14 @@ def _spec_inversion(config, spec, spec_weight):
 
 def _synth_spec(config, spec, station_pars):
     """Return a stream with one or more synthetic spectra."""
-    par = station_pars.params_dict
-    par_err = station_pars.params_err_dict
+    par = {
+        x.param_id: x.value
+        for x in station_pars.get_spectral_parameters().values()
+    }
+    par_err = {
+        x.param_id: x.compact_uncertainty()
+        for x in station_pars.get_spectral_parameters().values()
+    }
     spec_st = Stream()
     params_opt = [par[key] for key in ('Mw', 'fc', 't_star')]
 
@@ -505,7 +511,7 @@ def spectral_inversion(config, spec_st, weight_st):
             logger.warning(msg)
             continue
         spec_st += _synth_spec(config, spec, station_pars)
-        sspec_output.station_parameters[station_pars.param_id] = station_pars
+        sspec_output.station_parameters[station_pars.station_id] = station_pars
 
     logger.info('Inverting spectra: done')
     logger.info('---------------------------------------------------')

@@ -171,9 +171,8 @@ def local_magnitude(config, st, proc_st, sspec_output):
 
         # Make sure that the param_Ml object is always defined, even when Ml
         # is not computed (i.e., "continue" below)
-        try:
-            param_Ml = station_pars.Ml
-        except KeyError:
+        param_Ml = station_pars.Ml
+        if param_Ml is None:
             param_Ml = SpectralParameter(
                 param_id='Ml', value=np.nan, format_spec='{:.2f}')
             station_pars.Ml = param_Ml
