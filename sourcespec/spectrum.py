@@ -51,7 +51,13 @@ class AttributeDict(dict):
         super().__init__(*args, **kwargs)
 
     def __getattr__(self, name):
-        return self[name]
+        try:
+            return self.__getitem__(name)
+        except KeyError as e:
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute "
+                f"'{name}'"
+            ) from e
 
     def __setattr__(self, name, value):
         self[name] = value
