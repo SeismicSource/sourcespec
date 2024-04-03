@@ -15,6 +15,7 @@ Output functions for source_spec.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import shutil
 import contextlib
 import logging
 from collections.abc import Mapping
@@ -397,8 +398,10 @@ def _make_symlinks(config):
             continue
         basename = os.path.basename(filename)
         linkname = os.path.join(out_data_dir, basename)
-        if os.path.exists(linkname):
+        if os.path.isfile(linkname) or os.path.islink(linkname):
             os.remove(linkname)
+        elif os.path.isdir(linkname):
+            shutil.rmtree(linkname, ignore_errors=True)
         filename = os.path.join(rel_path, filename)
         os.symlink(filename, linkname)
 
