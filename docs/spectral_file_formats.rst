@@ -86,21 +86,27 @@ Here is an example of how to read an HDF5 file and save it to a text file:
 
 HDF5 File Format
 ----------------
-In the HDF5 file format, each :class:`spectrum.Spectrum` object is stored in
-a `group`_ named ``spectrum_NNNN``, where ``NNNN`` is the index of the spectrum
-in the original :class:`spectrum.SpectrumStream` object. For each group,
-metadata is stored in the `attributes`_ section, and data is stored into
-6 `datasets`_, as illustrated below:
+In the HDF5 file format, all the spectra are stored in a group named
+``spectra``. This will allow for storing additional data types in the future.
+Within the ``spectra`` group, each :class:`spectrum.Spectrum` object is stored
+in a `group`_ named ``spectrum_NNNNN_NET.STA.LOC.CHAN``, where ``NNNN`` is the
+index of the spectrum in the original :class:`spectrum.SpectrumStream` object.
+For each group, metadata is stored in the `attributes`_ section, and data is
+stored into 6 `datasets`_, as illustrated below:
 
 .. code-block:: none
 
-    spectrum_NNNN ──> attributes
-      ├── data
-      ├── data_logspaced
-      ├── data_mag
-      ├── data_mag_logspaced
-      ├── freq
-      └── freq_logspaced
+    HDF5 ──> attributes
+      └── spectra
+          ├── spectrum_NNNNN_NET.STA.LOC.CHAN ──> attributes
+          |   ├── data
+          |   ├── data_logspaced
+          |   ├── data_mag
+          |   ├── data_mag_logspaced
+          |   ├── freq
+          |   └── freq_logspaced
+          ├── spectrum_NNNNN_NET.STA.LOC.CHAN ──> attributes
+          ...
 
 The mandatory metadata fields are:
 
@@ -134,25 +140,27 @@ Example code for reading a SourceSpec HDF5 file using ``h5py``:
 
     >>> import h5py
     >>> fp = h5py.File('38471103.spectra.hdf5', 'r')
-    >>> print('\n'.join(fp.keys()))
-    spectrum_0000
-    spectrum_0001
-    spectrum_0002
-    spectrum_0003
+    >>> spectra = fp['spectra']
+    >>> print('\n'.join(spectra.keys()))
+    spectrum_00000_CI.CCA..HHE
+    spectrum_00001_CI.CCA..HHH
+    spectrum_00002_CI.CCA..HHN
+    spectrum_00003_CI.CCA..HHS
     ...
-    >>> print(fp['spectrum_0000'].attrs['network'])
+    >>> spec = spectra['spectrum_00000_CI.CCA..HHE']
+    >>> print(spec.attrs['network'])
     CI
-    >>> print(fp['spectrum_0000'].attrs['station'])
+    >>> print(spec.attrs['station'])
     CCA
-    >>> print(fp['spectrum_0000'].attrs['channel'])
-    HHN
-    >>> print(fp['spectrum_0000'].attrs['coords'])
+    >>> print(spec.attrs['channel'])
+    HHE
+    >>> print(spec.attrs['coords'])
     {'elevation': 0.959, 'latitude': 35.34149169921875, 'longitude': -116.87464141845703}
-    >>> print(fp['spectrum_0000']['freq'][...])
+    >>> print(spec['freq'][...])
     [ 0.1996008   0.3992016   0.5988024   0.79840319  0.99800399  1.19760479
       1.39720559  1.59680639  1.79640719  1.99600798  2.19560878  2.39520958
     ...
-    >>> print(fp['spectrum_0000']['data'][...])
+    >>> print(spec['data'][...])
     [2.49035173e+15 1.37636948e+15 1.44746675e+15 1.63566457e+15
      6.93049162e+14 1.01315194e+15 9.36761128e+14 8.00776096e+14
     ...

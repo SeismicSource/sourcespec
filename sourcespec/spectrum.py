@@ -377,9 +377,9 @@ class Spectrum():
         self.stats.location = trace.stats.location
         self.stats.channel = trace.stats.channel
 
-    def _write_hdf5(self, group):
+    def _write_to_hdf5_group(self, group):
         """
-        Write the spectrum to an HDF5 group.
+        Write the spectrum to an HDF5 spectrum group.
 
         :param group: The HDF5 group to write to.
         """
@@ -417,12 +417,44 @@ class Spectrum():
         group.create_dataset(
             'data_mag_logspaced', data=self.data_mag_logspaced)
 
-    def _write_text(self, filename):
+    def _write_hdf5(self, filename, append=False):
+        """
+        Write the spectrum to an HDF5 file.
+
+        :param append: If True, append the spectrum to an existing file.
+        :param filename: The name of the file to write to.
+        """
+        if append:
+            fp = h5py.File(filename, 'a')
+        else:
+            fp = h5py.File(filename, 'w')
+            fp.attrs['format'] = 'SourceSpec HDF5'
+            fp.attrs['version'] = '1.0'
+            fp.attrs['url'] = 'https://sourcespec.seismicsource.org'
+        main_group = fp['spectra'] if 'spectra' in fp\
+            else fp.create_group('spectra')
+        all_spec_group_names = [
+            key for key in main_group.keys()
+            if key.startswith('spectrum_')
+        ]
+        if not all_spec_group_names:
+            last_group_number = -1
+        else:
+            last_group = sorted(all_spec_group_names)[-1]
+            last_group_number = int(last_group.split('_')[1])
+        nn = last_group_number + 1
+        spec_group_name = f'spectrum_{nn:05d}_{self.id}'
+        self._write_to_hdf5_group(main_group.create_group(spec_group_name))
+        fp.close()
+
+    def _write_text(self, filename, append=False):
         """
         Write the spectrum to a TEXT file.
 
         :param filename: The name of the file to write to.
         """
+        if append:
+            raise ValueError('Cannot append to a TEXT file')
         with open(filename, 'w', encoding='utf-8') as fp:
             fp.write('# %SOURCESPEC TEXT SPECTRUM FORMAT 1.0\n')
             fp.write('# %BEGIN STATS YAML\n')
@@ -474,25 +506,9 @@ class Spectrum():
             Only valid for HDF5 format.
         """
         if format == 'HDF5':
-            if append:
-                fp = h5py.File(filename, 'a')
-                fp.attrs['format'] = 'SourceSpec SpectrumStream HDF5'
-                fp.attrs['version'] = '1.0'
-                fp.attrs['url'] = 'https://sourcespec.seismicsource.org'
-                try:
-                    lastgroup = sorted(fp.keys())[-1]
-                    newgroup = f'spectrum_{int(lastgroup[-4:])+1:04d}'
-                except IndexError:
-                    newgroup = 'spectrum_0000'
-            else:
-                fp = h5py.File(filename, 'w')
-                newgroup = 'spectrum_0000'
-            self._write_hdf5(fp.create_group(newgroup))
-            fp.close()
+            self._write_hdf5(filename, append)
         elif format == 'TEXT':
-            if append:
-                raise ValueError('Cannot append to a TEXT file')
-            self._write_text(filename)
+            self._write_text(filename, append)
         else:
             raise ValueError(f'Unsupported format: {format}')
 
@@ -773,7 +789,11 @@ def read_spectra(pathname, format='HDF5'):
     for fname in filelist:
         if format == 'HDF5':
             with h5py.File(fname, 'r') as fp:
-                for group in fp.values():
+                try:
+                    main_group = fp['spectra']
+                except KeyError as e:
+                    raise ValueError('No spectra found in HDF5 file') from e
+                for group in main_group.values():
                     spectra.append(_read_spectrum_from_hdf5_group(group))
         elif format == 'TEXT':
             spectra.append(_read_spectrum_from_text_file(fname))
