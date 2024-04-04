@@ -18,6 +18,7 @@ from collections import defaultdict
 from argparse import ArgumentParser
 import matplotlib
 import matplotlib.pyplot as plt
+from sourcespec._version import get_versions
 from sourcespec.spectrum import read_spectra
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
 from sourcespec.spectrum import SpectrumStream
@@ -131,7 +132,8 @@ def compute_mean_residuals(residual_dict, min_spectra=20):
                 norm_mean += norm
         spec_mean.data_mag /= norm_mean
         spec_mean.data = mag_to_moment(spec_mean.data_mag)
-
+        spec_mean.stats.software = 'SourceSpec'
+        spec_mean.stats.software_version = get_versions()['version']
         residual_mean.append(spec_mean)
     return residual_mean
 

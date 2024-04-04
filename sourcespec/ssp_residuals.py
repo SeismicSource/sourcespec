@@ -14,6 +14,7 @@ Spectral residual routine for sourcespec.
 """
 import os
 import logging
+from sourcespec._version import get_versions
 from sourcespec.spectrum import SpectrumStream
 from sourcespec.ssp_spectral_model import spectral_model
 from sourcespec.ssp_util import mag_to_moment
@@ -47,6 +48,8 @@ def spectral_residuals(config, spec_st, sspec_output):
             res = spec.copy()
             res.data_mag = spec.data_mag - synth_mean_mag
             res.data = mag_to_moment(res.data_mag)
+            res.stats.software = 'SourceSpec'
+            res.stats.software_version = get_versions()['version']
             residuals.append(res)
     # Save residuals to HDF5 file
     evid = config.event.event_id
