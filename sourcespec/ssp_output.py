@@ -434,3 +434,19 @@ def write_output(config, sspec_output):
     _write_hypo71(config, sspec_output)
     # Write to quakeml file, if requested
     write_qml(config, sspec_output)
+
+
+def save_spectra(config, spec_st):
+    """Save spectra to file."""
+    if not config.save_spectra:
+        return
+    outfile = os.path.join(
+        config.options.outdir,
+        f'{config.event.event_id}.spectra.hdf5'
+    )
+    spec_st.sort()
+    for spec in spec_st:
+        spec.stats.software = 'SourceSpec'
+        spec.stats.software_version = get_versions()['version']
+    spec_st.write(outfile)
+    logger.info(f'Spectra saved to: {outfile}')

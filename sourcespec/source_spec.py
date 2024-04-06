@@ -73,8 +73,9 @@ def main():
     compute_summary_statistics(config, sspec_output)
 
     # Save output
-    from sourcespec.ssp_output import write_output
+    from sourcespec.ssp_output import write_output, save_spectra
     write_output(config, sspec_output)
+    save_spectra(config, spec_st)
 
     # Save residuals
     from sourcespec.ssp_residuals import spectral_residuals

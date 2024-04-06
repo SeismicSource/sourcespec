@@ -102,7 +102,6 @@ More details are in section :ref:`configuration_file:Configuration File`.
 .. _Dataless SEED: https://ds.iris.edu/ds/nodes/dmc/data/formats/dataless-seed/
 .. _SEED resp: https://ds.iris.edu/ds/nodes/dmc/data/formats/resp/
 .. _SAC polezero (PAZ): https://www.jakewalter.net/sacresponse.html
-.. _pickle: https://docs.python.org/3/library/pickle.html
 .. _Cartopy: https://scitools.org.uk/cartopy/docs/latest
 .. _SQLite: https://www.sqlite.org
 .. _YAML: https://yaml.org

@@ -4,7 +4,7 @@
 Plot stacked spectra, along with summary inverted spectrum.
 
 :copyright:
-    2023 Claudio Satriano <satriano@ipgp.fr>
+    2023-2024 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
@@ -222,7 +222,7 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
     fmins = []
     fmaxs = []
     for spec in selected_specs:
-        freqs = spec.get_freq()
+        freqs = spec.freq
         spec_handle, = ax.loglog(
             freqs, spec.data, color=color, lw=linewidth,
             alpha=alpha, zorder=20)

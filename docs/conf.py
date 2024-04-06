@@ -46,7 +46,8 @@ autodoc_mock_imports = [
     'lxml',
     'PIL',
     'shapely',
-    'tzlocal'
+    'tzlocal',
+    'h5py'
 ]
 napoleon_use_param = True
 napoleon_preprocess_types = True
@@ -75,7 +76,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'SourceSpec'
-copyright = '2013-2023, Claudio Satriano'  # pylint: disable=redefined-builtin
+copyright = '2013-2024, Claudio Satriano'  # pylint: disable=redefined-builtin
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

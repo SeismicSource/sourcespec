@@ -90,7 +90,10 @@ output files (``EVID`` is replaced by the actual event ID):
 -  ``EVID.ssp.log``: log file in text format (including the command line
    arguments, for `reproducibility`_)
 -  ``EVID.ssp.conf``: the input config file (for `reproducibility`_)
--  ``EVID-residuals.pickle``: station residuals in Python `pickle`_ format
+-  ``EVID.residuals.hdf5``: station residuals in
+   :ref:`spectral_file_formats:HDF5 File Format`
+-  ``EVID.spectra.hdf5``: (optional) spectra in
+   :ref:`spectral_file_formats:HDF5 File Format`
 -  ``EVID.ssp.h``: hypocenter file in `HYPO71`_ format with the estimated
    moment magnitude (only if an input HYPO71 file is provided)
 -  ``EVID.xml``: updated `QuakeML`_ file with the results of the SourceSpec
@@ -131,7 +134,6 @@ HTML format.
 .. _Dataless SEED: https://ds.iris.edu/ds/nodes/dmc/data/formats/dataless-seed/
 .. _SEED resp: https://ds.iris.edu/ds/nodes/dmc/data/formats/resp/
 .. _SAC polezero (PAZ): https://www.jakewalter.net/sacresponse.html
-.. _pickle: https://docs.python.org/3/library/pickle.html
 .. _Cartopy: https://scitools.org.uk/cartopy/docs/latest
 .. _SQLite: https://www.sqlite.org
 .. _YAML: https://yaml.org

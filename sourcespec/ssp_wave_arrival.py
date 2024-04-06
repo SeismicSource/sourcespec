@@ -132,7 +132,8 @@ def _wave_arrival(trace, phase, config):
     # if _wave_arrival_taup() fails, it will raise a RuntimeError
     travel_time, takeoff_angle = _wave_arrival_taup(trace, phase)
     method = 'global velocity model (iasp91)'
-    return travel_time, takeoff_angle, method
+    # make sure returned values are float
+    return float(travel_time), float(takeoff_angle), method
 
 
 def _validate_pick(pick, theo_pick_time, tolerance, trace_id):
