@@ -107,7 +107,10 @@ def _init_parser(description, epilog, nargs):
     )
     group.add_argument(
         '-t', '--trace_path', nargs=nargs,
-        help='path to trace file(s) or trace dir'
+        help='path to trace file(s) or trace dir. It can be any format\n'
+             'supported by ObsPy (e.g. miniSEED, SAC, etc.), a directory\n'
+             'containing such files, or a TAR(GZ) or ZIP archive containing\n'
+             'such files'
     )
     parser.add_argument(
         '-q', '--qmlfile', dest='qml_file',

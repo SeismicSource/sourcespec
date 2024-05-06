@@ -18,6 +18,10 @@ Two very common choices are:
 The SAC format can carry additional information in its header, like
 event location and origin time, phase picks, instrument sensitivity.
 
+Input trace files can be provided --through the ``-t`` option-- as a list of
+files, as a directory containing the files, or as a TAR(GZ) or ZIP archive
+containing the files.
+
 Event formats
 ~~~~~~~~~~~~~
 
