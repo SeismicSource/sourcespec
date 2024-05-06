@@ -121,6 +121,8 @@ previous versions. You will need to upgrade your old database manually or using
 - Changes to `plot_sourcepars`:
   - Read vp, vs and rho from the SQLite database (previously: vs was hardcoded
     to 3.5 km/s, rho to 2700 kg/m3 and vp was not used)
+  - Read the source radius "k" coefficient from the SQLite database
+    (previously: "k" was hardcoded to 0.3724, value for the Brune model)
   - New command line option `--wave_type` to select the wave type (P, S, SV
     or SH) for plots involving the corner frequency
   - Possibility of plotting histogram of apparent stress

@@ -45,24 +45,60 @@ class Annot():
             print(f'{evid} Mw {Mw:.1f} {ystring}')
 
 
-def mag_to_moment(mag):
-    """Convert magnitude to moment."""
+def mag_to_moment(mag, b=0.5):
+    """
+    Convert magnitude to moment.
+
+    The parameter b is used to change the slope of the fc-Mw stress drop curve.
+
+    The standard value of b is 0.5, which corresponds to a self-similar model.
+    """
     mag = np.asarray(mag)
-    return np.power(10, (1.5 * mag + 9.1))
+    return np.power(10, (3 * b * mag + 9.1))
 
 
-def stress_drop_curve_fc_mw(delta_sigma, vel, mw, b=-0.5):
+def stress_drop_curve_fc_mw(delta_sigma, vel, mw, k=0.3724, b=-0.5):
     """
     Constant stress drop curve in fc vs Mw.
 
-    Chounet et al. (2013), https://hal.science/hal-03965701, eq. 9, page 9.
+    Obtained by combining the equation for stress drop:
+
+        delta_sigma = 7/16 * Mo / a^3
+
+    with the equation for source radius:
+
+        a = k * vel * (delta_sigma / fc)
+
+    where k is a coefficient discussed in Kaneko and Shearer (2014).
+
+    For the Brune source model, k=0.3724.
+
+    Parameters
+    ----------
+    delta_sigma : float
+        Stress drop in MPa.
+    vel : float
+        P or S-wave velocity in km/s.
+    mw : float
+        Moment magnitude.
+    b : float, optional
+        The slope of the stress drop curve. Default is -0.5.
+    k : float, optional
+        Coefficient for the source radius. Default is 0.3724
+        (Brune source model).
+
+    Returns
+    -------
+    fc : float
+        Corner frequency in Hz.
     """
     vel *= 1e3  # P or S-wave velocity in m/s
     delta_sigma *= 1e6  # stress drop in Pa
-    # b is the slope of stress-drop curve: b!=-0.5 means no self-similarity
-    power10 = 10**(-(-3 * b * mw + 9.1) - 0.935)
+    # compute moment from magnitude, allowing for non-self-similarity through
+    # the b parameter
+    moment = mag_to_moment(mw, -b)
     # return fc in Hz
-    return vel * (delta_sigma * power10)**(1. / 3)
+    return k*vel*(16/7 * delta_sigma / moment)**(1/3)
 
 
 def stress_drop_curve_Er_mw(delta_sigma, mu, mw):
@@ -216,6 +252,10 @@ class Params():
             self.cur, 'vs', np.float64, query_condition)
         self.rho = query_event_params_into_numpy(
             self.cur, 'rho', np.float64, query_condition)
+        self.kp = query_event_params_into_numpy(
+            self.cur, 'kp', np.float64, query_condition)
+        self.ks = query_event_params_into_numpy(
+            self.cur, 'ks', np.float64, query_condition)
         self.wave_type = query_event_params_into_numpy(
             self.cur, 'wave_type', str, query_condition)
         self.nsta = query_event_params_into_numpy(
@@ -304,6 +344,8 @@ class Params():
         self.vp = np.delete(self.vp, idx)
         self.vs = np.delete(self.vs, idx)
         self.rho = np.delete(self.rho, idx)
+        self.kp = np.delete(self.kp, idx)
+        self.ks = np.delete(self.ks, idx)
         self.wave_type = np.delete(self.wave_type, idx)
         self.nsta = np.delete(self.nsta, idx)
         self.Mo = np.delete(self.Mo, idx)
@@ -403,7 +445,7 @@ class Params():
             title += f'\n{extra_text}'
         ax.set_title(title, y=0.95, verticalalignment='top')
 
-    def _stress_drop_curves_fc_mw(self, vel, ax):
+    def _stress_drop_curves_fc_mw(self, vel, k_parameter, ax):
         """Plot stress-drop curves for different delta_sigma."""
         mag_min, mag_max = ax.get_xlim()
         mw_step = 0.1
@@ -411,7 +453,8 @@ class Params():
         fc_min = np.inf
         fc_max = 0.
         for delta_sigma in (0.1, 1., 10., 100.):
-            fc_test = stress_drop_curve_fc_mw(delta_sigma, vel, mw_test)
+            fc_test = stress_drop_curve_fc_mw(
+                delta_sigma, vel, mw_test, k_parameter)
             if fc_test.min() < fc_min:
                 fc_min = fc_test.min()
             if fc_test.max() > fc_max:
@@ -613,7 +656,7 @@ class Params():
         annot = Annot(self.mw, self.ssd, self.evids, yformat)
         fig.canvas.mpl_connect('pick_event', annot)
 
-    def _fit_fc_mw(self, vel, ax, slope=False):
+    def _fit_fc_mw(self, vel, k_parameter, ax, slope=False):
         """Plot a linear regression of fc vs mw."""
         mag_min, mag_max = ax.get_xlim()
         mw_step = 0.1
@@ -640,7 +683,8 @@ class Params():
         delta_sigma = 1. / ((vel * 1000.)**3.) * 10**(a + 9.1 + 0.935)
         delta_sigma /= 1e6
         print('delta_sigma', delta_sigma)
-        fc_test = stress_drop_curve_fc_mw(delta_sigma, vel, mw_test, b)
+        fc_test = stress_drop_curve_fc_mw(
+            delta_sigma, vel, mw_test, k_parameter, b=b)
         ax.plot(
             mw_test, fc_test, color='red', zorder=10, label=f'r2: {r2:.2f}')
         ax.legend()
@@ -668,18 +712,20 @@ class Params():
 
         if wave_type == 'P':
             vel = np.nanmean(self.vp)
+            k = np.nanmean(self.kp)
         elif wave_type in ('S', 'SV', 'SH'):
             vel = np.nanmean(self.vs)
+            k = np.nanmean(self.ks)
         else:
             raise ValueError('Wave type must be "P", "S", "SV" or "SH"')
-        self._stress_drop_curves_fc_mw(vel, ax)
+        self._stress_drop_curves_fc_mw(vel, k, ax)
 
         if hist:
             npoints = self._2d_hist_fc_mw(fig, ax, nbins, wave_type)
         else:
             npoints = self._scatter_fc_mw(fig, ax, wave_type)
         if fit:
-            self._fit_fc_mw(vel, ax, slope=slope)
+            self._fit_fc_mw(vel, k, ax, slope=slope)
         extra_text = 'Stress drop curves'
         self._set_plot_title(ax, npoints, extra_text)
         self._add_grid(ax_Mo)
