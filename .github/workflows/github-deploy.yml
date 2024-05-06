@@ -19,21 +19,24 @@ jobs:
       run: pipx run twine check dist/*
 
 
-  publish:
-    needs: [dist]
-    runs-on: ubuntu-latest
+  publish-to-pypi:
+    name: >-
+      Publish to PyPI
     # upload to PyPI on every tag starting with 'v'
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
-    # alternatively, to publish when a GitHub Release is created, use the following rule:
-    # if: github.event_name == 'release' && github.event.action == 'published'
-
+    needs:
+    - dist
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/sourcespec
+    permissions:
+      id-token: write
     steps:
-    - uses: actions/download-artifact@v2
-      with:
-        name: artifact
-        path: dist
-
-    - uses: pypa/gh-action-pypi-publish@v1.4.2
-      with:
-        user: claudiodsf
-        password: ${{ secrets.pypi_password }}
+      - name: Download all the dists
+        uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
