@@ -11,8 +11,8 @@ Two methods are available:
         number of peaks in the kernel density estimation;
 
 :copyright:
-    2023 Claudio Satriano <satriano@ipgp.fr>,
-         Kris Vanneste <kris.vanneste@oma.be>
+    2023-2024 Claudio Satriano <satriano@ipgp.fr>,
+              Kris Vanneste <kris.vanneste@oma.be>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)

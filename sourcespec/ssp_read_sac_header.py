@@ -4,7 +4,7 @@
 Read metadata from SAC file headers.
 
 :copyright:
-    2023 Claudio Satriano <satriano@ipgp.fr>
+    2023-2024 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)

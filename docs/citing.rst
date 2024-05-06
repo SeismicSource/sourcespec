@@ -6,7 +6,7 @@ How to Cite
 
 If you used SourceSpec for a scientific paper, please cite it as:
 
-   Satriano, C. (2023). SourceSpec – Earthquake source parameters from
+   Satriano, C. (2024). SourceSpec – Earthquake source parameters from
    P- or S-wave displacement spectra (X.Y). `doi:
    10.5281/ZENODO.3688587 <https://doi.org/10.5281/ZENODO.3688587>`__
 
