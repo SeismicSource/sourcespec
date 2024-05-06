@@ -4,13 +4,30 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 
-## unreleased
+## v1.8 - 2024-04-07
+
+This long overdue release brings many improvements, new features and bugfixes
+gradually introduced during the last year.
+
+Release highlights:
+
+- New file formats for events and spectra
+- New configuration options to better specifify velocity and density models
+- Better support for P-wave inversion and teleseismic events
+- Support for radiation pattern correction from focal mechanism
+- Option for travel time-based signal window length
+- More options to control the calculation of source radius and stress drop
+- Improved estimation of radiated energy
+- New source parameter: apparent stress
+- Fix for map tiles not plotted anymore
 
 This release requires at least Python 3.7.
 
 Warning: the SQLite database used by this version is not compatible with
 previous versions. You will need to upgrade your old database manually or using
 `source_spec -u DATABASE_FILE_NAME`.
+
+Make sure to read the detailed Changelog below 👇
 
 ### Input/output
 
