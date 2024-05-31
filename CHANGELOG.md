@@ -4,6 +4,12 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 
+## unreleased
+
+### Bugfixes
+
+- Fix for corner case where all the inversion errors are zero
+
 ## v1.8 - 2024-04-07
 
 This long overdue release brings many improvements, new features and bugfixes
@@ -29,7 +35,7 @@ previous versions. You will need to upgrade your old database manually or using
 
 Make sure to read the detailed Changelog below 👇
 
-### Input/output
+### v1.8: Input/output
 
 - Introducing a new file format for providing event information
   (hypocentral location, magnitude, focal mechanism, moment tensor):
@@ -76,7 +82,7 @@ Make sure to read the detailed Changelog below 👇
   - Link to input files
   - Information on the type of wave used for the inversion (P, S, SV or SH)
 
-### Processing
+### v1.8: Processing
 
 - Use all the available components to compute P-wave spectra (previously,
   only the vertical component was used)
@@ -98,7 +104,7 @@ Make sure to read the detailed Changelog below 👇
 - Possibility of using variable signal window lengths for each station
   as a function of the travel time of the P or S wave (see [#48])
 
-### Inversion
+### v1.8: Inversion
 
 - Possibility of using the magnitude (or scalar moment) provided in the event
   file as initial Mw value for the inversion
@@ -107,7 +113,7 @@ Make sure to read the detailed Changelog below 👇
 - By combining the previous options, it is now possible to fix the Mw value
   during the inversion to the value provided in the event file
 
-### Post-Inversion
+### v1.8: Post-Inversion
 
 - Possibility of choosing the "k" coefficient to compute source radius from
   corner frequency (Kaneko and Shearer, 2014)
@@ -124,7 +130,7 @@ Make sure to read the detailed Changelog below 👇
   weighted averages (the previous behavior was to not compute weighted averages
   for these parameters)
 
-### Plotting
+### v1.8: Plotting
 
 - Show the station radiated energy (Er) value on the station spectra plots
 - Show the summary radiated energy (Er) value on the stacked spectra plot
@@ -145,7 +151,7 @@ Make sure to read the detailed Changelog below 👇
   - Possibility of plotting histogram of apparent stress
   - Option to filter events by apparent stress
 
-### Config file
+### v1.8: Config file
 
 - New config parameter `epi_dist_ranges` to select stations within one or
   more ranges of epicentral distances. It replaces the old parameter
@@ -182,7 +188,7 @@ Make sure to read the detailed Changelog below 👇
 - New config parameter `variable_win_length_factor` to specify window
   length as a fraction of the travel time of the P/S wave (see [#48])
 
-### Bugfixes
+### v1.8: Bugfixes
 
 - Fix source radius computation when using P waves (use P-wave velocity instead
   of S-wave velocity)
@@ -204,7 +210,7 @@ Make sure to read the detailed Changelog below 👇
   when using weighted mean as reference statistics
 - Fix for Stamen Terrain basemap now requiring an API key from Stadia Maps
 
-### Requirements
+### v1.8: Requirements
 
 - Python minimum version raised to 3.7
 - Matplotlib minimum version raised to 3.2

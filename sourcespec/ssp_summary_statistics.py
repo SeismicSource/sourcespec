@@ -71,9 +71,13 @@ def _weights(values, errors=None, logarithmic=False):
     else:
         # compute the width of the error bar in linear units
         errors_width = values_plus - values_minus
-    # fix for infinite weight (zero error width)
-    errors_width[errors_width == 0] =\
-        np.nanmin(errors_width[errors_width > 0])
+    try:
+        # fix for infinite weight (zero error width)
+        errors_width[errors_width == 0] =\
+            np.nanmin(errors_width[errors_width > 0])
+    except ValueError:
+        # if all errors are zero, return ones
+        return np.ones_like(errors_width)
     return 1. / (errors_width**2.)
 
 
