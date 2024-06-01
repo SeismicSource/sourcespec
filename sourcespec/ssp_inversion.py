@@ -198,8 +198,13 @@ def _spec_inversion(config, spec, spec_weight):
     # Find frequency range (indexes) to compute Mw_0 and t_star_0
     # When using noise weighting, idx1 is the first maximum in
     # signal-to-noise ratio
-    idx0, idx1 = _freq_ranges_for_Mw0_and_tstar0(
-        config, weight, freq_logspaced, statId)
+    try:
+        idx0, idx1 = _freq_ranges_for_Mw0_and_tstar0(
+            config, weight, freq_logspaced, statId)
+    except RuntimeError:
+        spec.stats.ignore = True
+        spec.stats.ignore_reason = 'fit failed'
+        raise
 
     # first maximum is a proxy for fc, we use it for fc_0:
     fc_0 = freq_logspaced[idx1]
@@ -248,6 +253,8 @@ def _spec_inversion(config, spec, spec_weight):
         params_opt, params_err, misfit = _curve_fit(
             config, spec, weight, yerr, initial_values, bounds)
     except (RuntimeError, ValueError) as m:
+        spec.stats.ignore = True
+        spec.stats.ignore_reason = 'fit failed'
         raise RuntimeError(
             f'{m}\n{statId}: unable to fit spectral model'
         ) from m
@@ -259,12 +266,16 @@ def _spec_inversion(config, spec, spec_weight):
     logger.info(f'{statId}: misfit: {misfit:.3f}')
 
     if np.isclose(fc, bounds.fc_min, rtol=0.1):
+        spec.stats.ignore = True
+        spec.stats.ignore_reason = 'fc too low'
         raise ValueError(
             f'{statId}: optimal fc within 10% of fc_min: '
             f'{fc:.3f} ~= {bounds.fc_min:.3f}: ignoring inversion results'
         )
 
     if np.isclose(fc, bounds.fc_max, rtol=1e-4):
+        spec.stats.ignore = True
+        spec.stats.ignore_reason = 'fc too high'
         raise ValueError(
             f'{statId}: optimal fc within 0.1% of fc_max: '
             f'{fc:.3f} ~= {bounds.fc_max:.3f}: ignoring inversion results'
@@ -272,6 +283,8 @@ def _spec_inversion(config, spec, spec_weight):
 
     misfit_max = config.pi_misfit_max or np.inf
     if misfit > misfit_max:
+        spec.stats.ignore = True
+        spec.stats.ignore_reason = 'misfit too high'
         raise ValueError(
             f'{statId}: misfit larger than pi_misfit_max: '
             f'{misfit:.3f} > {misfit_max:.3f}: ignoring inversion results'
@@ -282,6 +295,8 @@ def _spec_inversion(config, spec, spec_weight):
         config.pi_t_star_min_max or (-np.inf, np.inf)
     # pylint: disable=superfluous-parens
     if not (pi_t_star_min <= t_star <= pi_t_star_max):
+        spec.stats.ignore = True
+        spec.stats.ignore_reason = 't_star out of bounds'
         raise ValueError(
             f'{statId}: t_star: {t_star:.3f} not in allowed range '
             f'[{pi_t_star_min:.3f}, {pi_t_star_max:.3f}]: '
@@ -289,6 +304,8 @@ def _spec_inversion(config, spec, spec_weight):
         )
     pi_fc_min, pi_fc_max = config.pi_fc_min_max or (-np.inf, np.inf)
     if not (pi_fc_min <= fc <= pi_fc_max):
+        spec.stats.ignore = True
+        spec.stats.ignore_reason = 'fc out of bounds'
         raise ValueError(
             f'{statId}: fc: {fc:.3f} not in allowed range '
             f'[{pi_fc_min:.3f}, {pi_fc_max:.3f}]: ignoring inversion results'

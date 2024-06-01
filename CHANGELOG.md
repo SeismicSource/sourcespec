@@ -8,6 +8,7 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 
 ### Bugfixes
 
+- Fix for rejected spectra still being plotted in the stacked spectra plot
 - Fix for corner case where all the inversion errors are zero
 
 ## v1.8 - 2024-04-07

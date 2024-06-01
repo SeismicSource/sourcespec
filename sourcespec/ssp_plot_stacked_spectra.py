@@ -211,9 +211,12 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
     if not config.plot_show and not config.plot_save:
         return
     # Select "H" spectra (note: spec_st.select cannot be used because it is
-    # case unsensitive)
+    # case unsensitive). Also, ignore spectra with ignore=True
     selected_specs = [
-        spec for spec in spec_st if spec.stats.channel[-1] == 'H']
+        spec for spec in spec_st
+        if spec.stats.channel[-1] == 'H'
+        and not spec.stats.ignore
+    ]
     # plotting
     fig, ax = _make_fig(config)
     color = 'red'
