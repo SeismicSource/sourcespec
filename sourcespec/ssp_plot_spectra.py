@@ -183,6 +183,7 @@ def _make_fig(config, plot_params):
             ax2.yaxis.set_tick_params(
                 which='both', labelright=False, width=0)
         ax.has_station_text = False
+        ax.has_ignore_text = False
         axes.append((ax, ax2))
     fig.subplots_adjust(hspace=.025, wspace=.03)
     plot_params.figures.append(fig)
@@ -485,6 +486,22 @@ def _station_text(spec, ax, color, path_effects, stack_plots):
         ax.has_station_text = True
 
 
+def _ignore_text(spec, ax, color, path_effects, stack_plots):
+    ignore_text = spec.stats.ignore_reason
+    if not stack_plots:
+        color = 'black'
+    if not ax.has_ignore_text or stack_plots:
+        ax.text(
+            0.05, 0.02, ignore_text,
+            horizontalalignment='left',
+            verticalalignment='bottom',
+            color=color,
+            transform=ax.transAxes,
+            zorder=50,
+            path_effects=path_effects)
+        ax.has_ignore_text = True
+
+
 def _params_text(spec, ax, color, path_effects, stack_plots):
     global STATION_TEXT_YPOS  # pylint: disable=global-statement
     if stack_plots:
@@ -583,8 +600,12 @@ def _plot_spec(config, plot_params, spec, spec_noise):
     path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
     color, linestyle, linewidth =\
         _color_lines(config, orientation, plotn, stack_plots)
-    # dim out ignored spectra
-    alpha = 0.3 if spec.stats.ignore else 1.0
+    # dim out ignored spectra, make invisible spectra not to be plotted
+    alpha = 1.0
+    if spec.stats.ignore:
+        alpha = 0.3
+    if not spec.stats.plotme:
+        alpha = 0.0
     if plot_type == 'regular':
         zorder = defaultdict(lambda: 20, {'S': 21, 'H': 22})
         ax.loglog(
@@ -611,6 +632,10 @@ def _plot_spec(config, plot_params, spec, spec_noise):
             color=color, alpha=alpha, zorder=20)
     if orientation == 'S':
         _params_text(spec, ax, color, path_effects, stack_plots)
+    # plot ignored text for inverted spectra, either uncorrected (H) or
+    # corrected (h), so that this text is plotted only for failed inversions
+    if orientation in ['H', 'h'] and spec.stats.ignore:
+        _ignore_text(spec, ax, color, path_effects, stack_plots)
     # station_text must be written after params_text, since it might move up
     # if params_text is too tall
     _station_text(spec, ax, color, path_effects, stack_plots)
@@ -667,10 +692,11 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
         # which would coincide with the component spectrum
         # (but if the spectrum is corrected, e.g., the 'h' component is
         # available, then plot it)
+        spec.stats.plotme = True
         orientation = spec.stats.channel[-1]
         if (not plot_params.stack_plots and ncomponents == 1
                 and orientation == 'H' and 'h' not in orientations):
-            continue
+            spec.stats.plotme = False
         spec_noise = None
         if orientation not in ['S', 's', 't', 'h']:
             specid = spec.get_id()

@@ -6,6 +6,10 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 
 ## unreleased
 
+### Plotting
+
+- Spectral plots: show information on the reason why a fit failed
+
 ### Bugfixes
 
 - Fix for rejected spectra still being plotted in the stacked spectra plot
