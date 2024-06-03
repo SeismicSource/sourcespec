@@ -8,6 +8,7 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 
 ### Plotting
 
+- Stacked spectra: color spectral curves according to the weighting function
 - Spectral plots: show information on the reason why a fit failed
 
 ### Bugfixes

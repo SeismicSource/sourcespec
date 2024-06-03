@@ -16,6 +16,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
+from matplotlib.collections import LineCollection
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
 from sourcespec.ssp_spectral_model import spectral_model
 from sourcespec.savefig import savefig
@@ -198,12 +199,22 @@ def _savefig(config, fig):
     if config.plot_show:
         plt.show()
     if config.plot_save:
-        savefig(fig, figfile, fmt, bbox_inches='tight')
+        savefig(fig, figfile, fmt, bbox_inches='tight', dpi=300)
         config.figures['stacked_spectra'].append(figfile)
         logger.info(f'Stacked spectra plot saved to: {figfile}')
 
 
-def plot_stacked_spectra(config, spec_st, sspec_output):
+def _truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
+    """
+    Truncate a colormap to a specific range.
+    """
+    return matplotlib.colors.LinearSegmentedColormap.from_list(
+        f'trunc({cmap.name},{minval:.2f},{maxval:.2f})',
+        cmap(np.linspace(minval, maxval, n))
+    )
+
+
+def plot_stacked_spectra(config, spec_st, weight_st, sspec_output):
     """
     Plot stacked spectra, along with summary inverted spectrum.
     """
@@ -219,28 +230,65 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
     ]
     # plotting
     fig, ax = _make_fig(config)
-    color = 'red'
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
+        'w_red', ['white', 'red'], N=100)
+    cmap = _truncate_colormap(cmap, 0.2, 1)
+    norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
     alpha = 0.5
     linewidth = 2
     fmins = []
     fmaxs = []
+    specmins = []
+    specmaxs = []
     for spec in selected_specs:
+        # find the same spec in weight_st
+        try:
+            weight_spec = weight_st.select(id=spec.id)[0]
+            weight = weight_spec.data
+        except IndexError:
+            # this should not happen, but if it does, use a weight of 1
+            weight = np.ones_like(spec.data)
+        color = cmap(norm(weight))
         freqs = spec.freq
-        spec_handle, = ax.loglog(
-            freqs, spec.data, color=color, lw=linewidth,
-            alpha=alpha, zorder=20)
+        # create a multi-segment line to use a colormap
+        points = np.array([freqs, spec.data]).T.reshape((-1, 1, 2))
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+        # generate a rasterized LineCollection to produce smaller files
+        lc = LineCollection(
+            segments, cmap=cmap, norm=norm, alpha=alpha, rasterized=True,
+            zorder=20)
+        lc.set_array(weight)
+        lc.set_linewidth(linewidth)
+        ax.add_collection(lc)
+        # store min/max values for axes limits
         fmins.append(freqs.min())
         fmaxs.append(freqs.max())
+        specmins.append(spec.data.min())
+        specmaxs.append(spec.data.max())
     fmin = min(fmins)
     fmax = max(fmaxs)
+    ax.set_xlim(fmin, fmax)
+    specmin = min(specmins)
+    specmax = max(specmaxs)
+    padding = 0.05*(np.log10(specmax) - np.log10(specmin))
+    ax.set_ylim(
+        10**(np.log10(specmin)-padding),
+        10**(np.log10(specmax)+padding)
+    )
     freq, synth_model, synth_model_no_att, synth_model_no_fc =\
         _summary_synth_spec(sspec_output, fmin, fmax)
     color = 'black'
     alpha = 0.9
     linewidth = 2
-    synth_handle, = ax.loglog(
+    synth_handle, = ax.plot(
         freq, synth_model, color=color, lw=linewidth,
         alpha=alpha, zorder=40)
+    # draw an invisible line to add to the legend
+    spec_handle, = ax.plot(
+        [1], [1], color=cmap(norm(0.5)), lw=linewidth,
+        alpha=alpha, zorder=20)
     legend_handles = [spec_handle, synth_handle]
     legend_labels = [
         _nspectra_text(selected_specs),
@@ -249,7 +297,7 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
     if config.plot_spectra_no_attenuation:
         color = 'gray'
         linewidth = 2
-        synth_no_att_handle, = ax.loglog(
+        synth_no_att_handle, = ax.plot(
             freq, synth_model_no_att, color=color, lw=linewidth,
             alpha=alpha, zorder=39)
         legend_handles.append(synth_no_att_handle)
@@ -258,7 +306,7 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
         color = 'gray'
         linewidth = 2
         linestyle = 'dashed'
-        synth_no_fc_handle, = ax.loglog(
+        synth_no_fc_handle, = ax.plot(
             freq, synth_model_no_fc, color=color, lw=linewidth, ls=linestyle,
             alpha=alpha, zorder=39)
         legend_handles.append(synth_no_fc_handle)
@@ -267,6 +315,12 @@ def plot_stacked_spectra(config, spec_st, sspec_output):
         legend_handles, legend_labels,
         loc='upper right', framealpha=1
     ).set_zorder(100)
+    axins = ax.inset_axes([0.05, 0.27, 0.3, 0.04])
+    cbar = matplotlib.colorbar.ColorbarBase(
+        axins, cmap=cmap, norm=norm, orientation='horizontal')
+    cbar.ax.text(
+        0.5, 0.5, 'Weight', fontsize=10, color='w', ha='center', va='center')
+    cbar.ax.set_xticks([0, 0.5, 1], ['0', '0.5', '1'], size=8)
     ax2 = _make_ax2(ax)
     _plot_fc_and_mw(sspec_output, ax, ax2)
     _summary_params_text(sspec_output, ax)
