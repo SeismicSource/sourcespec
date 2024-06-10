@@ -88,8 +88,12 @@ class PAZ():
 
     def _read(self, file):
         """Read a PAZ file."""
-        with open(file, 'r', encoding='ascii') as fp:
-            self.lines = enumerate(fp, start=1)
+        # We cannot use the "with" statement here because we need to keep
+        # self.lines alive as an iterator
+        # pylint: disable=consider-using-with
+        fp = open(file, 'r', encoding='ascii')  # sourcery skip
+        # pylint: enable=consider-using-with
+        self.lines = enumerate(fp, start=1)
         while True:
             try:
                 self._parse_paz_file_lines()
@@ -100,6 +104,7 @@ class PAZ():
                     f'Unable to parse file "{file}" as PAZ file. '
                     f'Error at line {self.linenum}: {e}'
                 ) from e
+        fp.close()
 
     def _parse_paz_file_lines(self):
         """Parse a line or a set of lines of a PAZ file."""
