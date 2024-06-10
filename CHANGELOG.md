@@ -11,6 +11,10 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 - Stacked spectra: color spectral curves according to the weighting function
 - Spectral plots: show information on the reason why a fit failed
 
+### Config file
+
+- Improved documentation for the `sn_min` and `spectral_sn_min` parameters
+
 ### Bugfixes
 
 - Fix for rejected spectra still being plotted in the stacked spectra plot
