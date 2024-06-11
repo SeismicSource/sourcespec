@@ -31,7 +31,8 @@ Release highlights:
 - New file formats for events and spectra
 - New configuration options to better specifify velocity and density models
 - Better support for P-wave inversion and teleseismic events
-- Support for radiation pattern correction from focal mechanism
+- Radiation pattern correction from focal mechanism in radiated energy
+  computation 
 - Option for travel time-based signal window length
 - More options to control the calculation of source radius and stress drop
 - Improved estimation of radiated energy
