@@ -8,7 +8,7 @@ title: "SourceSpec – Earthquake source parameters from P- or S-wave displaceme
 doi: 10.5281/ZENODO.3688587
 url: "https://sourcespec.seismicsource.org"
 repository-code:: "https://github.com/SeismicSource/sourcespec"
-license: CeCILL 2.1
+license: "CeCILL 2.1"
 identifiers:
   - description: "This is the collection of archived snapshots of all versions of SourceSpec"
     type: doi
