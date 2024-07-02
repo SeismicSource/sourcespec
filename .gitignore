@@ -22,7 +22,7 @@ docs/generated
 .vscode
 
 #Build products
-sourcespec.egg-info/
+*.egg-info/
 dist/
 build/
 RELEASE-VERSION
