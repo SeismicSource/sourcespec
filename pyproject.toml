@@ -3,7 +3,7 @@ requires = ["setuptools>=77", "versioneer[toml]"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sourcespec"
+name = "sourcespec2"
 dynamic = ["version", "readme"]
 authors = [
     { name = "Claudio Satriano", email = "satriano@ipgp.fr" },
@@ -46,11 +46,11 @@ Source = "https://github.com/SeismicSource/sourcespec"
 Documentation = "https://sourcespec.readthedocs.io"
 
 [project.scripts]
-source_spec = "sourcespec.source_spec:main"
-source_model = "sourcespec.source_model:main"
-source_residuals = "sourcespec.source_residuals:main"
-clipping_detection = "sourcespec.clipping_detection:main"
-plot_sourcepars = "sourcespec.plot_sourcepars:main"
+source_spec2 = "sourcespec2.source_spec:main"
+source_model2 = "sourcespec2.source_model:main"
+source_residuals2 = "sourcespec2.source_residuals:main"
+clipping_detection2 = "sourcespec2.clipping_detection:main"
+plot_sourcepars2 = "sourcespec2.plot_sourcepars:main"
 
 [tool.setuptools]
 include-package-data = true
@@ -60,23 +60,23 @@ platforms = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["sourcespec", "sourcespec.*"]
+include = ["sourcespec2", "sourcespec2.*"]
 
 [tool.setuptools.package-data]
 "*" = ["LICENSE"]
-"sourcespec.config_files" = ["*.yaml", "*.conf"]
-"sourcespec.html_report_template" = ["*.html", "*.css"]
+"sourcespec2.config_files" = ["*.yaml", "*.conf"]
+"sourcespec2.html_report_template" = ["*.html", "*.css"]
 
 [tool.setuptools.dynamic]
-version = {attr = "sourcespec.__version__"}
+version = {attr = "sourcespec2.__version__"}
 
 [tool.versioneer]
 VCS = "git"
 style = "pep440"
-versionfile_source = "sourcespec/_version.py"
-versionfile_build = "sourcespec/_version.py"
+versionfile_source = "sourcespec2/_version.py"
+versionfile_build = "sourcespec2/_version.py"
 tag_prefix = "v"
-parentdir_prefix = "sourcespec-"
+parentdir_prefix = "sourcespec2-"
 
 [tool.pylama]
 skip = "build/*,versioneer.py,*/_version.py,*/configobj/*,*/adjustText/*"
