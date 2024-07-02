@@ -12,7 +12,7 @@ Functions to compute geometrical spreading coefficients.
 import logging
 import numpy as np
 from obspy.taup import TauPyModel
-from sourcespec.ssp_util import MediumProperties
+from .ssp_util import MediumProperties
 model = TauPyModel(model='iasp91')
 v_model = model.model.s_mod.v_mod
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
