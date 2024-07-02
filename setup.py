@@ -44,16 +44,16 @@ project_urls = {
 }
 
 setup(
-    name='sourcespec',
-    packages=['sourcespec', 'sourcespec.configobj', 'sourcespec.adjustText'],
+    name='sourcespec2',
+    packages=['sourcespec2', 'sourcespec2.configobj', 'sourcespec2.adjustText'],
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'source_spec = sourcespec.source_spec:main',
-            'source_model = sourcespec.source_model:main',
-            'source_residuals = sourcespec.source_residuals:main',
-            'clipping_detection = sourcespec.clipping_detection:main',
-            'plot_sourcepars = sourcespec.plot_sourcepars:main',
+            'source_spec2 = sourcespec2.source_spec:main',
+            'source_model2 = sourcespec2.source_model:main',
+            'source_residuals2 = sourcespec2.source_residuals:main',
+            'clipping_detection2 = sourcespec2.clipping_detection:main',
+            'plot_sourcepars2 = sourcespec2.plot_sourcepars:main',
         ]
     },
     version=versioneer.get_version(),
