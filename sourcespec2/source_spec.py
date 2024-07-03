@@ -25,10 +25,11 @@ def main():
     options = parse_args(progname='source_spec')
 
     # Setup stage
-    from .ssp_setup import (
-        configure, move_outdir, remove_old_outdir, setup_logging,
-        save_config, ssp_exit)
+    from .config import configure
     config = configure(options, progname='source_spec')
+    from .ssp_setup import (
+        move_outdir, remove_old_outdir, setup_logging,
+        save_config, ssp_exit)
     setup_logging(config)
 
     from .ssp_read_traces import read_traces
