@@ -14,7 +14,7 @@ import os
 import sys
 import shutil
 import sqlite3
-from sourcespec.ssp_db_definitions import (
+from .ssp_db_definitions import (
     DB_VERSION,
     STATIONS_TABLE, STATIONS_PRIMARY_KEYS, EVENTS_TABLE, EVENTS_PRIMARY_KEYS)
 

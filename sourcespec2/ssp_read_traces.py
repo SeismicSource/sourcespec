@@ -26,14 +26,14 @@ import contextlib
 from obspy import read
 from obspy.core import Stream
 from obspy.core.util import AttribDict
-from sourcespec.ssp_setup import (
+from .ssp_setup import (
     ssp_exit, INSTR_CODES_VEL, INSTR_CODES_ACC, TRACEID_MAP)
-from sourcespec.ssp_util import MediumProperties
-from sourcespec.ssp_read_station_metadata import (
+from .ssp_util import MediumProperties
+from .ssp_read_station_metadata import (
     read_station_metadata, PAZ)
-from sourcespec.ssp_read_event_metadata import (
+from .ssp_read_event_metadata import (
     parse_qml, parse_hypo_file, parse_hypo71_picks)
-from sourcespec.ssp_read_sac_header import (
+from .ssp_read_sac_header import (
     compute_sensitivity_from_SAC,
     get_instrument_from_SAC, get_station_coordinates_from_SAC,
     get_event_from_SAC, get_picks_from_SAC)
