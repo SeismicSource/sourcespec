@@ -23,9 +23,9 @@ def make_synth(config, spec_st, trace_spec=None):
     import math
     import numpy as np
     from copy import deepcopy
-    from sourcespec.spectrum import Spectrum
-    from sourcespec.ssp_spectral_model import spectral_model, objective_func
-    from sourcespec.ssp_util import mag_to_moment, moment_to_mag
+    from .spectrum import Spectrum
+    from .ssp_spectral_model import spectral_model, objective_func
+    from .ssp_util import mag_to_moment, moment_to_mag
     fdelta = 0.01
     fmin = config.options.fmin
     fmax = config.options.fmax + fdelta
@@ -82,9 +82,9 @@ def main():
     """
     # pylint: disable=import-outside-toplevel
     # Lazy-import modules for speed
-    from sourcespec.ssp_parse_arguments import parse_args
+    from .ssp_parse_arguments import parse_args
     options = parse_args(progname='source_model')
-    from sourcespec.ssp_setup import configure, ssp_exit
+    from .ssp_setup import configure, ssp_exit
     plot_show = bool(options.plot)
     conf_overrides = {
         'plot_show': plot_show,
@@ -93,10 +93,10 @@ def main():
     }
     config = configure(
         options, progname='source_model', config_overrides=conf_overrides)
-    from sourcespec.spectrum import SpectrumStream
-    from sourcespec.ssp_read_traces import read_traces
-    from sourcespec.ssp_process_traces import process_traces
-    from sourcespec.ssp_build_spectra import build_spectra
+    from .spectrum import SpectrumStream
+    from .ssp_read_traces import read_traces
+    from .ssp_process_traces import process_traces
+    from .ssp_build_spectra import build_spectra
 
     # We don't use weighting in source_model
     config.weighting = 'no_weight'
@@ -121,8 +121,8 @@ def main():
         spec_st = SpectrumStream()
         make_synth(config, spec_st)
 
-    from sourcespec.ssp_plot_spectra import plot_spectra
-    from sourcespec.ssp_plot_traces import plot_traces
+    from .ssp_plot_spectra import plot_spectra
+    from .ssp_plot_traces import plot_traces
     plot_traces(config, proc_st, ncols=2, block=False)
     plot_spectra(config, spec_st, ncols=1, stack_plots=True)
 

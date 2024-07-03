@@ -18,10 +18,10 @@ from collections import defaultdict
 from argparse import ArgumentParser
 import matplotlib
 import matplotlib.pyplot as plt
-from sourcespec._version import get_versions
-from sourcespec.spectrum import read_spectra
-from sourcespec.ssp_util import moment_to_mag, mag_to_moment
-from sourcespec.spectrum import SpectrumStream
+from ._version import get_versions
+from .spectrum import read_spectra
+from .ssp_util import moment_to_mag, mag_to_moment
+from .spectrum import SpectrumStream
 matplotlib.use('Agg')  # NOQA
 
 

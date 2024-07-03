@@ -15,7 +15,7 @@ import re
 import logging
 from obspy import read_inventory
 from obspy.core.inventory import Inventory, Network, Station, Channel, Response
-from sourcespec.ssp_setup import INSTR_CODES_VEL, INSTR_CODES_ACC
+from .ssp_setup import INSTR_CODES_VEL, INSTR_CODES_ACC
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 

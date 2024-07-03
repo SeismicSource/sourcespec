@@ -14,10 +14,10 @@ Spectral residual routine for sourcespec.
 """
 import os
 import logging
-from sourcespec._version import get_versions
-from sourcespec.spectrum import SpectrumStream
-from sourcespec.ssp_spectral_model import spectral_model
-from sourcespec.ssp_util import mag_to_moment
+from ._version import get_versions
+from .spectrum import SpectrumStream
+from .ssp_spectral_model import spectral_model
+from .ssp_util import mag_to_moment
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
