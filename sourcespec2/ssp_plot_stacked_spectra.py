@@ -17,10 +17,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
 from matplotlib.collections import LineCollection
-from sourcespec.ssp_util import moment_to_mag, mag_to_moment
-from sourcespec.ssp_spectral_model import spectral_model
-from sourcespec.savefig import savefig
-from sourcespec._version import get_versions
+from .ssp_util import moment_to_mag, mag_to_moment
+from .ssp_spectral_model import spectral_model
+from .savefig import savefig
+from ._version import get_versions
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
