@@ -29,8 +29,8 @@ from copy import copy
 from datetime import datetime
 from collections import defaultdict
 from . import __version__, __banner__
-from .configobj import ConfigObj
-from .configobj.validate import Validator
+from .config.configobj import ConfigObj
+from .config.configobj.validate import Validator
 from .config import Config
 from .ssp_update_db import update_db_file
 
@@ -266,7 +266,7 @@ def _read_config(config_file, configspec=None):
 
 def _parse_configspec():
     configspec_file = os.path.join(
-        os.path.dirname(__file__), 'config_files', 'configspec.conf')
+        os.path.dirname(__file__), 'config', 'configspec.conf')
     return _read_config(configspec_file)
 
 
@@ -578,7 +578,7 @@ def _init_traceid_map(traceid_map_file):
 def _write_sample_ssp_event_file():
     ssp_event_file = 'ssp_event.yaml'
     src_path = os.path.join(
-        os.path.dirname(__file__), 'config_files', 'ssp_event.yaml')
+        os.path.dirname(__file__), 'config', 'ssp_event.yaml')
     dest_path = os.path.join('.', ssp_event_file)
     write_file = True
     if os.path.exists(dest_path):

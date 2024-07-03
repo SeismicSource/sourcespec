@@ -17,7 +17,7 @@ if sys.version_info < MIN_PYTHON_VERSION:
     )
     sys.exit(MSG)
 
-from setuptools import setup  # noqa
+from setuptools import setup, find_packages # noqa
 import versioneer # noqa
 revision = versioneer.get_versions()['full-revisionid']
 cdn_baseurl = 'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec@{}'\
@@ -45,7 +45,7 @@ project_urls = {
 
 setup(
     name='sourcespec2',
-    packages=['sourcespec2', 'sourcespec2.configobj', 'sourcespec2.adjustText'],
+    packages=find_packages(),
     include_package_data=True,
     entry_points={
         'console_scripts': [

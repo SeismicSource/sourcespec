@@ -11,7 +11,7 @@ exclude docs/configuration_file.rst
 include bin/*.py
 include versioneer.py
 include sourcespec2/_version.py
-include sourcespec2/config_files/configspec.conf
-include sourcespec2/config_files/ssp_event.yaml
+include sourcespec2/config/configspec.conf
+include sourcespec2/config/ssp_event.yaml
 include sourcespec2/html_report_template/style.css
 include sourcespec2/html_report_template/*.html
