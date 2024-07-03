@@ -24,11 +24,11 @@ import signal
 import uuid
 import json
 import contextlib
-import warnings
 from copy import copy
 from datetime import datetime
 from collections import defaultdict
 from . import __version__, __banner__
+from .config import library_versions
 from .config.configobj import ConfigObj
 from .config.configobj.validate import Validator
 from .config import Config
@@ -46,7 +46,6 @@ else:
     IPSHELL = None
 
 # global variables
-OS = os.name
 OLDLOGFILE = None
 LOGGER = None
 SSP_EXIT_CALLED = False
@@ -55,202 +54,6 @@ TRACEID_MAP = None
 # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
 INSTR_CODES_VEL = ['H', 'L']
 INSTR_CODES_ACC = ['N', ]
-OBSPY_VERSION = None
-OBSPY_VERSION_STR = None
-NUMPY_VERSION_STR = None
-SCIPY_VERSION_STR = None
-MATPLOTLIB_VERSION_STR = None
-CARTOPY_VERSION_STR = None
-PYTHON_VERSION_STR = None
-
-
-def _check_obspy_version():
-    global OBSPY_VERSION, OBSPY_VERSION_STR  # pylint: disable=global-statement
-    # check ObsPy version
-    # pylint: disable=import-outside-toplevel
-    import obspy
-    MIN_OBSPY_VERSION = (1, 2, 0)
-    OBSPY_VERSION_STR = obspy.__version__
-    OBSPY_VERSION = OBSPY_VERSION_STR.split('.')[:3]
-    # special case for "rc" versions:
-    OBSPY_VERSION[2] = OBSPY_VERSION[2].split('rc')[0]
-    OBSPY_VERSION = tuple(map(int, OBSPY_VERSION))
-    with contextlib.suppress(IndexError):
-        # add half version number for development versions
-        # check if there is a fourth field in version string:
-        OBSPY_VERSION = OBSPY_VERSION[:2] + (OBSPY_VERSION[2] + 0.5,)
-    if OBSPY_VERSION < MIN_OBSPY_VERSION:
-        MIN_OBSPY_VERSION_STR = '.'.join(map(str, MIN_OBSPY_VERSION))
-        sys.stderr.write(
-            f'ERROR: ObsPy >= {MIN_OBSPY_VERSION_STR} is required. '
-            f'You have version: {OBSPY_VERSION_STR}\n')
-        sys.exit(1)
-
-
-def _cartopy_download_gshhs():
-    """
-    Download GSHHS data for cartopy.
-    """
-    # pylint: disable=import-outside-toplevel
-    from cartopy.io.shapereader import GSHHSShpDownloader as Downloader
-    from cartopy import config as cartopy_config
-    from pathlib import Path
-    gshhs_downloader = Downloader.from_config(('shapefiles', 'gshhs'))
-    format_dict = {'config': cartopy_config, 'scale': 'f', 'level': 1}
-    target_path = gshhs_downloader.target_path(format_dict)
-    if not os.path.exists(target_path):
-        sys.stdout.write(
-            'Downloading GSHHS data for cartopy.\n'
-            'This is needed only the first time you use cartopy and may take '
-            'a while...\n')
-        sys.stdout.flush()
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            try:
-                path = gshhs_downloader.path(format_dict)
-            except Exception:
-                sys.stderr.write(
-                    '\nUnable to download data. '
-                    'Check your internet connection.\n')
-                sys.exit(1)
-        sys.stdout.write(f'Done! Data cached to {Path(path).parents[1]}\n\n')
-
-
-def _cartopy_download_borders():
-    """
-    Download borders data for cartopy.
-
-    Inspired from
-    https://github.com/SciTools/cartopy/blob/main/tools/cartopy_feature_download.py
-    """
-    # pylint: disable=import-outside-toplevel
-    from cartopy.io import Downloader
-    from cartopy import config as cartopy_config
-    from pathlib import Path
-    category = 'cultural'
-    name = 'admin_0_boundary_lines_land'
-    scales = ('10m', '50m')
-    for scale in scales:
-        downloader = Downloader.from_config((
-            'shapefiles', 'natural_earth', category, name, scale))
-        format_dict = {
-            'config': cartopy_config, 'category': category, 'name': name,
-            'resolution': scale}
-        target_path = downloader.target_path(format_dict)
-        if not os.path.exists(target_path):
-            sys.stdout.write(
-                'Downloading border data for cartopy...\n')
-            sys.stdout.flush()
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore')
-                try:
-                    path = downloader.path(format_dict)
-                except Exception:
-                    sys.stderr.write(
-                        '\nUnable to download data. '
-                        'Check your internet connection.\n')
-                    sys.exit(1)
-            sys.stdout.write(
-                f'Done! Data cached to {Path(path).parents[0]}\n\n')
-
-
-def _check_cartopy_version():
-    cartopy_min_ver = (0, 21, 0)
-    try:
-        cartopy_ver = None
-        import cartopy  # NOQA pylint: disable=import-outside-toplevel
-        global CARTOPY_VERSION_STR  # pylint: disable=global-statement
-        CARTOPY_VERSION_STR = cartopy.__version__
-        cartopy_ver = tuple(map(int, cartopy.__version__.split('.')[:3]))
-        if cartopy_ver < cartopy_min_ver:
-            raise ImportError
-        _cartopy_download_gshhs()
-        _cartopy_download_borders()
-    except ImportError as e:
-        cartopy_min_ver_str = '.'.join(map(str, cartopy_min_ver))
-        msg = (
-            f'\nPlease install cartopy >= {cartopy_min_ver_str} to plot maps.'
-            '\nHow to install: '
-            'https://scitools.org.uk/cartopy/docs/latest/installing.html\n\n'
-            'Alternatively, set "plot_station_map" to "False" '
-            'in config file.\n'
-        )
-        if cartopy_ver is not None:
-            msg += f'Installed cartopy version: {CARTOPY_VERSION_STR}.\n'
-        raise ImportError(msg) from e
-
-
-def _check_rasterio_version():
-    # pylint: disable=import-outside-toplevel, unused-import
-    try:
-        import rasterio  # NOQA
-    except ImportError as e:
-        msg = (
-            '\nPlease install rasterio to plot GeoTIFF files.\n'
-            'How to install: https://rasterio.readthedocs.io/en/stable/\n'
-        )
-        raise ImportError(msg) from e
-
-
-def _check_pyproj_version():
-    # pylint: disable=import-outside-toplevel
-    try:
-        import pyproj # noqa pylint: disable=unused-import
-    except ImportError as e:
-        msg = '\nPlease install pyproj to plot maps.\n'
-        raise ImportError(msg) from e
-
-
-def _check_nllgrid_version():
-    # pylint: disable=import-outside-toplevel
-    nllgrid_min_ver = (1, 4, 2)
-    try:
-        nllgrid_ver = None
-        import nllgrid  # NOQA
-        nllgrid_ver_str = nllgrid.__version__.split('+')[0]
-        nllgrid_ver = tuple(map(int, nllgrid_ver_str.split('.')))
-        # nllgrid versions are sometimes X.Y, other times X.Y.Z
-        while len(nllgrid_ver) < 3:
-            nllgrid_ver = (*nllgrid_ver, 0)
-        if nllgrid_ver < nllgrid_min_ver:
-            raise ImportError
-    except ImportError as e:
-        nllgrid_min_ver_str = '.'.join(map(str, nllgrid_min_ver))
-        msg = (
-            f'\nPlease install nllgrid >= {nllgrid_min_ver_str} to use '
-            'NonLinLoc grids.\n'
-            'How to install: https://github.com/claudiodsf/nllgrid\n'
-        )
-        if nllgrid_ver is not None:
-            msg += f'Installed nllgrid version: {nllgrid.__version__}\n'
-        raise ImportError(msg) from e
-
-
-def _check_library_versions():
-    # pylint: disable=import-outside-toplevel
-    # pylint: disable=global-statement
-    global PYTHON_VERSION_STR
-    global NUMPY_VERSION_STR
-    global SCIPY_VERSION_STR
-    global MATPLOTLIB_VERSION_STR
-    PYTHON_VERSION_STR = '.'.join(map(str, sys.version_info[:3]))
-    import numpy
-    NUMPY_VERSION_STR = numpy.__version__
-    import scipy
-    SCIPY_VERSION_STR = scipy.__version__
-    import matplotlib
-    MATPLOTLIB_VERSION_STR = matplotlib.__version__
-    MATPLOTLIB_VERSION = MATPLOTLIB_VERSION_STR.split('.')[:3]
-    MATPLOTLIB_VERSION = tuple(map(int, MATPLOTLIB_VERSION))
-    MAX_MATPLOTLIB_VERSION = (3, 10, 0)
-    if MATPLOTLIB_VERSION >= MAX_MATPLOTLIB_VERSION:
-        MAX_MATPLOTLIB_VERSION_STR = '.'.join(map(str, MAX_MATPLOTLIB_VERSION))
-        sys.stderr.write(
-            f'ERROR: Matplotlib >= {MAX_MATPLOTLIB_VERSION_STR} '
-            'is not yet supported. Please use a less recent version'
-            f' You have version: {MATPLOTLIB_VERSION_STR}\n'
-        )
-        sys.exit(1)
 
 
 def _read_config(config_file, configspec=None):
@@ -665,9 +468,6 @@ def configure(options, progname, config_overrides=None):
         extend those defined in the config file
     :return: A ``Config`` object with both command line and config options.
     """
-    _check_obspy_version()
-    _check_library_versions()
-
     configspec = _parse_configspec()
     if options.sampleconf:
         _write_sample_config(configspec, progname)
@@ -815,22 +615,20 @@ def configure(options, progname, config_overrides=None):
 
     if config.plot_station_map:
         try:
-            _check_cartopy_version()
-            _check_pyproj_version()
+            library_versions.check_cartopy_version()
+            library_versions.check_pyproj_version()
             if config.plot_map_style == 'geotiff':
-                _check_rasterio_version()
+                library_versions.check_rasterio_version()
         except ImportError as err:
             for msg in config.warnings:
                 print(msg)
-            sys.stderr.write(str(err))
-            sys.exit(1)
+            sys.exit(err)
 
     if config.NLL_time_dir is not None or config.NLL_model_dir is not None:
         try:
-            _check_nllgrid_version()
+            library_versions.check_nllgrid_version()
         except ImportError as err:
-            sys.stderr.write(str(err))
-            sys.exit(1)
+            sys.exit(err)
 
     _init_instrument_codes(config)
     _init_traceid_map(config.traceid_mapping_file)
@@ -1000,13 +798,14 @@ def _log_debug_information():
     uname = platform.uname()
     uname_str = f'{uname[0]} {uname[2]} {uname[4]}'
     LOGGER.debug(f'Platform: {uname_str}')
-    LOGGER.debug(f'Python version: {PYTHON_VERSION_STR}')
-    LOGGER.debug(f'ObsPy version: {OBSPY_VERSION_STR}')
-    LOGGER.debug(f'NumPy version: {NUMPY_VERSION_STR}')
-    LOGGER.debug(f'SciPy version: {SCIPY_VERSION_STR}')
-    LOGGER.debug(f'Matplotlib version: {MATPLOTLIB_VERSION_STR}')
-    if CARTOPY_VERSION_STR is not None:
-        LOGGER.debug(f'Cartopy version: {CARTOPY_VERSION_STR}')
+    lv = library_versions
+    LOGGER.debug(f'Python version: {lv.PYTHON_VERSION_STR}')
+    LOGGER.debug(f'ObsPy version: {lv.OBSPY_VERSION_STR}')
+    LOGGER.debug(f'NumPy version: {lv.NUMPY_VERSION_STR}')
+    LOGGER.debug(f'SciPy version: {lv.SCIPY_VERSION_STR}')
+    LOGGER.debug(f'Matplotlib version: {lv.MATPLOTLIB_VERSION_STR}')
+    if lv.CARTOPY_VERSION_STR is not None:
+        LOGGER.debug(f'Cartopy version: {lv.CARTOPY_VERSION_STR}')
     LOGGER.debug('Running arguments:')
     LOGGER.debug(' '.join(sys.argv))
 
