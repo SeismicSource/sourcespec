@@ -26,8 +26,7 @@ import contextlib
 from obspy import read
 from obspy.core import Stream
 from obspy.core.util import AttribDict
-from .ssp_setup import (
-    ssp_exit, INSTR_CODES_VEL, INSTR_CODES_ACC, TRACEID_MAP)
+from .ssp_setup import ssp_exit
 from .ssp_util import MediumProperties
 from .ssp_read_station_metadata import (
     read_station_metadata, PAZ)
@@ -41,11 +40,11 @@ logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 # TRACE MANIPULATION ----------------------------------------------------------
-def _correct_traceid(trace):
-    if TRACEID_MAP is None:
+def _correct_traceid(trace, config):
+    if config.TRACEID_MAP is None:
         return
     with contextlib.suppress(KeyError):
-        traceid = TRACEID_MAP[trace.get_id()]
+        traceid = config.TRACEID_MAP[trace.get_id()]
         net, sta, loc, chan = traceid.split('.')
         trace.stats.network = net
         trace.stats.station = sta
@@ -53,7 +52,7 @@ def _correct_traceid(trace):
         trace.stats.channel = chan
 
 
-def _add_instrtype(trace):
+def _add_instrtype(trace, config):
     """Add instrtype to trace."""
     instrtype = None
     band_code = None
@@ -64,14 +63,14 @@ def _add_instrtype(trace):
     if len(chan) > 2:
         band_code = chan[0]
         instr_code = chan[1]
-    if instr_code in INSTR_CODES_VEL:
+    if instr_code in config.INSTR_CODES_VEL:
         # SEED standard band codes from higher to lower sampling rate
         # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
         if band_code in ['G', 'D', 'E', 'S']:
             instrtype = 'shortp'
         if band_code in ['F', 'C', 'H', 'B']:
             instrtype = 'broadb'
-    if instr_code in INSTR_CODES_ACC:
+    if instr_code in config.INSTR_CODES_ACC:
         instrtype = 'acc'
     if instrtype is None:
         # Let's see if there is an instrument name in SAC header (ISNet format)
@@ -343,9 +342,9 @@ def _read_trace_files(config, inventory, ssp_event, picks):
             if (config.options.station is not None and
                     trace.stats.station != config.options.station):
                 continue
-            _correct_traceid(trace)
+            _correct_traceid(trace, config)
             try:
-                _add_instrtype(trace)
+                _add_instrtype(trace, config)
                 _add_inventory(trace, inventory, config)
                 _check_instrtype(trace)
                 _add_coords(trace)
