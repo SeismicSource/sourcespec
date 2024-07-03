@@ -15,7 +15,7 @@ import re
 import logging
 from obspy import read_inventory
 from obspy.core.inventory import Inventory, Network, Station, Channel, Response
-from .ssp_setup import INSTR_CODES_VEL, INSTR_CODES_ACC
+from .config.config import INSTR_CODES_VEL, INSTR_CODES_ACC
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -32,7 +32,7 @@ class PAZ():
     input_units = None
     linenum = None
 
-    def __init__(self, file=None):
+    def __init__(self, file=None, INST_CODES_VEL=None, INST_CODES_ACC=None):
         """
         Init PAZ object.
 
@@ -41,6 +41,8 @@ class PAZ():
         """
         if file is not None:
             self._read(file)
+        self.INSTR_CODES_VEL = INST_CODES_VEL
+        self.INSTR_CODES_ACC = INST_CODES_ACC
 
     def __str__(self):
         return (
