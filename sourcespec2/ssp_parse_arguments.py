@@ -12,7 +12,7 @@ Argument parser for sourcespec.
 import sys
 from argparse import ArgumentParser, RawTextHelpFormatter
 from itertools import zip_longest
-from sourcespec._version import get_versions
+from ._version import get_versions
 
 
 def _parse_values(value_str):

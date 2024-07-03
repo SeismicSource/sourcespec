@@ -28,11 +28,11 @@ import warnings
 from copy import copy
 from datetime import datetime
 from collections import defaultdict
-from sourcespec import __version__, __banner__
-from sourcespec.configobj import ConfigObj
-from sourcespec.configobj.validate import Validator
-from sourcespec.config import Config
-from sourcespec.ssp_update_db import update_db_file
+from . import __version__, __banner__
+from .configobj import ConfigObj
+from .configobj.validate import Validator
+from .config import Config
+from .ssp_update_db import update_db_file
 
 # define ipshell(), if possible
 # note: ANSI colors do not work on Windows standard terminal
