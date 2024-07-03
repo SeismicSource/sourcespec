@@ -13,8 +13,8 @@ import logging
 import numpy as np
 from scipy.stats import norm
 from scipy.integrate import quad
-from sourcespec.ssp_setup import ssp_exit
-from sourcespec.ssp_data_types import (
+from .ssp_setup import ssp_exit
+from .ssp_data_types import (
     SummarySpectralParameter, SummaryStatistics)
 from sourcespec.ssp_util import mag_to_moment
 from sourcespec.ssp_spectral_model import spectral_model
