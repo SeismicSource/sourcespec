@@ -64,7 +64,7 @@ include = ["sourcespec2", "sourcespec2.*"]
 
 [tool.setuptools.package-data]
 "*" = ["LICENSE"]
-"sourcespec2.config_files" = ["*.yaml", "*.conf"]
+"sourcespec2.config" = ["*.yaml", "*.conf"]
 "sourcespec2.html_report_template" = ["*.html", "*.css"]
 
 [tool.setuptools.dynamic]
