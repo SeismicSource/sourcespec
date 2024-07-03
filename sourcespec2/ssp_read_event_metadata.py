@@ -20,7 +20,7 @@ from datetime import datetime
 import yaml
 from obspy import UTCDateTime
 from obspy import read_events
-from .ssp_setup import ssp_exit, TRACEID_MAP
+from .ssp_setup import ssp_exit
 from .ssp_event import SSPEvent
 from .ssp_pick import SSPPick
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
@@ -518,7 +518,7 @@ def _is_hypo71_picks(pick_file):
                 raise TypeError(f'{pick_file}: Not a hypo71 phase file')
 
 
-def _correct_station_name(station):
+def _correct_station_name(station, config):
     """
     Correct station name, based on a traceid map.
 
@@ -526,16 +526,16 @@ def _correct_station_name(station):
 
     :return: corrected station name
     """
-    if TRACEID_MAP is None:
+    if config.TRACEID_MAP is None:
         return station
     # get all the keys containing station name in it
-    keys = [key for key in TRACEID_MAP if station == key.split('.')[1]]
+    keys = [key for key in config.TRACEID_MAP if station == key.split('.')[1]]
     # then take just the first one
     try:
         key = keys[0]
     except IndexError:
         return station
-    traceid = TRACEID_MAP[key]
+    traceid = config.TRACEID_MAP[key]
     return traceid.split('.')[1]
 
 
@@ -573,7 +573,7 @@ def parse_hypo71_picks(config):
                 continue
             pick = SSPPick()
             pick.station = line[:4].strip()
-            pick.station = _correct_station_name(pick.station)
+            pick.station = _correct_station_name(pick.station, config)
             pick.flag = line[4:5]
             pick.phase = line[5:6]
             pick.polarity = line[6:7]
