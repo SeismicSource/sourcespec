@@ -23,9 +23,9 @@ from obspy.signal.filter import envelope
 from obspy.signal.invsim import WOODANDERSON
 from obspy.signal.util import smooth
 from obspy.signal.trigger import trigger_onset
-from sourcespec.ssp_data_types import SpectralParameter
-from sourcespec.ssp_util import cosine_taper
-from sourcespec.ssp_util import remove_instr_response
+from .ssp_data_types import SpectralParameter
+from .ssp_util import cosine_taper
+from .ssp_util import remove_instr_response
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
