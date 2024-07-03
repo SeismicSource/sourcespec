@@ -24,10 +24,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.patheffects as PathEffects
-from sourcespec.spectrum import SpectrumStream
-from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
-from sourcespec.savefig import savefig
-from sourcespec._version import get_versions
+from .spectrum import SpectrumStream
+from .ssp_util import spec_minmax, moment_to_mag, mag_to_moment
+from .savefig import savefig
+from ._version import get_versions
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 logging.getLogger('matplotlib').setLevel(logging.WARNING)

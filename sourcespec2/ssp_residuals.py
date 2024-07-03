@@ -15,9 +15,9 @@ Spectral residual routine for sourcespec.
 import os
 import contextlib
 import logging
-from sourcespec.spectrum import SpectrumStream
-from sourcespec.ssp_spectral_model import spectral_model
-from sourcespec.ssp_util import (
+from .spectrum import SpectrumStream
+from .ssp_spectral_model import spectral_model
+from .ssp_util import (
     mag_to_moment, select_trace, set_spectrum_processing_info
 )
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])

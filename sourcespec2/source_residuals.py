@@ -23,9 +23,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import matplotlib.colors as mcolors
-from sourcespec._version import get_versions
-from sourcespec.spectrum import read_spectra, SpectrumStream
-from sourcespec.ssp_util import mag_to_moment
+from ._version import get_versions
+from .spectrum import read_spectra, SpectrumStream
+from .ssp_util import mag_to_moment
 matplotlib.use('Agg')  # NOQA
 
 

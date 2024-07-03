@@ -11,7 +11,7 @@ Wave arrival time picking for sourcespec.
 """
 import logging
 import numpy as np
-from sourcespec.ssp_util import smooth
+from .ssp_util import smooth
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 

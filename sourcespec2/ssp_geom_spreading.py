@@ -209,8 +209,7 @@ def _plot_teleseismic(ax, x_data, angular_dist, source_depth, model_params,
     params['station_depth_in_km'] = (
         params.get('station_depth_in_km', 0))
     # pylint: disable=import-outside-toplevel
-    from sourcespec.ssp_geom_spreading_teleseismic import (
-        geom_spreading_teleseismic)
+    from .ssp_geom_spreading_teleseismic import geom_spreading_teleseismic
     gst = np.vectorize(geom_spreading_teleseismic)
     coeff = gst(angular_dist, source_depth, **params)
     label = _append_label_suffix((
