@@ -22,18 +22,18 @@ import numpy as np
 from scipy.optimize import curve_fit, minimize, basinhopping
 from scipy.signal import argrelmax
 from obspy.geodetics import gps2dist_azimuth
-from sourcespec.spectrum import SpectrumStream
-from sourcespec.ssp_spectral_model import (
+from .spectrum import SpectrumStream
+from .ssp_spectral_model import (
     spectral_model, objective_func, callback)
-from sourcespec.ssp_setup import ssp_exit
-from sourcespec.ssp_util import (
+from .ssp_setup import ssp_exit
+from .ssp_util import (
     weighted_std,
     mag_to_moment, source_radius, static_stress_drop, quality_factor,
     select_trace, smooth, primary_and_secondary_azimuthal_gap)
-from sourcespec.ssp_data_types import (
+from .ssp_data_types import (
     InitialValues, Bounds, SpectralParameter, StationParameters,
     SourceSpecOutput)
-from sourcespec.ssp_grid_sampling import GridSampling
+from .ssp_grid_sampling import GridSampling
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
