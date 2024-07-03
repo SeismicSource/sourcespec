@@ -25,17 +25,17 @@ from matplotlib import cm
 from matplotlib import colors
 import matplotlib.patheffects as PathEffects
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
-from sourcespec.adjustText import adjust_text
-from sourcespec.cached_tiler import CachedTiler
-from sourcespec.map_tiles import (
+from .adjustText import adjust_text
+from .cached_tiler import CachedTiler
+from .map_tiles import (
     EsriHillshade,
     EsriHillshadeDark,
     EsriOcean,
     EsriImagery,
     StamenTerrain,
 )
-from sourcespec.savefig import savefig
-from sourcespec._version import get_versions
+from .savefig import savefig
+from ._version import get_versions
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')

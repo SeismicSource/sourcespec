@@ -22,9 +22,9 @@ from collections.abc import Mapping
 from datetime import datetime
 from tzlocal import get_localzone
 import numpy as np
-from sourcespec.ssp_qml_output import write_qml
-from sourcespec.ssp_sqlite_output import write_sqlite
-from sourcespec._version import get_versions
+from .ssp_qml_output import write_qml
+from .ssp_sqlite_output import write_sqlite
+from ._version import get_versions
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
