@@ -18,7 +18,11 @@ Build spectral objects.
 import logging
 import math
 import numpy as np
-from scipy.integrate import cumtrapz
+# cumtrapz was deprecated in scipy 1.12.0 and removed in 1.14.0
+try:
+    from scipy.integrate import cumtrapz
+except ImportError:
+    from scipy.integrate import cumulative_trapezoid as cumtrapz
 from scipy.interpolate import interp1d
 from obspy.core import Stream
 from sourcespec.spectrum import Spectrum, SpectrumStream
