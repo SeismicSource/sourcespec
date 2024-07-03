@@ -10,3 +10,4 @@ Configuration classes and functions for SourceSpec
     (http://www.cecill.info/licences.en.html)
 """
 from .config import Config  # noqa
+from .library_versions import library_versions  # noqa
