@@ -17,8 +17,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as mpe
 
-from sourcespec._version import get_versions
-from sourcespec.savefig import savefig
+from ._version import get_versions
+from .savefig import savefig
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 mpl_logger = logging.getLogger('matplotlib')

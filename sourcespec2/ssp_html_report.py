@@ -16,8 +16,8 @@ import re
 import contextlib
 from urllib.parse import urlparse
 import numpy as np
-from sourcespec._version import get_versions
-from sourcespec.ssp_data_types import SpectralParameter
+from ._version import get_versions
+from .ssp_data_types import SpectralParameter
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 VALID_FIGURE_FORMATS = ('.png', '.svg')
 

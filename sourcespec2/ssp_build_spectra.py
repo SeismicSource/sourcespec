@@ -25,14 +25,14 @@ except ImportError:
     from scipy.integrate import cumulative_trapezoid as cumtrapz
 from scipy.interpolate import interp1d
 from obspy.core import Stream
-from sourcespec.spectrum import Spectrum, SpectrumStream
-from sourcespec.ssp_setup import ssp_exit
-from sourcespec.ssp_util import (
+from .spectrum import Spectrum, SpectrumStream
+from .ssp_setup import ssp_exit
+from .ssp_util import (
     smooth, cosine_taper, moment_to_mag, MediumProperties,
     geom_spread_r_power_n, geom_spread_boatwright, geom_spread_teleseismic)
-from sourcespec.ssp_process_traces import filter_trace
-from sourcespec.ssp_correction import station_correction
-from sourcespec.ssp_radiation_pattern import get_radiation_pattern_coefficient
+from .ssp_process_traces import filter_trace
+from .ssp_correction import station_correction
+from .ssp_radiation_pattern import get_radiation_pattern_coefficient
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 

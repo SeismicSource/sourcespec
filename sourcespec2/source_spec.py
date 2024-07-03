@@ -21,17 +21,17 @@ def main():
     """Main routine for source_spec."""
     # pylint: disable=import-outside-toplevel
     # Lazy-import modules for speed
-    from sourcespec.ssp_parse_arguments import parse_args
+    from .ssp_parse_arguments import parse_args
     options = parse_args(progname='source_spec')
 
     # Setup stage
-    from sourcespec.ssp_setup import (
+    from .ssp_setup import (
         configure, move_outdir, remove_old_outdir, setup_logging,
         save_config, ssp_exit)
     config = configure(options, progname='source_spec')
     setup_logging(config)
 
-    from sourcespec.ssp_read_traces import read_traces
+    from .ssp_read_traces import read_traces
     st = read_traces(config)
 
     # Now that we have an evid, we can rename the outdir and the log file
@@ -43,58 +43,58 @@ def main():
     save_config(config)
 
     # Deconvolve, filter, cut traces:
-    from sourcespec.ssp_process_traces import process_traces
+    from .ssp_process_traces import process_traces
     proc_st = process_traces(config, st)
 
     # Build spectra (amplitude in magnitude units)
-    from sourcespec.ssp_build_spectra import build_spectra
+    from .ssp_build_spectra import build_spectra
     spec_st, specnoise_st, weight_st = build_spectra(config, proc_st)
 
-    from sourcespec.ssp_plot_traces import plot_traces
+    from .ssp_plot_traces import plot_traces
     plot_traces(config, proc_st)
 
     # Spectral inversion
-    from sourcespec.ssp_inversion import spectral_inversion
+    from .ssp_inversion import spectral_inversion
     sspec_output = spectral_inversion(config, spec_st, weight_st)
 
     # Radiated energy and apparent stress
-    from sourcespec.ssp_radiated_energy import (
+    from .ssp_radiated_energy import (
         radiated_energy_and_apparent_stress)
     radiated_energy_and_apparent_stress(
         config, spec_st, specnoise_st, sspec_output)
 
     # Local magnitude
     if config.compute_local_magnitude:
-        from sourcespec.ssp_local_magnitude import local_magnitude
+        from .ssp_local_magnitude import local_magnitude
         local_magnitude(config, st, proc_st, sspec_output)
 
     # Compute summary statistics from station spectral parameters
-    from sourcespec.ssp_summary_statistics import compute_summary_statistics
+    from .ssp_summary_statistics import compute_summary_statistics
     compute_summary_statistics(config, sspec_output)
 
     # Save output
-    from sourcespec.ssp_output import write_output, save_spectra
+    from .ssp_output import write_output, save_spectra
     write_output(config, sspec_output)
     save_spectra(config, spec_st)
 
     # Save residuals
-    from sourcespec.ssp_residuals import spectral_residuals
+    from .ssp_residuals import spectral_residuals
     spectral_residuals(config, spec_st, sspec_output)
 
     # Plotting
-    from sourcespec.ssp_plot_spectra import plot_spectra
+    from .ssp_plot_spectra import plot_spectra
     plot_spectra(config, spec_st, specnoise_st, plot_type='regular')
     plot_spectra(config, weight_st, plot_type='weight')
-    from sourcespec.ssp_plot_stacked_spectra import plot_stacked_spectra
+    from .ssp_plot_stacked_spectra import plot_stacked_spectra
     plot_stacked_spectra(config, spec_st, weight_st, sspec_output)
-    from sourcespec.ssp_plot_params_stats import box_plots
+    from .ssp_plot_params_stats import box_plots
     box_plots(config, sspec_output)
     if config.plot_station_map:
-        from sourcespec.ssp_plot_stations import plot_stations
+        from .ssp_plot_stations import plot_stations
         plot_stations(config, sspec_output)
 
     if config.html_report:
-        from sourcespec.ssp_html_report import html_report
+        from .ssp_html_report import html_report
         html_report(config, sspec_output)
 
     ssp_exit()

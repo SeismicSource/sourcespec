@@ -20,11 +20,11 @@ import numpy as np
 from scipy.signal import savgol_filter
 from obspy.core import Stream
 from obspy.core.util import AttribDict
-from sourcespec.ssp_setup import ssp_exit
-from sourcespec.ssp_util import (
+from .ssp_setup import ssp_exit
+from .ssp_util import (
     remove_instr_response, station_to_event_position)
-from sourcespec.ssp_wave_arrival import add_arrival_to_trace
-from sourcespec.clipping_detection import (
+from .ssp_wave_arrival import add_arrival_to_trace
+from .clipping_detection import (
     compute_clipping_score, clipping_peaks)
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
