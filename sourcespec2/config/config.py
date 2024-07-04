@@ -31,6 +31,27 @@ INSTR_CODES_ACC = []
 
 class Config(dict):
     """Config class for sourcespec."""
+    def __init__(self):
+        # Initialize config object to the default values
+        configspec = _parse_configspec()
+        config_obj = _get_default_config_obj(configspec)
+        self.update(config_obj.dict())
+        # Additional config values
+        self.vertical_channel_codes = ['Z']
+        self.horizontal_channel_codes_1 = ['N', 'R']
+        self.horizontal_channel_codes_2 = ['E', 'T']
+        # Empty options object, for compatibility with the command line version
+        self.options = types.SimpleNamespace()
+        # A list of warnings to be issued when logger is set up
+        self.warnings = []
+        # Create a dict to store figure paths
+        self.figures = defaultdict(list)
+        # store the absolute path of the current working directory
+        self.workdir = os.getcwd()
+        # SEED standard instrument codes:
+        # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
+        self.INSTR_CODES_VEL = ['H', 'L']
+        self.INSTR_CODES_ACC = ['N', ]
 
     def __setitem__(self, key, value):
         """Make Config keys accessible as attributes."""
@@ -348,14 +369,10 @@ def _check_mandatory_config_params(config_obj):
         sys.exit(msg)
 
 
-def _init_instrument_codes(config):
+def _update_instrument_codes(config):
     """
-    Initialize instrument codes from config file.
+    Update instrument codes from config file.
     """
-    # SEED standard instrument codes:
-    # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
-    config.INSTR_CODES_VEL = ['H', 'L']
-    config.INSTR_CODES_ACC = ['N', ]
     # User-defined instrument codes:
     instr_code_acc_user = config.instrument_code_acceleration
     instr_code_vel_user = config.instrument_code_velocity
@@ -461,6 +478,12 @@ def _none_lenght(input_list):
     return 1 if input_list is None else len(input_list)
 
 
+# Global config object, initialized with default values
+# API users should use this object to access configuration parameters
+# and update them as needed
+config = Config()
+
+
 def configure(options=None, progname='source_spec', config_overrides=None):
     """
     Parse command line arguments and read config file.
@@ -547,9 +570,8 @@ def configure(options=None, progname='source_spec', config_overrides=None):
     options.outdir = os.path.join(options.outdir, f'no_evid_{hexstr}')
     _write_config(config_obj, progname, options.outdir)
 
-    # Create a Config object
-    config = Config(config_obj.dict().copy())
-
+    # Update config object with the contents of the config file
+    config.update(config_obj.dict())
     # Add options to config:
     config.options = options
 
@@ -557,10 +579,6 @@ def configure(options=None, progname='source_spec', config_overrides=None):
     if getattr(options, 'station_metadata', None):
         config.station_metadata = options.station_metadata
 
-    # Additional config values
-    config.vertical_channel_codes = ['Z']
-    config.horizontal_channel_codes_1 = ['N', 'R']
-    config.horizontal_channel_codes_2 = ['E', 'T']
     msc = config.mis_oriented_channels
     if msc is not None:
         config.vertical_channel_codes.append(msc[0])
@@ -608,9 +626,6 @@ def configure(options=None, progname='source_spec', config_overrides=None):
     except ValueError as msg:
         sys.exit(f'Error parsing parameter "Er_freq_range": {msg}')
 
-    # A list of warnings to be issued when logger is set up
-    config.warnings = []
-
     if config.html_report:
         if not config.plot_save:
             msg = (
@@ -640,11 +655,7 @@ def configure(options=None, progname='source_spec', config_overrides=None):
         except ImportError as err:
             sys.exit(err)
 
-    _init_instrument_codes(config)
+    _update_instrument_codes(config)
     _init_traceid_map(config)
     _init_plotting(config.plot_show)
-    # Create a dict to store figure paths
-    config.figures = defaultdict(list)
-    # store the absolute path of the current working directory
-    config.workdir = os.getcwd()
     return config
