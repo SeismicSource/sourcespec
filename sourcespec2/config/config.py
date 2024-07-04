@@ -11,6 +11,7 @@ Config class for sourcespec.
 """
 import os
 import sys
+import types
 import shutil
 import uuid
 import json
@@ -49,7 +50,7 @@ class Config(dict):
     __setattr__ = __setitem__
 
 
-def _read_config(config_file, configspec=None):
+def _read_config_file(config_file, configspec=None):
     kwargs = {
         'configspec': configspec,
         'file_error': True,
@@ -75,7 +76,18 @@ def _read_config(config_file, configspec=None):
 def _parse_configspec():
     configspec_file = os.path.join(
         os.path.dirname(__file__), 'configspec.conf')
-    return _read_config(configspec_file)
+    return _read_config_file(configspec_file)
+
+
+def _get_default_config_obj(configspec):
+    config_obj = ConfigObj(configspec=configspec, default_encoding='utf8')
+    val = Validator()
+    config_obj.validate(val)
+    config_obj.defaults = []
+    config_obj.initial_comment = configspec.initial_comment
+    config_obj.comments = configspec.comments
+    config_obj.final_comment = configspec.final_comment
+    return config_obj
 
 
 def _write_config_to_file(config_obj, filepath):
@@ -99,13 +111,7 @@ def _write_config_to_file(config_obj, filepath):
 
 
 def _write_sample_config(configspec, progname):
-    c = ConfigObj(configspec=configspec, default_encoding='utf8')
-    val = Validator()
-    c.validate(val)
-    c.defaults = []
-    c.initial_comment = configspec.initial_comment
-    c.comments = configspec.comments
-    c.final_comment = configspec.final_comment
+    config_obj = _get_default_config_obj(configspec)
     configfile = f'{progname}.conf'
     write_file = True
     if os.path.exists(configfile):
@@ -114,7 +120,7 @@ def _write_sample_config(configspec, progname):
         )
         write_file = ans in ['y', 'Y']
     if write_file:
-        _write_config_to_file(c, configfile)
+        _write_config_to_file(config_obj, configfile)
         print(f'Sample config file written to: {configfile}')
         note = """
 Note that the default config parameters are suited for a M<5 earthquake
@@ -125,7 +131,7 @@ according to your setup."""
 
 
 def _update_config_file(config_file, configspec):
-    config_obj = _read_config(config_file, configspec)
+    config_obj = _read_config_file(config_file, configspec)
     val = Validator()
     config_obj.validate(val)
     mod_time = datetime.fromtimestamp(os.path.getmtime(config_file))
@@ -138,7 +144,7 @@ def _update_config_file(config_file, configspec):
     if ans not in ['y', 'Y']:
         sys.exit(0)
     config_new = ConfigObj(configspec=configspec, default_encoding='utf8')
-    config_new = _read_config(None, configspec)
+    config_new = _read_config_file(None, configspec)
     config_new.validate(val)
     config_new.defaults = []
     config_new.comments = configspec.comments
@@ -558,7 +564,7 @@ def _parse_free_surface_amplification(values):
     return fsa_items
 
 
-def configure(options, progname, config_overrides=None):
+def configure(options=None, progname='source_spec', config_overrides=None):
     """
     Parse command line arguments and read config file.
 
@@ -568,23 +574,28 @@ def configure(options, progname, config_overrides=None):
         extend those defined in the config file
     :return: A ``Config`` object with both command line and config options.
     """
+    if options is None:
+        # create an empty object to support the following getattr() calls
+        options = types.SimpleNamespace()
     configspec = _parse_configspec()
-    if options.sampleconf:
+    if getattr(options, 'sampleconf', None):
         _write_sample_config(configspec, progname)
         sys.exit(0)
-    if options.updateconf:
+    if getattr(options, 'updateconf', None):
         _update_config_file(options.updateconf, configspec)
         sys.exit(0)
-    if options.updatedb:
+    if getattr(options, 'updatedb', None):
         update_db_file(options.updatedb)
         sys.exit(0)
-    if options.samplesspevent:
+    if getattr(options, 'samplesspevent', None):
         _write_sample_ssp_event_file()
         sys.exit(0)
 
-    if options.config_file:
+    # initialize config object to the default values
+    config_obj = _get_default_config_obj(configspec)
+    if getattr(options, 'config_file', None):
         options.config_file = _fix_and_expand_path(options.config_file)
-    config_obj = _read_config(options.config_file, configspec)
+        config_obj = _read_config_file(options.config_file, configspec)
 
     # Apply overrides
     if config_overrides is not None:
@@ -617,17 +628,19 @@ def configure(options, progname, config_overrides=None):
     _check_deprecated_config_options(config_obj)
     _check_mandatory_config_params(config_obj)
 
+    # TODO: we should allow outdir to be None and not producing any output
+    options.outdir = getattr(options, 'outdir', 'sspec_out')
     # Fix and expand paths in options
     options.outdir = _fix_and_expand_path(options.outdir)
-    if options.trace_path:
+    if getattr(options, 'trace_path', None):
         # trace_path is a list
         options.trace_path = [
             _fix_and_expand_path(path) for path in options.trace_path]
-    if options.qml_file:
+    if getattr(options, 'qml_file', None):
         options.qml_file = _fix_and_expand_path(options.qml_file)
-    if options.hypo_file:
+    if getattr(options, 'hypo_file', None):
         options.hypo_file = _fix_and_expand_path(options.hypo_file)
-    if options.pick_file:
+    if getattr(options, 'pick_file', None):
         options.pick_file = _fix_and_expand_path(options.pick_file)
 
     # Create a 'no_evid_' subdir into outdir.
@@ -644,7 +657,7 @@ def configure(options, progname, config_overrides=None):
     config.options = options
 
     # Override station_metadata config option with command line option
-    if options.station_metadata is not None:
+    if getattr(options, 'station_metadata', None):
         config.station_metadata = options.station_metadata
 
     # Additional config values
