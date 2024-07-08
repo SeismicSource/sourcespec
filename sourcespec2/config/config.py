@@ -20,6 +20,9 @@ from copy import copy
 from datetime import datetime
 from collections import defaultdict
 from .library_versions import library_versions
+from .mandatory_deprecated import (
+    mandatory_config_params, deprecated_config_params
+)
 from .configobj import ConfigObj
 from .configobj.validate import Validator
 from ..ssp_update_db import update_db_file
@@ -32,26 +35,27 @@ INSTR_CODES_ACC = []
 class Config(dict):
     """Config class for sourcespec."""
     def __init__(self):
+        # Additional config values. Tey must be defined using the dict syntax.
+        self['running_from_command_line'] = False
+        self['vertical_channel_codes'] = ['Z']
+        self['horizontal_channel_codes_1'] = ['N', 'R']
+        self['horizontal_channel_codes_2'] = ['E', 'T']
+        # Empty options object, for compatibility with the command line version
+        self['options'] = types.SimpleNamespace()
+        # A list of warnings to be issued when logger is set up
+        self['warnings'] = []
+        # Create a dict to store figure paths
+        self['figures'] = defaultdict(list)
+        # store the absolute path of the current working directory
+        self['workdir'] = os.getcwd()
+        # SEED standard instrument codes:
+        # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
+        self['INSTR_CODES_VEL'] = ['H', 'L']
+        self['INSTR_CODES_ACC'] = ['N', ]
         # Initialize config object to the default values
         configspec = _parse_configspec()
         config_obj = _get_default_config_obj(configspec)
         self.update(config_obj.dict())
-        # Additional config values
-        self.vertical_channel_codes = ['Z']
-        self.horizontal_channel_codes_1 = ['N', 'R']
-        self.horizontal_channel_codes_2 = ['E', 'T']
-        # Empty options object, for compatibility with the command line version
-        self.options = types.SimpleNamespace()
-        # A list of warnings to be issued when logger is set up
-        self.warnings = []
-        # Create a dict to store figure paths
-        self.figures = defaultdict(list)
-        # store the absolute path of the current working directory
-        self.workdir = os.getcwd()
-        # SEED standard instrument codes:
-        # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
-        self.INSTR_CODES_VEL = ['H', 'L']
-        self.INSTR_CODES_ACC = ['N', ]
 
     def __setitem__(self, key, value):
         """Make Config keys accessible as attributes."""
@@ -66,6 +70,197 @@ class Config(dict):
             raise AttributeError(err) from err
 
     __setattr__ = __setitem__
+
+    def update(self, other):
+        """
+        Update the configuration with the values from another dictionary.
+
+        :param dict other: The dictionary with the new values
+
+        :raises ValueError: If an error occurs while parsing the options
+        """
+        for key, value in other.items():
+            self[key] = value
+        # Set to None all the 'None' strings
+        for key, value in self.items():
+            if value == 'None':
+                self[key] = None
+        # Make sure that self['figures'] is still a defaultdict
+        self['figures'] = defaultdict(list, self['figures'])
+        self._update_channel_codes()
+        self._update_instrument_codes()
+
+    def _update_channel_codes(self):
+        """
+        Update channel codes with mis-oriented channels.
+        """
+        msc = self.mis_oriented_channels
+        if msc is None:
+            return
+        self['vertical_channel_codes'].append(msc[0])
+        self['horizontal_channel_codes_1'].append(msc[1])
+        self['horizontal_channel_codes_2'].append(msc[2])
+        self['vertical_channel_codes'] =\
+            list(set(self['vertical_channel_codes']))
+        self['horizontal_channel_codes_1'] =\
+            list(set(self['horizontal_channel_codes_1']))
+        self['horizontal_channel_codes_2'] =\
+            list(set(self['horizontal_channel_codes_2']))
+
+    def _update_instrument_codes(self):
+        """
+        Update instrument codes from user-defined values.
+        """
+        # User-defined instrument codes:
+        instr_code_acc_user = self['instrument_code_acceleration']
+        instr_code_vel_user = self['instrument_code_velocity']
+        # Remove user-defined instrument codes if they conflict
+        # with another instrument
+        with contextlib.suppress(ValueError):
+            self['INSTR_CODES_VEL'].remove(instr_code_acc_user)
+        with contextlib.suppress(ValueError):
+            self['INSTR_CODES_ACC'].remove(instr_code_vel_user)
+        # Add user-defined instrument codes
+        if instr_code_vel_user is not None:
+            self['INSTR_CODES_VEL'].append(instr_code_vel_user)
+        if instr_code_acc_user is not None:
+            self['INSTR_CODES_ACC'].append(instr_code_acc_user)
+        self['INSTR_CODES_VEL'] = list(set(self['INSTR_CODES_VEL']))
+        self['INSTR_CODES_ACC'] = list(set(self['INSTR_CODES_ACC']))
+
+    def validate(self):
+        """
+        Validate the configuration.
+
+        :raises ValueError: If an error occurs while validating the options
+        """
+        config_obj = ConfigObj(self, configspec=_parse_configspec())
+        val = Validator()
+        test = config_obj.validate(val)
+        # The variable "test" is:
+        # - True if everything is ok
+        # - False if no config value is provided
+        # - A dict if invalid values are present,
+        #   with the invalid values as False
+        msg = ''
+        if isinstance(test, dict):
+            for entry in [e for e in test if not test[e]]:
+                msg += f'\nInvalid value for "{entry}": "{config_obj[entry]}"'
+            raise ValueError(msg)
+        if not test:
+            raise ValueError('No configuration value present!')
+        # Reupdate the config object with the validated values, which include
+        # type conversion from string to numeric values
+        self.update(config_obj.dict())
+        # Check deprecated and mandatory parameters
+        self._check_deprecated_config_params()
+        self._check_mandatory_config_params()
+        self._check_force_list()
+        self._check_list_lengths()
+        self._check_Er_freq_range()
+        self._check_html_report()
+
+    def _check_deprecated_config_params(self):
+        deprecation_msgs = []
+        for param, msgs in deprecated_config_params.items():
+            if param in self:
+                # add two spaces before each line of the message
+                msg = ''.join(f'  {line}\n' for line in msgs)
+                # replace first character with '>'
+                msg = f'>{msg[1:]}'
+                deprecation_msgs.append(msg)
+        if not deprecation_msgs:
+            return
+        msg = ''
+        if self['running_from_command_line']:
+            msg += (
+                'Error: your config file contains deprecated parameters:\n\n'
+            )
+        msg += ''.join(deprecation_msgs)
+        if self['running_from_command_line']:
+            msg += (
+                '\nPlease upgrade your config file manually or '
+                'via the "-U" option.\n'
+            )
+        raise ValueError(msg)
+
+    def _check_mandatory_config_params(self):
+        messages = []
+        for par in mandatory_config_params:
+            if self[par] is None:
+                msg = f'"{par}" is mandatory and cannot be None'
+                messages.append(msg)
+        if messages:
+            msg = '\n'.join(messages)
+            raise ValueError(msg)
+
+    def _check_force_list(self):
+        """
+        Check the force_list options and convert them to lists of floats.
+
+        :raises ValueError: If an error occurs while parsing the options
+        """
+        try:
+            for param in [
+                'vp_source', 'vs_source', 'rho_source', 'layer_top_depths'
+            ]:
+                self[param] = _float_list(self[param])
+        except ValueError as msg:
+            raise ValueError(
+                f'Error parsing parameter "{param}": {msg}'
+            ) from msg
+
+    def _check_list_lengths(self):
+        """
+        Check that the lists describing the source model have the same length.
+        """
+        n_vp_source = _none_lenght(self.vp_source)
+        n_vs_source = _none_lenght(self.vs_source)
+        n_rho_source = _none_lenght(self.rho_source)
+        n_layer_top_depths = _none_lenght(self.layer_top_depths)
+        try:
+            assert n_vp_source == n_vs_source == n_rho_source \
+                == n_layer_top_depths
+        except AssertionError as err:
+            raise ValueError(
+                'Error: "vp_source", "vs_source", "rho_source", and '
+                '"layer_top_depths" must have the same length.'
+            ) from err
+
+    def _check_Er_freq_range(self):
+        """
+        Check the Er_freq_range option.
+
+        :raises ValueError: If an error occurs while parsing the options
+        """
+        if self['Er_freq_range'] is None:
+            self['Er_freq_range'] = [None, None]
+        try:
+            self['Er_freq_range'] = _float_list(
+                self['Er_freq_range'], max_length=2,
+                accepted_values=[None, 'noise']
+            )
+        except ValueError as msg:
+            raise ValueError(
+                f'Error parsing parameter "Er_freq_range": {msg}'
+            ) from msg
+
+    def _check_html_report(self):
+        """
+        Check the html_report option.
+        """
+        if self['html_report']:
+            if not self['plot_save']:
+                self['warnings'].append(
+                    'The "html_report" option is selected but "plot_save" '
+                    'is "False". HTML report will have no plots.'
+                )
+            if self['plot_save_format'] not in ['png', 'svg']:
+                self['warnings'].append(
+                    'The "html_report" option is selected but '
+                    '"plot_save_format" is not "png" or "svg". '
+                    'HTML report will have no plots.'
+                )
 
 
 def _read_config_file(config_file, configspec=None):
@@ -203,195 +398,11 @@ def _write_config(config_obj, progname, outdir):
         _tmp_config_obj.write(fp)
 
 
-def _check_deprecated_config_options(config_obj):
-    deprecation_msgs = []
-    if 's_win_length' in config_obj or 'noise_win_length' in config_obj:
-        deprecation_msgs.append(
-            '> "s_win_length" and "noise_win_length" config parameters '
-            'are no more\n'
-            '   supported. Both are replaced by "win_length".\n'
-        )
-    if 'traceids' in config_obj:
-        deprecation_msgs.append(
-            '> "traceids" config parameter has been renamed to '
-            '"traceid_mapping_file".\n'
-        )
-    if 'ignore_stations' in config_obj or 'use_stations' in config_obj:
-        deprecation_msgs.append(
-            '> "ignore_stations" and "use_stations" config parameters '
-            'have been renamed to\n'
-            '  "ignore_traceids" and "use_traceids", respectively.\n'
-        )
-    if 'dataless' in config_obj:
-        deprecation_msgs.append(
-            '> "dataless" config parameter has been renamed to '
-            '"station_metadata".\n'
-        )
-    if 'clip_nmax' in config_obj:
-        deprecation_msgs.append(
-            '> "clip_nmax" config parameter has been renamed to '
-            '"clip_max_percent".\n'
-            '   Note that the new default is 5% (current value in your config '
-            f'file: {config_obj["clip_nmax"]}%)\n'
-        )
-    if 'trace_format' in config_obj:
-        deprecation_msgs.append(
-            '> "trace_format" config parameter is no more supported.\n'
-            '   Use "sensitivity" to manually specify how sensor sensitivity '
-            'should be computed.\n'
-        )
-    if 'PLOT_SHOW' in config_obj:
-        deprecation_msgs.append(
-            '> "PLOT_SHOW" config parameter has been renamed to "plot_show".\n'
-        )
-    if 'PLOT_SAVE' in config_obj:
-        deprecation_msgs.append(
-            '> "PLOT_SAVE" config parameter has been renamed to "plot_save".\n'
-        )
-    if 'PLOT_SAVE_FORMAT' in config_obj:
-        deprecation_msgs.append(
-            '> "PLOT_SAVE_FORMAT" config parameter has been renamed to '
-            '"plot_save_format".\n'
-        )
-    if 'vp' in config_obj:
-        deprecation_msgs.append(
-            '> "vp" config parameter has been renamed to "vp_source".\n'
-        )
-    if 'vs' in config_obj:
-        deprecation_msgs.append(
-            '> "vs" config parameter has been renamed to "vs_source".\n'
-        )
-    if 'rho' in config_obj:
-        deprecation_msgs.append(
-            '> "rho" config parameter has been renamed to "rho_source".\n'
-        )
-    if 'pre_p_time' in config_obj:
-        deprecation_msgs.append(
-            '> "pre_p_time" config parameter has been renamed to '
-            '"noise_pre_time".\n'
-        )
-    if 'pre_s_time' in config_obj:
-        deprecation_msgs.append(
-            '> "pre_s_time" config parameter has been renamed to '
-            '"signal_pre_time".\n'
-        )
-    if 'rps_from_focal_mechanism' in config_obj:
-        deprecation_msgs.append(
-            '> "rps_from_focal_mechanism" config parameter has been renamed '
-            'to "rp_from_focal_mechanism".\n'
-        )
-    if 'paz' in config_obj:
-        deprecation_msgs.append(
-            '> "paz" config parameter has been removed and merged with '
-            '"station_metadata".\n'
-        )
-    if 'max_epi_dist' in config_obj:
-        deprecation_msgs.append(
-            '> "max_epi_dist" config parameter has been removed and replaced '
-            'by "epi_dist_ranges".\n'
-        )
-    if 'max_freq_Er' in config_obj:
-        deprecation_msgs.append(
-            '> "max_freq_Er" config parameter has been removed and replaced '
-            'by "Er_freq_min_max".\n'
-        )
-    if deprecation_msgs:
-        sys.stderr.write(
-            'Error: your config file contains deprecated parameters:\n\n')
-    for msg in deprecation_msgs:
-        sys.stderr.write(msg)
-    if deprecation_msgs:
-        sys.stderr.write(
-            '\nPlease upgrade your config file manually or '
-            'via the "-U" option.\n'
-        )
-        sys.exit(1)
-
-
 def _init_plotting(plot_show):
     # pylint: disable=import-outside-toplevel
     import matplotlib.pyplot as plt
     if not plot_show:
         plt.switch_backend('Agg')
-
-
-def _check_mandatory_config_params(config_obj):
-    mandatory_params = [
-        'p_arrival_tolerance',
-        's_arrival_tolerance',
-        'noise_pre_time',
-        'signal_pre_time',
-        'win_length',
-        'taper_halfwidth',
-        'spectral_smooth_width_decades',
-        'bp_freqmin_acc',
-        'bp_freqmax_acc',
-        'bp_freqmin_shortp',
-        'bp_freqmax_shortp',
-        'bp_freqmin_broadb',
-        'bp_freqmax_broadb',
-        'freq1_acc',
-        'freq2_acc',
-        'freq1_shortp',
-        'freq2_shortp',
-        'freq1_broadb',
-        'freq2_broadb',
-        'rmsmin',
-        'sn_min',
-        'spectral_sn_min',
-        'rpp',
-        'rps',
-        'geom_spread_n_exponent',
-        'geom_spread_cutoff_distance',
-        'f_weight',
-        'weight',
-        't_star_0',
-        't_star_0_variability',
-        'a', 'b', 'c',
-        'ml_bp_freqmin',
-        'ml_bp_freqmax',
-        'n_sigma',
-        'lower_percentage',
-        'mid_percentage',
-        'upper_percentage',
-        'nIQR',
-        'plot_spectra_maxrows',
-        'plot_traces_maxrows',
-        'plot_station_text_size'
-    ]
-    messages = []
-    for par in mandatory_params:
-        if config_obj[par] is None:
-            msg = f'"{par}" is mandatory and cannot be None'
-            messages.append(msg)
-    if messages:
-        msg = '\n'.join(messages)
-        sys.exit(msg)
-
-
-def _update_instrument_codes(config):
-    """
-    Update instrument codes from config file.
-    """
-    # User-defined instrument codes:
-    instr_code_acc_user = config.instrument_code_acceleration
-    instr_code_vel_user = config.instrument_code_velocity
-    # Remove user-defined instrument codes if they conflict
-    # with another instrument
-    with contextlib.suppress(ValueError):
-        config.INSTR_CODES_VEL.remove(instr_code_acc_user)
-    with contextlib.suppress(ValueError):
-        config.INSTR_CODES_ACC.remove(instr_code_vel_user)
-    # Add user-defined instrument codes
-    if instr_code_vel_user is not None:
-        config.INSTR_CODES_VEL.append(instr_code_vel_user)
-    if instr_code_acc_user is not None:
-        config.INSTR_CODES_ACC.append(instr_code_acc_user)
-    # TODO: remove these when the global config object will be implemented
-    global INSTR_CODES_VEL
-    global INSTR_CODES_ACC
-    INSTR_CODES_VEL = config.INSTR_CODES_VEL
-    INSTR_CODES_ACC = config.INSTR_CODES_ACC
 
 
 def _init_traceid_map(config):
@@ -511,42 +522,18 @@ def configure(options=None, progname='source_spec', config_overrides=None):
         _write_sample_ssp_event_file()
         sys.exit(0)
 
-    # initialize config object to the default values
-    config_obj = _get_default_config_obj(configspec)
     if getattr(options, 'config_file', None):
         options.config_file = _fix_and_expand_path(options.config_file)
         config_obj = _read_config_file(options.config_file, configspec)
-
-    # Apply overrides
-    if config_overrides is not None:
-        try:
-            for key, value in config_overrides.items():
-                config_obj[key] = value
-        except AttributeError as e:
-            raise ValueError('"config_override" must be a dict-like.') from e
-
-    # Set to None all the 'None' strings
-    for key, value in config_obj.dict().items():
-        if value == 'None':
-            config_obj[key] = None
-
-    val = Validator()
-    test = config_obj.validate(val)
-    # test is:
-    # - True if everything is ok
-    # - False if no config value is provided
-    # - A dict if invalid values are present, with the invalid values as False
-    if isinstance(test, dict):
-        for entry in [e for e in test if not test[e]]:
-            sys.stderr.write(
-                f'Invalid value for "{entry}": "{config_obj[entry]}"\n')
-        sys.exit(1)
-    if not test:
-        sys.stderr.write('No configuration value present!\n')
-        sys.exit(1)
-
-    _check_deprecated_config_options(config_obj)
-    _check_mandatory_config_params(config_obj)
+        # Apply overrides
+        if config_overrides is not None:
+            try:
+                for key, value in config_overrides.items():
+                    config_obj[key] = value
+            except AttributeError as e:
+                raise ValueError(
+                    '"config_override" must be a dict-like.'
+                ) from e
 
     # TODO: we should allow outdir to be None and not producing any output
     options.outdir = getattr(options, 'outdir', 'sspec_out')
@@ -572,18 +559,18 @@ def configure(options=None, progname='source_spec', config_overrides=None):
 
     # Update config object with the contents of the config file
     config.update(config_obj.dict())
+    config.running_from_command_line = True
+    try:
+        config.validate()
+    except ValueError as msg:
+        sys.exit(msg)
+
     # Add options to config:
     config.options = options
 
     # Override station_metadata config option with command line option
     if getattr(options, 'station_metadata', None):
         config.station_metadata = options.station_metadata
-
-    msc = config.mis_oriented_channels
-    if msc is not None:
-        config.vertical_channel_codes.append(msc[0])
-        config.horizontal_channel_codes_1.append(msc[1])
-        config.horizontal_channel_codes_2.append(msc[2])
 
     # Fix and expand paths in config
     if config.database_file:
@@ -596,47 +583,6 @@ def configure(options=None, progname='source_spec', config_overrides=None):
     if config.residuals_filepath:
         config.residuals_filepath = _fix_and_expand_path(
             config.residuals_filepath)
-
-    # Parse force_list options into lists of float
-    try:
-        for param in [
-                'vp_source', 'vs_source', 'rho_source', 'layer_top_depths']:
-            config[param] = _float_list(config[param])
-    except ValueError as msg:
-        sys.exit(f'Error parsing parameter "{param}": {msg}')
-    n_vp_source = _none_lenght(config.vp_source)
-    n_vs_source = _none_lenght(config.vs_source)
-    n_rho_source = _none_lenght(config.rho_source)
-    n_layer_top_depths = _none_lenght(config.layer_top_depths)
-    try:
-        assert n_vp_source == n_vs_source == n_rho_source == n_layer_top_depths
-    except AssertionError:
-        sys.exit(
-            'Error: "vp_source", "vs_source", "rho_source", and '
-            '"layer_top_depths" must have the same length.'
-        )
-
-    # Check the Er_freq_range parameter
-    if config.Er_freq_range is None:
-        config.Er_freq_range = [None, None]
-    try:
-        config.Er_freq_range = _float_list(
-            config.Er_freq_range, max_length=2,
-            accepted_values=[None, 'noise'])
-    except ValueError as msg:
-        sys.exit(f'Error parsing parameter "Er_freq_range": {msg}')
-
-    if config.html_report:
-        if not config.plot_save:
-            msg = (
-                'The "html_report" option is selected but "plot_save" '
-                'is "False". HTML report will have no plots.')
-            config.warnings.append(msg)
-        if config.plot_save_format not in ['png', 'svg']:
-            msg = (
-                'The "html_report" option is selected but "plot_save_format" '
-                'is not "png" or "svg". HTML report will have no plots.')
-            config.warnings.append(msg)
 
     if config.plot_station_map:
         try:
@@ -655,7 +601,12 @@ def configure(options=None, progname='source_spec', config_overrides=None):
         except ImportError as err:
             sys.exit(err)
 
-    _update_instrument_codes(config)
+    # TODO: remove these when the global config object will be implemented
+    global INSTR_CODES_VEL
+    global INSTR_CODES_ACC
+    INSTR_CODES_VEL = config.INSTR_CODES_VEL
+    INSTR_CODES_ACC = config.INSTR_CODES_ACC
+
     _init_traceid_map(config)
     _init_plotting(config.plot_show)
     return config
