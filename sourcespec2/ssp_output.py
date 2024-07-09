@@ -22,6 +22,7 @@ from collections.abc import Mapping
 from datetime import datetime
 from tzlocal import get_localzone
 import numpy as np
+from .config import config
 from .ssp_qml_output import write_qml
 from .ssp_sqlite_output import write_sqlite
 from ._version import get_versions
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 logging.getLogger('tzlocal').setLevel(logging.WARNING)
 
 
-def _write_author_and_agency_to_parfile(config, parfile):
+def _write_author_and_agency_to_parfile(parfile):
     author_str = empty_author_str = '\n*** Author:'
     if config.author_name is not None:
         author_str += f' {config.author_name}'
@@ -67,7 +68,7 @@ def _value_error_str(value, error, fmt):
     return s
 
 
-def _write_parfile(config, sspec_output):
+def _write_parfile(sspec_output):
     """
     Write station source parameters to file.
 
@@ -288,13 +289,23 @@ def _write_parfile(config, sspec_output):
             f'{config.end_of_run_tz}')
         if config.options.run_id:
             parfile.write(f'\n*** Run ID: {config.options.run_id}')
-        _write_author_and_agency_to_parfile(config, parfile)
+        _write_author_and_agency_to_parfile(parfile)
 
     logger.info(f'Output written to file: {parfilename}')
 
 
 def _dict2yaml(dict_like, level=0):
-    """Serialize a dict-like object into YAML format."""
+    """
+    Serialize a dict-like object into YAML format.
+
+    :param dict_like: Dict-like object to serialize.
+    :type dict_like: dict
+    :param level: Indentation level.
+    :type level: int
+
+    :return: YAML-formatted string.
+    :rtype: str
+    """
     if not isinstance(dict_like, Mapping):
         raise TypeError('dict_like must be a dict-like object')
     comments = dict_like.get('_comments', {})
@@ -333,8 +344,13 @@ def _dict2yaml(dict_like, level=0):
     return lines
 
 
-def _write_yaml(config, sspec_output):
-    """Write sspec output in a YAML file."""
+def _write_yaml(sspec_output):
+    """
+    Write sspec output in a YAML file.
+
+    :param sspec_output: Output of the spectral inversion.
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    """
     if not os.path.exists(config.options.outdir):
         os.makedirs(config.options.outdir)
     evid = config.event.event_id
@@ -350,7 +366,13 @@ def _write_yaml(config, sspec_output):
     logger.info(f'Output written to file: {yamlfilename}')
 
 
-def _write_hypo71(config, sspec_output):
+def _write_hypo71(sspec_output):
+    """
+    Write source parameters to hypo71 file.
+
+    :param sspec_output: Output of the spectral inversion.
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    """
     if not config.options.hypo_file:
         return
     if config.hypo_file_format != 'hypo71':
@@ -380,7 +402,7 @@ def _write_hypo71(config, sspec_output):
     logger.info(f'Hypo file written to: {hypo_file_out}')
 
 
-def _make_symlinks(config):
+def _make_symlinks():
     """Make symlinks to input files into output directory."""
     # Windows does not support symlinks
     if os.name == 'nt':
@@ -410,8 +432,13 @@ def _make_symlinks(config):
         os.symlink(filename, linkname)
 
 
-def write_output(config, sspec_output):
-    """Write results into different formats."""
+def write_output(sspec_output):
+    """
+    Write results into different formats.
+
+    :param sspec_output: Output of the spectral inversion.
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    """
     # Add run info to output object
     run_info = sspec_output.run_info
     run_info.SourceSpec_version = get_versions()['version']
@@ -427,21 +454,26 @@ def write_output(config, sspec_output):
     run_info.agency_short_name = config.agency_short_name
     run_info.agency_url = config.agency_url
     # Symlink input files into output directory
-    _make_symlinks(config)
+    _make_symlinks()
     # Write to parfile (deprecated)
-    _write_parfile(config, sspec_output)
+    _write_parfile(sspec_output)
     # Write to YAML file
-    _write_yaml(config, sspec_output)
+    _write_yaml(sspec_output)
     # Write to SQLite database, if requested
-    write_sqlite(config, sspec_output)
+    write_sqlite(sspec_output)
     # Write to hypo file, if requested
-    _write_hypo71(config, sspec_output)
+    _write_hypo71(sspec_output)
     # Write to quakeml file, if requested
-    write_qml(config, sspec_output)
+    write_qml(sspec_output)
 
 
-def save_spectra(config, spec_st):
-    """Save spectra to file."""
+def save_spectra(spec_st):
+    """
+    Save spectra to file.
+
+    :param spec_st: Stream of spectra.
+    :type spec_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    """
     if not config.save_spectra:
         return
     outfile = os.path.join(
