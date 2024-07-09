@@ -23,6 +23,7 @@ from obspy.signal.filter import envelope
 from obspy.signal.invsim import WOODANDERSON
 from obspy.signal.util import smooth
 from obspy.signal.trigger import trigger_onset
+from .config import config
 from .ssp_data_types import SpectralParameter
 from .ssp_util import cosine_taper
 from .ssp_util import remove_instr_response
@@ -30,7 +31,18 @@ logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def _check_nyquist(freqmax, trace):
-    """Check if freqmax is smaller than Nyquist frequency."""
+    """
+    Check if freqmax is smaller than Nyquist frequency.
+
+    :param freqmax: Maximum frequency for bandpass filtering.
+    :type freqmax: float
+
+    :param trace: Trace to process.
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :return: Corrected maximum frequency.
+    :rtype: float
+    """
     nyquist = 1. / (2. * trace.stats.delta)
     if freqmax >= nyquist:
         freqmax = nyquist * 0.999
@@ -46,8 +58,16 @@ def _check_nyquist(freqmax, trace):
 _check_nyquist.messages = []  # noqa
 
 
-def _get_cut_times(config, tr):
-    """Get trace cut times between P arrival and end of envelope coda."""
+def _get_cut_times(tr):
+    """
+    Get trace cut times between P arrival and end of envelope coda.
+
+    :param tr: Trace to process.
+    :type tr: :class:`obspy.core.trace.Trace`
+
+    :return: Start and end times.
+    :rtype: tuple of :class:`obspy.core.UTCDateTime`
+    """
     tr_env = tr.copy()
     # remove the mean...
     tr_env.detrend(type='constant')
@@ -93,8 +113,20 @@ def _get_cut_times(config, tr):
     return t0, t1
 
 
-def _process_trace(config, tr, t0, t1):
-    """Convert to Wood-Anderson, filter, trim."""
+def _process_trace(tr, t0, t1):
+    """
+    Convert to Wood-Anderson, filter, trim.
+
+    :param tr: Trace to process.
+    :type tr: :class:`obspy.core.trace.Trace`
+    :param t0: Start time for trace cut.
+    :type t0: :class:`obspy.core.utcdatetime.UTCDateTime`
+    :param t1: End time for trace cut.
+    :type t1: :class:`obspy.core.utcdatetime.UTCDateTime`
+
+    :return: Processed trace.
+    :rtype: :class:`obspy.core.trace.Trace`
+    """
     tr_process = tr.copy()
     # Do a preliminary trim, in order to check if there is enough
     # data within the selected time window
@@ -142,8 +174,18 @@ def _process_trace(config, tr, t0, t1):
     return tr_process
 
 
-def _compute_local_magnitude(config, amp, h_dist):
-    """Compute local magnitude using the Richter formula."""
+def _compute_local_magnitude(amp, h_dist):
+    """
+    Compute local magnitude using the Richter formula.
+
+    :param amp: Maximum amplitude in millimeters.
+    :type amp: float
+    :param h_dist: Hypocentral distance in kilometers.
+    :type h_dist: float
+
+    :return: Local magnitude.
+    :rtype: float
+    """
     a = config.a
     b = config.b
     c = config.c
@@ -152,8 +194,17 @@ def _compute_local_magnitude(config, amp, h_dist):
     )
 
 
-def local_magnitude(config, st, proc_st, sspec_output):
-    """Compute local magnitude from max absolute W-A amplitude."""
+def local_magnitude(st, proc_st, sspec_output):
+    """
+    Compute local magnitude from max absolute W-A amplitude.
+
+    :param st: Stream object with all traces.
+    :type st: :class:`obspy.core.stream.Stream`
+    :param proc_st: Stream object with processed traces.
+    :type proc_st: :class:`obspy.core.stream.Stream`
+    :param sspec_output: Output of the spectral inversion.
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    """
     logger.info('Computing local magnitude...')
     # We only use traces selected for proc_st
     trace_ids = {tr.id for tr in proc_st}
@@ -183,8 +234,8 @@ def local_magnitude(config, st, proc_st, sspec_output):
             continue
 
         try:
-            t0, t1 = _get_cut_times(config, tr)
-            tr_process = _process_trace(config, tr, t0, t1)
+            t0, t1 = _get_cut_times(tr)
+            tr_process = _process_trace(tr, t0, t1)
         except RuntimeError as msg:
             logger.warning(msg)
             continue
@@ -193,7 +244,7 @@ def local_magnitude(config, st, proc_st, sspec_output):
         # amp must be in millimeters for local magnitude computation
         amp = np.abs(tr_process.max()) * 1e3
         h_dist = tr_process.stats.hypo_dist
-        ml = _compute_local_magnitude(config, amp, h_dist)
+        ml = _compute_local_magnitude(amp, h_dist)
         statId = f'{tr_id} {tr.stats.instrtype}'
         logger.info(f'{statId}: Ml {ml:.1f}')
         # compute average with the other component, if available
