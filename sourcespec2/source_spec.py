@@ -25,8 +25,8 @@ def main():
     options = parse_args(progname='source_spec')
 
     # Setup stage
-    from .config import configure
-    config = configure(options, progname='source_spec')
+    from .config import configure_cli
+    config = configure_cli(options, progname='source_spec')
     from .ssp_setup import (
         move_outdir, remove_old_outdir, setup_logging,
         save_config, ssp_exit)
