@@ -24,7 +24,7 @@ import signal
 import contextlib
 from datetime import datetime
 from . import __version__, __banner__
-from .config import library_versions
+from .config import config, library_versions
 
 # define ipshell(), if possible
 # note: ANSI colors do not work on Windows standard terminal
@@ -43,7 +43,7 @@ LOGGER = None
 SSP_EXIT_CALLED = False
 
 
-def save_config(config):
+def save_config():
     """Save config file to output dir."""
     # Actually, it renames the file already existing.
     src = os.path.join(config.options.outdir, 'source_spec.conf')
@@ -55,7 +55,7 @@ def save_config(config):
     os.rename(src, dst)
 
 
-def move_outdir(config):
+def move_outdir():
     """Move outdir to a new dir named from evid (and optional run_id)."""
     try:
         evid = config.event.event_id
@@ -85,7 +85,7 @@ def move_outdir(config):
     config.options.outdir = dst
 
 
-def remove_old_outdir(config):
+def remove_old_outdir():
     """Try to remove the old outdir."""
     try:
         oldoutdir = config.options.oldoutdir
@@ -121,7 +121,7 @@ def _color_handler_emit(fn):
     return new
 
 
-def setup_logging(config, basename=None, progname='source_spec'):
+def setup_logging(basename=None, progname='source_spec'):
     """
     Set up the logging infrastructure.
 
@@ -129,6 +129,12 @@ def setup_logging(config, basename=None, progname='source_spec'):
     and a second time with a basename (typically the eventid).
     When called the second time, the previous logfile is renamed using the
     given basename.
+
+    :param basename: The basename for the logfile (default: None).
+    :type basename: str
+    :param progname: The program name to be used in the log file (default:
+        'source_spec')
+    :type progname: str
     """
     # pylint: disable=global-statement
     global OLDLOGFILE
