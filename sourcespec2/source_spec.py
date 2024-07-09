@@ -49,7 +49,7 @@ def main():
 
     # Build spectra (amplitude in magnitude units)
     from .ssp_build_spectra import build_spectra
-    spec_st, specnoise_st, weight_st = build_spectra(config, proc_st)
+    spec_st, specnoise_st, weight_st = build_spectra(proc_st)
 
     from .ssp_plot_traces import plot_traces
     plot_traces(config, st, suffix='raw')

@@ -15,13 +15,14 @@ Spectral station correction calculated from ssp_residuals.
 """
 import logging
 import numpy as np
+from .config import config
 from .spectrum import read_spectra
 from .ssp_util import mag_to_moment
 from .ssp_setup import ssp_exit
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-def station_correction(spec_st, config):
+def station_correction(spec_st):
     """
     Correct spectra using station-average residuals.
 
@@ -32,8 +33,6 @@ def station_correction(spec_st, config):
     spec_st : SpectrumStream or list of Spectrum
         List of spectra to be corrected. Corrected spectra are appended
         to the list (component code of uncorrected spectra is renamed to 'h').
-    config : Config
-        Configuration object containing the residuals file path.
     """
     res_filepath = config.residuals_filepath
     if res_filepath is None:
