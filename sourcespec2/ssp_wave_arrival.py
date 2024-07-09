@@ -16,11 +16,29 @@ import logging
 import warnings
 from math import asin, degrees
 from obspy.taup import TauPyModel
+from .config import config
 model = TauPyModel(model='iasp91')
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def _get_nll_grd(phase, station, grd_type, NLL_time_dir):
+    """
+    Get a NLL grid for a given phase, station and type.
+
+    :param phase: Phase for which to get the grid
+    :type phase: str
+    :param station: Station name
+    :type station: str
+    :param grd_type: Type of grid (time or angle)
+    :type grd_type: str
+    :param NLL_time_dir: Path to NLL time grids
+    :type NLL_time_dir: str
+
+    :return: NLL grid
+    :rtype: :class:`nllgrid.NLLGrid`
+
+    :raises RuntimeError: If the grid is not found
+    """
     # Lazy-import here, since nllgrid is not an installation requirement
     # pylint: disable=import-outside-toplevel
     from nllgrid import NLLGrid
@@ -42,7 +60,23 @@ _get_nll_grd.grds = {}  # noqa
 
 
 def _wave_arrival_nll(trace, phase, NLL_time_dir, focmec):
-    """Travel time and takeoff angle using a NLL grid."""
+    """
+    Travel time and takeoff angle using a NLL grid.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param phase: Phase for which to get arrival
+    :type phase: str
+    :param NLL_time_dir: Path to NLL time grids
+    :type NLL_time_dir: str
+    :param focmec: Whether to compute takeoff angle from focal mechanism
+    :type focmec: bool
+
+    :return: Travel time and takeoff angle
+    :rtype: tuple of float
+
+    :raises RuntimeError: If the grid is not found
+    """
     if NLL_time_dir is None:
         raise RuntimeError
     station = trace.stats.station
@@ -75,7 +109,19 @@ def _wave_arrival_nll(trace, phase, NLL_time_dir, focmec):
 
 
 def _wave_arrival_vel(trace, vel):
-    """Travel time and takeoff angle using a constant velocity (in km/s)."""
+    """
+    Travel time and takeoff angle using a constant velocity (in km/s).
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param vel: Velocity in km/s
+    :type vel: float
+
+    :return: Travel time and takeoff angle
+    :rtype: tuple of float
+
+    :raises RuntimeError: If velocity is not set
+    """
     if vel is None:
         raise RuntimeError
     travel_time = trace.stats.hypo_dist / vel
@@ -86,7 +132,17 @@ def _wave_arrival_vel(trace, vel):
 
 
 def _wave_arrival_taup(trace, phase):
-    """Travel time and takeoff angle using taup."""
+    """
+    Travel time and takeoff angle using taup.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param phase: Phase for which to get arrival
+    :type phase: str
+
+    :return: Travel time and takeoff angle
+    :rtype: tuple of float
+    """
     phase_list = [phase.lower(), phase]
     hypo_depth = trace.stats.event.hypocenter.depth.value_in_km
     kwargs = {
@@ -114,8 +170,18 @@ def _wave_arrival_taup(trace, phase):
     return travel_time, takeoff_angle
 
 
-def _wave_arrival(trace, phase, config):
-    """Get travel time and takeoff angle."""
+def _wave_arrival(trace, phase):
+    """
+    Get travel time and takeoff angle.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param phase: Phase for which to get arrival
+    :type phase: str
+
+    :return: Travel time, takeoff angle and method used
+    :rtype: float, float, str
+    """
     NLL_time_dir = config.NLL_time_dir
     focmec = config.rp_from_focal_mechanism
     vel = {'P': config.vp_tt, 'S': config.vs_tt}
@@ -137,7 +203,21 @@ def _wave_arrival(trace, phase, config):
 
 
 def _validate_pick(pick, theo_pick_time, tolerance, trace_id):
-    """Check if a pick is valid, i.e., close enough to theoretical one."""
+    """
+    Check if a pick is valid, i.e., close enough to theoretical one.
+
+    :param pick: Pick to validate
+    :type pick: :class:`obspy.core.event.Pick`
+    :param theo_pick_time: Theoretical pick time
+    :type theo_pick_time: float
+    :param tolerance: Tolerance in seconds
+    :type tolerance: float
+    :param trace_id: Trace ID
+    :type trace_id: str
+
+    :return: True if pick is valid, False otherwise
+    :rtype: bool
+    """
     if theo_pick_time is None:
         return True
     delta_t = pick.time - theo_pick_time
@@ -150,6 +230,17 @@ def _validate_pick(pick, theo_pick_time, tolerance, trace_id):
 
 
 def _get_theo_pick_time(trace, travel_time):
+    """
+    Get theoretical pick time.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param travel_time: Travel time
+    :type travel_time: float
+
+    :return: Theoretical pick time
+    :rtype: float
+    """
     if trace.stats.event.hypocenter.origin_time is None:
         msg = (
             f'{trace.id}: hypocenter origin time not set: '
@@ -163,6 +254,17 @@ _get_theo_pick_time.msg_cache = [] # noqa
 
 
 def _travel_time_from_pick(trace, pick_time):
+    """
+    Compute travel time from pick time.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param pick_time: Pick time
+    :type pick_time: float
+
+    :return: Travel time
+    :rtype: float
+    """
     try:
         travel_time = pick_time - trace.stats.event.hypocenter.origin_time
     except TypeError:
@@ -171,7 +273,21 @@ def _travel_time_from_pick(trace, pick_time):
 
 
 def _find_picks(trace, phase, theo_pick_time, tolerance):
-    """Search for valid picks in trace stats. Return pick time if found."""
+    """
+    Search for valid picks in trace stats. Return pick time if found.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param phase: Phase for which to search pick
+    :type phase: str
+    :param theo_pick_time: Theoretical pick time
+    :type theo_pick_time: float
+    :param tolerance: Tolerance in seconds
+    :type tolerance: float
+
+    :return: Pick time if found, None otherwise
+    :rtype: float or None
+    """
     for pick in (p for p in trace.stats.picks if p.phase.upper() == phase):
         if _validate_pick(pick, theo_pick_time, tolerance, trace.id):
             trace.stats.arrivals[phase] = (phase, pick.time)
@@ -179,13 +295,19 @@ def _find_picks(trace, phase, theo_pick_time, tolerance):
     return None
 
 
-def add_arrival_to_trace(trace, phase, config):
+def add_arrival_to_trace(trace, phase):
     """
     Add arrival time, travel time and takeoff angle to trace for the
     given phase.
 
     Uses the theoretical arrival time if no pick is available
     or if the pick is too different from the theoretical arrival.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :param phase: Phase for which to add arrival
+    :type phase: str
     """
     tolerance = (
         config.p_arrival_tolerance
@@ -201,7 +323,7 @@ def add_arrival_to_trace(trace, phase, config):
         trst.takeoff_angles[phase] = add_arrival_to_trace.angle_cache[key]
         return
     # If no cache is available, compute travel_time and takeoff_angle
-    travel_time, takeoff_angle, method = _wave_arrival(trace, phase, config)
+    travel_time, takeoff_angle, method = _wave_arrival(trace, phase)
     theo_pick_time = _get_theo_pick_time(trace, travel_time)
     pick_time = _find_picks(trace, phase, theo_pick_time, tolerance)
     if pick_time is not None:
