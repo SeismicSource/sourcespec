@@ -45,7 +45,7 @@ def main():
 
     # Deconvolve, filter, cut traces:
     from .ssp_process_traces import process_traces
-    proc_st = process_traces(config, st)
+    proc_st = process_traces(st)
 
     # Build spectra (amplitude in magnitude units)
     from .ssp_build_spectra import build_spectra

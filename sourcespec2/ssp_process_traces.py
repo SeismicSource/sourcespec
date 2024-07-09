@@ -20,6 +20,7 @@ import numpy as np
 from scipy.signal import savgol_filter
 from obspy.core import Stream
 from obspy.core.util import AttribDict
+from .config import config
 from .ssp_setup import ssp_exit
 from .ssp_util import (
     remove_instr_response, station_to_event_position)
@@ -45,8 +46,18 @@ def _skip_stream_and_raise(st, reason, short_reason=None):
     raise RuntimeError(f'{st[0].id}: {reason}: skipping trace')
 
 
-def _get_bandpass_frequencies(config, trace):
-    """Get frequencies for bandpass filter."""
+def _get_bandpass_frequencies(trace):
+    """
+    Get frequencies for bandpass filter.
+
+    :param trace: ObsPy Trace object.
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :return: Tuple with minimum and maximum frequencies.
+    :rtype: tuple
+
+    :raises: ValueError if instrument type is unknown.
+    """
     # see if there is a station-specific filter
     station = trace.stats.station
     try:
@@ -66,9 +77,16 @@ def _get_bandpass_frequencies(config, trace):
     return bp_freqmin, bp_freqmax
 
 
-def filter_trace(config, trace):
-    """Filter trace."""
-    bp_freqmin, bp_freqmax = _get_bandpass_frequencies(config, trace)
+def filter_trace(trace):
+    """
+    Filter trace in place.
+
+    Save filter info to trace stats.
+
+    :param trace: ObsPy Trace object.
+    :type trace: :class:`obspy.core.trace.Trace`
+    """
+    bp_freqmin, bp_freqmax = _get_bandpass_frequencies(trace)
     nyquist = 1. / (2. * trace.stats.delta)
     if bp_freqmax >= nyquist:
         bp_freqmax = nyquist * 0.999
@@ -85,7 +103,15 @@ def filter_trace(config, trace):
     trace.stats.filter = AttribDict(filter_options)
 
 
-def _check_signal_level(config, trace):
+def _check_signal_level(trace):
+    """
+    Check if the trace has significant signal level.
+
+    :param trace: ObsPy Trace object.
+    :type trace: :class:`obspy.core
+
+    :raises: RuntimeError if trace RMS is smaller than config.rmsmin.
+    """
     rms2 = np.power(trace.data, 2).sum()
     rms = np.sqrt(rms2)
     rms_min = config.rmsmin
@@ -97,7 +123,13 @@ def _check_signal_level(config, trace):
         )
 
 
-def _check_clipping(config, trace):
+def _check_clipping(trace):
+    """
+    Check if the trace is clipped.
+
+    :param trace: ObsPy Trace object.
+    :type trace: :class:`obspy.core.trace.Trace`
+    """
     trace.stats.clipped = False
     if config.clipping_detection_algorithm == 'none':
         return
@@ -147,7 +179,15 @@ def _check_clipping(config, trace):
             'skipping trace')
 
 
-def _check_sn_ratio(config, trace):
+def _check_sn_ratio(trace):
+    """
+    Check if the trace has significant signal to noise ratio.
+
+    :param trace: ObsPy Trace object.
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :raises: RuntimeError if no noise window is available.
+    """
     trace_noise = _get_detrended_trace_copy(trace)
     t1 = trace_noise.stats.arrivals['N1'][1]
     t2 = trace_noise.stats.arrivals['N2'][1]
@@ -189,6 +229,15 @@ def _check_sn_ratio(config, trace):
 
 
 def _get_detrended_trace_copy(trace):
+    """
+    Get a copy of the trace with the mean and linear trend removed.
+
+    :param trace: ObsPy Trace object.
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :return: Trace with mean and linear trend removed.
+    :rtype: :class:`obspy.core.trace.Trace`
+    """
     # noise time window for s/n ratio
     tr_copy = trace.copy()
     # remove the mean...
@@ -198,10 +247,13 @@ def _get_detrended_trace_copy(trace):
     return tr_copy
 
 
-def _remove_baseline(config, trace):
+def _remove_baseline(trace):
     """
     Get the signal baseline using a Savitzky-Golay filter and subtract it
     from the trace.
+
+    :param trace: ObsPy Trace object.
+    :type trace: :class:`obspy.core.trace.Trace`
     """
     if not config.remove_baseline:
         return
@@ -213,7 +265,18 @@ def _remove_baseline(config, trace):
     trace.data -= baseline
 
 
-def _process_trace(config, trace):
+def _process_trace(trace):
+    """
+    Process a trace.
+
+    :param trace: ObsPy Trace object.
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :return: Processed trace.
+    :rtype: :class:`obspy.core.trace.Trace`
+
+    :raises: RuntimeError if unable to remove instrument response.
+    """
     # copy trace for manipulation
     trace_process = trace.copy()
     comp = trace_process.stats.channel
@@ -228,11 +291,11 @@ def _process_trace(config, trace):
             trace_process.stats.ignore = True
             trace_process.stats.ignore_reason = 'vertical'
     # check if the trace has (significant) signal
-    _check_signal_level(config, trace_process)
+    _check_signal_level(trace_process)
     # check if trace is clipped
-    _check_clipping(config, trace_process)
+    _check_clipping(trace_process)
     # Remove instrument response
-    bp_freqmin, bp_freqmax = _get_bandpass_frequencies(config, trace)
+    bp_freqmin, bp_freqmax = _get_bandpass_frequencies(trace)
     if config.correct_instrumental_response:
         try:
             pre_filt = (
@@ -245,10 +308,10 @@ def _process_trace(config, trace):
                 reason=f'unable to remove instrument response: {e}',
                 short_reason='no instr response'
             )
-    _remove_baseline(config, trace_process)
-    filter_trace(config, trace_process)
+    _remove_baseline(trace_process)
+    filter_trace(trace_process)
     # Check if the trace has significant signal to noise ratio
-    _check_sn_ratio(config, trace_process)
+    _check_sn_ratio(trace_process)
     trace_process.stats.processed = True
     return trace_process
 
@@ -258,6 +321,11 @@ def _add_station_to_event_position(trace):
     Add to ``trace.stats`` station-to-event distance (hypocentral and
     epicentral), great-circle distance, azimuth and backazimuth.
     Raise RuntimeError if unable to compute distances.
+
+    :param trace: ObsPy Trace object.
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :raises: RuntimeError if unable to compute hypocentral distance.
     """
     try:
         station_to_event_position(trace)
@@ -269,10 +337,14 @@ def _add_station_to_event_position(trace):
         )
 
 
-def _check_epicentral_distance(config, trace):
+def _check_epicentral_distance(trace):
     """
-    Reject traces with hypocentral distance outside the range specified
-    in the configuration file.
+    Check if the epicentral distance is within the selected range.
+
+    :param trace: ObsPy Trace object.
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :raises: RuntimeError if epicentral distance is outside the range.
     """
     if config.epi_dist_ranges is None:
         return
@@ -299,8 +371,15 @@ def _check_epicentral_distance(config, trace):
         )
 
 
-def _add_arrivals(config, trace):
-    """Add to trace P and S arrival times, travel times and angles."""
+def _add_arrivals(trace):
+    """
+    Add to trace P and S arrival times, travel times and angles.
+
+    :param trace: ObsPy Trace object.
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :raises: RuntimeError if unable to get arrival times.
+    """
     for phase in 'P', 'S':
         try:
             add_arrival_to_trace(trace, phase, config)
@@ -318,8 +397,15 @@ def _add_arrivals(config, trace):
         refine_trace_picks(trace, freqmin, debug)
 
 
-def _define_signal_and_noise_windows(config, trace):
-    """Define signal and noise windows for spectral analysis."""
+def _define_signal_and_noise_windows(trace):
+    """
+    Define signal and noise windows for spectral analysis.
+
+    :param trace: ObsPy Trace object.
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :raises: RuntimeError if P or S window is incomplete.
+    """
     p_arrival_time = trace.stats.arrivals['P'][1]
     if config.wave_type[0] == 'P' and p_arrival_time < trace.stats.starttime:
         _skip_trace_and_raise(trace, 'P-window incomplete')
@@ -384,12 +470,18 @@ def _define_signal_and_noise_windows(config, trace):
     trace.stats.arrivals['N2'] = ('N2', t2)
 
 
-def _check_signal_window(config, st):
+def _check_signal_window(st):
     """
     Check if the signal window has sufficient amount of signal
     (i.e., not too many gaps).
 
     This is done on the stream, before merging.
+
+    :param st: ObsPy Stream object.
+    :type st: :class:`obspy.core.stream.Stream`
+
+    :raises: RuntimeError if the cut interval has no signal.
+    :raises: RuntimeError if too many gaps in the signal window.
     """
     traceid = st[0].id
     st_cut = st.copy()
@@ -427,9 +519,19 @@ def _check_signal_window(config, st):
             'of overlaps.')
 
 
-def _merge_stream(config, st):
+def _merge_stream(st):
     """
     Check for gaps and overlaps; remove mean; merge stream.
+
+    :param st: ObsPy Stream object.
+    :type st: :class:`obspy.core.stream.Stream`
+
+    :return: An ObsPy Trace object.
+    :rtype: :class:`obspy.core.trace.Trace`
+
+    :raises: RuntimeError if gap duration is larger than config.gap_max.
+    :raises: RuntimeError if overlap duration is larger than
+        config.overlap_max.
     """
     traceid = st[0].id
     # First, compute gap/overlap statistics for the whole trace.
@@ -487,8 +589,15 @@ def _glob_to_regex(pattern):
     return pattern
 
 
-def _skip_ignored(config, st):
-    """Skip traces ignored from config."""
+def _skip_ignored(st):
+    """
+    Skip traces ignored from config.
+
+    :param st: ObsPy Stream object.
+    :type st: :class:`obspy.core.stream.Stream`
+
+    :raises: RuntimeError if traces are ignored from config file.
+    """
     traceid = st[0].id
     network, station, location, channel = traceid.split('.')
 
@@ -526,8 +635,16 @@ def _skip_ignored(config, st):
         )
 
 
-def process_traces(config, st):
-    """Remove mean, deconvolve and ignore unwanted components."""
+def process_traces(st):
+    """
+    Remove mean, deconvolve and ignore unwanted components.
+
+    :param st: Stream object with traces to process.
+    :type st: :class:`obspy.core.stream.Stream`
+
+    :return: Stream object with processed traces.
+    :rtype: :class:`obspy.core.stream.Stream`
+    """
     logger.info('Processing traces...')
     out_st = Stream()
     for traceid in sorted({tr.id for tr in st}):
@@ -537,16 +654,16 @@ def process_traces(config, st):
             # Add event-related metadata to trace.stats
             for _trace in st_sel:
                 _add_station_to_event_position(_trace)
-                _check_epicentral_distance(config, _trace)
-                _add_arrivals(config, _trace)
-                _define_signal_and_noise_windows(config, _trace)
+                _check_epicentral_distance(_trace)
+                _add_arrivals(_trace)
+                _define_signal_and_noise_windows(_trace)
             # We skip traces ignored from config file here, so that we have
             # the metadata needed for the raw plot
-            _skip_ignored(config, st_sel)
-            _check_signal_window(config, st_sel)
-            trace = _merge_stream(config, st_sel)
+            _skip_ignored(st_sel)
+            _check_signal_window(st_sel)
+            trace = _merge_stream(st_sel)
             trace.stats.ignore = False
-            trace_process = _process_trace(config, trace)
+            trace_process = _process_trace(trace)
             out_st.append(trace_process)
         except (ValueError, RuntimeError) as msg:
             logger.warning(msg)
