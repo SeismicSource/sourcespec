@@ -52,8 +52,8 @@ def main():
     spec_st, specnoise_st, weight_st = build_spectra(proc_st)
 
     from .ssp_plot_traces import plot_traces
-    plot_traces(config, st, suffix='raw')
-    plot_traces(config, proc_st)
+    plot_traces(st, suffix='raw')
+    plot_traces(proc_st)
 
     # Spectral inversion
     from .ssp_inversion import spectral_inversion
