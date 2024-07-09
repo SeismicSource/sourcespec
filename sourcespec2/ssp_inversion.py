@@ -22,6 +22,7 @@ import numpy as np
 from scipy.optimize import curve_fit, minimize, basinhopping
 from scipy.signal import argrelmax
 from obspy.geodetics import gps2dist_azimuth
+from .config import config
 from .spectrum import SpectrumStream
 from .ssp_spectral_model import (
     spectral_model, objective_func, callback)
@@ -37,7 +38,7 @@ from .ssp_grid_sampling import GridSampling
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-def _parse_Q_model(config):
+def _parse_Q_model():
     """
     Parse Q_model value from config.
 
@@ -99,8 +100,7 @@ def _parse_Q_model(config):
     return Q_model_func
 
 
-def _curve_fit(
-        config, spec, weight, yerr, initial_values, bounds, Q_model=None):
+def _curve_fit(spec, weight, yerr, initial_values, bounds, Q_model=None):
     """
     Curve fitting.
 
@@ -114,8 +114,6 @@ def _curve_fit(
 
     Parameters
     ----------
-    config : Config
-        Configuration object containing inversion parameters.
     spec : Spectrum
         Spectrum object containing spectral data.
     weight : array_like
@@ -237,17 +235,17 @@ def _curve_fit(
         params_opt = grid_sampling.params_opt
         params_err = grid_sampling.params_err
         spec_label = f'{spec.id} {spec.stats.instrtype}'
-        grid_sampling.plot_conditional_misfit(config, spec_label)
+        grid_sampling.plot_conditional_misfit(spec_label)
         # fc-Mw
         plot_par_idx = (1, 0)
-        grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
+        grid_sampling.plot_misfit_2d(plot_par_idx, spec_label)
         if Q_model is None:
             # fc-t_star
             plot_par_idx = (1, 2)
-            grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
+            grid_sampling.plot_misfit_2d(plot_par_idx, spec_label)
             # tstar-Mw
             plot_par_idx = (2, 0)
-            grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
+            grid_sampling.plot_misfit_2d(plot_par_idx, spec_label)
     else:
         raise ValueError(
             f'Unknown inversion algorithm: {config.inv_algorithm}')
@@ -263,7 +261,7 @@ def _curve_fit(
     return params_opt, params_err, rmsn, quality_of_fit
 
 
-def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_logspaced, statId):
+def _freq_ranges_for_Mw0_and_tstar0(weight, freq_logspaced, statId):
     """
     Find the frequency range to compute Mw_0 and, possibly, t_star_0.
     Note that second index is supposed to correspond to fc_0, our initial
@@ -325,7 +323,7 @@ def _compute_station_azimuth(spec):
     return stla, stlo, az
 
 
-def _spec_inversion(config, spec, spec_weight, station_pars, Q_model=None):
+def _spec_inversion(spec, spec_weight, station_pars, Q_model=None):
     """
     Invert one spectrum and store results in station_pars.
 
@@ -335,8 +333,6 @@ def _spec_inversion(config, spec, spec_weight, station_pars, Q_model=None):
 
     Parameters
     ----------
-    config : Config
-        Configuration object containing inversion parameters and settings.
     spec : Spectrum
         Spectrum object containing the spectral data to invert.
     spec_weight : Spectrum
@@ -386,7 +382,7 @@ def _spec_inversion(config, spec, spec_weight, station_pars, Q_model=None):
     # signal-to-noise ratio
     try:
         idx0, idx1 = _freq_ranges_for_Mw0_and_tstar0(
-            config, weight, freq_logspaced, statId)
+            weight, freq_logspaced, statId)
     except RuntimeError:
         spec.stats.ignore = True
         spec.stats.ignore_reason = 'fit failed'
@@ -430,7 +426,7 @@ def _spec_inversion(config, spec, spec_weight, station_pars, Q_model=None):
     initial_values = InitialValues(Mw_0, fc_0, t_star_0)
     if Q_model is not None:
         initial_values.invert_t_star = False
-    bounds = Bounds(config, spec, initial_values)
+    bounds = Bounds(spec, initial_values)
     Mw_0_variability =\
         config.Mw_0_variability if config.Mw_0_variability > 0 else 1e-6
     bounds.Mw_min = Mw_0_min * (1 - Mw_0_variability)
@@ -457,7 +453,7 @@ def _spec_inversion(config, spec, spec_weight, station_pars, Q_model=None):
     # Call curve fitting function
     try:
         params_opt, params_err, rmsn, quality_of_fit = _curve_fit(
-            config, spec, weight, yerr, initial_values, bounds, Q_model)
+            spec, weight, yerr, initial_values, bounds, Q_model)
     except (RuntimeError, ValueError) as m:
         spec.stats.ignore = True
         spec.stats.ignore_reason = 'fit failed'
@@ -622,8 +618,18 @@ def _spec_inversion(config, spec, spec_weight, station_pars, Q_model=None):
     station_pars.Qo.confidence_level = 68.2
 
 
-def _synth_spec(config, spec, station_pars):
-    """Return a stream with one or more synthetic spectra."""
+def _synth_spec(spec, station_pars):
+    """
+    Return a stream with one or more synthetic spectra.
+
+    :param spec: Spectrum object.
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param station_pars: Station parameters.
+    :type station_pars: :class:`~sourcespec.ssp_data_types.StationParameters`
+
+    :return: Stream with synthetic spectra.
+    :rtype: :class:`~sourcespec.spectrum.SpectrumStream`
+    """
     par = {
         x.param_id: x.value
         for x in station_pars.get_spectral_parameters().values()
@@ -716,13 +722,13 @@ def _compute_inversion_quality_info(inverted_spectra, sspec_output):
     )
 
 
-def spectral_inversion(config, spec_st, weight_st):
+def spectral_inversion(spec_st, weight_st):
     """Inversion of displacement spectra."""
     logger.info('Inverting spectra...')
 
     # See if quality factor Q should be fixed to a value or function
     try:
-        Q_model = _parse_Q_model(config)
+        Q_model = _parse_Q_model()
     except ValueError as e:
         logger.error(f'Error parsing Q_model: {e}')
         ssp_exit(1)
@@ -801,14 +807,14 @@ def spectral_inversion(config, spec_st, weight_st):
             continue
         spec_weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
         try:
-            _spec_inversion(config, spec, spec_weight, station_pars, Q_model)
+            _spec_inversion(spec, spec_weight, station_pars, Q_model)
         except (RuntimeError, ValueError) as msg:
             logger.warning(msg)
             station_pars.ignored = spec.stats.ignore
             station_pars.ignored_reason = getattr(
                 spec.stats, 'ignore_reason', None)
             continue
-        spec_st += _synth_spec(config, spec, station_pars)
+        spec_st += _synth_spec(spec, station_pars)
     logger.info('Inverting spectra: done')
     logger.info('---------------------------------------------------')
 
