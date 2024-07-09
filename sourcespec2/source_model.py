@@ -104,7 +104,7 @@ def main():
     if len(config.options.trace_path) > 0:
         st = read_traces()
         # Deconvolve, filter, cut traces:
-        proc_st = process_traces(config, st)
+        proc_st = process_traces(st)
         # Build spectra (amplitude in magnitude units)
         spec_st, _specnoise_st, _weight_st = build_spectra(config, proc_st)
         if len(spec_st) == 0:
