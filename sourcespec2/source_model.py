@@ -84,7 +84,7 @@ def main():
     # Lazy-import modules for speed
     from .ssp_parse_arguments import parse_args
     options = parse_args(progname='source_model')
-    from .config import configure_cli
+    from .config import config, configure_cli
     from .ssp_setup import ssp_exit
     plot_show = bool(options.plot)
     conf_overrides = {
@@ -92,7 +92,7 @@ def main():
         'plot_save': False,
         'html_report': False
     }
-    config = configure_cli(
+    configure_cli(
         options, progname='source_model', config_overrides=conf_overrides)
     from .spectrum import SpectrumStream
     from .ssp_read_traces import read_traces
@@ -102,7 +102,7 @@ def main():
     # We don't use weighting in source_model
     config.weighting = 'no_weight'
     if len(config.options.trace_path) > 0:
-        st = read_traces(config)
+        st = read_traces()
         # Deconvolve, filter, cut traces:
         proc_st = process_traces(config, st)
         # Build spectra (amplitude in magnitude units)

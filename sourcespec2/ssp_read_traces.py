@@ -26,6 +26,7 @@ import contextlib
 from obspy import read
 from obspy.core import Stream
 from obspy.core.util import AttribDict
+from .config import config
 from .ssp_setup import ssp_exit
 from .ssp_util import MediumProperties
 from .ssp_read_station_metadata import (
@@ -40,7 +41,13 @@ logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 # TRACE MANIPULATION ----------------------------------------------------------
-def _correct_traceid(trace, config):
+def _correct_traceid(trace):
+    """
+    Correct traceid from config.TRACEID_MAP, if available.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    """
     if config.TRACEID_MAP is None:
         return
     with contextlib.suppress(KeyError):
@@ -52,8 +59,13 @@ def _correct_traceid(trace, config):
         trace.stats.channel = chan
 
 
-def _add_instrtype(trace, config):
-    """Add instrtype to trace."""
+def _add_instrtype(trace):
+    """
+    Add instrtype to trace.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    """
     instrtype = None
     band_code = None
     instr_code = None
@@ -82,8 +94,15 @@ def _add_instrtype(trace, config):
     trace.stats.info = f'{trace.id} {trace.stats.instrtype}'
 
 
-def _add_inventory(trace, inventory, config):
-    """Add inventory to trace."""
+def _add_inventory(trace, inventory):
+    """
+    Add inventory to trace.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param inventory: ObsPy Inventory object
+    :type inventory: :class:`obspy.core.inventory.Inventory`
+    """
     net, sta, loc, chan = trace.id.split('.')
     inv = (
         inventory.select(
@@ -125,7 +144,12 @@ def _add_inventory(trace, inventory, config):
 
 
 def _check_instrtype(trace):
-    """Check if instrument type is consistent with units in inventory."""
+    """
+    Check if instrument type is consistent with units in inventory.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    """
     inv = trace.stats.inventory
     if not inv:
         raise RuntimeError(
@@ -164,7 +188,12 @@ def _check_instrtype(trace):
 
 
 def _add_coords(trace):
-    """Add coordinates to trace."""
+    """
+    Add coordinates to trace.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    """
     # If we already know that traceid is skipped, raise a silent exception
     if trace.id in _add_coords.skipped:
         raise RuntimeError()
@@ -203,7 +232,14 @@ _add_coords.skipped = []  # noqa
 
 
 def _add_event(trace, ssp_event=None):
-    """Add ssp_event object to trace."""
+    """
+    Add ssp_event object to trace.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param ssp_event: SSPEvent object (default: None)
+    :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
+    """
     if ssp_event is None:
         # Try to get hypocenter information from the SAC header
         try:
@@ -214,7 +250,14 @@ def _add_event(trace, ssp_event=None):
 
 
 def _add_picks(trace, picks=None):
-    """Add picks to trace."""
+    """
+    Add picks to trace.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param picks: list of picks (default: None)
+    :type picks: list of :class:`sourcespec.ssp_event.Pick`
+    """
     if picks is None:
         picks = []
     trace_picks = []
@@ -232,7 +275,12 @@ def _add_picks(trace, picks=None):
 
 
 def _complete_picks(st):
-    """Add component-specific picks to all components."""
+    """
+    Add component-specific picks to all components in a stream.
+
+    :param st: ObsPy Stream object
+    :type st: :class:`obspy.core.stream.Stream`
+    """
     for station in {tr.stats.station for tr in st}:
         st_sel = st.select(station=station)
         # 'code' is band+instrument code
@@ -254,7 +302,13 @@ def _complete_picks(st):
 
 
 # FILE PARSING ----------------------------------------------------------------
-def _hypo_vel(hypo, config):
+def _hypo_vel(hypo):
+    """
+    Compute velocity at hypocenter.
+
+    :param hypo: Hypocenter object
+    :type hypo: :class:`sourcespec.ssp_event.Hypocenter`
+    """
     medium_properties = MediumProperties(
         hypo.longitude, hypo.latitude, hypo.depth.value_in_km, config)
     hypo.vp = medium_properties.get(mproperty='vp', where='source')
@@ -269,6 +323,16 @@ def _hypo_vel(hypo, config):
 
 
 def _build_filelist(path, filelist, tmpdir):
+    """
+    Build a list of files to read.
+
+    :param path: Path to a file or directory
+    :type path: str
+    :param filelist: List of files to read
+    :type filelist: list
+    :param tmpdir: Temporary directory
+    :type tmpdir: str
+    """
     if os.path.isdir(path):
         listing = os.listdir(path)
         for filename in listing:
@@ -299,10 +363,20 @@ def _build_filelist(path, filelist, tmpdir):
             filelist.append(path)
 
 
-def _read_trace_files(config, inventory, ssp_event, picks):
+def _read_trace_files(inventory, ssp_event, picks):
     """
     Read trace files from a given path. Complete trace metadata and
     return a stream object.
+
+    :param inventory: ObsPy Inventory object
+    :type inventory: :class:`obspy.core.inventory.Inventory`
+    :param ssp_event: SSPEvent object
+    :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
+    :param picks: list of picks
+    :type picks: list of :class:`sourcespec.ssp_event.Pick`
+
+    :return: ObsPy Stream object
+    :rtype: :class:`obspy.core.stream.Stream`
     """
     # phase 1: build a file list
     # ph 1.1: create a temporary dir and run '_build_filelist()'
@@ -342,10 +416,10 @@ def _read_trace_files(config, inventory, ssp_event, picks):
             if (config.options.station is not None and
                     trace.stats.station != config.options.station):
                 continue
-            _correct_traceid(trace, config)
+            _correct_traceid(trace)
             try:
-                _add_instrtype(trace, config)
-                _add_inventory(trace, inventory, config)
+                _add_instrtype(trace)
+                _add_inventory(trace, inventory)
                 _check_instrtype(trace)
                 _add_coords(trace)
                 _add_event(trace, ssp_event)
@@ -361,13 +435,19 @@ def _read_trace_files(config, inventory, ssp_event, picks):
 
 
 def _log_event_info(ssp_event):
+    """
+    Log event information.
+
+    :param ssp_event: SSPEvent object
+    :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
+    """
     for line in str(ssp_event).splitlines():
         logger.info(line)
     logger.info('---------------------------------------------------')
 
 
 # Public interface:
-def read_traces(config):
+def read_traces():
     """Read traces, store waveforms and metadata."""
     # read station metadata into an ObsPy ``Inventory`` object
     inventory = read_station_metadata(config.station_metadata)
@@ -390,7 +470,7 @@ def read_traces(config):
 
     # finally, read trace files
     logger.info('Reading traces...')
-    st = _read_trace_files(config, inventory, ssp_event, picks)
+    st = _read_trace_files(inventory, ssp_event, picks)
     logger.info('Reading traces: done')
     logger.info('---------------------------------------------------')
     if len(st) == 0:
@@ -414,7 +494,7 @@ def read_traces(config):
             ssp_exit(1)
     # add velocity info to hypocenter
     try:
-        _hypo_vel(ssp_event.hypocenter, config)
+        _hypo_vel(ssp_event.hypocenter)
     except Exception as e:
         logger.error(
             f'Unable to compute velocity at hypocenter: {e}\n')
