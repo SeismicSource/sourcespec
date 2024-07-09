@@ -382,7 +382,7 @@ def _add_arrivals(trace):
     """
     for phase in 'P', 'S':
         try:
-            add_arrival_to_trace(trace, phase, config)
+            add_arrival_to_trace(trace, phase)
         except Exception as e:
             for line in str(e).splitlines():
                 logger.warning(line)
