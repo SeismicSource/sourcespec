@@ -17,6 +17,7 @@ import warnings
 from math import asin, degrees
 from obspy.taup import TauPyModel
 from .ssp_velocity_model import CrustalVelocityModel
+from .config import config
 model = TauPyModel(model='iasp91')
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
@@ -162,7 +163,7 @@ def _wave_arrival_from_layer_model(trace, phase, vel):
     return travel_time, takeoff_angle, method
 
 
-def _wave_arrival_from_velocity_model(config, trace, phase):
+def _wave_arrival_from_velocity_model(trace, phase):
     """
     Compute travel time and takeoff angle using layered or constant velocity.
 
@@ -170,8 +171,6 @@ def _wave_arrival_from_velocity_model(config, trace, phase):
     _wave_arrival_layer_model). Otherwise uses a constant velocity taken from
     config.vp or config.vs for the requested phase.
 
-    :param config: Configuration object with velocity settings
-    :type config: object
     :param trace: ObsPy Trace object
     :type trace: :class:`obspy.core.trace.Trace`
     :param phase: Phase name ('P' or 'S')
@@ -234,7 +233,7 @@ def _wave_arrival_taup(trace, phase):
     return travel_time, takeoff_angle, method
 
 
-def _wave_arrival(trace, phase, config):
+def _wave_arrival(trace, phase):
     """
     Get travel time and takeoff angle using configured methods.
 
@@ -245,8 +244,6 @@ def _wave_arrival(trace, phase, config):
     :type trace: :class:`obspy.core.trace.Trace`
     :param phase: Phase name ('P' or 'S')
     :type phase: str
-    :param config: Configuration object with model options
-    :type config: object
 
     :return: Tuple (travel_time, takeoff_angle, method)
     :rtype: tuple(float or None, float or None, str)
@@ -256,7 +253,7 @@ def _wave_arrival(trace, phase, config):
     with contextlib.suppress(RuntimeError):
         return _wave_arrival_nll(trace, phase, NLL_time_dir, focmec)
     with contextlib.suppress(RuntimeError):
-        return _wave_arrival_from_velocity_model(config, trace, phase)
+        return _wave_arrival_from_velocity_model(trace, phase)
     # if _wave_arrival_taup() fails, it will raise a RuntimeError
     return _wave_arrival_taup(trace, phase)
 
@@ -354,7 +351,7 @@ def _find_picks(trace, phase, theo_pick_time, tolerance):
     return None
 
 
-def add_arrival_to_trace(trace, phase, config):
+def add_arrival_to_trace(trace, phase):
     """
     Add arrival time, travel time and takeoff angle to trace for the
     given phase.
@@ -386,7 +383,7 @@ def add_arrival_to_trace(trace, phase, config):
         trst.takeoff_angles[phase] = add_arrival_to_trace.angle_cache[key]
         return
     # If no cache is available, compute travel_time and takeoff_angle
-    travel_time, takeoff_angle, method = _wave_arrival(trace, phase, config)
+    travel_time, takeoff_angle, method = _wave_arrival(trace, phase)
     logger.info(
         f'{trace.id}: {phase} travel time: {travel_time:.2f} s, '
         f'computed from {method}')
