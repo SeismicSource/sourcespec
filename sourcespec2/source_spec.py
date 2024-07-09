@@ -25,23 +25,23 @@ def main():
     options = parse_args(progname='source_spec')
 
     # Setup stage
-    from .config import configure_cli
-    config = configure_cli(options, progname='source_spec')
+    from .config import config, configure_cli
+    configure_cli(options, progname='source_spec')
     from .ssp_setup import (
         move_outdir, remove_old_outdir, setup_logging,
         save_config, ssp_exit)
-    setup_logging(config)
+    setup_logging()
 
     from .ssp_read_traces import read_traces
-    st = read_traces(config)
+    st = read_traces()
 
     # Now that we have an evid, we can rename the outdir and the log file
-    move_outdir(config)
-    setup_logging(config, config.event.event_id)
-    remove_old_outdir(config)
+    move_outdir()
+    setup_logging(config.event.event_id)
+    remove_old_outdir()
 
     # Save config to out dir
-    save_config(config)
+    save_config()
 
     # Deconvolve, filter, cut traces:
     from .ssp_process_traces import process_traces
