@@ -12,6 +12,7 @@ Classes for spectral inversion routines.
 import logging
 from collections import OrderedDict
 import numpy as np
+from .config import config
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -49,14 +50,13 @@ class InitialValues():
 class Bounds():
     """Bounds for bounded spectral inversion."""
 
-    def __init__(self, config, spec, initial_values):
-        self.config = config
+    def __init__(self, spec, initial_values):
         self.spec = spec
         self.hd = spec.stats.hypo_dist
         self.ini_values = initial_values
         self.invert_t_star = initial_values.invert_t_star
         self.Mw_min = self.Mw_max = None
-        self._set_fc_min_max(config)
+        self._set_fc_min_max()
         if config.Qo_min_max is None:
             self.t_star_min, self.t_star_max =\
                 self._check_minmax(config.t_star_min_max)
@@ -78,7 +78,7 @@ class Bounds():
             s += 't_star: None, None'
         return s
 
-    def _set_fc_min_max(self, config):
+    def _set_fc_min_max(self):
         fc_0 = self.ini_values.fc_0
         if config.fc_min_max is None:
             # If no bound is given, set it to fc_0 +/- a decade
@@ -108,9 +108,9 @@ class Bounds():
         return (None, None) if minmax is None else minmax
 
     def _Qo_to_t_star(self):
-        phase = self.config.wave_type[0]
+        phase = config.wave_type[0]
         travel_time = self.spec.stats.travel_times[phase]
-        t_star_bounds = travel_time / np.array(self.config.Qo_min_max)
+        t_star_bounds = travel_time / np.array(config.Qo_min_max)
         return sorted(t_star_bounds)
 
     def _fix_initial_values_t_star(self):
