@@ -19,6 +19,7 @@ from obspy.core.event import (CreationInfo, FocalMechanism, Magnitude,
                               MomentTensor, QuantityError, ResourceIdentifier,
                               StationMagnitude, StationMagnitudeContribution,
                               WaveformStreamID)
+from .config import config
 from ._version import get_versions
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
@@ -63,8 +64,13 @@ class SSPTag(AttribDict):
         self.value = value
 
 
-def write_qml(config, sspec_output):
-    """Write QuakeML output."""
+def write_qml(sspec_output):
+    """
+    Write QuakeML output.
+
+    :param sspec_output: Output from spectral inversion.
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    """
     if not config.options.qml_file:
         config.qml_file_out = None
         return
