@@ -18,12 +18,27 @@ Compute radiated energy from spectral integration.
 import contextlib
 import logging
 import numpy as np
+from .config import config
 from .ssp_data_types import SpectralParameter
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
 def _spectral_integral(spec, t_star, fmin=None, fmax=None):
-    """Compute spectral integral in eq. (3) from Lancieri et al. (2012)."""
+    """
+    Compute spectral integral in eq. (3) from Lancieri et al. (2012).
+
+    :param spec: Spectrum object
+    :param spec type: :class:`~sourcespec.spectrum.Spectrum`
+    :param t_star: t* value
+    :param t_star type: float
+    :param fmin: Minimum frequency for integration (optional)
+    :param fmin type: float
+    :param fmax: Maximum frequency for integration (optional)
+    :param fmax type: float
+
+    :return: Spectral integral
+    :rtype: float
+    """
     # Note: eq. (3) from Lancieri et al. (2012) is the same as
     # eq. (1) in Boatwright et al. (2002), but expressed in frequency,
     # instead of angular frequency (2pi factor).
@@ -116,6 +131,16 @@ def _finite_bandwidth_correction(spec, fc, fmax):
     - Di Bona & Rovelli (1988), eq. 13
     - Ide & Beroza (2001), eq. 5
     - Lancieri et al. (2012), eq. 4 (note, missing parenthesis in the paper)
+
+    :param spec: Spectrum object
+    :param spec type: :class:`~sourcespec.spectrum.Spectrum`
+    :param fc: Corner frequency
+    :param fc type: float
+    :param fmax: Maximum frequency for integration
+    :param fmax type: float
+
+    :return: Finite bandwidth correction
+    :rtype: float
     """
     if fmax is None:
         fmax = spec.freq[-1]
@@ -125,8 +150,16 @@ def _finite_bandwidth_correction(spec, fc, fmax):
     )
 
 
-def _get_frequency_range(config, spec):
-    """Get frequency range for spectral integration."""
+def _get_frequency_range(spec):
+    """
+    Get frequency range for spectral integration.
+
+    :param spec: Spectrum object
+    :param spec type: :class:`~sourcespec.spectrum.Spectrum`
+
+    :return: Frequency range for spectral integration
+    :rtype: float, float
+    """
     fmin, fmax = config.Er_freq_range
     if fmin == 'noise':
         fmin = spec.stats.spectral_snratio_fmin
@@ -153,20 +186,17 @@ def _get_frequency_range(config, spec):
     return fmin, fmax
 
 
-def radiated_energy_and_apparent_stress(
-        config, spec_st, specnoise_st, sspec_output):
+def radiated_energy_and_apparent_stress(spec_st, specnoise_st, sspec_output):
     """
     Compute radiated energy (in N.m) and apparent stress (in MPa).
 
-    :param config: Config object
-    :param config type: :class:`sourcespec.config.Config`
     :param spec_st: Stream of spectra
-    :param spec_st type: :class:`obspy.core.stream.Stream`
+    :param spec_st type: :class:`~sourcespec.spectrum.SpectrumStream`
     :param specnoise_st: Stream of noise spectra
-    :param specnoise_st type: :class:`obspy.core.stream.Stream`
+    :param specnoise_st type: :class:`~sourcespec.spectrum.SpectrumStream`
     :param sspec_output: Output of spectral inversion
     :param sspec_output type:
-        :class:`sourcespec.ssp_data_types.SourceSpecOutput`
+        :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
     """
     logger.info('Computing radiated energy and apparent stress...')
     rho = config.event.hypocenter.rho
@@ -206,7 +236,7 @@ def radiated_energy_and_apparent_stress(
 
         # Compute signal and noise integrals and subtract noise from signal,
         # under the hypothesis that energy is additive and noise is stationary
-        fmin, fmax = _get_frequency_range(config, spec)
+        fmin, fmax = _get_frequency_range(spec)
         signal_integral = _spectral_integral(spec, t_star, fmin, fmax)
         noise_integral = _spectral_integral(specnoise, t_star, fmin, fmax)
         rho = spec.stats.rho_station
