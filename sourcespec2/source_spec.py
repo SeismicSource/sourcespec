@@ -66,7 +66,7 @@ def main():
     # Local magnitude
     if config.compute_local_magnitude:
         from .ssp_local_magnitude import local_magnitude
-        local_magnitude(config, st, proc_st, sspec_output)
+        local_magnitude(st, proc_st, sspec_output)
 
     # Compute summary statistics from station spectral parameters
     from .ssp_summary_statistics import compute_summary_statistics
