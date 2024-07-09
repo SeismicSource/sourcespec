@@ -12,6 +12,7 @@ SQLite output for source_spec.
 import os.path
 import logging
 import sqlite3
+from .config import config
 from .ssp_setup import ssp_exit
 from .ssp_db_definitions import (
     DB_VERSION,
@@ -38,6 +39,7 @@ def _open_sqlite_db(db_file):
 
     :param db_file: SQLite database file
     :type db_file: str
+
     :return: SQLite connection and cursor
     :rtype: tuple
     """
@@ -131,7 +133,7 @@ def _create_stations_table(cursor, db_file):
         _log_db_write_error(db_err, db_file)
 
 
-def _write_stations_table(cursor, db_file, sspec_output, config):
+def _write_stations_table(cursor, db_file, sspec_output):
     """
     Write station source parameters to database.
 
@@ -141,8 +143,9 @@ def _write_stations_table(cursor, db_file, sspec_output, config):
     :type db_file: str
     :param sspec_output: sspec output object
     :type sspec_output: ssp_data_types.SourceSpecOutput
-    :param config: sspec configuration object
-    :type config: config.Config
+
+    :return: Number of observations
+    :rtype: int
     """
     event = config.event
     evid = event.event_id
@@ -218,7 +221,7 @@ def _create_events_table(cursor, db_file):
         _log_db_write_error(db_err, db_file)
 
 
-def _write_events_table(cursor, db_file, sspec_output, config, nobs):
+def _write_events_table(cursor, db_file, sspec_output, nobs):
     """
     Write Events table.
 
@@ -228,8 +231,6 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
     :type db_file: str
     :param sspec_output: SSP output object
     :type sspec_output: ssp_data_types.SourceSpecOutput
-    :param config: SSP configuration object
-    :type config: config.Config
     :param nobs: Number of observations
     :type nobs: int
     """
@@ -396,14 +397,12 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
         ssp_exit(1)
 
 
-def write_sqlite(config, sspec_output):
+def write_sqlite(sspec_output):
     """
-    Write SSP output to SQLite database.
+    Write SourceSpec output to SQLite database.
 
-    :param config: SSP configuration object
-    :type config: config.Config
-    :param sspec_output: SSP output object
-    :type sspec_output: ssp_data_types.SourceSpecOutput
+    :param sspec_output: SourceSpec output object
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
     """
     db_file = config.get('database_file', None)
     if not db_file:
@@ -419,13 +418,13 @@ def write_sqlite(config, sspec_output):
     # Create Stations table
     _create_stations_table(cursor, db_file)
     # Write station source parameters to database
-    nobs = _write_stations_table(cursor, db_file, sspec_output, config)
+    nobs = _write_stations_table(cursor, db_file, sspec_output)
     # Commit changes
     conn.commit()
     # Create Events table
     _create_events_table(cursor, db_file)
     # Write event source parameters to database
-    _write_events_table(cursor, db_file, sspec_output, config, nobs)
+    _write_events_table(cursor, db_file, sspec_output, nobs)
     # Commit changes and close database
     conn.commit()
     conn.close()
