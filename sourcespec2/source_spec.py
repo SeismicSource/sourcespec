@@ -69,7 +69,7 @@ def main():
 
     # Compute summary statistics from station spectral parameters
     from .ssp_summary_statistics import compute_summary_statistics
-    compute_summary_statistics(config, sspec_output)
+    compute_summary_statistics(sspec_output)
 
     # Save output
     from .ssp_output import write_output, save_spectra
