@@ -9,5 +9,6 @@ Configuration classes and functions for SourceSpec
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-from .config import configure, config  # noqa
+from .config import config  # noqa
+from .configure_cli import configure_cli  # noqa
 from .library_versions import library_versions  # noqa

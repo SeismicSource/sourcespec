@@ -84,7 +84,7 @@ def main():
     # Lazy-import modules for speed
     from .ssp_parse_arguments import parse_args
     options = parse_args(progname='source_model')
-    from .config import configure
+    from .config import configure_cli
     from .ssp_setup import ssp_exit
     plot_show = bool(options.plot)
     conf_overrides = {
@@ -92,7 +92,7 @@ def main():
         'plot_save': False,
         'html_report': False
     }
-    config = configure(
+    config = configure_cli(
         options, progname='source_model', config_overrides=conf_overrides)
     from .spectrum import SpectrumStream
     from .ssp_read_traces import read_traces
