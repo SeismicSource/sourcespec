@@ -106,7 +106,7 @@ def main():
         # Deconvolve, filter, cut traces:
         proc_st = process_traces(st)
         # Build spectra (amplitude in magnitude units)
-        spec_st, _specnoise_st, _weight_st = build_spectra(config, proc_st)
+        spec_st, _specnoise_st, _weight_st = build_spectra(proc_st)
         if len(spec_st) == 0:
             ssp_exit()
         # We keep just horizontal component:

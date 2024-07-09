@@ -25,6 +25,7 @@ except ImportError:
     from scipy.integrate import cumulative_trapezoid as cumtrapz
 from scipy.interpolate import interp1d
 from obspy.core import Stream
+from .config import config
 from .spectrum import Spectrum, SpectrumStream
 from .ssp_setup import ssp_exit
 from .ssp_util import (
@@ -45,7 +46,18 @@ class SpectrumIgnored(Exception):
         self.reason = reason
 
 
-def _get_nint(config, trace):
+def _get_nint(trace):
+    """
+    Return the number of integrations to be performed on the trace.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :return: Number of integrations
+    :rtype: int
+
+    :raises ValueError: If the instrument type is unknown
+    """
     if config.trace_units == 'auto':
         instrtype = trace.stats.instrtype
     else:
@@ -61,23 +73,48 @@ def _get_nint(config, trace):
     return nint
 
 
-def _time_integrate(config, trace):
-    nint = _get_nint(config, trace)
+def _time_integrate(trace):
+    """
+    Integrate the trace in time domain.
+
+    Trace is filtered after each integration.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core.trace.Trace
+    """
+    nint = _get_nint(trace)
     trace.detrend(type='constant')
     trace.detrend(type='linear')
     for _ in range(nint):
         trace.data = cumtrapz(trace.data) * trace.stats.delta
         trace.stats.npts -= 1
-        filter_trace(config, trace)
+        filter_trace(trace)
 
 
-def _frequency_integrate(config, spec):
-    nint = _get_nint(config, spec)
+def _frequency_integrate(spec):
+    """
+    Integrate the spectrum in frequency domain.
+
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    """
+    nint = _get_nint(spec)
     for _ in range(nint):
         spec.data /= (2 * math.pi * spec.freq)
 
 
-def _cut_spectrum(config, spec):
+def _cut_spectrum(spec):
+    """
+    Cut the spectrum to the frequency range specified in the configuration.
+
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+
+    :return: Cut spectrum
+    :rtype: :class:`~sourcespec.spectrum.Spectrum`
+
+    :raises RuntimeError: If the instrument type is unknown
+    """
     # see if there is a station-specific frequency range
     station = spec.stats.station
     try:
@@ -101,6 +138,19 @@ def _compute_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
     Compute the component 'H' from geometric mean of the stream components.
 
     (which can also be all three components)
+
+    :param spec_st: Stream of spectra
+    :type spec_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    :param code: Band+instrument code
+    :type code: str
+    :param vertical_channel_codes: List of vertical channel codes
+        (default: ['Z'] if None)
+    :type vertical_channel_codes: list
+    :param wave_type: Wave type ('S' or 'P', default: 'S')
+    :type wave_type: str
+
+    :return: Spectrum object with the 'H' component
+    :rtype: :class:`~sourcespec.spectrum.Spectrum`
     """
     if vertical_channel_codes is None:
         vertical_channel_codes = ['Z']
@@ -134,7 +184,15 @@ def _compute_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
     return spec_h
 
 
-def _check_data_len(config, trace):
+def _check_data_len(trace):
+    """
+    Check if data length is sufficient.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :raises RuntimeError: If data length is insufficient
+    """
     traceId = trace.get_id()
     trace_cut = trace.copy()
     if config.wave_type[0] == 'S':
@@ -156,15 +214,24 @@ def _check_data_len(config, trace):
             'skipping trace')
 
 
-def _cut_signal_noise(config, trace):
+def _cut_signal_noise(trace):
+    """
+    Cut signal and noise windows from trace.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :return: Signal and noise traces
+    :rtype: tuple of :class:`obspy.core.trace.Trace
+    """
     trace_signal = trace.copy()
     trace_noise = trace.copy()
 
     # Integrate in time domain, if required.
     # (otherwise frequency-domain integration is performed later)
     if config.time_domain_int:
-        _time_integrate(config, trace_signal)
-        _time_integrate(config, trace_noise)
+        _time_integrate(trace_signal)
+        _time_integrate(trace_noise)
 
     # trim...
     if config.wave_type[0] == 'S':
@@ -216,8 +283,21 @@ def _cut_signal_noise(config, trace):
 
 
 def _recompute_time_window(trace, wave_type, npts, keep='start'):
-    """Recompute start or end time of signal or noise window,
-    based on new number of points"""
+    """
+    Recompute start or end time of signal or noise window,
+    based on new number of points.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param wave_type: Wave type ('P', 'S', 'N')
+    :type wave_type: str
+    :param npts: Number of points
+    :type npts: int
+    :param keep: Keep 'start' or 'end' of window (default: 'start')
+    :type keep: str
+
+    :raises ValueError: If keep is not 'start' or 'end'
+    """
     length = npts * trace.stats.delta
     if keep == 'end':
         label, _ = trace.stats.arrivals[f'{wave_type}1']
@@ -231,7 +311,17 @@ def _recompute_time_window(trace, wave_type, npts, keep='start'):
         raise ValueError('keep must be "start" or "end"')
 
 
-def _check_noise_level(trace_signal, trace_noise, config):
+def _check_noise_level(trace_signal, trace_noise):
+    """
+    Check noise level.
+
+    :param trace_signal: Signal trace
+    :type trace_signal: :class:`obspy.core.trace.Trace`
+    :param trace_noise: Noise trace
+    :type trace_noise: :class:`obspy.core.trace.Trace`
+
+    :raises RuntimeError: If noise level is too low
+    """
     traceId = trace_signal.get_id()
     trace_signal_rms = ((trace_signal.data**2).sum())**0.5
     # Scale trace_noise_rms to length of signal window,
@@ -251,9 +341,17 @@ def _check_noise_level(trace_signal, trace_noise, config):
             'station will be skipped')
 
 
-def _geometrical_spreading_coefficient(config, spec):
+def _geometrical_spreading_coefficient(spec):
     """
     Return the geometrical spreading coefficient for the given spectrum.
+
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+
+    :return: Geometrical spreading coefficient
+    :rtype: float
+
+    :raises ValueError: If the geometrical spreading model is unknown
     """
     hypo_dist_in_km = spec.stats.hypo_dist
     epi_dist_in_km = spec.stats.epi_dist
@@ -285,11 +383,14 @@ def _geometrical_spreading_coefficient(config, spec):
 PROPERTY_LOG_MESSAGES = []
 
 
-def _displacement_to_moment(stats, config):
+def _displacement_to_moment(stats):
     """
     Return the coefficient for converting displacement to seismic moment.
 
     From Aki&Richards,1980
+
+    :param stats: Stats object
+    :type stats: :class:`~sourcespec.spectrum.AttributeDict`
     """
     phase = config.wave_type[0]
     lon = stats.coords.longitude
@@ -336,7 +437,15 @@ def _displacement_to_moment(stats, config):
 
 
 def _smooth_spectrum(spec, smooth_width_decades=0.2):
-    """Smooth spectrum in a log10-freq space."""
+    """
+    Smooth spectrum in a log10-freq space.
+
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param smooth_width_decades: Width of the smoothing window in decades
+        (default: 0.2)
+    :type smooth_width_decades: float
+    """
     # 1. Generate log10-spaced frequencies
     freq = spec.freq
     _log_freq = np.log10(freq)
@@ -370,7 +479,18 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
     spec.data_logspaced = data_logspaced
 
 
-def _build_spectrum(config, trace):
+def _build_spectrum(trace):
+    """
+    Build a spectrum from a trace.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :return: Spectrum object
+    :rtype: :class:`~sourcespec.spectrum.Spectrum`
+
+    :raises RuntimeError: If an error occurs while building the spectrum
+    """
     spec = Spectrum(obspy_trace=trace)
     spec.stats.instrtype = trace.stats.instrtype
     spec.stats.coords = trace.stats.coords
@@ -385,12 +505,12 @@ def _build_spectrum(config, trace):
     # Integrate in frequency domain, if no time-domain
     # integration has been performed
     if not config.time_domain_int:
-        _frequency_integrate(config, spec)
+        _frequency_integrate(spec)
     # cut the spectrum
-    spec = _cut_spectrum(config, spec)
+    spec = _cut_spectrum(spec)
     # correct geometrical spreading
     try:
-        geom_spread = _geometrical_spreading_coefficient(config, spec)
+        geom_spread = _geometrical_spreading_coefficient(spec)
     except Exception as e:
         raise RuntimeError(
             f'{spec.id}: Error computing geometrical spreading: '
@@ -399,9 +519,9 @@ def _build_spectrum(config, trace):
     spec.data *= geom_spread
     # store the radiation pattern coefficient in the spectrum stats
     spec.stats.radiation_pattern =\
-        get_radiation_pattern_coefficient(spec.stats, config)
+        get_radiation_pattern_coefficient(spec.stats)
     # convert to seismic moment
-    coeff = _displacement_to_moment(spec.stats, config)
+    coeff = _displacement_to_moment(spec.stats)
     spec.data *= coeff
     # store coeff to correct back data in displacement units
     # for radiated_energy()
@@ -412,6 +532,15 @@ def _build_spectrum(config, trace):
 
 
 def _build_uniform_weight(spec):
+    """
+    Build a uniform spectral weight.
+
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+
+    :return: Uniform weight
+    :rtype: :class:`~sourcespec.spectrum.Spectrum`
+    """
     weight = spec.copy()
     weight.snratio = None
     weight.data = np.ones_like(weight.data)
@@ -419,7 +548,16 @@ def _build_uniform_weight(spec):
     return weight
 
 
-def _build_weight_from_frequency(config, spec):
+def _build_weight_from_frequency(spec):
+    """
+    Build spectral weights from frequency.
+
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+
+    :return: Spectral weights
+    :rtype: :class:`~sourcespec.spectrum.Spectrum`
+    """
     weight = spec.copy()
     freq = weight.freq
     weight.data = np.ones_like(weight.data)
@@ -435,6 +573,17 @@ def _build_weight_from_frequency(config, spec):
 def _build_weight_from_inv_frequency(spec, power=0.25):
     """
     Build spectral weights from inverse frequency (raised to a power < 1)
+
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param power: Power to which the inverse frequency is raised
+        (default: 0.25)
+    :type power: float
+
+    :return: Spectral weights
+    :rtype: :class:`~sourcespec.spectrum.Spectrum`
+
+    :raises ValueError: If power is >= 1
     """
     if power >= 1:
         raise ValueError('pow must be < 1')
@@ -465,6 +614,19 @@ def _build_weight_from_inv_frequency(spec, power=0.25):
 
 
 def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
+    """
+    Build spectral weights from the ratio of signal to noise.
+
+    :param spec: signal spectrum
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param specnoise: noise spectrum
+    :type specnoise: :class:`~sourcespec.spectrum.Spectrum`
+    :param smooth_width_decades: Width of the smoothing window in decades
+    :type smooth_width_decades: float
+
+    :return: Spectral weights
+    :rtype: :class:`~sourcespec.spectrum.Spectrum`
+    """
     weight = spec.copy()
     weight.data /= specnoise.data
     # save signal-to-noise ratio before log10, smoothing, and normalization
@@ -486,7 +648,19 @@ def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
     return weight
 
 
-def _build_weight_from_noise(config, spec, specnoise):
+def _build_weight_from_noise(spec, specnoise):
+    """
+    Build spectral weights from signal to noise ratio, if available.
+    Otherwise, build uniform weights.
+
+    :param spec: Signal spectrum
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param specnoise: Noise spectrum
+    :type specnoise: :class:`~sourcespec.spectrum.Spectrum`
+
+    :return: Spectral weights
+    :rtype: :class:`~sourcespec.spectrum.Spectrum`
+    """
     if specnoise is None or np.all(specnoise.data == 0):
         spec_id = spec.get_id()[:-1]
         logger.warning(
@@ -505,9 +679,19 @@ def _build_weight_from_noise(config, spec, specnoise):
     return weight
 
 
-def _build_weight_spectral_stream(config, spec_st, specnoise_st):
-    """Build a stream of weights from a stream of spectra and a stream of
-    noise spectra."""
+def _build_weight_spectral_stream(spec_st, specnoise_st):
+    """
+    Build a stream of weights from a stream of spectra and a stream of
+    noise spectra.
+
+    :param spec_st: Stream of signal spectra
+    :type spec_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    :param specnoise_st: Stream of noise spectra
+    :type specnoise_st: :class:`~sourcespec.spectrum.SpectrumStream`
+
+    :return: Stream of weights
+    :rtype: :class:`~sourcespec.spectrum.SpectrumStream`
+    """
     weight_st = SpectrumStream()
     spec_ids = {sp.id[:-1] for sp in spec_st if not sp.stats.ignore}
     for specid in spec_ids:
@@ -517,9 +701,9 @@ def _build_weight_spectral_stream(config, spec_st, specnoise_st):
         except Exception:
             continue
         if config.weighting == 'noise':
-            weight = _build_weight_from_noise(config, spec_h, specnoise_h)
+            weight = _build_weight_from_noise(spec_h, specnoise_h)
         elif config.weighting == 'frequency':
-            weight = _build_weight_from_frequency(config, spec_h)
+            weight = _build_weight_from_frequency(spec_h)
         elif config.weighting == 'inv_frequency':
             weight = _build_weight_from_inv_frequency(spec_h)
         elif config.weighting == 'no_weight':
@@ -529,7 +713,17 @@ def _build_weight_spectral_stream(config, spec_st, specnoise_st):
 
 
 def _select_spectra(spec_st, specid):
-    """Select spectra from stream, based on specid."""
+    """
+    Select spectra from stream, based on specid.
+
+    :param spec_st: Stream of spectra
+    :type spec_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    :param specid: Spectrum ID
+    :type specid: str
+
+    :return: Stream of selected spectra
+    :rtype: :class:`~sourcespec.spectrum.SpectrumStream`
+    """
     network, station, location, channel = specid.split('.')
     channel = channel + '?' * (3 - len(channel))
     spec_st_sel = spec_st.select(
@@ -545,6 +739,17 @@ def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
     Add to spec_st and specnoise_st the "H" component.
 
     H component is obtained from the modulus of all the available components.
+
+    :param spec_st: Stream of spectra
+    :type spec_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    :param specnoise_st: Stream of noise spectra
+    :type specnoise_st: :class:`~sourcespec.spectrum.SpectrumStream`
+
+    :param vertical_channel_codes: List of vertical channel codes
+        (default: ['Z'] if None)
+    :type vertical_channel_codes: list
+    :param wave_type: Wave type ('S' or 'P', default: 'S')
+    :type wave_type: str
     """
     if vertical_channel_codes is None:
         vertical_channel_codes = ['Z']
@@ -564,9 +769,19 @@ def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
                 specnoise_st.append(specnoise_h)
 
 
-def _check_spectral_sn_ratio(config, spec, specnoise):
+def _check_spectral_sn_ratio(spec, specnoise):
+    """
+    Check spectral signal-to-noise ratio.
+
+    :param spec: Signal spectrum
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param specnoise: Noise spectrum
+    :type specnoise: :class:`~sourcespec.spectrum.Spectrum`
+
+    :raises SpectrumIgnored: If the spectrum is to be ignored
+    """
     spec_id = spec.get_id()
-    weight = _build_weight_from_noise(config, spec, specnoise)
+    weight = _build_weight_from_noise(spec, specnoise)
     freqs = weight.freq
     # if no noise window is available, snratio is not computed
     if weight.snratio is None:
@@ -608,7 +823,15 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
 
 
 def _ignore_spectrum(msg, spec, specnoise):
-    """Ignore spectrum. Set ignore flag and reason."""
+    """
+    Ignore spectrum. Set ignore flag and reason.
+
+    :param msg: Ignore message
+    :type msg: str
+    :param spec: Signal spectrum to ignore
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param specnoise: Noise spectrum object to ignore
+    """
     logger.warning(msg)
     spec.stats.ignore = True
     spec.stats.ignore_reason = msg.reason
@@ -617,24 +840,39 @@ def _ignore_spectrum(msg, spec, specnoise):
 
 
 def _ignore_trace(msg, trace):
-    """Ignore trace. Set ignore flag and reason."""
+    """
+    Ignore trace. Set ignore flag and reason.
+
+    :param msg: Ignore message
+    :type msg: str
+    :param trace: Trace to ignore
+    :type trace: :class:`obspy.core.trace.Trace`
+    """
     # NOTE: no logger.warning here, because it is already done in
     # _ignore_spectrum()
     trace.stats.ignore = True
     trace.stats.ignore_reason = msg.reason
 
 
-def _build_signal_and_noise_streams(config, st):
-    """Build signal and noise streams."""
+def _build_signal_and_noise_streams(st):
+    """
+    Build signal and noise streams.
+
+    :param st: ObsPy Stream object
+    :type st: :class:`obspy.core.stream.Stream`
+
+    :return: Signal and noise streams
+    :rtype: tuple of :class:`obspy.core.stream.Stream`
+    """
     # remove traces with ignore flag
     traces = Stream([tr for tr in st if not tr.stats.ignore])
     signal_st = Stream()
     noise_st = Stream()
     for trace in sorted(traces, key=lambda tr: tr.id):
         try:
-            _check_data_len(config, trace)
-            trace_signal, trace_noise = _cut_signal_noise(config, trace)
-            _check_noise_level(trace_signal, trace_noise, config)
+            _check_data_len(trace)
+            trace_signal, trace_noise = _cut_signal_noise(trace)
+            _check_noise_level(trace_signal, trace_noise)
             signal_st.append(trace_signal)
             noise_st.append(trace_noise)
         except RuntimeError as msg:
@@ -644,11 +882,18 @@ def _build_signal_and_noise_streams(config, st):
     return signal_st, noise_st
 
 
-def _trim_components(config, signal_st, noise_st, st):
+def _trim_components(signal_st, noise_st, original_st):
     """
     Trim components of the same instrument to the same number of samples.
 
     Recompute time window of the signal and noise traces for correct plotting.
+
+    :param signal_st: Stream of signal traces
+    :type signal_st: :class:`obspy.core
+    :param noise_st: Stream of noise traces
+    :type noise_st: :class:`obspy.core
+    :param original_st: Original stream
+    :type original_st: :class:`obspy.core.stream.Stream`
     """
     for traceid in sorted({tr.id[:-1] for tr in signal_st}):
         st_sel = signal_st.select(id=f'{traceid}*') +\
@@ -665,26 +910,35 @@ def _trim_components(config, signal_st, noise_st, st):
                 tr.data = tr.data[:npts]
             elif tr.stats.type == 'noise':
                 tr.data = tr.data[-npts:]
-        for tr in st.select(id=f'{traceid}*'):
+        for tr in original_st.select(id=f'{traceid}*'):
             _recompute_time_window(tr, config.wave_type[0], npts, keep='start')
             _recompute_time_window(tr, 'N', npts, keep='end')
 
 
-def _build_signal_and_noise_spectral_streams(
-        config, signal_st, noise_st, original_st):
+def _build_signal_and_noise_spectral_streams(signal_st, noise_st, original_st):
     """
     Build signal and noise spectral streams.
 
     Note: original_st is only used to keep track of ignored traces.
+
+    :param signal_st: Stream of signal traces
+    :type signal_st: :class:`obspy.core
+    :param noise_st: Stream of noise traces
+    :type noise_st: :class:`obspy.core
+    :param original_st: Original stream
+    :type original_st: :class:`obspy.core
+
+    :return: Signal and noise spectral streams
+    :rtype: tuple of :class:`~sourcespec.spectrum.SpectrumStream`
     """
     spec_st = SpectrumStream()
     specnoise_st = SpectrumStream()
     for trace_signal in sorted(signal_st, key=lambda tr: tr.id):
         trace_noise = noise_st.select(id=trace_signal.id)[0]
         try:
-            spec = _build_spectrum(config, trace_signal)
-            specnoise = _build_spectrum(config, trace_noise)
-            _check_spectral_sn_ratio(config, spec, specnoise)
+            spec = _build_spectrum(trace_signal)
+            specnoise = _build_spectrum(trace_noise)
+            _check_spectral_sn_ratio(spec, specnoise)
         except RuntimeError as msg:
             # RuntimeError is for skipped spectra
             logger.warning(msg)
@@ -708,40 +962,51 @@ def _build_signal_and_noise_spectral_streams(
     for specnoise in specnoise_st:
         specnoise.data_mag = moment_to_mag(specnoise.data)
     # apply station correction if a residual file is specified in config
-    spec_st = station_correction(spec_st, config)
+    spec_st = station_correction(spec_st)
     return spec_st, specnoise_st
 
 
-def _zero_pad(config, trace):
-    """Zero-pad trace to spectral_win_length"""
+def _zero_pad(trace):
+    """
+    Zero-pad trace to spectral_win_length
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    """
     spec_win_len = config.spectral_win_length
     if spec_win_len is None:
         return
-    wtype = config.wave_type[0]
     if trace.stats.type == 'signal':
+        wtype = config.wave_type[0]
         t1 = trace.stats.arrivals[f'{wtype}1'][1]
     elif trace.stats.type == 'noise':
         t1 = trace.stats.arrivals['N1'][1]
     trace.trim(starttime=t1, endtime=t1 + spec_win_len, pad=True, fill_value=0)
 
 
-def build_spectra(config, st):
+def build_spectra(st):
     """
     Build spectra and the ``spec_st`` object.
 
     Computes P- or S-wave (displacement) spectra from
     accelerometers and velocimeters, uncorrected for anelastic attenuation,
     corrected for instrumental constants, normalized by geometrical spreading.
+
+    :param st: ObsPy Stream object
+    :type st: :class:`obspy.core.stream.Stream`
+
+    :return: spectra, noise spectra, and weights
+    :rtype: tuple of :class:`~sourcespec.spectrum.Spectrum`
     """
     wave_type = config.wave_type
     logger.info(f'Building {wave_type}-wave spectra...')
-    signal_st, noise_st = _build_signal_and_noise_streams(config, st)
-    _trim_components(config, signal_st, noise_st, st)
+    signal_st, noise_st = _build_signal_and_noise_streams(st)
+    _trim_components(signal_st, noise_st, st)
     for trace in signal_st + noise_st:
-        _zero_pad(config, trace)
+        _zero_pad(trace)
     spec_st, specnoise_st = _build_signal_and_noise_spectral_streams(
-        config, signal_st, noise_st, st)
-    weight_st = _build_weight_spectral_stream(config, spec_st, specnoise_st)
+        signal_st, noise_st, st)
+    weight_st = _build_weight_spectral_stream(spec_st, specnoise_st)
     logger.info(f'Building {wave_type}-wave spectra: done')
     logger.info('---------------------------------------------------')
     return spec_st, specnoise_st, weight_st
