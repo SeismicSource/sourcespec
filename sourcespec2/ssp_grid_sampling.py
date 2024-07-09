@@ -21,6 +21,7 @@ from scipy.signal import peak_widths as find_peak_widths
 # pylint: disable=no-name-in-module
 from scipy.signal._peak_finding_utils import PeakPropertyWarning
 import matplotlib.pyplot as plt
+from .config import config
 from .kdtree import KDTree
 from .savefig import savefig
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
@@ -252,7 +253,7 @@ class GridSampling():
         self.nsteps = self.misfit.shape
         self.extent = extent
 
-    def plot_conditional_misfit(self, config, label):
+    def plot_conditional_misfit(self, label):
         """Plot conditional misfit for each parameter."""
         # Check config, if we need to plot at all
         if not config.plot_show and not config.plot_save:
@@ -290,7 +291,7 @@ class GridSampling():
             ax[dim].set_ylabel('misfit')
         ax[0].set_title(label)
         plt.tight_layout()
-        figfile_base = self._get_figfile_base(config)
+        figfile_base = self._get_figfile_base()
         figfile_base += f".cond_misfit_{label.replace(' ', '_')}."
         fmt = config.plot_save_format
         if fmt == 'pdf_multipage':
@@ -306,7 +307,7 @@ class GridSampling():
                 f'{label}: conditional misfit plot saved to: {figfile}')
             config.figures['misfit_1d'].append(figfile)
 
-    def plot_misfit_2d(self, config, plot_par_idx, label):
+    def plot_misfit_2d(self, plot_par_idx, label):
         """Plot a 2D conditional misfit map."""
         # Check config, if we need to plot at all
         if not config.plot_show and not config.plot_save:
@@ -377,7 +378,7 @@ class GridSampling():
             ax.set_ylabel(ylabel)
         cbar = plt.colorbar(mmap, ax=ax, extend='max')
         cbar.set_label('misfit')
-        figfile_base = self._get_figfile_base(config)
+        figfile_base = self._get_figfile_base()
         params_string = f'{params_name[0]}-{params_name[1]}'
         figfile_base += f".misfit_{params_string}_{label.replace(' ', '_')}."
         fmt = config.plot_save_format
@@ -393,7 +394,7 @@ class GridSampling():
             logger.info(f'{label}: conditional misfit map saved to: {figfile}')
             config.figures[f'misfit_{params_string}'].append(figfile)
 
-    def _get_figfile_base(self, config):
+    def _get_figfile_base(self):
         outdir = os.path.join(config.options.outdir, 'misfit')
         if not os.path.exists(outdir):
             os.makedirs(outdir)
