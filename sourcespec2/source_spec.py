@@ -73,8 +73,8 @@ def main():
 
     # Save output
     from .ssp_output import write_output, save_spectra
-    write_output(config, sspec_output)
-    save_spectra(config, spec_st)
+    write_output(sspec_output)
+    save_spectra(spec_st)
 
     # Save residuals
     from .ssp_residuals import spectral_residuals
