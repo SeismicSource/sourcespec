@@ -280,6 +280,9 @@ def configure_cli(options=None, progname='source_spec', config_overrides=None):
     """
     Configure SourceSpec from command line arguments and config file.
 
+    The global config object is updated with the configuration parameters
+    read from the configuration file and the command line options.
+
     :param options: An object containing command line options
     :type options: A generic object
     :param progname: The name of the program
@@ -287,9 +290,6 @@ def configure_cli(options=None, progname='source_spec', config_overrides=None):
     :param config_overrides: A dictionary with parameters that override or
         extend those defined in the config file
     :type config_overrides: dict
-
-    :return: A ``Config`` object with both command line and config options.
-    :rtype: Config
     """
     if options is None:
         # create an empty object to support the following getattr() calls
@@ -396,4 +396,3 @@ def configure_cli(options=None, progname='source_spec', config_overrides=None):
 
     _init_traceid_map()
     _init_plotting()
-    return config
