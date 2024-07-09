@@ -56,7 +56,7 @@ def main():
 
     # Spectral inversion
     from .ssp_inversion import spectral_inversion
-    sspec_output = spectral_inversion(config, spec_st, weight_st)
+    sspec_output = spectral_inversion(spec_st, weight_st)
 
     # Radiated energy and apparent stress
     from .ssp_radiated_energy import (
