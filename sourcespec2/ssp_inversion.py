@@ -20,6 +20,7 @@ import numpy as np
 from scipy.optimize import curve_fit, minimize, basinhopping
 from scipy.signal import argrelmax
 from obspy.geodetics import gps2dist_azimuth
+from .config import config
 from .spectrum import SpectrumStream
 from .ssp_spectral_model import (
     spectral_model, objective_func, callback)
@@ -33,7 +34,7 @@ from .ssp_grid_sampling import GridSampling
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
+def _curve_fit(spec, weight, yerr, initial_values, bounds):
     """
     Curve fitting.
 
@@ -43,6 +44,20 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
       - Truncated Newton algorithm (TNC) with bounds.
       - Basin-hopping (BH)
       - Grid search (GS)
+
+    :param spec: Spectrum object.
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param weight: Weight array.
+    :type weight: :class:`numpy.ndarray`
+    :param yerr: Error array.
+    :type yerr: :class:`numpy.ndarray`
+    :param initial_values: Initial values for the inversion.
+    :type initial_values: :class:`~sourcespec.ssp_data_types.InitialValues`
+    :param bounds: Bounds for the inversion.
+    :type bounds: :class:`~sourcespec.ssp_data_types.Bounds`
+
+    :return: Optimal parameters, parameter errors, misfit.
+    :rtype: tuple, tuple, float
     """
     freq_logspaced = spec.freq_logspaced
     ydata = spec.data_mag_logspaced
@@ -114,22 +129,34 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         params_opt = grid_sampling.params_opt
         params_err = grid_sampling.params_err
         spec_label = f'{spec.id} {spec.stats.instrtype}'
-        grid_sampling.plot_conditional_misfit(config, spec_label)
+        grid_sampling.plot_conditional_misfit(spec_label)
         # fc-t_star
         plot_par_idx = (1, 2)
-        grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
+        grid_sampling.plot_misfit_2d(plot_par_idx, spec_label)
         # fc-Mw
         plot_par_idx = (1, 0)
-        grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
+        grid_sampling.plot_misfit_2d(plot_par_idx, spec_label)
         # tstar-Mw
         plot_par_idx = (2, 0)
-        grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
+        grid_sampling.plot_misfit_2d(plot_par_idx, spec_label)
     misfit = minimize_func(params_opt)
     return params_opt, params_err, misfit
 
 
-def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_logspaced, statId):
-    """Find the frequency range to compute Mw_0 and, possibly, t_star_0."""
+def _freq_ranges_for_Mw0_and_tstar0(weight, freq_logspaced, statId):
+    """
+    Find the frequency range to compute Mw_0 and, possibly, t_star_0.
+
+    :param weight: Weight array.
+    :type weight: :class:`numpy.ndarray`
+    :param freq_logspaced: Log-spaced frequency array.
+    :type freq_logspaced: :class:`numpy.ndarray`
+    :param statId: Station ID.
+    :type statId: str
+
+    :return: Indexes for the frequency range.
+    :rtype: int, int
+    """
     if config.weighting == 'noise':
         # we start where signal-to-noise becomes strong
         idx0 = np.where(weight > 0.5)[0][0]
@@ -172,8 +199,21 @@ def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_logspaced, statId):
     return idx0, idx1
 
 
-def _spec_inversion(config, spec, spec_weight):
-    """Invert one spectrum, return a StationParameters() object."""
+def _spec_inversion(spec, spec_weight):
+    """
+    Invert one spectrum, return a StationParameters() object.
+
+    :param spec: Spectrum object.
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param spec_weight: Spectrum object with the noise spectrum.
+    :type spec_weight: :class:`~sourcespec.spectrum.Spectrum`
+
+    :return: Station parameters.
+    :rtype: :class:`~sourcespec.ssp_data_types.StationParameters`
+
+    :raises RuntimeError: If the inversion fails.
+    :raises ValueError: If the inversion results are not acceptable.
+    """
     # azimuth computation
     coords = spec.stats.coords
     stla = coords.latitude
@@ -200,7 +240,7 @@ def _spec_inversion(config, spec, spec_weight):
     # signal-to-noise ratio
     try:
         idx0, idx1 = _freq_ranges_for_Mw0_and_tstar0(
-            config, weight, freq_logspaced, statId)
+            weight, freq_logspaced, statId)
     except RuntimeError:
         spec.stats.ignore = True
         spec.stats.ignore_reason = 'fit failed'
@@ -237,7 +277,7 @@ def _spec_inversion(config, spec, spec_weight):
         Mw_0_min = Mw_0_max = Mw_0
 
     initial_values = InitialValues(Mw_0, fc_0, t_star_0)
-    bounds = Bounds(config, spec, initial_values)
+    bounds = Bounds(spec, initial_values)
     Mw_0_variability =\
         config.Mw_0_variability if config.Mw_0_variability > 0 else 1e-6
     bounds.Mw_min = Mw_0_min * (1 - Mw_0_variability)
@@ -251,7 +291,7 @@ def _spec_inversion(config, spec, spec_weight):
     logger.info(f'{statId}: bounds: {bounds}')
     try:
         params_opt, params_err, misfit = _curve_fit(
-            config, spec, weight, yerr, initial_values, bounds)
+            spec, weight, yerr, initial_values, bounds)
     except (RuntimeError, ValueError) as m:
         spec.stats.ignore = True
         spec.stats.ignore_reason = 'fit failed'
@@ -404,8 +444,18 @@ def _spec_inversion(config, spec, spec_weight):
     return station_pars
 
 
-def _synth_spec(config, spec, station_pars):
-    """Return a stream with one or more synthetic spectra."""
+def _synth_spec(spec, station_pars):
+    """
+    Return a stream with one or more synthetic spectra.
+
+    :param spec: Spectrum object.
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param station_pars: Station parameters.
+    :type station_pars: :class:`~sourcespec.ssp_data_types.StationParameters`
+
+    :return: Stream with synthetic spectra.
+    :rtype: :class:`~sourcespec.spectrum.SpectrumStream`
+    """
     par = {
         x.param_id: x.value
         for x in station_pars.get_spectral_parameters().values()
@@ -460,8 +510,18 @@ def _synth_spec(config, spec, station_pars):
     return spec_st
 
 
-def spectral_inversion(config, spec_st, weight_st):
-    """Inversion of displacement spectra."""
+def spectral_inversion(spec_st, weight_st):
+    """
+    Inversion of displacement spectra.
+
+    :param spec_st: Stream of displacement spectra.
+    :type spec_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    :param weight_st: Stream of noise spectra.
+    :type weight_st: :class:`~sourcespec.spectrum.SpectrumStream`
+
+    :return: Inversion results.
+    :rtype: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    """
     logger.info('Inverting spectra...')
     weighting_messages = {
         'noise': 'Using noise weighting for inversion.',
@@ -522,11 +582,11 @@ def spectral_inversion(config, spec_st, weight_st):
             continue
         spec_weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
         try:
-            station_pars = _spec_inversion(config, spec, spec_weight)
+            station_pars = _spec_inversion(spec, spec_weight)
         except (RuntimeError, ValueError) as msg:
             logger.warning(msg)
             continue
-        spec_st += _synth_spec(config, spec, station_pars)
+        spec_st += _synth_spec(spec, station_pars)
         sspec_output.station_parameters[station_pars.station_id] = station_pars
 
     logger.info('Inverting spectra: done')
