@@ -160,7 +160,8 @@ def parse_args():
     )
     parser.add_argument(
         '-r', '--runid', default=None,
-        help='Only select a specific runid. Default is all')
+        help='Only select a specific runid. Default is all. Use "latest" to '
+             'select the latest runid for each event')
     parser.add_argument(
         '-s', '--statistics', default='mean',
         help='Statistics to use: "mean", "wmean" (weighted mean) '
@@ -222,7 +223,10 @@ def query_event_params_into_numpy(cursor, param, param_type, query_condition):
     """
     Query a parameter from the Events table and return it as a numpy array.
     """
-    query = f'select {param} from Events {query_condition} order by evid,runid'
+    query = (
+        f'SELECT e.{param} FROM Events e {query_condition} '
+        'ORDER BY e.evid, e.runid'
+    )
     cursor.execute(query)
     result = np.array(cursor.fetchall())
     if len(result) == 0:
@@ -243,7 +247,20 @@ class Params():
         self.runid = runid = args.runid
         self.stat = stat = args.statistics
         self._open_db(self.sqlite_file)
-        query_condition = f'where runid="{runid}"' if runid is not None else ''
+        if runid == 'latest':
+            # select the latest runid for each event
+            query_condition = """
+JOIN (
+    SELECT evid, MAX(runid) AS max_runid
+    FROM events
+    GROUP BY evid
+) AS max_runids
+ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
+"""
+        elif runid is not None:
+            query_condition = f'WHERE runid="{runid}"'
+        else:
+            query_condition = ''
         self.evids = query_event_params_into_numpy(
             self.cur, 'evid', str, query_condition)
         self.vp = query_event_params_into_numpy(
