@@ -85,7 +85,7 @@ def main():
     plot_spectra(spec_st, specnoise_st, plot_type='regular')
     plot_spectra(weight_st, plot_type='weight')
     from .ssp_plot_stacked_spectra import plot_stacked_spectra
-    plot_stacked_spectra(config, spec_st, weight_st, sspec_output)
+    plot_stacked_spectra(spec_st, weight_st, sspec_output)
     from .ssp_plot_params_stats import box_plots
     box_plots(config, sspec_output)
     if config.plot_station_map:
