@@ -15,6 +15,7 @@ Spectral residual routine for sourcespec.
 import os
 import contextlib
 import logging
+from .config import config
 from ._version import get_versions
 from .spectrum import SpectrumStream
 from .ssp_spectral_model import spectral_model
@@ -22,13 +23,11 @@ from .ssp_util import mag_to_moment
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-def spectral_residuals(config, spec_st, sspec_output):
+def spectral_residuals(spec_st, sspec_output):
     """
     Compute spectral residuals with respect to an average spectral model.
     Saves a stream of residuals to disk in HDF5 format.
 
-    :param config: Configuration object
-    :type config: :class:`~sourcespec.config.Config`
     :param spec_st: Stream of spectra
     :type spec_st: :class:`~sourcespec.spectrum.SpectrumStream`
     :param sspec_output: Output of the source spectral parameter estimation
