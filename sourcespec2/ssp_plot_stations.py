@@ -27,6 +27,7 @@ from matplotlib import cm
 from matplotlib import colors
 import matplotlib.patheffects as PathEffects
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
+from .config import config
 from .adjustText import adjust_text
 from .cached_tiler import CachedTiler
 from .map_tiles import (
@@ -144,6 +145,14 @@ def _shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shifted'):
 def _get_circles_step(maxdist, ncircles):
     """
     Return the step for the circles to be plotted.
+
+    :param maxdist: maximum distance from the epicenter.
+    :type maxdist: float
+    :param ncircles: number of circles to plot.
+    :type ncircles: int
+
+    :return: step for the circles.
+    :rtype: float
     """
     step = _round_to_base(maxdist / ncircles, base=5)
     if step == 0:
@@ -154,6 +163,21 @@ def _get_circles_step(maxdist, ncircles):
 
 
 def _plot_circles(ax, evlo, evla, distances):
+    """
+    Plot circles around the epicenter.
+
+    :param ax: axes to plot the circles.
+    :type ax: matplotlib.axes.Axes
+    :param evlo: epicenter longitude.
+    :type evlo: float
+    :param evla: epicenter latitude.
+    :type evla: float
+    :param distances: distances from the epicenter.
+    :type distances: list of float
+
+    :return: list of texts with circle labels.
+    :rtype: list of matplotlib.text.Text
+    """
     geodetic_transform = ccrs.PlateCarree()
     g = pyproj.Geod(ellps='WGS84')
     texts = []
@@ -189,6 +213,14 @@ def _plot_circles(ax, evlo, evla, distances):
 
 
 def _plot_epicenter_as_beachball(ax, event):
+    """
+    Plot the epicenter as a beachball.
+
+    :param ax: axes to plot the beachball.
+    :type ax: matplotlib.axes.Axes
+    :param event: event object.
+    :type event: :class:`~sourcespec.ssp_event.SSPEvent`
+    """
     geodetic_transform = ccrs.PlateCarree()
     fm = event.focal_mechanism
     # TODO: draw full moment tensor, if available
@@ -226,6 +258,14 @@ def _plot_epicenter_as_beachball(ax, event):
 
 
 def _plot_epicenter_as_star(ax, event):
+    """
+    Plot the epicenter as a star.
+
+    :param ax: axes to plot the star.
+    :type ax: matplotlib.axes.Axes
+    :param event: event object.
+    :type event: :class:`~sourcespec.ssp_event.SSPEvent`
+    """
     geodetic_transform = ccrs.PlateCarree()
     hypo = event.hypocenter
     evlo = hypo.longitude.value_in_deg
@@ -239,7 +279,14 @@ def _plot_epicenter_as_star(ax, event):
 
 
 def _add_event_info(event, ax):
-    """Add event information as plot title."""
+    """
+    Add event information as plot title.
+
+    :param event: event object.
+    :type event: :class:`~sourcespec.ssp_event.SSPEvent`
+    :param ax: axes to plot the event information.
+    :type ax: matplotlib.axes.Axes
+    """
     evid = event.event_id
     hypo = event.hypocenter
     evlo = hypo.longitude.value_in_deg
@@ -257,8 +304,17 @@ def _add_event_info(event, ax):
         ha='left', va='top', linespacing=1.5, transform=ax.transAxes)
 
 
-def _add_tiles(config, ax, tiler, alpha=1):
-    """Add map tiles to basemap."""
+def _add_tiles(ax, tiler, alpha=1):
+    """
+    Add map tiles to basemap.
+
+    :param ax: axes to plot the tiles.
+    :type ax: matplotlib.axes.Axes
+    :param tiler: tiler object.
+    :type tiler: :class:`~sourcespec.cached_tiler.CachedTiler`
+    :param alpha: transparency of the tiles.
+    :type alpha: float
+    """
     if config.plot_map_tiles_zoom_level:
         tile_zoom_level = config.plot_map_tiles_zoom_level
     else:
@@ -282,7 +338,17 @@ def _add_tiles(config, ax, tiler, alpha=1):
 
 
 def _read_geotiff(tif_file, grayscale=False):
-    """Read GeoTIFF file."""
+    """
+    Read GeoTIFF file.
+
+    :param tif_file: GeoTIFF file to read.
+    :type tif_file: str
+    :param grayscale: read the GeoTIFF as grayscale.
+    :type grayscale: bool
+
+    :return: tif_raster and bounding box.
+    :rtype: tuple of numpy.ndarray, tuple of float
+    """
     # lazy import rasterio, since it is not a mandatory dependency
     # pylint: disable=import-outside-toplevel
     import rasterio
@@ -318,8 +384,13 @@ def _read_geotiff(tif_file, grayscale=False):
     return tif_raster, tif_bbox
 
 
-def _add_geotiff(config, ax):
-    """Add GeoTIFF to basemap."""
+def _add_geotiff(ax):
+    """
+    Add GeoTIFF to basemap.
+
+    :param ax: axes to plot the geotiff.
+    :type ax: matplotlib.axes.Axes
+    """
     tif_file = config.plot_map_geotiff_filepath
     grayscale = config.plot_map_geotiff_grayscale
     if tif_file is None:
@@ -358,8 +429,13 @@ def _add_geotiff(config, ax):
             transform=ccrs.PlateCarree(), zorder=ZORDER_BASEMAP)
 
 
-def _add_coastlines(config, ax):
-    """Add coastlines and borders to basemap."""
+def _add_coastlines(ax):
+    """
+    Add coastlines and borders to basemap.
+
+    :param ax: axes to plot the coastlines.
+    :type ax: matplotlib.axes.Axes
+    """
     if config.plot_coastline_resolution == 'no_coastline':
         return
     # add coastlines from GSHHS
@@ -405,6 +481,12 @@ def _add_gridlines_to_orthographic_axes(ax, bounding_box):
     """
     Add gridlines to global orthographic GeoAxes.
 
+    :param ax: axes to plot the gridlines.
+    :type ax: matplotlib.axes.Axes
+    :param bounding_box: bounding box of the map.
+    :type bounding_box: list of float
+
+    .. note::
     We need to compute gridlines manually, since Cartopy has occasional
     bugs with gridlines in global projections.
 
@@ -462,7 +544,7 @@ def _get_ax_projection(maxdiagonal, max_map_diagonal=100, tiler=None):
     return ccrs.Mercator()
 
 
-def _make_geoaxes_planar(config, fig, buonding_box, maxdiagonal):
+def _make_geoaxes_planar(fig, buonding_box, maxdiagonal):
     """
     Create a GeoAxes with a planar projection and optionally add map tiles.
 
@@ -493,7 +575,7 @@ def _make_geoaxes_planar(config, fig, buonding_box, maxdiagonal):
     ax.global_projection = False
     ax.maxdiagonal = maxdiagonal
     if map_style == 'geotiff':
-        _add_geotiff(config, ax)
+        _add_geotiff(ax)
         ax.attribution_text = config.plot_map_geotiff_attribution
     elif map_style == 'no_basemap':
         ax.add_feature(land_10m, zorder=ZORDER_BASEMAP)
@@ -503,7 +585,7 @@ def _make_geoaxes_planar(config, fig, buonding_box, maxdiagonal):
         if map_style in ['hillshade', 'hillshade_dark']:
             # add a sea mask to the hillshade map
             ax.add_feature(ocean_10m, zorder=ZORDER_TILES+1)
-        _add_tiles(config, ax, tiler)
+        _add_tiles(ax, tiler)
     if map_style in ['hillshade', 'hillshade_dark', 'ocean', 'satellite']:
         ax.attribution_text = 'Map powered by Esri and Natural Earth'
     elif map_style == 'stamen_terrain':
@@ -517,6 +599,18 @@ def _make_geoaxes_orthographic(fig, evlo, evla, bounding_box):
     Create a GeoAxes with global Orthographic projection.
 
     The basemap is the Earth stock image from Cartopy.
+
+    :param fig: figure to add the axes.
+    :type fig: matplotlib.figure.Figure
+    :param evlo: epicenter longitude.
+    :type evlo: float
+    :param evla: epicenter latitude.
+    :type evla: float
+    :param bounding_box: bounding box of the map.
+    :type bounding_box: list of float
+
+    :return: axes with Orthographic projection.
+    :rtype: matplotlib.axes.Axes
     """
     _projection = ccrs.Orthographic(
         central_longitude=evlo, central_latitude=evla)
@@ -528,10 +622,19 @@ def _make_geoaxes_orthographic(fig, evlo, evla, bounding_box):
     return ax
 
 
-def _make_basemap(config, maxdist):
+def _make_basemap(maxdist):
     """
     Create basemap with tiles (optional), coastlines (optional), hypocenter
     and distance circles.
+
+    :param maxdist: maximum distance from the epicenter.
+    :type maxdist: float
+
+    :return: ax0 (invisible axis for title and footer),
+        ax (GeoAxes with basemap),
+        circle_texts (list of texts with circle labels).
+    :rtype: tuple of matplotlib.axes.Axes, matplotlib.axes.Axes,
+        list of matplotlib.text.Text
     """
     g = pyproj.Geod(ellps='WGS84')
     event = config.event
@@ -562,10 +665,10 @@ def _make_basemap(config, maxdist):
     ax0.set_axis_off()
     _add_event_info(config.event, ax0)
     if maxdist < 3000:  # km
-        ax = _make_geoaxes_planar(config, fig, bounding_box, maxdiagonal)
+        ax = _make_geoaxes_planar(fig, bounding_box, maxdiagonal)
     else:
         ax = _make_geoaxes_orthographic(fig, evlo, evla, bounding_box)
-    _add_coastlines(config, ax)
+    _add_coastlines(ax)
     circles_distances = np.arange(1, ncircles + 1) * circles_step
     circle_texts = _plot_circles(ax, evlo, evla, circles_distances)
     try:
@@ -579,9 +682,14 @@ def _make_basemap(config, maxdist):
     }
 
 
-def _add_footer(config, ax, attribution_text=None):
+def _add_footer(ax, attribution_text=None):
     """
     Add code and author information at the figure footer.
+
+    :param ax: axes to plot the footer.
+    :type ax: matplotlib.axes.Axes
+    :param attribution_text: additional attribution text.
+    :type attribution_text: str
     """
     textstr = (
         f'SourceSpec v{get_versions()["version"]} '
@@ -615,6 +723,15 @@ def _add_footer(config, ax, attribution_text=None):
 def _add_main_title(ax, vname, vmean, verr):
     """
     Add to the figure the main title with the value and its error.
+
+    :param ax: axes to plot the title.
+    :type ax: matplotlib.axes.Axes
+    :param vname: name of the value.
+    :type vname: str
+    :param vmean: mean value.
+    :type vmean: float
+    :param verr: error value.
+    :type verr: float or tuple of float
     """
     verr_minus, verr_plus = _get_verr_minus_plus(verr)
     if vname == 'fc':
@@ -639,6 +756,12 @@ def _contrast_color(color):
     Return the best contrasting color, either black or white.
 
     Source: https://stackoverflow.com/a/3943023/2021880
+
+    :param color: color in RGB format.
+    :type color: tuple of float
+
+    :return: 'black' or 'white'.
+    :rtype: str
     """
     R, G, B = [
         c / 12.92 if c <= 0.03928
@@ -651,6 +774,12 @@ def _contrast_color(color):
 def _get_verr_minus_plus(verr):
     """
     Return the minus and plus error values for the given error value.
+
+    :param verr: error value.
+    :type verr: float or tuple of float
+
+    :return: minus and plus error values.
+    :rtype: tuple of float
     """
     if isinstance(verr, tuple):
         verr_minus, verr_plus = verr
@@ -662,6 +791,20 @@ def _get_verr_minus_plus(verr):
 def _get_cmap_and_norm(values, outliers, vname, vmean, verr):
     """
     Return the colormap and normalization for the given values.
+
+    :param values: values to plot.
+    :type values: numpy.ndarray
+    :param outliers: boolean array with the outliers.
+    :type outliers: numpy.ndarray
+    :param vname: name of the value.
+    :type vname: str
+    :param vmean: mean value.
+    :type vmean: float
+    :param verr: error value.
+    :type verr: float or tuple of float
+
+    :return: colormap, normalization and colorbar extension.
+    :rtype: matplotlib.colors.Colormap, matplotlib.colors.Normalize, str
     """
     verr_minus, verr_plus = _get_verr_minus_plus(verr)
     values_no_outliers = values[~outliers]
@@ -701,10 +844,25 @@ def _get_cmap_and_norm(values, outliers, vname, vmean, verr):
     return cmap, norm, cbar_extend
 
 
-def _plot_stations_scatter(
-        config, ax, lonlat_dist, st_ids, values, cmap, norm):
+def _plot_stations_scatter(ax, lonlat_dist, st_ids, values, cmap, norm):
     """
     Plot the stations as scatter points on the map.
+
+    :param ax: axes to plot the stations.
+    :type ax: matplotlib.axes.Axes
+    :param lonlat_dist: array with the station coordinates and distances.
+    :type lonlat_dist: numpy.ndarray
+    :param st_ids: list with the station IDs.
+    :type st_ids: list of str
+    :param values: values to plot.
+    :type values: numpy.ndarray
+    :param cmap: colormap.
+    :type cmap: matplotlib.colors.Colormap
+    :param norm: normalization.
+    :type norm: matplotlib.colors.Normalize
+
+    :return: list of texts with station labels.
+    :rtype: list of matplotlib.text.Text
     """
     trans = ccrs.PlateCarree()
     lonlat = lonlat_dist[:, :2]
@@ -734,6 +892,13 @@ def _plot_stations_scatter(
 def _adjust_text_labels(station_texts, circle_texts, ax):
     """
     Adjust the text labels so that they do not overlap.
+
+    :param station_texts: list of texts with station labels.
+    :type station_texts: list of matplotlib.text.Text
+    :param circle_texts: list of texts with circle labels.
+    :type circle_texts: list of matplotlib.text.Text
+    :param ax: axes to plot the text labels.
+    :type ax: matplotlib.axes.Axes
     """
     if not station_texts:
         return
@@ -758,10 +923,24 @@ def _adjust_text_labels(station_texts, circle_texts, ax):
             t.set_position((x_pos, y_pos))
 
 
-def _add_colorbar(
-        ax, cmap, norm, vmean, verr, vname, cbar_extend):
+def _add_colorbar(ax, cmap, norm, vmean, verr, vname, cbar_extend):
     """
     Add a colorbar to the given axes.
+
+    :param ax: axes to plot the colorbar.
+    :type ax: matplotlib.axes.Axes
+    :param cmap: colormap.
+    :type cmap: matplotlib.colors.Colormap
+    :param norm: normalization.
+    :type norm: matplotlib.colors.Normalize
+    :param vmean: mean value.
+    :type vmean: float
+    :param verr: error value.
+    :type verr: float or tuple of float
+    :param vname: name of the value.
+    :type vname: str
+    :param cbar_extend: colorbar extension.
+    :type cbar_extend: str
     """
     ax_divider = make_axes_locatable(ax)
     cax = ax_divider.append_axes(
@@ -788,9 +967,14 @@ def _add_colorbar(
     cax.set_ylabel(cm_label)
 
 
-def _savefig(config, fig, vname):
+def _savefig(fig, vname):
     """
     Save the figure to a file.
+
+    :param fig: figure to save.
+    :type fig: matplotlib.figure.Figure
+    :param vname: name of the value.
+    :type vname: str
     """
     evid = config.event.event_id
     figfile_base = os.path.join(config.options.outdir, evid)
@@ -811,10 +995,26 @@ def _savefig(config, fig, vname):
 
 
 def _make_station_map(
-        config, basemap_data, lonlat_dist, st_ids, values, outliers,
+        basemap_data, lonlat_dist, st_ids, values, outliers,
         vmean, verr, vname):
     """
     Make a map of stations with the given values.
+
+    :param basemap_data: dictionary with the basemap data.
+    :param lonlat_dist: array with the station coordinates and distances.
+    :type lonlat_dist: numpy.ndarray
+    :param st_ids: list with the station IDs.
+    :type st_ids: list of str
+    :param values: values to plot.
+    :type values: numpy.ndarray
+    :param outliers: boolean array with the outliers.
+    :type outliers: numpy.ndarray
+    :param vmean: mean value.
+    :type vmean: float
+    :param verr: error value.
+    :type verr: float or tuple of float
+    :param vname: name of the value.
+    :type vname: str
     """
     ax0 = basemap_data['ax0']
     ax = basemap_data['ax']
@@ -823,14 +1023,27 @@ def _make_station_map(
     cmap, norm, cbar_extend = _get_cmap_and_norm(
         values, outliers, vname, vmean, verr)
     station_texts = _plot_stations_scatter(
-        config, ax, lonlat_dist, st_ids, values, cmap, norm)
+        ax, lonlat_dist, st_ids, values, cmap, norm)
     _add_colorbar(ax, cmap, norm, vmean, verr, vname, cbar_extend)
-    _add_footer(config, ax0, ax.attribution_text)
+    _add_footer(ax0, ax.attribution_text)
     _adjust_text_labels(station_texts, circle_texts, ax)
-    _savefig(config, ax0.get_figure(), vname)
+    _savefig(ax0.get_figure(), vname)
 
 
 def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
+    """
+    Spread overlapping stations horizontally and vertically.
+
+    :param lonlat_dist: array with the station coordinates and distances.
+    :type lonlat_dist: numpy.ndarray
+    :param min_dlonlat: minimum distance between stations.
+    :type min_dlonlat: float
+    :param spread: spread distance.
+    :type spread: float
+
+    :return: array with the station coordinates and distances.
+    :rtype: numpy.ndarray
+    """
     dlonlat = np.diff(lonlat_dist[:, :2], axis=0)
     dlonlat = np.sum(dlonlat**2, axis=1)**(0.5)
     # find indexes of overlapping stations
@@ -847,12 +1060,10 @@ def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
     return lonlat_dist
 
 
-def plot_stations(config, sspec_output):
+def plot_stations(sspec_output):
     """
     Plot station map, color coded by magnitude or fc.
 
-    :param config: Configuration object
-    :type config: config.Config
     :param sspec_output: SourceSpecOutput object
     :type sspec_output: ssp_data_types.SourceSpecOutput
     """
@@ -876,16 +1087,16 @@ def plot_stations(config, sspec_output):
     mag_outliers = np.array([stationpar[k]['Mw'].outlier for k in st_ids])
     summary_mag = summary_values['Mw']
     summary_mag_err = summary_uncertainties['Mw']
-    basemap_data = _make_basemap(config, maxdist)
+    basemap_data = _make_basemap(maxdist)
     # make a copy of the basemap data for the second plot, before modifying it
     basemap_data2 = deepcopy(basemap_data)
     _make_station_map(
-        config, basemap_data, lonlat_dist, st_ids,
+        basemap_data, lonlat_dist, st_ids,
         mag, mag_outliers, summary_mag, summary_mag_err, 'mag')
     fc = np.array([stationpar[k]['fc'].value for k in st_ids])
     fc_outliers = np.array([stationpar[k]['fc'].outlier for k in st_ids])
     summary_fc = summary_values['fc']
     summary_fc_err = summary_uncertainties['fc']
     _make_station_map(
-        config, basemap_data2, lonlat_dist, st_ids,
+        basemap_data2, lonlat_dist, st_ids,
         fc, fc_outliers, summary_fc, summary_fc_err, 'fc')
