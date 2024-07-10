@@ -15,7 +15,7 @@ import re
 import logging
 from obspy import read_inventory
 from obspy.core.inventory import Inventory, Network, Station, Channel, Response
-from .config.configure_cli import INSTR_CODES_VEL, INSTR_CODES_ACC
+from .config import config
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -32,7 +32,7 @@ class PAZ():
     input_units = None
     linenum = None
 
-    def __init__(self, file=None, INST_CODES_VEL=None, INST_CODES_ACC=None):
+    def __init__(self, file=None):
         """
         Init PAZ object.
 
@@ -41,8 +41,6 @@ class PAZ():
         """
         if file is not None:
             self._read(file)
-        self.INSTR_CODES_VEL = INST_CODES_VEL
-        self.INSTR_CODES_ACC = INST_CODES_ACC
 
     def __str__(self):
         return (
@@ -79,13 +77,13 @@ class PAZ():
             return
         instr_code = self.channel[1]
         self.input_units = None
-        if instr_code in INSTR_CODES_VEL:
+        if instr_code in config.INSTR_CODES_VEL:
             band_code = self.channel[0]
             # SEED standard band codes for velocity channels
             # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming
             if band_code in ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'S']:
                 self.input_units = 'M/S'
-        elif instr_code in INSTR_CODES_ACC:
+        elif instr_code in config.INSTR_CODES_ACC:
             self.input_units = 'M/S**2'
 
     def _read(self, file):
