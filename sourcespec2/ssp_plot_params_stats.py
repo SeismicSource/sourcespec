@@ -16,7 +16,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as mpe
-
+from .config import config
 from ._version import get_versions
 from .savefig import savefig
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
@@ -33,8 +33,13 @@ class PlotParam():
         self.color = color
 
 
-def box_plots(config, sspec_output):
-    """Show parameter statistics through box plots."""
+def box_plots(sspec_output):
+    """
+    Show parameter statistics through box plots.
+
+    :param sspec_output: SourceSpec output.
+    :type sspec_output: :class:`sourcespec.ssp_data_types.SourceSpecOutput`
+    """
     # Check config, if we need to plot at all
     if not config.plot_show and not config.plot_save:
         return
@@ -159,10 +164,16 @@ def box_plots(config, sspec_output):
     if config.plot_show:
         plt.show()
     if config.plot_save:
-        _savefig(config, fig)
+        _savefig(fig)
 
 
-def _savefig(config, fig):
+def _savefig(fig):
+    """
+    Save the figure to a file.
+
+    :param fig: Figure to save.
+    :type fig: :class:`matplotlib.figure.Figure`
+    """
     evid = config.event.event_id
     figfile_base = os.path.join(config.options.outdir, f'{evid}.boxplot.')
     fmt = config.plot_save_format
