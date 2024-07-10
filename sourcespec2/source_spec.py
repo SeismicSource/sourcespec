@@ -79,7 +79,7 @@ def main():
 
     # Save residuals
     from .ssp_residuals import spectral_residuals
-    spectral_residuals(config, spec_st, sspec_output)
+    spectral_residuals(spec_st, sspec_output)
 
     # Plotting
     from .ssp_plot_spectra import plot_spectra
