@@ -55,8 +55,8 @@ def save_config():
     os.rename(src, dst)
 
 
-def move_outdir():
-    """Move outdir to a new dir named from evid (and optional run_id)."""
+def get_outdir_path():
+    """Construct full path to output directory"""
     try:
         evid = config.event.event_id
     except Exception:
@@ -64,12 +64,21 @@ def move_outdir():
     src = config.options.outdir
     run_id = config.options.run_id
     run_id_subdir = config.options.run_id_subdir
-    dst = os.path.split(src)[0]
-    dst = os.path.join(dst, str(evid))
+    # TODO: does next line also work if no tmpdir has been created first?
+    outdir = os.path.split(src)[0]
+    outdir = os.path.join(outdir, str(evid))
     if run_id and run_id_subdir:
-        dst = os.path.join(dst, str(run_id))
+        outdir = os.path.join(outdir, str(run_id))
     elif run_id:
-        dst += f'_{run_id}'
+        outdir += f'_{run_id}'
+
+    return outdir
+
+
+def move_outdir():
+    """Move outdir to a new dir named from evid (and optional run_id)."""
+    src = config.options.outdir
+    dst = get_outdir_path()
     # Create destination
     if not os.path.exists(dst):
         os.makedirs(dst)
