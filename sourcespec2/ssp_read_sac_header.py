@@ -13,14 +13,23 @@ import re
 import logging
 import contextlib
 from obspy.core.util import AttribDict
+from .config import config
 from .ssp_setup import ssp_exit
 from .ssp_event import SSPEvent
 from .ssp_pick import SSPPick
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-def compute_sensitivity_from_SAC(trace, config):
-    """Compute sensitivity from SAC header fields."""
+def compute_sensitivity_from_SAC(trace):
+    """
+    Compute sensitivity from SAC header fields.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+
+    :return: Sensitivity
+    :rtype: float
+    """
     # Securize the string before calling eval()
     # see https://stackoverflow.com/a/25437733/2021880
     inp = re.sub(r'\.(?![0-9])', '', config.sensitivity)
@@ -53,7 +62,15 @@ instruments = {
 
 
 def get_instrument_from_SAC(trace):
-    """Get instrument information from SAC header."""
+    """
+    Get instrument information from SAC header.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core
+
+    :return: Instrument type, band code, instrument code
+    :rtype: tuple
+    """
     try:
         codes = instruments[trace.stats.sac.kinst]
         instrtype = codes['instrtype']
@@ -74,7 +91,15 @@ def get_instrument_from_SAC(trace):
 
 
 def get_station_coordinates_from_SAC(trace):
-    """Get station coordinates from SAC header."""
+    """
+    Get station coordinates from SAC header.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core
+
+    :return: Station coordinates
+    :rtype: :class:`AttribDict` or None
+    """
     with contextlib.suppress(Exception):
         stla = trace.stats.sac.stla
         stlo = trace.stats.sac.stlo
@@ -87,7 +112,15 @@ def get_station_coordinates_from_SAC(trace):
 
 
 def get_event_from_SAC(trace):
-    """Get event information from SAC header."""
+    """
+    Get event information from SAC header.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core
+
+    :return: Event information
+    :rtype: :class:`ssp_event.SSPEvent`
+    """
     try:
         sac_hdr = trace.stats.sac
     except AttributeError as e:
@@ -133,7 +166,15 @@ def get_event_from_SAC(trace):
 
 
 def get_picks_from_SAC(trace):
-    """Get picks from SAC header."""
+    """
+    Get picks from SAC header.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core
+
+    :return: List of picks
+    :rtype: list of :class:`ssp_pick.SSPPick`
+    """
     try:
         sac_hdr = trace.stats.sac
     except AttributeError as e:
