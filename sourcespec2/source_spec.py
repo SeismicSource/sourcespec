@@ -90,7 +90,7 @@ def main():
     box_plots(sspec_output)
     if config.plot_station_map:
         from .ssp_plot_stations import plot_stations
-        plot_stations(config, sspec_output)
+        plot_stations(sspec_output)
 
     if config.html_report:
         from .ssp_html_report import html_report
