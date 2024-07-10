@@ -363,10 +363,10 @@ def _build_filelist(path, filelist, tmpdir):
             filelist.append(path)
 
 
-def _read_trace_files(inventory, ssp_event, picks):
+def _read_trace_files():
     """
-    Read trace files from a given path. Complete trace metadata and
-    return a stream object.
+    Read trace files from a given path and return a stream object.
+    Trace metadata are not yet updated.
 
     :param inventory: ObsPy Inventory object
     :type inventory: :class:`obspy.core.inventory.Inventory`
@@ -392,9 +392,6 @@ def _read_trace_files(inventory, ssp_event, picks):
         fullpath = os.path.join(tmpdir, filename)
         _build_filelist(fullpath, filelist, None)
     # phase 2: build a stream object from the file list
-    orientation_codes = config.vertical_channel_codes +\
-        config.horizontal_channel_codes_1 +\
-        config.horizontal_channel_codes_2
     st = Stream()
     for filename in sorted(filelist):
         try:
@@ -403,30 +400,13 @@ def _read_trace_files(inventory, ssp_event, picks):
             logger.warning(
                 f'{filename}: Unable to read file as a trace: skipping')
             continue
+        # TODO: optionally we could already call select_components here
+        #tmpst = select_components(tmpst)
         for trace in tmpst.traces:
-            orientation = trace.stats.channel[-1]
-            if orientation not in orientation_codes:
-                logger.warning(
-                    f'{trace.id}: Unknown channel orientation: '
-                    f'"{orientation}": skipping trace'
-                )
-                continue
             # only use the station specified by the command line option
             # "--station", if any
             if (config.options.station is not None and
                     trace.stats.station != config.options.station):
-                continue
-            _correct_traceid(trace)
-            try:
-                _add_instrtype(trace)
-                _add_inventory(trace, inventory)
-                _check_instrtype(trace)
-                _add_coords(trace)
-                _add_event(trace, ssp_event)
-                _add_picks(trace, picks)
-            except Exception as err:
-                for line in str(err).splitlines():
-                    logger.warning(line)
                 continue
             st.append(trace)
     shutil.rmtree(tmpdir)
@@ -446,12 +426,53 @@ def _log_event_info(ssp_event):
     logger.info('---------------------------------------------------')
 
 
-# Public interface:
-def read_traces():
-    """Read traces, store waveforms and metadata."""
-    # read station metadata into an ObsPy ``Inventory`` object
-    inventory = read_station_metadata(config.station_metadata)
+def select_components(st):
+    """
+    Select requested components from stream
 
+    :param st: ObsPy Stream object
+    :type st: :class:`obspy.core.stream.Stream`
+
+    :return: ObsPy Stream object
+    :rtype: :class:`obspy.core.stream.Stream`
+    """
+    orientation_codes = config.vertical_channel_codes +\
+        config.horizontal_channel_codes_1 +\
+        config.horizontal_channel_codes_2
+
+    tmpst = st.copy()
+    st = Stream()
+    for trace in tmpst.traces:
+        orientation = trace.stats.channel[-1]
+        if orientation not in orientation_codes:
+            logger.warning(
+                f'{trace.id}: Unknown channel orientation: '
+                f'"{orientation}": skipping trace'
+            )
+            continue
+        # TODO: should we also filter by station here?
+        # only use the station specified by the command line option
+        # "--station", if any
+        #if (config.options.station is not None and
+        #        trace.stats.station != config.options.station):
+        #    continue
+        st.append(trace)
+
+    return st
+
+
+def read_event_and_picks(trace1=None):
+    """
+    Read event and phase picks
+
+    :param trace1: ObsPy Trace object containing event info (optional)
+    :type trace1: :class:`obspy.core.stream.Stream`
+
+    :return: (ssp_event, picks)
+    :rtype: tuple of
+        :class:`sourcespec.ssp_event.SSPEvent`,
+        list of :class:`sourcespec.ssp_event.Pick`
+    """
     picks = []
     ssp_event = None
     # parse hypocenter file
@@ -468,20 +489,10 @@ def read_traces():
     if ssp_event is not None:
         _log_event_info(ssp_event)
 
-    # finally, read trace files
-    logger.info('Reading traces...')
-    st = _read_trace_files(inventory, ssp_event, picks)
-    logger.info('Reading traces: done')
-    logger.info('---------------------------------------------------')
-    if len(st) == 0:
-        logger.error('No trace loaded')
-        ssp_exit(1)
-    _complete_picks(st)
-
     # if ssp_event is still None, get it from first trace
-    if ssp_event is None:
+    if ssp_event is None and trace1 is not None:
         try:
-            ssp_event = st[0].stats.event
+            ssp_event = trace1.stats.event
             _log_event_info(ssp_event)
         except AttributeError:
             logger.error('No hypocenter information found.')
@@ -492,6 +503,21 @@ def read_traces():
                 '(if you use the SAC format).\n'
             )
             ssp_exit(1)
+    # TODO: log also if trace1 is None?
+
+    return (ssp_event, picks)
+
+
+def augment_event(ssp_event):
+    """
+    Add velocity info to hypocenter
+    and add event name from/to config.options
+
+    The augmented event is stored in config.event
+
+    :param ssp_event: Evento to be augmented
+    :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
+    """
     # add velocity info to hypocenter
     try:
         _hypo_vel(ssp_event.hypocenter)
@@ -508,5 +534,56 @@ def read_traces():
     # add event to config file
     config.event = ssp_event
 
-    st.sort()
+
+def augment_traces(st, inventory, ssp_event, picks):
+    """
+    Add all required information to trace headers
+
+    :param st: Traces to be augmented
+    :type st: :class:`obspy.core.stream.Stream`
+    :param inventory: Station metadata
+    :type inventory: :class:`obspy.core.inventory.Inventory`
+    :param ssp_event: Event information
+    :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
+    :param picks: list of picks
+    :type picks: list of :class:`sourcespec.ssp_event.Pick`
+    """
+    for trace in st:
+        _correct_traceid(trace)
+        try:
+            _add_instrtype(trace)
+            _add_inventory(trace, inventory)
+            _check_instrtype(trace)
+            _add_coords(trace)
+            _add_event(trace, ssp_event)
+            _add_picks(trace, picks)
+        except Exception as err:
+            for line in str(err).splitlines():
+                logger.warning(line)
+            continue
+
+    _complete_picks(st)
+
+
+def read_station_inventory():
+    """read station metadata into an ObsPy ``Inventory`` object"""
+    inventory = read_station_metadata(config.station_metadata)
+    return inventory
+
+
+# Public interface:
+def read_traces():
+    """
+    Read trace files
+
+    :return: Traces
+    :rtype: :class:`obspy.core.stream.Stream`
+    """
+    logger.info('Reading traces...')
+    st = _read_trace_files()
+    logger.info('Reading traces: done')
+    logger.info('---------------------------------------------------')
+    if len(st) == 0:
+        logger.error('No trace loaded')
+        ssp_exit(1)
     return st
