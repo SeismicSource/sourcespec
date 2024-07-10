@@ -20,14 +20,20 @@ from datetime import datetime
 import yaml
 from obspy import UTCDateTime
 from obspy import read_events
+from .config import config
 from .ssp_setup import ssp_exit
 from .ssp_event import SSPEvent
 from .ssp_pick import SSPPick
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-def parse_qml(config):
-    """Parse event metadata and picks from a QuakeML file."""
+def parse_qml():
+    """
+    Parse event metadata and picks from a QuakeML file.
+
+    :return: a tuple of (SSPEvent, picks)
+    :rtype: tuple
+    """
     ssp_event = None
     picks = []
     qml_file = config.options.qml_file
@@ -76,6 +82,17 @@ def parse_qml(config):
 
 
 def _get_event_from_qml(qml_file, event_id=None):
+    """
+    Get an event from a QuakeML file.
+
+    :param qml_file: QuakeML file
+    :type qml_file: str
+    :param event_id: event id
+    :type event_id: str
+
+    :return: QuakeML event
+    :rtype: obspy.core.event.Event
+    """
     cat = read_events(qml_file)
     if event_id is not None:
         _qml_events = [ev for ev in cat if event_id in str(ev.resource_id)]
@@ -98,7 +115,10 @@ def _get_evid_from_resource_id(resource_id):
     Get evid from resource_id.
 
     :param resource_id: resource_id string
+    :type resource_id: str
+
     :returns: evid string
+    :rtype: str
     """
     evid = resource_id
     if '/' in evid:
@@ -115,6 +135,19 @@ def _get_evid_from_resource_id(resource_id):
 def _parse_qml_event(
         qml_event,
         parse_event_name_from_description=False, event_description_regex=None):
+    """
+    Parse event metadata from a QuakeML event.
+
+    :param qml_event: QuakeML event
+    :type qml_event: obspy.core.event.Event
+    :param parse_event_name_from_description: parse event name from description
+    :type parse_event_name_from_description: bool
+    :param event_description_regex: regex to extract event name
+    :type event_description_regex: str
+
+    :return: SSPEvent object
+    :rtype: SSPEvent
+    """
     ssp_event = SSPEvent()
     ssp_event.event_id = _get_evid_from_resource_id(
         str(qml_event.resource_id.id))
@@ -146,18 +179,42 @@ def _parse_qml_event(
 
 
 def _parse_magnitude_from_qml_event(qml_event, ssp_event):
+    """
+    Parse magnitude from a QuakeML event.
+
+    :param qml_event: QuakeML event
+    :type qml_event: obspy.core.event.Event
+    :param ssp_event: SSPEvent object
+    :type ssp_event: SSPEvent
+    """
     mag = qml_event.preferred_magnitude() or qml_event.magnitudes[0]
     ssp_event.magnitude.value = mag.mag
     ssp_event.magnitude.mag_type = mag.magnitude_type
 
 
 def _parse_scalar_moment_from_qml_event(qml_event, ssp_event):
+    """
+    Parse scalar moment from a QuakeML event.
+
+    :param qml_event: QuakeML event
+    :type qml_event: obspy.core.event.Event
+    :param ssp_event: SSPEvent object
+    :type ssp_event: SSPEvent
+    """
     fm = qml_event.preferred_focal_mechanism() or qml_event.focal_mechanisms[0]
     ssp_event.scalar_moment.value = fm.moment_tensor.scalar_moment
     ssp_event.scalar_moment.units = 'N-m'
 
 
 def _parse_moment_tensor_from_qml_event(qml_event, ssp_event):
+    """
+    Parse moment tensor from a QuakeML event.
+
+    :param qml_event: QuakeML event
+    :type qml_event: obspy.core.event.Event
+    :param ssp_event: SSPEvent object
+    :type ssp_event: SSPEvent
+    """
     fm = qml_event.preferred_focal_mechanism() or qml_event.focal_mechanisms[0]
     mt = fm.moment_tensor.tensor
     ssp_event.moment_tensor.m_rr = mt.m_rr
@@ -170,6 +227,14 @@ def _parse_moment_tensor_from_qml_event(qml_event, ssp_event):
 
 
 def _parse_focal_mechanism_from_qml_event(qml_event, ssp_event):
+    """
+    Parse focal mechanism from a QuakeML event.
+
+    :param qml_event: QuakeML event
+    :type qml_event: obspy.core.event.Event
+    :param ssp_event: SSPEvent object
+    :type ssp_event: SSPEvent
+    """
     fm = qml_event.focal_mechanisms[0]
     nodal_plane = fm.nodal_planes.nodal_plane_1
     ssp_event.focal_mechanism.strike = nodal_plane.strike
@@ -178,6 +243,17 @@ def _parse_focal_mechanism_from_qml_event(qml_event, ssp_event):
 
 
 def _parse_picks_from_qml_event(ev, origin):
+    """
+    Parse picks from a QuakeML event.
+
+    :param ev: QuakeML event
+    :type ev: obspy.core.event.Event
+    :param origin: QuakeML origin object
+    :type origin: obspy.core.event.Origin
+
+    :return: list of SSPPick objects
+    :rtype: list
+    """
     picks = []
     for pck in ev.picks:
         pick = SSPPick()
@@ -219,9 +295,12 @@ def _parse_hypo71_hypocenter(hypo_file, _):
     Parse a hypo71 hypocenter file.
 
     :param hypo_file: path to hypo71 hypocenter file
+    :type hypo_file: str
     :param _: unused (for consistency with other parsers)
+    :type _: None
 
     :return: a tuple of (SSPEvent, picks)
+    :rtype: tuple
     """
     with open(hypo_file, encoding='ascii') as fp:
         line = fp.readline()
@@ -257,6 +336,15 @@ def _parse_hypo71_hypocenter(hypo_file, _):
 
 
 def _parse_hypo2000_hypo_line(line):
+    """
+    Parse a line from a hypo2000 hypocenter file.
+
+    :param line: line from hypo2000 hypocenter file
+    :type line: str
+
+    :return: SSPEvent object
+    :rtype: SSPEvent
+    """
     word = line.split()
     ssp_event = SSPEvent()
     hypo = ssp_event.hypocenter
@@ -308,6 +396,19 @@ def _parse_hypo2000_hypo_line(line):
 
 
 def _parse_hypo2000_station_line(line, oldpick, origin_time):
+    """
+    Parse a line from a hypo2000 station file.
+
+    :param line: line from hypo2000 station file
+    :type line: str
+    :param oldpick: previous pick
+    :type oldpick: SSPPick
+    :param origin_time: origin time
+    :type origin_time: UTCDateTime
+
+    :return: SSPPick object
+    :rtype: SSPPick
+    """
     if oldpick is not None:
         oldstation = oldpick.station
         oldnetwork = oldpick.network
@@ -341,9 +442,12 @@ def _parse_hypo2000_file(hypo_file, _):
     Parse a hypo2000 hypocenter file.
 
     :param hypo_file: path to hypo2000 hypocenter file
+    :type hypo_file: str
     :param _: unused (for consistency with other parsers)
+    :type _: None
 
     :return: a tuple of (SSPEvent, picks)
+    :rtype: tuple
     """
     ssp_event = None
     picks = []
@@ -391,9 +495,12 @@ def _parse_source_spec_event_file(event_file, event_id=None):
     Parse a SourceSpec Event File, which is a YAML file.
 
     :param event_file: path to SourceSpec event file
+    :type event_file: str
     :param evid: event id
+    :type evid: str
 
     :return: SSPEvent object
+    :rtype: SSPEvent
     """
     try:
         with open(event_file, encoding='utf-8') as fp:
@@ -452,10 +559,13 @@ def parse_hypo_file(hypo_file, event_id=None):
     """
     Parse a SourceSpec Event File, hypo71 or hypo2000 hypocenter file.
 
-    :param hypo_file:
-        Path to the hypocenter file.
-    :returns:
-        A tuple of (SSPEvent, picks, format).
+    :param hypo_file: Path to the hypocenter file.
+    :type hypo_file: str
+    :param event_id: Event ID.
+    :type event_id: str
+
+    :return: A tuple of (SSPEvent, picks, format).
+    :rtype: tuple
     """
     if not os.path.exists(hypo_file):
         logger.error(f'{hypo_file}: No such file or directory')
@@ -488,6 +598,14 @@ def parse_hypo_file(hypo_file, event_id=None):
 
 
 def _is_hypo71_picks(pick_file):
+    """
+    Check if a file is a hypo71 phase file.
+
+    :param pick_file: path to hypo71 phase file
+    :type pick_file: str
+
+    :raises TypeError: if the file is not a hypo71 phase file
+    """
     with open(pick_file, encoding='ascii') as fp:
         for line in fp:
             # remove newline
@@ -505,13 +623,15 @@ def _is_hypo71_picks(pick_file):
                 raise TypeError(f'{pick_file}: Not a hypo71 phase file')
 
 
-def _correct_station_name(station, config):
+def _correct_station_name(station):
     """
     Correct station name, based on a traceid map.
 
     :param station: station name
+    :type station: str
 
     :return: corrected station name
+    :rtype: str
     """
     if config.TRACEID_MAP is None:
         return station
@@ -526,13 +646,12 @@ def _correct_station_name(station, config):
     return traceid.split('.')[1]
 
 
-def parse_hypo71_picks(config):
+def parse_hypo71_picks():
     """
     Parse hypo71 picks file
 
-    :param config: Config object
-
     :return: list of SSPPick objects
+    :rtype: list
     """
     picks = []
     pick_file = config.options.pick_file
@@ -560,7 +679,7 @@ def parse_hypo71_picks(config):
                 continue
             pick = SSPPick()
             pick.station = line[:4].strip()
-            pick.station = _correct_station_name(pick.station, config)
+            pick.station = _correct_station_name(pick.station)
             pick.flag = line[4:5]
             pick.phase = line[5:6]
             pick.polarity = line[6:7]

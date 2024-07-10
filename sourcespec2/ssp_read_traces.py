@@ -125,7 +125,7 @@ def _add_inventory(trace, inventory):
             coords = inv.get_coordinates(trace.id, trace.stats.starttime)
         paz = PAZ()
         paz.seedID = trace.id
-        paz.sensitivity = compute_sensitivity_from_SAC(trace, config)
+        paz.sensitivity = compute_sensitivity_from_SAC(trace)
         paz.poles = []
         paz.zeros = []
         if inv:
@@ -461,10 +461,10 @@ def read_traces():
         config.hypo_file_format = file_format
     # parse pick file
     if config.options.pick_file is not None:
-        picks = parse_hypo71_picks(config)
+        picks = parse_hypo71_picks()
     # parse QML file
     if config.options.qml_file is not None:
-        ssp_event, picks = parse_qml(config)
+        ssp_event, picks = parse_qml()
     if ssp_event is not None:
         _log_event_info(ssp_event)
 
