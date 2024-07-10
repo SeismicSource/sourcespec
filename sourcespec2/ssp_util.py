@@ -18,6 +18,7 @@ from obspy.signal.invsim import cosine_taper as _cos_taper
 from obspy.geodetics import gps2dist_azimuth, kilometers2degrees
 from obspy.taup import TauPyModel
 from ._version import get_versions
+from .config import config
 model = TauPyModel(model='iasp91')
 v_model = model.model.s_mod.v_mod
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
@@ -100,20 +101,17 @@ class MediumProperties():
     :type lat: float
     :param depth_in_km: Depth (km).
     :type depth_in_km: float
-    :param config: Configuration object.
-    :type config: :class:`~sourcespec.config.Config`
     """
 
     _logged_messages = set()  # Class variable shared across all instances
 
-    def __init__(self, lon, lat, depth_in_km, config):
+    def __init__(self, lon, lat, depth_in_km):
         """
         Initialize the MediumProperties object.
         """
         self.lon = lon
         self.lat = lat
         self.depth_in_km = depth_in_km
-        self.config = config
 
     def _log_once(self, message):
         """
@@ -177,8 +175,8 @@ class MediumProperties():
         :return: Property value or None.
         :rtype: float or None
         """
-        general_values = getattr(self.config, mproperty)
-        general_depths = getattr(self.config, 'layer_top_depths', None)
+        general_values = getattr(config, mproperty)
+        general_depths = getattr(config, 'layer_top_depths', None)
         value = self._get_layered_property_value(
             general_values, general_depths)
         if value is not None:
@@ -201,8 +199,8 @@ class MediumProperties():
             raise ValueError(f'Invalid property: {mproperty}')
         # 1) Try source-specific parameters (with optional source-specific
         #    layering depths).
-        source_values = self.config[f'{mproperty}_source']
-        source_depths = getattr(self.config, 'layer_top_depths_source', None)
+        source_values = config[f'{mproperty}_source']
+        source_depths = getattr(config, 'layer_top_depths_source', None)
         value = self._get_layered_property_value(source_values, source_depths)
         if value is not None:
             return value
@@ -222,7 +220,7 @@ class MediumProperties():
         if mproperty not in ('vp', 'vs', 'rho'):
             raise ValueError(f'Invalid property: {mproperty}')
         # 1) Try station-specific scalar parameter (no layering at stations).
-        value = self.config[f'{mproperty}_stations']
+        value = config[f'{mproperty}_stations']
         if value is not None:
             return value
         # 2) Fallback to general parameters (layered, depth-dependent).
@@ -241,7 +239,7 @@ class MediumProperties():
         # pylint: disable=import-outside-toplevel
         from nllgrid import NLLGrid
         grdfile = f'*.{wave}.mod.hdr'
-        grdfile = os.path.join(self.config.NLL_model_dir, grdfile)
+        grdfile = os.path.join(config.NLL_model_dir, grdfile)
         try:
             grdfile = glob(grdfile)[0]
         except IndexError as e:
@@ -314,7 +312,7 @@ class MediumProperties():
         else:
             raise ValueError(f'Invalid location: {where}')
         if (
-            self.config.NLL_model_dir is not None
+            config.NLL_model_dir is not None
             and mproperty in ['vp', 'vs']
         ):
             wave = 'P' if mproperty == 'vp' else 'S'
