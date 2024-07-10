@@ -95,7 +95,7 @@ class _Config(dict):
         self['workdir'] = os.getcwd()
         # SEED standard instrument codes:
         # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
-        self['INSTR_CODES_VEL'] = ['H', 'L']
+        self['INSTR_CODES_VEL'] = ['H', 'L', 'P']
         self['INSTR_CODES_ACC'] = ['N', ]
         # Initialize config object to the default values
         configspec = parse_configspec()
