@@ -17,6 +17,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
 from matplotlib.collections import LineCollection
+from .config import config
 from .ssp_util import moment_to_mag, mag_to_moment
 from .ssp_spectral_model import spectral_model
 from .savefig import savefig
@@ -28,10 +29,39 @@ mpl_logger.setLevel(logging.WARNING)
 
 
 def _spectral_model_moment(freq, Mw, fc, t_star):
+    """
+    Compute spectral model in moment units.
+
+    :param freq: Frequency array
+    :type freq: :class:`numpy.ndarray`
+    :param Mw: Moment magnitude
+    :type Mw: float
+    :param fc: Corner frequency
+    :type fc: float
+    :param t_star: Attenuation parameter
+    :type t_star: float
+
+    :return: Spectral model in moment units
+    :rtype: :class:`numpy.ndarray`
+    """
     return mag_to_moment(spectral_model(freq, Mw=Mw, fc=fc, t_star=t_star))
 
 
 def _summary_synth_spec(sspec_output, fmin, fmax):
+    """
+    Compute synthetic spectrum for summary parameters.
+
+    :param sspec_output: Output of spectral inversion
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    :param fmin: Minimum frequency
+    :type fmin: float
+    :param fmax: Maximum frequency
+    :type fmax: float
+
+    :return: Frequency array, synthetic spectrum, synthetic spectrum without
+        attenuation, synthetic spectrum without corner frequency
+    :rtype: tuple of :class:`numpy.ndarray`
+    """
     npts = 100
     freq = np.logspace(np.log10(fmin), np.log10(fmax), npts)
     summary_values = sspec_output.reference_values()
@@ -44,7 +74,14 @@ def _summary_synth_spec(sspec_output, fmin, fmax):
     return freq, synth_model, synth_model_no_att, synth_model_no_fc
 
 
-def _make_fig(config):
+def _make_fig():
+    """
+    Create figure and axes for stacked spectra plot.
+
+    :return: Figure and axes
+    :rtype: tuple of :class:`matplotlib.figure.Figure`,
+        :class:`matplotlib.axes.Axes`
+    """
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
     figsize = (7, 7)
     dpi = (
@@ -59,6 +96,16 @@ def _make_fig(config):
 
 
 def _plot_fc_and_mw(sspec_output, ax, ax2):
+    """
+    Plot corner frequency and moment magnitude on the axes.
+
+    :param sspec_output: Output of spectral inversion
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    :param ax: Axes for stacked spectra plot
+    :type ax: :class:`matplotlib.axes.Axes`
+    :param ax2: Axes for magnitude plot
+    :type ax2: :class:`matplotlib.axes.Axes`
+    """
     fc = sspec_output.reference_values()['fc']
     fc_err_left, fc_err_right = sspec_output.reference_uncertainties()['fc']
     fc_min = fc - fc_err_left
@@ -75,6 +122,15 @@ def _plot_fc_and_mw(sspec_output, ax, ax2):
 
 
 def _make_ax2(ax):
+    """
+    Create a second y-axis for magnitude units.
+
+    :param ax: Axes for stacked spectra plot
+    :type ax: :class:`matplotlib.axes.Axes`
+
+    :return: Axes for magnitude units
+    :rtype: :class:`matplotlib.axes.Axes`
+    """
     ax2 = ax.twinx()
     # Move ax2 below ax
     ax.zorder = 2
@@ -90,6 +146,15 @@ def _make_ax2(ax):
 
 
 def _nspectra_text(spec_list):
+    """
+    Return text for the number of spectra.
+
+    :param spec_list: List of spectra
+    :type spec_list: list
+
+    :return: Text for the number of spectra
+    :rtype: str
+    """
     nspectra = len(spec_list)
     return (
         'Inverted spectrum'
@@ -99,6 +164,14 @@ def _nspectra_text(spec_list):
 
 
 def _summary_params_text(sspec_output, ax):
+    """
+    Add summary parameters to the plot.
+
+    :param sspec_output: Output of spectral inversion
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    :param ax: Axes for stacked spectra plot
+    :type ax: :class:`matplotlib.axes.Axes`
+    """
     summary_values = sspec_output.reference_values()
     summary_uncertainties = sspec_output.reference_uncertainties()
     Mo_value = summary_values['Mo']
@@ -141,7 +214,13 @@ def _summary_params_text(sspec_output, ax):
         path_effects=path_effects)
 
 
-def _add_title(config, ax):
+def _add_title(ax):
+    """
+    Add event information as a title to the plot.
+
+    :param ax: Axes for stacked spectra plot
+    :type ax: :class:`matplotlib.axes.Axes`
+    """
     # Add event information as a title
     evid = config.event.event_id
     hypo = config.event.hypocenter
@@ -160,8 +239,13 @@ def _add_title(config, ax):
         ha='left', va='top', transform=ax.transAxes)
 
 
-def _add_code_author(config, ax):
-    # Add code and author information to the figure bottom
+def _add_code_author(ax):
+    """
+    Add code and author information to the figure bottom.
+
+    :param ax: Axes for stacked spectra plot
+    :type ax: :class:`matplotlib.axes.Axes`
+    """
     textstr = (
         f'SourceSpec v{get_versions()["version"]} '
         f'- {config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")} '
@@ -188,7 +272,13 @@ def _add_code_author(config, ax):
         ha='right', va='top', transform=ax.transAxes)
 
 
-def _savefig(config, fig):
+def _savefig(fig):
+    """
+    Save figure to file.
+
+    :param fig: Figure to save
+    :type fig: :class:`matplotlib.figure.Figure`
+    """
     evid = config.event.event_id
     figfile_base = os.path.join(config.options.outdir, evid)
     figfile_base += '.stacked_spectra.'
@@ -214,9 +304,16 @@ def _truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
     )
 
 
-def plot_stacked_spectra(config, spec_st, weight_st, sspec_output):
+def plot_stacked_spectra(spec_st, weight_st, sspec_output):
     """
     Plot stacked spectra, along with summary inverted spectrum.
+
+    :param spec_st: Stream of spectra
+    :type spec_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    :param weight_st: Stream of spectral weights
+    :type weight_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    :param sspec_output: Output of spectral inversion
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
     """
     # Check config, if we need to plot at all
     if not config.plot_show and not config.plot_save:
@@ -229,7 +326,7 @@ def plot_stacked_spectra(config, spec_st, weight_st, sspec_output):
         and not spec.stats.ignore
     ]
     # plotting
-    fig, ax = _make_fig(config)
+    fig, ax = _make_fig()
     ax.set_xscale('log')
     ax.set_yscale('log')
     cmap = matplotlib.colors.LinearSegmentedColormap.from_list(
@@ -324,6 +421,6 @@ def plot_stacked_spectra(config, spec_st, weight_st, sspec_output):
     ax2 = _make_ax2(ax)
     _plot_fc_and_mw(sspec_output, ax, ax2)
     _summary_params_text(sspec_output, ax)
-    _add_title(config, ax)
-    _add_code_author(config, ax)
-    _savefig(config, fig)
+    _add_title(ax)
+    _add_code_author(ax)
+    _savefig(fig)
