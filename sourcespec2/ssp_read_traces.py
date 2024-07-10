@@ -148,7 +148,7 @@ def _add_inventory(trace, inventory):
                 ) from e
             # if it fails, try to evaluate it as a string containing
             # a combination of SAC header fields
-            paz.sensitivity = compute_sensitivity_from_SAC(trace, config)
+            paz.sensitivity = compute_sensitivity_from_SAC(trace)
         paz.poles = []
         paz.zeros = []
         if inv:
@@ -515,10 +515,10 @@ def read_traces():
         config.hypo_file_format = file_format
     # parse pick file
     if config.options.pick_file is not None:
-        picks = parse_hypo71_picks(config)
+        picks = parse_hypo71_picks()
     # parse QML file
     if config.options.qml_file is not None:
-        ssp_event, picks = parse_qml(config)
+        ssp_event, picks = parse_qml()
     if ssp_event is not None:
         override_event_depth(ssp_event, depth_override)
         _log_event_info(ssp_event)
