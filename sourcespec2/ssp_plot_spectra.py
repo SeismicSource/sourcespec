@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.patheffects as PathEffects
 from .spectrum import SpectrumStream
+from .config import config
 from .ssp_util import spec_minmax, moment_to_mag, mag_to_moment
 from .savefig import savefig
 from ._version import get_versions
@@ -61,7 +62,7 @@ class PlotParams():
         self.axes = []
         self.ax0 = None
 
-    def set_plot_params(self, config, spec_st, specnoise_st):
+    def set_plot_params(self, spec_st, specnoise_st):
         """Determine the number of plots and axes min and max."""
         nplots = 0
         moment_minmax = None
@@ -97,7 +98,18 @@ class PlotParams():
         self.moment_minmax = moment_minmax
 
 
-def _make_fig(config, plot_params):
+def _make_fig(plot_params):
+    """
+    Create a new figure and axes for plotting spectra.
+
+    The number of lines and columns is determined by the number of spectra.
+    The number of lines is limited to `config.plot_spectra_maxrows`.
+
+    Figure is appended to `plot_params.figures`.
+
+    :param plot_params: PlotParams object
+    :type plot_params: PlotParams
+    """
     nlines = plot_params.nlines
     ncols = plot_params.ncols
     stack_plots = plot_params.stack_plots
@@ -197,7 +209,17 @@ SAVED_FIGURE_CODES = []
 BBOX = None
 
 
-def _savefig(config, plottype, figures, force_numbering=False):
+def _savefig(plottype, figures, force_numbering=False):
+    """
+    Save the figure(s) to a file.
+
+    :param plottype: Type of plot ('regular' or 'weight')
+    :type plottype: str
+    :param figures: List of figures
+    :type figures: list
+    :param force_numbering: Force numbering of the figures
+    :type force_numbering: bool
+    """
     global BBOX  # pylint: disable=global-statement
     evid = config.event.event_id
     if plottype == 'regular':
@@ -249,6 +271,9 @@ def _add_labels(plot_params):
     Add xlabels to the last row plots.
 
     Add ylabels to the first and last columns.
+
+    :param plot_params: PlotParams object
+    :type plot_params: PlotParams
     """
     plotn = plot_params.plotn
     ncols = plot_params.ncols
@@ -286,7 +311,19 @@ def _add_labels(plot_params):
         ax2.set_ylabel('Magnitude')
 
 
-def _color_lines(config, orientation, plotn, stack_plots):
+def _color_lines(orientation, plotn, stack_plots):
+    """
+    Determine the color, linestyle, and linewidth for the plot.
+
+    :param orientation: Channel code
+    :type orientation: str
+    :param plotn: Plot number
+    :type plotn: int
+    :param stack_plots: Stack plots
+    :type stack_plots: bool
+    :return: Color, linestyle, linewidth
+    :rtype: tuple
+    """
     if orientation in config.vertical_channel_codes:
         color = 'purple'
         linestyle = 'solid'
@@ -331,7 +368,17 @@ def _color_lines(config, orientation, plotn, stack_plots):
     return color, linestyle, linewidth
 
 
-def _add_legend(config, plot_params, spec_st, specnoise_st):
+def _add_legend(plot_params, spec_st, specnoise_st):
+    """
+    Add a legend to the plot.
+
+    :param plot_params: PlotParams object
+    :type plot_params: PlotParams
+    :param spec_st: Stream of spectra
+    :type spec_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    :param specnoise_st: Stream of noise spectra
+    :type specnoise_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    """
     stack_plots = plot_params.stack_plots
     plot_type = plot_params.plot_type
     ax0 = plot_params.ax0
@@ -342,8 +389,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
     if 'H' in channel_codes:
         ncol0 += 1
         orientation = 'H'
-        color, linestyle, linewidth =\
-            _color_lines(config, orientation, 0, stack_plots)
+        color, linestyle, linewidth = _color_lines(orientation, 0, stack_plots)
         linewidth = 2
         if plot_type == 'weight':
             label = 'Weight'
@@ -357,8 +403,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
     if 'h' in channel_codes:
         ncol0 += 1
         orientation = 'h'
-        color, linestyle, linewidth =\
-            _color_lines(config, orientation, 0, stack_plots)
+        color, linestyle, linewidth = _color_lines(orientation, 0, stack_plots)
         linewidth = 2
         label = 'RSS, uncorr.'
         _h, = ax0.plot(range(2), linestyle=linestyle, linewidth=linewidth,
@@ -369,8 +414,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
     if len(Z_codes) > 0:
         ncol0 += 1
         orientation = Z_codes[0]
-        color, linestyle, linewidth =\
-            _color_lines(config, orientation, 0, stack_plots)
+        color, linestyle, linewidth = _color_lines(orientation, 0, stack_plots)
         linewidth = 2
         label = ', '.join(Z_codes)
         _h, = ax0.plot(range(2), linestyle=linestyle, linewidth=linewidth,
@@ -381,8 +425,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
     if len(H1_codes) > 0:
         ncol0 += 1
         orientation = H1_codes[0]
-        color, linestyle, linewidth =\
-            _color_lines(config, orientation, 0, stack_plots)
+        color, linestyle, linewidth = _color_lines(orientation, 0, stack_plots)
         linewidth = 2
         label = ', '.join(H1_codes)
         _h, = ax0.plot(range(2), linestyle=linestyle, linewidth=linewidth,
@@ -393,8 +436,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
     if len(H2_codes) > 0:
         ncol0 += 1
         orientation = H2_codes[0]
-        color, linestyle, linewidth =\
-            _color_lines(config, orientation, 0, stack_plots)
+        color, linestyle, linewidth = _color_lines(orientation, 0, stack_plots)
         linewidth = 2
         label = ', '.join(H2_codes)
         _h, = ax0.plot(range(2), linestyle=linestyle, linewidth=linewidth,
@@ -417,8 +459,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
     if 'S' in channel_codes:
         ncol1 += 1
         orientation = 'S'
-        color, linestyle, linewidth =\
-            _color_lines(config, orientation, 0, stack_plots)
+        color, linestyle, linewidth = _color_lines(orientation, 0, stack_plots)
         linewidth = 2
         label = 'Brune fit'
         _h, = ax1.plot(range(2), linestyle=linestyle, linewidth=linewidth,
@@ -427,8 +468,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
     if 's' in channel_codes:
         ncol1 += 1
         orientation = 's'
-        color, linestyle, linewidth =\
-            _color_lines(config, orientation, 0, stack_plots)
+        color, linestyle, linewidth = _color_lines(orientation, 0, stack_plots)
         linewidth = 2
         label = 'Brune fit no attenuation'
         _h, = ax1.plot(range(2), linestyle=linestyle, linewidth=linewidth,
@@ -437,8 +477,7 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
     if 't' in channel_codes:
         ncol1 += 1
         orientation = 't'
-        color, linestyle, linewidth =\
-            _color_lines(config, orientation, 0, stack_plots)
+        color, linestyle, linewidth = _color_lines(orientation, 0, stack_plots)
         linewidth = 2
         label = 'Brune fit no fc'
         _h, = ax1.plot(range(2), linestyle=linestyle, linewidth=linewidth,
@@ -459,6 +498,19 @@ def _add_legend(config, plot_params, spec_st, specnoise_st):
 
 
 def _snratio_text(spec, ax, color, path_effects):
+    """
+    Add the spectral S/N ratio to the plot.
+
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param ax: Axes object
+    :type ax: :class:`matplotlib.axes.Axes`
+    :param color: Color
+    :type color: str
+    :param path_effects: Path effects
+    :type path_effects: list of
+        :class:`matplotlib.patheffects.AbstractPathEffect`
+    """
     global SNRATIO_TEXT_YPOS  # pylint: disable=global-statement
     if spec.stats.spectral_snratio is None:
         return
@@ -473,6 +525,21 @@ def _snratio_text(spec, ax, color, path_effects):
 
 
 def _station_text(spec, ax, color, path_effects, stack_plots):
+    """
+    Add station information to the plot.
+
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param ax: Axes object
+    :type ax: :class:`matplotlib.axes.Axes`
+    :param color: Color
+    :type color: str
+    :param path_effects: Path effects
+    :type path_effects: list of
+        :class:`matplotlib.patheffects.AbstractPathEffect`
+    :param stack_plots: Stack plots
+    :type stack_plots: bool
+    """
     station_text = f'{spec.id[:-1]} {spec.stats.instrtype}'
     if not stack_plots:
         color = 'black'
@@ -491,6 +558,21 @@ def _station_text(spec, ax, color, path_effects, stack_plots):
 
 
 def _ignore_text(spec, ax, color, path_effects, stack_plots):
+    """
+    Add ignore reason to the plot.
+
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param ax: Axes object
+    :type ax: :class:`matplotlib.axes.Axes`
+    :param color: Color
+    :type color: str
+    :param path_effects: Path effects
+    :type path_effects: list of
+        :class:`matplotlib.patheffects.AbstractPathEffect`
+    :param stack_plots: Stack plots
+    :type stack_plots: bool
+    """
     ignore_text = spec.stats.ignore_reason
     if not stack_plots:
         color = 'black'
@@ -507,6 +589,21 @@ def _ignore_text(spec, ax, color, path_effects, stack_plots):
 
 
 def _params_text(spec, ax, color, path_effects, stack_plots):
+    """
+    Add spectral parameters to the plot.
+
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param ax: Axes object
+    :type ax: :class:`matplotlib.axes.Axes`
+    :param color: Color
+    :type color: str
+    :param path_effects: Path effects
+    :type path_effects: list of
+        :class:`matplotlib.patheffects.AbstractPathEffect`
+    :param stack_plots: Stack plots
+    :type stack_plots: bool
+    """
     global STATION_TEXT_YPOS  # pylint: disable=global-statement
     if stack_plots:
         params_text_ypos = STATION_TEXT_YPOS - 0.04
@@ -579,6 +676,16 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
 
 
 def _plot_fc_and_mw(spec, ax, ax2):
+    """
+    Plot corner frequency and moment magnitude lines.
+
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param ax: Axes object (moment units)
+    :type ax: :class:`matplotlib.axes.Axes`
+    :param ax2: Axes object (magnitude units)
+    :type ax2: :class:`matplotlib.axes.Axes`
+    """
     fc = spec.stats.par['fc']
     Mw = spec.stats.par['Mw']
     if 'par_err' in spec.stats.keys():
@@ -595,8 +702,17 @@ def _plot_fc_and_mw(spec, ax, ax2):
     ax.axvline(fc, color='#999999', linewidth=2., zorder=1)
 
 
-def _plot_spec(config, plot_params, spec, spec_noise):
-    """Plot one spectrum (and its associated noise)."""
+def _plot_spec(plot_params, spec, spec_noise):
+    """
+    Plot one spectrum (and its associated noise).
+
+    :param plot_params: PlotParams object
+    :type plot_params: PlotParams
+    :param spec: Spectrum object
+    :type spec: :class:`~sourcespec.spectrum.Spectrum`
+    :param spec_noise: Noise spectrum object
+    :type spec_noise: :class:`~sourcespec.spectrum.Spectrum`
+    """
     plotn = plot_params.plotn
     plot_type = plot_params.plot_type
     stack_plots = plot_params.stack_plots
@@ -605,8 +721,7 @@ def _plot_spec(config, plot_params, spec, spec_noise):
     orientation = spec.stats.channel[-1]
     # Path effect to contour text in white
     path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
-    color, linestyle, linewidth =\
-        _color_lines(config, orientation, plotn, stack_plots)
+    color, linestyle, linewidth = _color_lines(orientation, plotn, stack_plots)
     # dim out ignored spectra, make invisible spectra not to be plotted
     alpha = 1.0
     if spec.stats.ignore:
@@ -648,8 +763,19 @@ def _plot_spec(config, plot_params, spec, spec_noise):
     _station_text(spec, ax, color, path_effects, stack_plots)
 
 
-def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
-    """Plot all spectra having the same specid."""
+def _plot_specid(plot_params, specid, spec_st, specnoise_st):
+    """
+    Plot all spectra having the same specid.
+
+    :param plot_params: PlotParams object
+    :type plot_params: PlotParams
+    :param specid: Band+instrument code
+    :type specid: str
+    :param spec_st: Stream of spectra
+    :type spec_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    :param specnoise_st: Stream of noise spectra
+    :type specnoise_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    """
     plotn = plot_params.plotn + 1
     nlines = plot_params.nlines
     ncols = plot_params.ncols
@@ -660,7 +786,7 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
     if plotn > nlines * ncols:
         # Add labels and legend before making a new figure
         _add_labels(plot_params)
-        _add_legend(config, plot_params, spec_st, specnoise_st)
+        _add_legend(plot_params, spec_st, specnoise_st)
         if (
             config.plot_save_asap and
             config.plot_save and not config.plot_show and
@@ -668,9 +794,9 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
         ):
             # save figure here to free up memory
             _savefig(
-                config, plot_params.plot_type, plot_params.figures,
+                plot_params.plot_type, plot_params.figures,
                 force_numbering=True)
-        _make_fig(config, plot_params)
+        _make_fig(plot_params)
         plotn = 1
     plot_params.plotn = plotn
     special_orientations = ['S', 's', 't', 'H', 'h']
@@ -709,15 +835,27 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
             specid = spec.get_id()
             with contextlib.suppress(Exception):
                 spec_noise = specnoise_st.select(id=specid)[0]
-        _plot_spec(config, plot_params, spec, spec_noise)
+        _plot_spec(plot_params, spec, spec_noise)
 
 
-def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
+def plot_spectra(spec_st, specnoise_st=None, ncols=None,
                  stack_plots=False, plot_type='regular'):
     """
     Plot spectra for signal and noise.
 
     Display to screen and/or save to file.
+
+    :param spec_st: Stream of spectra
+    :type spec_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    :param specnoise_st: Stream of noise spectra (optional)
+    :type specnoise_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    :param ncols: Number of columns in the plot. If None, it is automatically
+        determined based on the number of spectra.
+    :type ncols: int
+    :param stack_plots: If True, stack the plots vertically in the same figure.
+    :type stack_plots: bool
+    :param plot_type: Type of plot: 'regular' (default), 'weight'.
+    :type plot_type: str
     """
     # Check config, if we need to plot at all
     if not config.plot_show and not config.plot_save:
@@ -738,8 +876,8 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
     plot_params.plot_type = plot_type
     plot_params.stack_plots = stack_plots
     plot_params.ncols = ncols
-    plot_params.set_plot_params(config, spec_st, specnoise_st)
-    _make_fig(config, plot_params)
+    plot_params.set_plot_params(spec_st, specnoise_st)
+    _make_fig(plot_params)
 
     # Plot!
     if config.plot_spectra_ignored:
@@ -751,11 +889,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
             if not sp.stats.ignore
         })
     for _, specid in stalist:
-        _plot_specid(config, plot_params, specid, spec_st, specnoise_st)
+        _plot_specid(plot_params, specid, spec_st, specnoise_st)
 
     # Add labels and legend for the last figure
     _add_labels(plot_params)
-    _add_legend(config, plot_params, spec_st, specnoise_st)
+    _add_legend(plot_params, spec_st, specnoise_st)
     # Turn off the unused axes
     for ax, ax2 in plot_params.axes[plot_params.plotn:]:
         ax.set_axis_off()
@@ -765,4 +903,4 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
     if config.plot_show:
         plt.show()
     if config.plot_save:
-        _savefig(config, plot_type, plot_params.figures)
+        _savefig(plot_type, plot_params.figures)
