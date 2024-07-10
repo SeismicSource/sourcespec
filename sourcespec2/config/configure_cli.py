@@ -26,10 +26,6 @@ from .configobj import ConfigObj
 from .configobj.validate import Validator
 from ..ssp_update_db import update_db_file
 
-# TODO: remove these when the global config object will be implemented
-INSTR_CODES_VEL = []
-INSTR_CODES_ACC = []
-
 
 def _write_sample_config(configspec, progname):
     """
@@ -325,12 +321,6 @@ def configure_cli(options=None, progname='source_spec', config_overrides=None):
             library_versions.check_nllgrid_version()
         except ImportError as err:
             sys.exit(err)
-
-    # TODO: remove these when the global config object will be implemented
-    global INSTR_CODES_VEL
-    global INSTR_CODES_ACC
-    INSTR_CODES_VEL = config.INSTR_CODES_VEL
-    INSTR_CODES_ACC = config.INSTR_CODES_ACC
 
     _init_traceid_map()
     _init_plotting()
