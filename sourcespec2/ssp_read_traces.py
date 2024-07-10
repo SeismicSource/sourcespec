@@ -310,7 +310,7 @@ def _hypo_vel(hypo):
     :type hypo: :class:`sourcespec.ssp_event.Hypocenter`
     """
     medium_properties = MediumProperties(
-        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, config)
+        hypo.longitude, hypo.latitude, hypo.depth.value_in_km)
     hypo.vp = medium_properties.get(mproperty='vp', where='source')
     hypo.vs = medium_properties.get(mproperty='vs', where='source')
     hypo.rho = medium_properties.get(mproperty='rho', where='source')

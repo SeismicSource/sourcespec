@@ -17,6 +17,7 @@ import numpy as np
 from obspy.signal.invsim import cosine_taper as _cos_taper
 from obspy.geodetics import gps2dist_azimuth, kilometers2degrees
 from obspy.taup import TauPyModel
+from .config import config
 model = TauPyModel(model='iasp91')
 v_model = model.model.s_mod.v_mod
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
@@ -64,15 +65,12 @@ class MediumProperties():
     :type lat: float
     :param depth_in_km: Depth (km).
     :type depth_in_km: float
-    :param config: Configuration object.
-    :type config: :class:`~sourcespec.config.Config`
     """
 
-    def __init__(self, lon, lat, depth_in_km, config):
+    def __init__(self, lon, lat, depth_in_km):
         self.lon = lon
         self.lat = lat
         self.depth_in_km = depth_in_km
-        self.config = config
 
     def get_from_config_param_source(self, mproperty):
         """
@@ -86,13 +84,13 @@ class MediumProperties():
         """
         if mproperty not in ['vp', 'vs', 'rho']:
             raise ValueError(f'Invalid property: {mproperty}')
-        values = self.config[f'{mproperty}_source']
+        values = config[f'{mproperty}_source']
         if values is None:
             return None
-        if self.config.layer_top_depths is None:
+        if config.layer_top_depths is None:
             return values[0]
         values = np.array(values)
-        depths = np.array(self.config.layer_top_depths)
+        depths = np.array(config.layer_top_depths)
         try:
             # find the last value that is smaller than the source depth
             value = values[depths <= self.depth_in_km][-1]
@@ -112,10 +110,9 @@ class MediumProperties():
         """
         if mproperty not in ['vp', 'vs', 'rho']:
             raise ValueError(f'Invalid property: {mproperty}')
-        value = self.config[f'{mproperty}_stations']
+        value = config[f'{mproperty}_stations']
         if value is None:
-            value = self.get_from_config_param_source(
-                mproperty)
+            value = self.get_from_config_param_source(mproperty)
         return value
 
     def get_vel_from_NLL(self, wave):
@@ -131,7 +128,7 @@ class MediumProperties():
         # pylint: disable=import-outside-toplevel
         from nllgrid import NLLGrid
         grdfile = f'*.{wave}.mod.hdr'
-        grdfile = os.path.join(self.config.NLL_model_dir, grdfile)
+        grdfile = os.path.join(config.NLL_model_dir, grdfile)
         try:
             grdfile = glob(grdfile)[0]
         except IndexError as e:
@@ -206,7 +203,7 @@ class MediumProperties():
         else:
             raise ValueError(f'Invalid location: {where}')
         if (
-            self.config.NLL_model_dir is not None and
+            config.NLL_model_dir is not None and
             mproperty in ['vp', 'vs']
         ):
             wave = 'P' if mproperty == 'vp' else 'S'
