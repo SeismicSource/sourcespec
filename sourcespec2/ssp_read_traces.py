@@ -338,7 +338,7 @@ def _hypo_vel(hypo):
     """
     medium_properties = MediumProperties(
         hypo.longitude.value_in_deg, hypo.latitude.value_in_deg,
-        hypo.depth.value_in_km, config
+        hypo.depth.value_in_km
     )
     hypo.vp = medium_properties.get(mproperty='vp', where='source')
     hypo.vs = medium_properties.get(mproperty='vs', where='source')

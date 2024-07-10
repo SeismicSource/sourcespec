@@ -528,7 +528,7 @@ def _displacement_to_moment(stats):
     lon = stats.coords.longitude
     lat = stats.coords.latitude
     depth = -stats.coords.elevation
-    medium_properties = MediumProperties(lon, lat, depth, config)
+    medium_properties = MediumProperties(lon, lat, depth)
     depth_string = medium_properties.to_string('station depth', depth)
     v_name = f'v{phase.lower()}'
     v_source = config.event.hypocenter[v_name]
