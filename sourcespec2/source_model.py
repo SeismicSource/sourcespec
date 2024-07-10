@@ -125,7 +125,7 @@ def main():
     from .ssp_plot_spectra import plot_spectra
     from .ssp_plot_traces import plot_traces
     plot_traces(proc_st, ncols=2, block=False)
-    plot_spectra(config, spec_st, ncols=1, stack_plots=True)
+    plot_spectra(spec_st, ncols=1, stack_plots=True)
 
 
 if __name__ == '__main__':
