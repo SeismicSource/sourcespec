@@ -94,7 +94,7 @@ def main():
 
     if config.html_report:
         from .ssp_html_report import html_report
-        html_report(config, sspec_output)
+        html_report(sspec_output)
 
     ssp_exit()
 

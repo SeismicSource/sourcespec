@@ -16,6 +16,7 @@ import re
 import contextlib
 from urllib.parse import urlparse
 import numpy as np
+from .config import config
 from ._version import get_versions
 from .ssp_data_types import SpectralParameter
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
@@ -26,13 +27,21 @@ def _multireplace(string, replacements, ignore_case=False):
     """
     Given a string and a replacement map, it returns the replaced string.
 
-    :param str string: string to execute replacements on
-    :param dict replacements: replacement dictionary
-                              {value to find: value to replace}
-    :param bool ignore_case: whether the match should be case insensitive
+    :param tring: string to execute replacements on
+    :type string: str
+    :param replacements: replacement dictionary
+        {value to find: value to replace}
+    :type replacements: dict
+    :param ignore_case: whether the match should be case insensitive
+    :type ignore_case: bool
+
+    :return: replaced string
     :rtype: str
 
-    Source: https://gist.github.com/bgusach/a967e0587d6e01e889fd1d776c5f3729
+    .. note::
+
+        Source:
+        https://gist.github.com/bgusach/a967e0587d6e01e889fd1d776c5f3729
     """
     if not replacements:
         # Edge case that'd produce a funny regex and cause a KeyError
@@ -74,7 +83,13 @@ def _multireplace(string, replacements, ignore_case=False):
         lambda match: replacements[normalize_old(match.group(0))], string)
 
 
-def _agency_logo_path(config):
+def _agency_logo_path():
+    """
+    Return the path to the agency logo file.
+
+    :return: path to the agency logo file
+    :rtype: str
+    """
     agency_logo_path = config.agency_logo
     if agency_logo_path is None:
         return None
@@ -94,8 +109,14 @@ def _agency_logo_path(config):
     return agency_logo_path
 
 
-def _agency_logo(config):
-    agency_logo_path = _agency_logo_path(config)
+def _agency_logo():
+    """
+    Return the HTML code for the agency logo.
+
+    :return: HTML code for the agency logo
+    :rtype: str
+    """
+    agency_logo_path = _agency_logo_path()
     if agency_logo_path is None:
         return ''
     agency_logo_img = f'<img class="logo" src="{agency_logo_path}"/>'
@@ -114,11 +135,23 @@ def _agency_logo(config):
 
 
 def _logo_file_url():
+    """
+    Return the URL of the SourceSpec logo file.
+
+    :return: URL of the SourceSpec logo file
+    :rtype: str
+    """
     cdn_baseurl = 'https://cdn.jsdelivr.net/gh/SeismicSource/sourcespec@1.6'
     return f'{cdn_baseurl}/imgs/SourceSpec_logo.svg'
 
 
-def _version_and_run_completed(config):
+def _version_and_run_completed():
+    """
+    Return the SourceSpec version and the run completion date.
+
+    :return: SourceSpec version and run completion date
+    :rtype: tuple of str
+    """
     ssp_version = get_versions()['version']
     run_completed = (
         f'{config.end_of_run.strftime("%Y-%m-%d %H:%M:%S")} '
@@ -127,7 +160,13 @@ def _version_and_run_completed(config):
     return ssp_version, run_completed
 
 
-def _author_html(config):
+def _author_html():
+    """
+    Return the HTML code for the author.
+
+    :return: HTML code for the author
+    :rtype: str
+    """
     author = ''
     if config.author_name is not None:
         author = config.author_name
@@ -138,7 +177,13 @@ def _author_html(config):
     return author
 
 
-def _agency_html(config):
+def _agency_html():
+    """
+    Return the HTML code for the agency.
+
+    :return: HTML code for the agency
+    :rtype: str
+    """
     agency = ''
     if config.agency_full_name is not None:
         agency = config.agency_full_name
@@ -154,6 +199,17 @@ def _agency_html(config):
 
 
 def _author_and_agency_html(author, agency):
+    """
+    Return the HTML code for the author and the agency.
+
+    :param author: HTML code for the author
+    :type author: str
+    :param agency: HTML code for the agency
+    :type agency: str
+
+    :return: HTML code for the author and the agency
+    :rtype: str
+    """
     if author != '':
         author = f'<br/><br/>{author}'
     if author == '' and agency != '':
@@ -163,13 +219,19 @@ def _author_and_agency_html(author, agency):
     return author + agency
 
 
-def _page_footer(config):
+def _page_footer():
+    """
+    Return the HTML code for the page footer.
+
+    :return: HTML code for the page footer
+    :rtype: str
+    """
     footer_html = ''
     indent3 = 3 * '  '
     indent4 = 4 * '  '
     footer_html += f'{indent3}<div class="text_footer">\n'
-    author = _author_html(config)
-    agency = _agency_html(config)
+    author = _author_html()
+    agency = _agency_html()
     auth_agen_text = ''
     if author != '':
         if agency != '':
@@ -186,7 +248,7 @@ def _page_footer(config):
         else f'{indent4}{run_completed}\n'
     )
     footer_html += f'{indent3}</div>\n'
-    agency_logo_path = _agency_logo_path(config)
+    agency_logo_path = _agency_logo_path()
     if agency_logo_path is not None:
         if config.agency_url is not None:
             a_agency = f'<a href="{config.agency_url}" target="_blank">'
@@ -202,7 +264,17 @@ def _page_footer(config):
 
 
 def _format_exponent(value, reference):
-    """Format `value` to a string having the same exponent than `reference`."""
+    """
+    Format `value` to a string having the same exponent than `reference`.
+
+    :param value: value to format
+    :type value: float
+    :param reference: reference value
+    :type reference: float
+
+    :return: formatted value
+    :rtype: str
+    """
     # get the exponent of reference value
     xp = np.int(np.floor(np.log10(np.abs(reference))))
     # format value to print it with the same exponent of reference value
@@ -211,7 +283,19 @@ def _format_exponent(value, reference):
 
 
 def _summary_value_and_err_text(value, error, fmt):
-    """Format summary value and error text."""
+    """
+    Format summary value and error text.
+
+    :param value: value
+    :type value: float
+    :param error: error
+    :type error: float or tuple of float
+    :param fmt: format string
+    :type fmt: str
+
+    :return: formatted text
+    :rtype: str
+    """
     if error[0] == error[1]:
         text = f'{fmt}<br>&#177;{fmt}'
         text = text.format(value, error[0])
@@ -222,7 +306,19 @@ def _summary_value_and_err_text(value, error, fmt):
 
 
 def _station_value_and_err_text(par, key, fmt):
-    """Format station value and error text."""
+    """
+    Format station value and error text.
+
+    :param par: dictionary of station parameters
+    :type par: dict
+    :param key: parameter key
+    :type key: str
+    :param fmt: format string
+    :type fmt: str
+
+    :return: formatted value and error text
+    :rtype: tuple of str
+    """
     # par[key] can be None even if key is in par (e.g., if key is 'Ml' and
     # local magnitude is not computed)
     _par = par[key] if key in par else None
@@ -253,6 +349,15 @@ def _station_value_and_err_text(par, key, fmt):
 
 
 def _misfit_table_rows(misfit_plot_files):
+    """
+    Return the HTML code for the misfit table rows.
+
+    :param misfit_plot_files: list of misfit plot files
+    :type misfit_plot_files: list of str
+
+    :return: HTML code for the misfit table rows
+    :rtype: str
+    """
     template_dir = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
         'html_report_template'
@@ -281,7 +386,7 @@ def _misfit_table_rows(misfit_plot_files):
     return misfit_table_rows
 
 
-def _misfit_page(config):
+def _misfit_page():
     """Generate an HTML page with misfit plots."""
     # Read template files
     template_dir = os.path.join(
@@ -295,11 +400,11 @@ def _misfit_page(config):
     logo_file = _logo_file_url()
 
     # Version and run completed
-    ssp_version, run_completed = _version_and_run_completed(config)
+    ssp_version, run_completed = _version_and_run_completed()
 
     # Author and agency
-    author = _author_html(config)
-    agency = _agency_html(config)
+    author = _author_html()
+    agency = _agency_html()
     author_and_agency = _author_and_agency_html(author, agency)
 
     # 1d conditional misfit plots
@@ -337,20 +442,25 @@ def _misfit_page(config):
         fp.write(misfit)
 
 
-def _add_run_info_to_html(config, replacements):
-    """Add run info to HTML report."""
+def _add_run_info_to_html(replacements):
+    """
+    Add run info to HTML report.
+
+    :param replacements: replacement dictionary
+    :type replacements: dict
+    """
     ssp_url = 'https://sourcespec.seismicsource.org'
     logo_file = _logo_file_url()
-    agency_logo = _agency_logo(config)
-    ssp_version, run_completed = _version_and_run_completed(config)
-    author = _author_html(config)
+    agency_logo = _agency_logo()
+    ssp_version, run_completed = _version_and_run_completed()
+    author = _author_html()
     if not author:
         author_comment_begin = '<!--'
         author_comment_end = '-->'
     else:
         author_comment_begin = ''
         author_comment_end = ''
-    agency = _agency_html(config)
+    agency = _agency_html()
     if not agency:
         agency_comment_begin = '<!--'
         agency_comment_end = '-->'
@@ -358,7 +468,7 @@ def _add_run_info_to_html(config, replacements):
         agency_comment_begin = ''
         agency_comment_end = ''
     author_and_agency = _author_and_agency_html(author, agency)
-    page_footer = _page_footer(config)
+    page_footer = _page_footer()
     replacements.update({
         '{AGENCY_LOGO}': agency_logo,
         '{LOGO_FILE}': logo_file,
@@ -376,8 +486,13 @@ def _add_run_info_to_html(config, replacements):
     })
 
 
-def _add_event_info_to_html(config, replacements):
-    """Add event info to HTML report."""
+def _add_event_info_to_html(replacements):
+    """
+    Add event info to HTML report.
+
+    :param replacements: replacement dictionary
+    :type replacements: dict
+    """
     evid = config.event.event_id
     evname = config.event.name
     hypo = config.event.hypocenter
@@ -434,8 +549,13 @@ def _add_event_info_to_html(config, replacements):
     })
 
 
-def _add_maps_to_html(config, replacements):
-    """Add maps to HTML report."""
+def _add_maps_to_html(replacements):
+    """
+    Add maps to HTML report.
+
+    :param replacements: replacement dictionary
+    :type replacements: dict
+    """
     try:
         station_maps = [
             m for m in config.figures['station_maps']
@@ -472,8 +592,15 @@ def _add_maps_to_html(config, replacements):
     })
 
 
-def _add_traces_plots_to_html(config, templates, replacements):
-    """Add trace plots to HTML report."""
+def _add_traces_plots_to_html(templates, replacements):
+    """
+    Add trace plots to HTML report.
+
+    :param templates: template files
+    :type templates: :class:`HTMLTemplates`
+    :param replacements: replacement dictionary
+    :type replacements: dict
+    """
     with open(templates.traces_plot_html, encoding='utf-8') as fp:
         traces_plot = fp.read()
     traces_plot_files = [
@@ -508,8 +635,15 @@ def _add_traces_plots_to_html(config, templates, replacements):
     })
 
 
-def _add_spectra_plots_to_html(config, templates, replacements):
-    """Add spectra plots to HTML report."""
+def _add_spectra_plots_to_html(templates, replacements):
+    """
+    Add spectra plots to HTML report.
+
+    :param templates: template files
+    :type templates: :class:`HTMLTemplates`
+    :param replacements: replacement dictionary
+    :type replacements: dict
+    """
     with open(templates.spectra_plot_html, encoding='utf-8') as fp:
         spectra_plot = fp.read()
     spectra_plot_files = [
@@ -545,6 +679,14 @@ def _add_spectra_plots_to_html(config, templates, replacements):
 
 
 def _add_inversion_info_to_html(sspec_output, replacements):
+    """
+    Add inversion info to HTML report.
+
+    :param sspec_output: SourceSpec output
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    :param replacements: replacement dictionary
+    :type replacements: dict
+    """
     # Inversion information
     inversion_algorithms = {
         'TNC': 'Truncated Newton',
@@ -596,8 +738,15 @@ def _add_inversion_info_to_html(sspec_output, replacements):
     })
 
 
-def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
-    """Add summary spectral parameters to HTML report."""
+def _add_summary_spectral_params_to_html(sspec_output, replacements):
+    """
+    Add summary spectral parameters to HTML report.
+
+    :param sspec_output: SourceSpec output
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    :param replacements: replacement dictionary
+    :type replacements: dict
+    """
     ref_stat = sspec_output.summary_spectral_parameters.reference_statistics
     col_mean_highlighted = col_wmean_highlighted = col_perc_highlighted = ''
     if ref_stat == 'mean':
@@ -813,8 +962,13 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
     })
 
 
-def _add_box_plots_to_html(config, replacements):
-    """Add box plots to HTML report."""
+def _add_box_plots_to_html(replacements):
+    """
+    Add box plots to HTML report.
+
+    :param replacements: replacement dictionary
+    :type replacements: dict
+    """
     box_plots = ''
     with contextlib.suppress(KeyError, IndexError):
         box_plots = [
@@ -833,8 +987,13 @@ def _add_box_plots_to_html(config, replacements):
     })
 
 
-def _add_stacked_spectra_to_html(config, replacements):
-    """Add stacked spectra to HTML report."""
+def _add_stacked_spectra_to_html(replacements):
+    """
+    Add stacked spectra to HTML report.
+
+    :param replacements: replacement dictionary
+    :type replacements: dict
+    """
     stacked_spectra = ''
     with contextlib.suppress(KeyError, IndexError):
         stacked_spectra = [
@@ -853,8 +1012,17 @@ def _add_stacked_spectra_to_html(config, replacements):
     })
 
 
-def _add_station_table_to_html(config, sspec_output, templates, replacements):
-    """Add station table to HTML report."""
+def _add_station_table_to_html(sspec_output, templates, replacements):
+    """
+    Add station table to HTML report.
+
+    :param sspec_output: SourceSpec output
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    :param templates: template files
+    :type templates: :class:`HTMLTemplates`
+    :param replacements: replacement dictionary
+    :type replacements: dict
+    """
     with open(templates.station_table_row_html, encoding='utf-8') as fp:
         station_table_row = fp.read()
     station_table_rows = ''
@@ -921,12 +1089,17 @@ def _add_station_table_to_html(config, sspec_output, templates, replacements):
     })
 
 
-def _add_misfit_plots_to_html(config, replacements):
-    """Add misfit plots to HTML report."""
+def _add_misfit_plots_to_html(replacements):
+    """
+    Add misfit plots to HTML report.
+
+    :param replacements: replacement dictionary
+    :type replacements: dict
+    """
     if 'misfit_1d' in config.figures:
         misfit_plot_comment_begin = ''
         misfit_plot_comment_end = ''
-        _misfit_page(config)
+        _misfit_page()
     else:
         misfit_plot_comment_begin = '<!--'
         misfit_plot_comment_end = '-->'
@@ -936,8 +1109,15 @@ def _add_misfit_plots_to_html(config, replacements):
     })
 
 
-def _add_downloadable_files_to_html(config, templates, replacements):
-    """Add links to downloadable files to HTML report."""
+def _add_downloadable_files_to_html(templates, replacements):
+    """
+    Add links to downloadable files to HTML report.
+
+    :param templates: template files
+    :type templates: :class:`HTMLTemplates`
+    :param replacements: replacement dictionary
+    :type replacements: dict
+    """
     # symlink to input files (not supported on Windows)
     input_files = '' if os.name == 'nt' else 'input_files'
     evid = config.event.event_id
@@ -990,7 +1170,15 @@ class HTMLtemplates:
 
 
 def _cleanup_html(text):
-    """Remove unnecessary comments and whitespace from HTML."""
+    """
+    Remove unnecessary comments and whitespace from HTML.
+
+    :param text: HTML text
+    :type text: str
+
+    :returns: cleaned HTML text
+    :rtype: str
+    """
     # remove HTML-style comments
     text = re.sub(r'<!--.*?-->', '', text, flags=re.DOTALL)
     # strip spaces at the end of lines
@@ -1000,23 +1188,28 @@ def _cleanup_html(text):
     return text
 
 
-def html_report(config, sspec_output):
-    """Generate an HTML report."""
+def html_report(sspec_output):
+    """
+    Generate an HTML report.
+
+    :param sspec_output: Output from the SourceSpec inversion.
+    :type sspec_output: :class:`sourcespec.ssp_data_types.SourceSpecOutput`
+    """
     templates = HTMLtemplates()
 
     replacements = {}
-    _add_run_info_to_html(config, replacements)
-    _add_event_info_to_html(config, replacements)
-    _add_maps_to_html(config, replacements)
-    _add_traces_plots_to_html(config, templates, replacements)
-    _add_spectra_plots_to_html(config, templates, replacements)
+    _add_run_info_to_html(replacements)
+    _add_event_info_to_html(replacements)
+    _add_maps_to_html(replacements)
+    _add_traces_plots_to_html(templates, replacements)
+    _add_spectra_plots_to_html(templates, replacements)
     _add_inversion_info_to_html(sspec_output, replacements)
-    _add_summary_spectral_params_to_html(config, sspec_output, replacements)
-    _add_box_plots_to_html(config, replacements)
-    _add_stacked_spectra_to_html(config, replacements)
-    _add_station_table_to_html(config, sspec_output, templates, replacements)
-    _add_misfit_plots_to_html(config, replacements)
-    _add_downloadable_files_to_html(config, templates, replacements)
+    _add_summary_spectral_params_to_html(sspec_output, replacements)
+    _add_box_plots_to_html(replacements)
+    _add_stacked_spectra_to_html(replacements)
+    _add_station_table_to_html(sspec_output, templates, replacements)
+    _add_misfit_plots_to_html(replacements)
+    _add_downloadable_files_to_html(templates, replacements)
 
     with open(templates.index_html, encoding='utf-8') as fp:
         index = fp.read()
