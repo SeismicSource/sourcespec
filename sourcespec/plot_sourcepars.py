@@ -22,7 +22,7 @@ from scipy.optimize import curve_fit
 
 valid_plot_types = [
     'fc', 'Er', 'ssd', 'ra', 'Mo', 't_star', 'Qo', 'sigma_a',
-    'fc_mw', 'Er_mw', 'ssd_mw']
+    'fc_mw', 'Er_mw', 'ssd_mw', 'ssd_depth']
 
 
 class Annot():
@@ -263,6 +263,8 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             query_condition = ''
         self.evids = query_event_params_into_numpy(
             self.cur, 'evid', str, query_condition)
+        self.depth = query_event_params_into_numpy(
+            self.cur, 'depth', np.float64, query_condition)
         self.vp = query_event_params_into_numpy(
             self.cur, 'vp', np.float64, query_condition)
         self.vs = query_event_params_into_numpy(
@@ -358,6 +360,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
     def skip_events(self, idx):
         """Skip events with index idx."""
         self.evids = np.delete(self.evids, idx)
+        self.depth = np.delete(self.depth, idx)
         self.vp = np.delete(self.vp, idx)
         self.vs = np.delete(self.vs, idx)
         self.rho = np.delete(self.rho, idx)
@@ -673,6 +676,20 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         annot = Annot(self.mw, self.ssd, self.evids, yformat)
         fig.canvas.mpl_connect('pick_event', annot)
 
+    def _scatter_ssd_depth(self, fig, ax):
+        """Plot the scatter plot of ssd vs depth."""
+        alpha = 1
+        ax.errorbar(
+            self.depth, self.ssd,
+            xerr=None,
+            yerr=[self.ssd_err_minus, self.ssd_err_plus],
+            fmt='o', mec='black', mfc='#FCBA25', ecolor='#FCBA25',
+            alpha=alpha)
+        ax.scatter(self.depth, self.ssd, alpha=0, picker=True, zorder=20)
+        yformat = 'ssd {:.2e} MPa'
+        annot = Annot(self.depth, self.ssd, self.evids, yformat)
+        fig.canvas.mpl_connect('pick_event', annot)
+
     def _fit_fc_mw(self, vel, k_parameter, ax, slope=False):
         """Plot a linear regression of fc vs mw."""
         mag_min, mag_max = ax.get_xlim()
@@ -815,6 +832,37 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         ax_Mo.set_ylabel('ssd (MPa)')
         plt.show()
 
+    def plot_ssd_depth(self, hist=False, fit=False, nbins=None):
+        """
+        Plot the logarithm of static stress drop vs depth.
+
+        Parameters
+        ----------
+        hist : bool
+            If True, plot a 2D histogram instead of a scatter plot.
+        fit : bool
+            If True, plot a linear regression of ssd vs depth.
+        slope : bool
+            If True, also fit the slope of the linear regression.
+        """
+        fig, ax = plt.subplots()
+        ax.set_xlabel('Depth (km)')
+        ax.set_ylabel('ssd (MPa)')
+        ax.set_yscale('log')
+        ax.set_ylim(1e-3, 1e3)
+
+        if hist:
+            raise NotImplementedError(
+                'Histogram not implemented yet for ssd_depth')
+        else:
+            self._scatter_ssd_depth(fig, ax)
+        if fit:
+            raise NotImplementedError(
+                'Fit not implemented yet for ssd_depth')
+
+        self._set_plot_title(ax)
+        plt.show()
+
     def plot_hist(self, param_name, nbins=None, wave_type='S'):
         """Plot a histogram of the given parameter."""
         parameters = {
@@ -906,6 +954,8 @@ def run():
         params.plot_Er_mw(args.hist, args.fit, args.nbins)
     elif args.plot_type == 'ssd_mw':
         params.plot_ssd_mw(args.hist, args.fit, args.nbins)
+    elif args.plot_type == 'ssd_depth':
+        params.plot_ssd_depth(args.hist, args.fit, args.nbins)
     elif args.plot_type in valid_plot_types:
         params.plot_hist(args.plot_type, args.nbins, args.wave_type)
 
