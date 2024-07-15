@@ -17,7 +17,7 @@ import numpy as np
 from obspy.signal.invsim import cosine_taper as _cos_taper
 from obspy.geodetics import gps2dist_azimuth, kilometers2degrees
 from obspy.taup import TauPyModel
-from .config import config
+from .setup import config
 model = TauPyModel(model='iasp91')
 v_model = model.model.s_mod.v_mod
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])

@@ -14,7 +14,7 @@ Spectral residual routine for sourcespec.
 """
 import os
 import logging
-from .config import config
+from .setup import config
 from ._version import get_versions
 from .spectrum import SpectrumStream
 from .ssp_spectral_model import spectral_model

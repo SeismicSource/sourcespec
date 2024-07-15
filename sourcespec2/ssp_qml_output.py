@@ -19,7 +19,7 @@ from obspy.core.event import (CreationInfo, FocalMechanism, Magnitude,
                               MomentTensor, QuantityError, ResourceIdentifier,
                               StationMagnitude, StationMagnitudeContribution,
                               WaveformStreamID)
-from .config import config
+from .setup import config
 from ._version import get_versions
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 

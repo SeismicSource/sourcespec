@@ -22,7 +22,7 @@ from collections.abc import Mapping
 from datetime import datetime
 from tzlocal import get_localzone
 import numpy as np
-from .config import config
+from .setup import config
 from .ssp_qml_output import write_qml
 from .ssp_sqlite_output import write_sqlite
 from ._version import get_versions
