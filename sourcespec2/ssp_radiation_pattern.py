@@ -13,7 +13,7 @@ import contextlib
 import logging
 from math import pi, sin, cos
 from obspy.taup import TauPyModel
-from .config import config
+from .setup import config
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 model = TauPyModel(model='iasp91')
 

@@ -20,8 +20,7 @@ from datetime import datetime
 import yaml
 from obspy import UTCDateTime
 from obspy import read_events
-from .config import config
-from .ssp_setup import ssp_exit
+from .setup import config, ssp_exit
 from .ssp_event import SSPEvent
 from .ssp_pick import SSPPick
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])

@@ -11,4 +11,8 @@ Configuration classes and functions for SourceSpec
 """
 from .config import config  # noqa
 from .configure_cli import configure_cli  # noqa
-from .library_versions import library_versions  # noqa
+from .logging import setup_logging  # noqa
+from .exit import ssp_exit  # noqa
+from .outdir import (  # noqa
+    get_outdir_path, save_config, move_outdir, remove_old_outdir
+)

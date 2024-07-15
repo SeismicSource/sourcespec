@@ -19,8 +19,7 @@ import numpy as np
 from scipy.signal import savgol_filter
 from obspy.core import Stream
 from obspy.core.util import AttribDict
-from .config import config
-from .ssp_setup import ssp_exit
+from .setup import config, ssp_exit
 from .ssp_util import (
     remove_instr_response, station_to_event_position)
 from .ssp_wave_arrival import add_arrival_to_trace

@@ -12,7 +12,7 @@ Classes for spectral inversion routines.
 import logging
 from collections import OrderedDict
 import numpy as np
-from .config import config
+from .setup import config
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 

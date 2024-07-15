@@ -16,7 +16,7 @@ import re
 import contextlib
 from urllib.parse import urlparse
 import numpy as np
-from .config import config
+from .setup import config
 from ._version import get_versions
 from .ssp_data_types import SpectralParameter
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])

@@ -21,7 +21,7 @@ from scipy.signal import peak_widths as find_peak_widths
 # pylint: disable=no-name-in-module
 from scipy.signal._peak_finding_utils import PeakPropertyWarning
 import matplotlib.pyplot as plt
-from .config import config
+from .setup import config
 from .kdtree import KDTree
 from .savefig import savefig
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
