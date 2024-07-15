@@ -15,7 +15,6 @@ Trace processing for sourcespec.
     (http://www.cecill.info/licences.en.html)
 """
 import logging
-import re
 import numpy as np
 from scipy.signal import savgol_filter
 from obspy.core import Stream
@@ -577,64 +576,6 @@ def _merge_stream(st):
     return st[0]
 
 
-def _glob_to_regex(pattern):
-    """
-    Convert a glob-style pattern to a regex pattern.
-    """
-    # Escape regex-special characters except for ? and *
-    pattern = pattern.strip()
-    pattern = re.escape(pattern)            # Escapes all regex chars
-    pattern = pattern.replace(r'\?', '.')   # Convert escaped ? to .
-    pattern = pattern.replace(r'\*', '.*')  # Convert escaped * to .*
-    return pattern
-
-
-def _skip_ignored(st):
-    """
-    Skip traces ignored from config.
-
-    :param st: ObsPy Stream object.
-    :type st: :class:`obspy.core.stream.Stream`
-
-    :raises: RuntimeError if traces are ignored from config file.
-    """
-    traceid = st[0].id
-    network, station, location, channel = traceid.split('.')
-
-    # Build all possible IDs: station → full net.sta.loc.chan
-    ss = [
-        station,
-        '.'.join((network, station)),
-        '.'.join((network, station, location)),
-        '.'.join((network, station, location, channel)),
-    ]
-
-    def _matches(patterns, strings):
-        """Return True if any string matches any glob pattern."""
-        regex = r'^(' + '|'.join(_glob_to_regex(p) for p in patterns) + r')$'
-        return any(re.match(regex, s) for s in strings)
-
-    if (
-        config.use_traceids is not None and
-        not _matches(config.use_traceids, ss)
-    ):
-        _skip_stream_and_raise(
-            st,
-            reason='ignored from config file',
-            short_reason='ignored from config'
-        )
-
-    if (
-        config.ignore_traceids is not None and
-        _matches(config.ignore_traceids, ss)
-    ):
-        _skip_stream_and_raise(
-            st,
-            reason='ignored from config file',
-            short_reason='ignored from config'
-        )
-
-
 def process_traces(st):
     """
     Remove mean, deconvolve and ignore unwanted components.
@@ -657,9 +598,6 @@ def process_traces(st):
                 _check_epicentral_distance(_trace)
                 _add_arrivals(_trace)
                 _define_signal_and_noise_windows(_trace)
-            # We skip traces ignored from config file here, so that we have
-            # the metadata needed for the raw plot
-            _skip_ignored(st_sel)
             _check_signal_window(st_sel)
             trace = _merge_stream(st_sel)
             trace.stats.ignore = False
