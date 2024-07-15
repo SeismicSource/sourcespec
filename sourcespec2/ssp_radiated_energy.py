@@ -18,7 +18,7 @@ Compute radiated energy from spectral integration.
 import contextlib
 import logging
 import numpy as np
-from .config import config
+from .setup import config
 from .ssp_data_types import SpectralParameter
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 

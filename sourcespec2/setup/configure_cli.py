@@ -26,6 +26,18 @@ from .configobj import ConfigObj
 from .configobj.validate import Validator
 from ..ssp_update_db import update_db_file
 
+# define ipshell(), if possible
+# note: ANSI colors do not work on Windows standard terminal
+if sys.stdout.isatty() and sys.platform != 'win32':
+    try:
+        from IPython.terminal.embed import InteractiveShellEmbed
+        from traitlets.config import MultipleInstanceError
+        IPSHELL = InteractiveShellEmbed.instance()
+    except (ImportError, MultipleInstanceError):
+        IPSHELL = None
+else:
+    IPSHELL = None
+
 
 def _write_sample_config(configspec, progname):
     """
