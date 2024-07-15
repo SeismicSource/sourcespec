@@ -15,7 +15,7 @@ import re
 import logging
 from obspy import read_inventory
 from obspy.core.inventory import Inventory, Network, Station, Channel, Response
-from .config import config
+from .setup import config
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 

@@ -28,11 +28,9 @@ import warnings
 from obspy import read
 from obspy.core import Stream
 from obspy.core.util import AttribDict
-from .config import config
-from .ssp_setup import ssp_exit
+from .setup import config, ssp_exit
 from .ssp_util import MediumProperties
-from .ssp_read_station_metadata import (
-    read_station_metadata, PAZ)
+from .ssp_read_station_metadata import read_station_metadata, PAZ
 from .ssp_read_event_metadata import (
     parse_qml, parse_hypo_file, override_event_depth, parse_hypo71_picks)
 from .ssp_read_sac_header import (

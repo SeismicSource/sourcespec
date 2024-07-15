@@ -12,8 +12,7 @@ SQLite output for source_spec.
 import os.path
 import logging
 import sqlite3
-from .config import config
-from .ssp_setup import ssp_exit
+from .setup import config, ssp_exit
 from .ssp_db_definitions import (
     DB_VERSION,
     STATIONS_TABLE, STATIONS_PRIMARY_KEYS, EVENTS_TABLE, EVENTS_PRIMARY_KEYS)

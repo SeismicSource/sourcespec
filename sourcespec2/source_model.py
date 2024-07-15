@@ -84,8 +84,7 @@ def main():
     # Lazy-import modules for speed
     from .ssp_parse_arguments import parse_args
     options = parse_args(progname='source_model')
-    from .config import config, configure_cli
-    from .ssp_setup import ssp_exit
+    from .setup import config, configure_cli, ssp_exit
     plot_show = bool(options.plot)
     conf_overrides = {
         'plot_show': plot_show,
