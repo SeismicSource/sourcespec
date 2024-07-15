@@ -15,7 +15,6 @@ Trace processing for sourcespec.
     (http://www.cecill.info/licences.en.html)
 """
 import logging
-import re
 import numpy as np
 from scipy.signal import savgol_filter
 from obspy.core import Stream
@@ -520,38 +519,6 @@ def _merge_stream(st):
     return st[0]
 
 
-def _skip_ignored(traceid):
-    """
-    Skip traces ignored from config.
-
-    :param traceid: Trace ID.
-    :type traceid: str
-
-    :raises: RuntimeError if traceid is ignored from config file.
-    """
-    network, station, location, channel = traceid.split('.')
-    # build a list of all possible ids, from station only
-    # to full net.sta.loc.chan
-    ss = [
-        station,
-        '.'.join((network, station)),
-        '.'.join((network, station, location)),
-        '.'.join((network, station, location, channel)),
-    ]
-    if config.use_traceids is not None:
-        combined = (
-            "(" + ")|(".join(config.use_traceids) + ")"
-        ).replace('.', r'\.')
-        if not any(re.match(combined, s) for s in ss):
-            raise RuntimeError(f'{traceid}: ignored from config file')
-    if config.ignore_traceids is not None:
-        combined = (
-            "(" + ")|(".join(config.ignore_traceids) + ")"
-        ).replace('.', r'\.')
-        if any(re.match(combined, s) for s in ss):
-            raise RuntimeError(f'{traceid}: ignored from config file')
-
-
 def process_traces(st):
     """
     Remove mean, deconvolve and ignore unwanted components.
@@ -566,7 +533,6 @@ def process_traces(st):
     out_st = Stream()
     for traceid in sorted({tr.id for tr in st}):
         try:
-            _skip_ignored(traceid)
             # We still use a stream, since the trace can have gaps or overlaps
             st_sel = st.select(id=traceid)
             for _trace in st_sel:
