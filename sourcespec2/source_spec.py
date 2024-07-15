@@ -44,15 +44,14 @@ def ssp_run(st, inventory, ssp_event, picks, allow_exit=False):
     # pylint: disable=import-outside-toplevel
     # Lazy-import modules for speed
     import os
-    from .config import config
+    from .setup import config, ssp_exit
 
     # Avoid hard exit when ssp_exit is called somewhere
     if not allow_exit:
-        from . import ssp_setup
-        ssp_setup.SSP_EXIT_CALLED = True
+        ssp_exit.SSP_EXIT_CALLED = True
 
     # Create output folder if required, save config and setup logging
-    from .ssp_setup import (get_outdir_path, save_config, setup_logging)
+    from .setup import get_outdir_path, save_config, setup_logging
     if config.options.outdir:
         outdir = get_outdir_path(ssp_event.event_id)
         if not os.path.exists(outdir):
@@ -117,7 +116,7 @@ def ssp_output(proc_st, spec_st, specnoise_st, weight_st, sspec_output):
     """
     # pylint: disable=import-outside-toplevel
     # Lazy-import modules for speed
-    from .config import config
+    from .setup import config
 
     # TODO: check (again) if outdir exists
     if not config.options.outdir:
@@ -159,11 +158,9 @@ def main():
     options = parse_args(progname='source_spec')
 
     # Setup stage
-    from .config import configure_cli
+    from .setup import configure_cli
     configure_cli(options, progname='source_spec')
-    from .ssp_setup import (
-        move_outdir, remove_old_outdir, setup_logging,
-        ssp_exit)
+    from .setup import setup_logging
     setup_logging()
 
     # Read all required information from disk
@@ -176,6 +173,7 @@ def main():
     ssp_event, picks = read_event_and_picks(trace1)
 
     # Now that we have an evid, we can rename the outdir and the log file
+    from .setup import move_outdir, remove_old_outdir
     move_outdir(ssp_event.event_id)
     setup_logging(ssp_event.event_id)
     remove_old_outdir()
@@ -187,6 +185,7 @@ def main():
     # Generate output
     ssp_output(proc_st, spec_st, specnoise_st, weight_st, sspec_output)
 
+    from .setup import ssp_exit
     ssp_exit()
 
 

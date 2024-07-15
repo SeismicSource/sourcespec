@@ -16,7 +16,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as mpe
-from .config import config
+from .setup import config
 from ._version import get_versions
 from .savefig import savefig
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
