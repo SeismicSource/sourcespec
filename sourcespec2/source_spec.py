@@ -67,7 +67,7 @@ def ssp_run(st, inventory, ssp_event, picks, allow_exit=False):
     from .ssp_read_traces import (augment_event, augment_traces,
                                   select_components)
     augment_event(ssp_event)
-    st = select_components(st)
+    select_components(st)
     augment_traces(st, inventory, ssp_event, picks)
 
     # Deconvolve, filter, cut traces:
