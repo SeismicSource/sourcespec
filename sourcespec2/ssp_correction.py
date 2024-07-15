@@ -15,10 +15,9 @@ Spectral station correction calculated from ssp_residuals.
 """
 import logging
 import numpy as np
-from .config import config
 from .spectrum import read_spectra
 from .ssp_util import mag_to_moment
-from .ssp_setup import ssp_exit
+from .setup import config, ssp_exit
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 

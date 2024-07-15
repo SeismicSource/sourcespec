@@ -54,7 +54,7 @@ def _float_list(input_list, max_length=None, accepted_values=None):
         raise ValueError('Cannot parse all values in list') from e
 
 
-def _none_lenght(input_list):
+def _none_length(input_list):
     """
     Return the length of input list, or 1 if input list is None
 
@@ -416,10 +416,10 @@ class _Config(dict):
         :raises ValueError: If an error occurs while parsing the parameters
         """
         # Check that the tt velocity models have the same length
-        n_vp = _none_lenght(config.vp)
-        n_vs = _none_lenght(config.vs)
-        n_rho = _none_lenght(config.rho)
-        n_layer_top_depths = _none_lenght(config.layer_top_depths)
+        n_vp = _none_length(config.vp)
+        n_vs = _none_length(config.vs)
+        n_rho = _none_length(config.rho)
+        n_layer_top_depths = _none_length(config.layer_top_depths)
         try:
             assert n_vp == n_vs == n_rho == n_layer_top_depths
         except AssertionError as err:
@@ -428,10 +428,10 @@ class _Config(dict):
                 'must have the same length.'
             ) from err
         # Check that the velocity and density models have the same length
-        n_vp_source = _none_lenght(config.vp_source)
-        n_vs_source = _none_lenght(config.vs_source)
-        n_rho_source = _none_lenght(config.rho_source)
-        n_layer_top_depths_source = _none_lenght(
+        n_vp_source = _none_length(config.vp_source)
+        n_vs_source = _none_length(config.vs_source)
+        n_rho_source = _none_length(config.rho_source)
+        n_layer_top_depths_source = _none_length(
             config.layer_top_depths_source)
         try:
             assert (
@@ -467,29 +467,33 @@ class _Config(dict):
         Parse free_surface_amplification config parameter.
         """
         fsa = self['free_surface_amplification']
+        fsa_items = ()
         if len(fsa) == 1:
-            # If values list has only one element, it must be a float:
-            try:
-                fsa_dict = {'*': float(fsa[0])}
-            except ValueError as e:
-                raise ValueError(f'Invalid value: {fsa[0]}') from e
-        else:
+            # If values list has only one element, try to parse it as a float
+            with contextlib.suppress(ValueError, TypeError):
+                fsa_items = (('*', float(fsa[0])),)
+        # If the above failed, or if there are multiple elements,
+        # try to parse as STATID: FLOAT pairs
+        if not fsa_items:
             # Values must be in the form: STATID1: FLOAT, STATID2: FLOAT, ...
             try:
-                fsa_dict = {
-                    key: float(val) for key, val in
+                if any(':' not in item for item in fsa):
+                    # empty ValueError to jump to except clause
+                    raise ValueError()
+                fsa_items = tuple(
+                    (key.strip(), float(val)) for key, val in
                     (item.split(':') for item in fsa)
-                }
-            except ValueError as e:
+                )
+            except (ValueError, TypeError) as e:
                 raise ValueError(
                     'Invalid format. '
                     'Expected: STATID1: FLOAT, STATID2: FLOAT, ...'
                 ) from e
         # Check that all values are positive
-        for val in fsa_dict.values():
+        for _, val in fsa_items:
             if val <= 0:
                 raise ValueError('All values must be positive.')
-        self['free_surface_amplification'] = fsa_dict
+        self['free_surface_amplification'] = fsa_items
 
     def _check_html_report(self):
         """

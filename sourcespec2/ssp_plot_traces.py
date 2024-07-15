@@ -21,7 +21,7 @@ from matplotlib import transforms
 from matplotlib import patches
 import matplotlib.patheffects as PathEffects
 from matplotlib.ticker import ScalarFormatter as sf
-from .config import config
+from .setup import config
 from .savefig import savefig
 from ._version import get_versions
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])

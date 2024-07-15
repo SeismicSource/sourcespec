@@ -28,7 +28,7 @@ from matplotlib import cm
 from matplotlib import colors
 import matplotlib.patheffects as PathEffects
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
-from .config import config
+from .setup import config
 from .adjustText import adjust_text
 from .cached_tiler import CachedTiler
 from .map_tiles import (

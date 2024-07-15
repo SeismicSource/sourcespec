@@ -13,8 +13,7 @@ import logging
 import numpy as np
 from scipy.stats import norm
 from scipy.integrate import quad
-from .config import config
-from .ssp_setup import ssp_exit
+from .setup import config, ssp_exit
 from .ssp_data_types import (
     SummarySpectralParameter, SummaryStatistics)
 from .ssp_util import mag_to_moment
