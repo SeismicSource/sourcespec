@@ -17,6 +17,7 @@ Read traces in multiple formats of data and metadata.
 """
 import sys
 import os
+import re
 import logging
 import shutil
 import tarfile
@@ -426,6 +427,53 @@ def _log_event_info(ssp_event):
     logger.info('---------------------------------------------------')
 
 
+def _skip_traces_from_config(traceid):
+    """
+    Skip traces with unknown channel orientation or ignored from config file.
+
+    :param traceid: Trace ID.
+    :type traceid: str
+
+    :raises: RuntimeError if traceid is ignored from config file.
+    """
+    network, station, location, channel = traceid.split('.')
+    orientation_codes = config.vertical_channel_codes +\
+        config.horizontal_channel_codes_1 +\
+        config.horizontal_channel_codes_2
+    orientation = channel[-1]
+    if orientation not in orientation_codes:
+        raise RuntimeError(
+            f'{traceid}: Unknown channel orientation: '
+            f'"{orientation}": skipping trace'
+        )
+    # build a list of all possible ids, from station only
+    # to full net.sta.loc.chan
+    ss = [
+        station,
+        '.'.join((network, station)),
+        '.'.join((network, station, location)),
+        '.'.join((network, station, location, channel)),
+    ]
+    if config.use_traceids is not None:
+        # - combine all ignore_traceids in a single regex
+        # - escape the dots, otherwise they are interpreted as any character
+        # - add a dot before the first asterisk, to avoid a pattern error
+        combined = (
+            "(" + ")|(".join(config.use_traceids) + ")"
+        ).replace('.', r'\.').replace('(*', '(.*')
+        if not any(re.match(combined, s) for s in ss):
+            raise RuntimeError(f'{traceid}: ignored from config file')
+    if config.ignore_traceids is not None:
+        # - combine all ignore_traceids in a single regex
+        # - escape the dots, otherwise they are interpreted as any character
+        # - add a dot before the first asterisk, to avoid a pattern error
+        combined = (
+            "(" + ")|(".join(config.ignore_traceids) + ")"
+        ).replace('.', r'\.').replace('(*', '(.*')
+        if any(re.match(combined, s) for s in ss):
+            raise RuntimeError(f'{traceid}: ignored from config file')
+
+
 def select_components(st):
     """
     Select requested components from stream
@@ -436,19 +484,12 @@ def select_components(st):
     :return: ObsPy Stream object
     :rtype: :class:`obspy.core.stream.Stream`
     """
-    orientation_codes = config.vertical_channel_codes +\
-        config.horizontal_channel_codes_1 +\
-        config.horizontal_channel_codes_2
-
-    tmpst = st.copy()
-    st = Stream()
-    for trace in tmpst.traces:
-        orientation = trace.stats.channel[-1]
-        if orientation not in orientation_codes:
-            logger.warning(
-                f'{trace.id}: Unknown channel orientation: '
-                f'"{orientation}": skipping trace'
-            )
+    traces_to_keep = []
+    for trace in st:
+        try:
+            _skip_traces_from_config(trace.id)
+        except RuntimeError as e:
+            logger.warning(str(e))
             continue
         # TODO: should we also filter by station here?
         # only use the station specified by the command line option
@@ -456,9 +497,9 @@ def select_components(st):
         #if (config.options.station is not None and
         #        trace.stats.station != config.options.station):
         #    continue
-        st.append(trace)
-
-    return st
+        traces_to_keep.append(trace)
+    # in-place update of st
+    st.traces[:] = traces_to_keep[:]
 
 
 def read_event_and_picks(trace1=None):
@@ -537,7 +578,8 @@ def augment_event(ssp_event):
 
 def augment_traces(st, inventory, ssp_event, picks):
     """
-    Add all required information to trace headers
+    Add all required information to trace headers.
+    Remove problematic traces.
 
     :param st: Traces to be augmented
     :type st: :class:`obspy.core.stream.Stream`
@@ -548,6 +590,7 @@ def augment_traces(st, inventory, ssp_event, picks):
     :param picks: list of picks
     :type picks: list of :class:`sourcespec.ssp_event.Pick`
     """
+    traces_to_keep = []
     for trace in st:
         _correct_traceid(trace)
         try:
@@ -557,11 +600,14 @@ def augment_traces(st, inventory, ssp_event, picks):
             _add_coords(trace)
             _add_event(trace, ssp_event)
             _add_picks(trace, picks)
+            trace.stats.ignore = False
         except Exception as err:
             for line in str(err).splitlines():
                 logger.warning(line)
             continue
-
+        traces_to_keep.append(trace)
+    # in-place update of st
+    st.traces[:] = traces_to_keep[:]
     _complete_picks(st)
 
 
