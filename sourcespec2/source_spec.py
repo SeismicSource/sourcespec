@@ -54,14 +54,14 @@ def ssp_run(st, inventory, ssp_event, picks, allow_exit=False):
     # Create output folder if required, save config and setup logging
     from .ssp_setup import (get_outdir_path, save_config, setup_logging)
     if config.options.outdir:
-        outdir = get_outdir_path()
+        outdir = get_outdir_path(ssp_event.event_id)
         if not os.path.exists(outdir):
             os.makedirs(outdir)
             # Setup logging
             # (it is assumed this is already done if outdir exists)
-            setup_logging(config.event.event_id)
+            setup_logging(ssp_event.event_id)
         # Save config to out dir
-        save_config()
+        save_config(ssp_event.event_id)
 
     # Preprocessing
     from .ssp_read_traces import (augment_event, augment_traces,
@@ -159,7 +159,7 @@ def main():
     options = parse_args(progname='source_spec')
 
     # Setup stage
-    from .config import config, configure_cli
+    from .config import configure_cli
     configure_cli(options, progname='source_spec')
     from .ssp_setup import (
         move_outdir, remove_old_outdir, setup_logging,
@@ -176,8 +176,8 @@ def main():
     ssp_event, picks = read_event_and_picks(trace1)
 
     # Now that we have an evid, we can rename the outdir and the log file
-    move_outdir()
-    setup_logging(config.event.event_id)
+    move_outdir(ssp_event.event_id)
+    setup_logging(ssp_event.event_id)
     remove_old_outdir()
 
     # Run sourcespec function
