@@ -80,11 +80,13 @@ class _Config(dict):
         Import the global config object instead.
     """
     def __init__(self):
-        # Additional config values. Tey must be defined using the dict syntax.
+        # Additional config values that must exist for the code to run without
+        # errors. Tey must be defined using the dict syntax.
         self['running_from_command_line'] = False
         self['vertical_channel_codes'] = ['Z']
         self['horizontal_channel_codes_1'] = ['N', 'R']
         self['horizontal_channel_codes_2'] = ['E', 'T']
+        self['TRACEID_MAP'] = None
         # Empty options object, for compatibility with the command line version
         self['options'] = types.SimpleNamespace()
         # A list of warnings to be issued when logger is set up
@@ -131,6 +133,8 @@ class _Config(dict):
         for key, value in self.items():
             if value == 'None':
                 self[key] = None
+            if isinstance(value, list):
+                self[key] = [None if val == 'None' else val for val in value]
         # Make sure that self['figures'] is still a defaultdict
         self['figures'] = defaultdict(list, self['figures'])
         self._update_channel_codes()
