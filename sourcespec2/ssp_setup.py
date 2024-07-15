@@ -43,30 +43,39 @@ LOGGER = None
 SSP_EXIT_CALLED = False
 
 
-def save_config():
+def save_config(eventid=None):
     """Save config file to output dir."""
+    if eventid is None:
+        try:
+            eventid = config.event.event_id
+        except AttributeError as err:
+            raise RuntimeError(
+                'No event ID found. Cannot save config file.'
+            ) from err
     # Actually, it renames the file already existing.
     src = os.path.join(config.options.outdir, 'source_spec.conf')
-    evid = config.event.event_id
-    dst = os.path.join(config.options.outdir, f'{evid}.ssp.conf')
+    dst = os.path.join(config.options.outdir, f'{eventid}.ssp.conf')
     # On Windows, dst file must not exist
     with contextlib.suppress(Exception):
         os.remove(dst)
     os.rename(src, dst)
 
 
-def get_outdir_path():
+def get_outdir_path(eventid=None):
     """Construct full path to output directory"""
-    try:
-        evid = config.event.event_id
-    except Exception:
-        return
+    if eventid is None:
+        try:
+            eventid = config.event.event_id
+        except AttributeError as err:
+            raise RuntimeError(
+                'No event ID found. Cannot create output directory.'
+            ) from err
     src = config.options.outdir
     run_id = config.options.run_id
     run_id_subdir = config.options.run_id_subdir
     # TODO: does next line also work if no tmpdir has been created first?
     outdir = os.path.split(src)[0]
-    outdir = os.path.join(outdir, str(evid))
+    outdir = os.path.join(outdir, str(eventid))
     if run_id and run_id_subdir:
         outdir = os.path.join(outdir, str(run_id))
     elif run_id:
@@ -75,10 +84,10 @@ def get_outdir_path():
     return outdir
 
 
-def move_outdir():
+def move_outdir(eventid=None):
     """Move outdir to a new dir named from evid (and optional run_id)."""
     src = config.options.outdir
-    dst = get_outdir_path()
+    dst = get_outdir_path(eventid)
     # Create destination
     if not os.path.exists(dst):
         os.makedirs(dst)
