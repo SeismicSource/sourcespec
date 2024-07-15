@@ -25,9 +25,8 @@ except ImportError:
     from scipy.integrate import cumulative_trapezoid as cumtrapz
 from scipy.interpolate import interp1d
 from obspy.core import Stream
-from .config import config
+from .setup import config, ssp_exit
 from .spectrum import Spectrum, SpectrumStream
-from .ssp_setup import ssp_exit
 from .ssp_util import (
     smooth, cosine_taper, moment_to_mag, MediumProperties)
 from .ssp_geom_spreading import (

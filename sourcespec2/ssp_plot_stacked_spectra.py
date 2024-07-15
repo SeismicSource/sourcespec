@@ -17,7 +17,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
 from matplotlib.collections import LineCollection
-from .config import config
+from .setup import config
 from .ssp_util import moment_to_mag, mag_to_moment
 from .ssp_spectral_model import spectral_model
 from .savefig import savefig

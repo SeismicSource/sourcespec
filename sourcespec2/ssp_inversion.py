@@ -20,7 +20,7 @@ import numpy as np
 from scipy.optimize import curve_fit, minimize, basinhopping
 from scipy.signal import argrelmax
 from obspy.geodetics import gps2dist_azimuth
-from .config import config
+from .setup import config
 from .spectrum import SpectrumStream
 from .ssp_spectral_model import (
     spectral_model, objective_func, callback)
