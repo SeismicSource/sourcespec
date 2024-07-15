@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.patheffects as PathEffects
 from .spectrum import SpectrumStream
-from .config import config
+from .setup import config
 from .ssp_util import spec_minmax, moment_to_mag, mag_to_moment
 from .savefig import savefig
 from ._version import get_versions
