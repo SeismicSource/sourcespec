@@ -15,7 +15,7 @@ import re
 import logging
 from obspy import read_inventory
 from obspy.core.inventory import Inventory, Network, Station, Channel, Response
-from .setup import config
+from ..setup import config
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -182,24 +182,23 @@ def _read_paz_file(file):
     return paz.to_inventory()
 
 
-def read_station_metadata(path):
+def read_station_metadata():
     """
     Read station metadata into an ObsPy ``Inventory`` object.
-
-    :param path: path to the station metadata file or directory
-    :type path: str
 
     :return: inventory
     :rtype: :class:`~obspy.core.inventory.inventory.Inventory`
     """
     inventory = Inventory()
-    if path is None:
-        return inventory
     logger.info('Reading station metadata...')
-    if os.path.isdir(path):
-        filelist = [os.path.join(path, file) for file in os.listdir(path)]
+    metadata_path = config.station_metadata
+    if os.path.isdir(metadata_path):
+        filelist = [
+            os.path.join(metadata_path, file)
+            for file in os.listdir(metadata_path)
+        ]
     else:
-        filelist = [path, ]
+        filelist = [metadata_path, ]
     for file in sorted(filelist):
         if os.path.isdir(file):
             # we do not enter into subdirs of "path"
