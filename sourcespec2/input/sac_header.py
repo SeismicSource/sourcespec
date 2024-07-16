@@ -13,9 +13,9 @@ import re
 import logging
 import contextlib
 from obspy.core.util import AttribDict
-from .setup import config, ssp_exit
-from .ssp_event import SSPEvent
-from .ssp_pick import SSPPick
+from ..setup import config, ssp_exit
+from ..ssp_event import SSPEvent
+from ..ssp_pick import SSPPick
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 

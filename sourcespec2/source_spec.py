@@ -63,10 +63,8 @@ def ssp_run(st, inventory, ssp_event, picks, allow_exit=False):
         save_config(ssp_event.event_id)
 
     # Preprocessing
-    from .ssp_read_traces import (augment_event, augment_traces,
-                                  select_components)
+    from .input import augment_event, augment_traces
     augment_event(ssp_event)
-    select_components(st)
     augment_traces(st, inventory, ssp_event, picks)
 
     # Deconvolve, filter, cut traces:
@@ -164,12 +162,13 @@ def main():
     setup_logging()
 
     # Read all required information from disk
-    from .ssp_read_traces import (read_traces, read_station_inventory,
-                                  read_event_and_picks)
+    from .input import read_traces
     st = read_traces()
     trace1 = st[0] if len(st) else None
     st.sort()
-    inventory = read_station_inventory()
+    from .input import read_station_metadata
+    inventory = read_station_metadata()
+    from .input import read_event_and_picks
     ssp_event, picks = read_event_and_picks(trace1)
 
     # Now that we have an evid, we can rename the outdir and the log file
