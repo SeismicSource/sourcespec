@@ -48,11 +48,81 @@ def parse_qml():
     if qml_file is None:
         return ssp_event, picks
     try:
-        qml_event = _get_event_from_qml(qml_file, event_id)
+        cat = read_events(qml_file)
+        qml_event = _get_event_from_qml_cat(cat, event_id, qml_file)
+    except Exception as err:
+        logger.error(err)
+        ssp_exit(1)
+    else:
+        (ssp_event, picks) = parse_qml_event(qml_event,
+                parse_event_name_from_description=qml_event_description,
+                event_description_regex=qml_event_description_regex)
+    
+    return (ssp_event, picks)
+
+
+def parse_asdf(asdf_file, event_id=None):
+    """
+    Parse event metadata and picks from ASDF file
+    
+    :param asdf_file: full path to ASDF file
+    :type asdf_file: str
+    :param event_id: event id
+    :type event_id: str
+    
+    :return: a tuple of (SSPEvent, picks)
+    :rtype: tuple
+    """
+    import pyasdf
+    
+    ssp_event = None
+    picks = []
+    event_id = event_id or config.options.evid
+    # No need to parse event name from QuakeML if event name is given
+    # in the command line
+    if config.options.evname is None:
+        qml_event_description = config.qml_event_description
+        qml_event_description_regex = config.qml_event_description_regex
+    else:
+        qml_event_description = False
+        qml_event_description_regex = None
+
+    try:
+        ds = pyasdf.ASDFDataSet(asdf_file, mode='r')
+        cat = ds.events
+        qml_event = _get_event_from_qml_cat(cat, event_id, asdf_file)
+    except Exception as err:
+        logger.error(err)
+        ssp_exit(1)
+    else:
+        (ssp_event, picks) = parse_qml_event(qml_event,
+                parse_event_name_from_description=qml_event_description,
+                event_description_regex=qml_event_description_regex)
+        ssp_event.name = ssp_event.name or config.options.evname
+    
+    return (ssp_event, picks)
+
+
+def parse_qml_event(qml_event, parse_event_name_from_description=False,
+                    event_description_regex=None):
+    """
+    Parse event metadata and picks from a QuakeML / obspy event
+    
+    :param qml_event: QuakeML / obspy event
+    :type qml_event: instance of :class:`obspy.core.event.Event`
+    :param parse_event_name_from_description: parse event name from description
+    :type parse_event_name_from_description: bool
+    :param event_description_regex: regex to extract event name
+    :type event_description_regex: str
+    
+    :return: a tuple of (SSPEvent, picks)
+    :rtype: tuple
+    """
+    try:
         ssp_event = _parse_qml_event(
             qml_event,
-            parse_event_name_from_description=qml_event_description,
-            event_description_regex=qml_event_description_regex)
+            parse_event_name_from_description=parse_event_name_from_description,
+            event_description_regex=event_description_regex)
         picks = _parse_picks_from_qml_event(qml_event)
     except Exception as err:
         logger.error(err)
@@ -80,31 +150,33 @@ def parse_qml():
     return ssp_event, picks
 
 
-def _get_event_from_qml(qml_file, event_id=None):
+def _get_event_from_qml_cat(qml_cat, event_id=None,
+                            qml_source='QML catalog'):
     """
-    Get an event from a QuakeML file.
+    Get an event from a QuakeML catalog.
 
-    :param qml_file: QuakeML file
-    :type qml_file: str
+    :param qml_cat: QuakeML catalog
+    :type qml_cat: instance of :class:`obspy.core.event.Catalog`
     :param event_id: event id
     :type event_id: str
+    :param qml_source: source file of QuakeML catalog
+    :type qml_source: str
 
     :return: QuakeML event
     :rtype: obspy.core.event.Event
     """
-    cat = read_events(qml_file)
     if event_id is not None:
-        _qml_events = [ev for ev in cat if event_id in str(ev.resource_id)]
+        _qml_events = [ev for ev in qml_cat if event_id in str(ev.resource_id)]
         try:
             qml_event = _qml_events[0]
         except IndexError as e:
             raise ValueError(
-                f'Event {event_id} not found in {qml_file}') from e
+                f'Event {event_id} not found in {qml_source}') from e
     else:
-        qml_event = cat[0]
-        if len(cat) > 1:
+        qml_event = qml_cat[0]
+        if len(qml_cat) > 1:
             logger.warning(
-                f'Found {len(cat)} events in {qml_file}. '
+                f'Found {len(qml_cat)} events in {qml_source}. '
                 'Using the first one.')
     return qml_event
 
