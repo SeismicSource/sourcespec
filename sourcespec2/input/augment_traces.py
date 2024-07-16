@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: CECILL-2.1
 """
-Read traces in multiple formats of data and metadata.
+Augment traces with station and event metadata.
 
 :copyright:
     2012 Claudio Satriano <satriano@ipgp.fr>
@@ -15,31 +15,94 @@ Read traces in multiple formats of data and metadata.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-import sys
-import os
 import re
 import logging
-import shutil
-import tarfile
-import zipfile
-import tempfile
 import contextlib
-from obspy import read
-from obspy.core import Stream
 from obspy.core.util import AttribDict
-from .setup import config, ssp_exit
-from .ssp_util import MediumProperties
-from .ssp_read_station_metadata import read_station_metadata, PAZ
-from .ssp_read_event_metadata import (
-    parse_qml, parse_hypo_file, parse_hypo71_picks)
-from .ssp_read_sac_header import (
+from ..setup import config
+from .station_metadata import PAZ
+from .sac_header import (
     compute_sensitivity_from_SAC,
     get_instrument_from_SAC, get_station_coordinates_from_SAC,
     get_event_from_SAC, get_picks_from_SAC)
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-# TRACE MANIPULATION ----------------------------------------------------------
+def _skip_traces_from_config(traceid):
+    """
+    Skip traces with unknown channel orientation or ignored from config file.
+
+    :param traceid: Trace ID.
+    :type traceid: str
+
+    :raises: RuntimeError if traceid is ignored from config file.
+    """
+    network, station, location, channel = traceid.split('.')
+    orientation_codes = config.vertical_channel_codes +\
+        config.horizontal_channel_codes_1 +\
+        config.horizontal_channel_codes_2
+    orientation = channel[-1]
+    if orientation not in orientation_codes:
+        raise RuntimeError(
+            f'{traceid}: Unknown channel orientation: '
+            f'"{orientation}": skipping trace'
+        )
+    # build a list of all possible ids, from station only
+    # to full net.sta.loc.chan
+    ss = [
+        station,
+        '.'.join((network, station)),
+        '.'.join((network, station, location)),
+        '.'.join((network, station, location, channel)),
+    ]
+    if config.use_traceids is not None:
+        # - combine all use_traceids in a single regex
+        # - escape the dots, otherwise they are interpreted as any character
+        # - add a dot before the first asterisk, to avoid a pattern error
+        combined = (
+            "(" + ")|(".join(config.use_traceids) + ")"
+        ).replace('.', r'\.').replace('(*', '(.*')
+        if not any(re.match(combined, s) for s in ss):
+            raise RuntimeError(f'{traceid}: ignored from config file')
+    if config.ignore_traceids is not None:
+        # - combine all ignore_traceids in a single regex
+        # - escape the dots, otherwise they are interpreted as any character
+        # - add a dot before the first asterisk, to avoid a pattern error
+        combined = (
+            "(" + ")|(".join(config.ignore_traceids) + ")"
+        ).replace('.', r'\.').replace('(*', '(.*')
+        if any(re.match(combined, s) for s in ss):
+            raise RuntimeError(f'{traceid}: ignored from config file')
+
+
+def _select_components(st):
+    """
+    Select requested components from stream
+
+    :param st: ObsPy Stream object
+    :type st: :class:`obspy.core.stream.Stream`
+
+    :return: ObsPy Stream object
+    :rtype: :class:`obspy.core.stream.Stream`
+    """
+    traces_to_keep = []
+    for trace in st:
+        try:
+            _skip_traces_from_config(trace.id)
+        except RuntimeError as e:
+            logger.warning(str(e))
+            continue
+        # TODO: should we also filter by station here?
+        # only use the station specified by the command line option
+        # "--station", if any
+        #if (config.options.station is not None and
+        #        trace.stats.station != config.options.station):
+        #    continue
+        traces_to_keep.append(trace)
+    # in-place update of st
+    st.traces[:] = traces_to_keep[:]
+
+
 def _correct_traceid(trace):
     """
     Correct traceid from config.TRACEID_MAP, if available.
@@ -297,287 +360,36 @@ def _complete_picks(st):
                     tr.stats.picks += default_P_pick
                 if not [p for p in tr.stats.picks if p.phase == 'S']:
                     tr.stats.picks += default_S_pick
-# -----------------------------------------------------------------------------
 
 
-# FILE PARSING ----------------------------------------------------------------
-def _hypo_vel(hypo):
+def _augment_trace(trace, inventory, ssp_event, picks):
     """
-    Compute velocity at hypocenter.
+    Augment trace with station and event metadata.
 
-    :param hypo: Hypocenter object
-    :type hypo: :class:`sourcespec.ssp_event.Hypocenter`
-    """
-    medium_properties = MediumProperties(
-        hypo.longitude, hypo.latitude, hypo.depth.value_in_km)
-    hypo.vp = medium_properties.get(mproperty='vp', where='source')
-    hypo.vs = medium_properties.get(mproperty='vs', where='source')
-    hypo.rho = medium_properties.get(mproperty='rho', where='source')
-    depth_string = medium_properties.to_string(
-        'source depth', hypo.depth.value_in_km)
-    vp_string = medium_properties.to_string('vp_source', hypo.vp)
-    vs_string = medium_properties.to_string('vs_source', hypo.vs)
-    rho_string = medium_properties.to_string('rho_source', hypo.rho)
-    logger.info(f'{depth_string}, {vp_string}, {vs_string}, {rho_string}')
-
-
-def _build_filelist(path, filelist, tmpdir):
-    """
-    Build a list of files to read.
-
-    :param path: Path to a file or directory
-    :type path: str
-    :param filelist: List of files to read
-    :type filelist: list
-    :param tmpdir: Temporary directory
-    :type tmpdir: str
-    """
-    if os.path.isdir(path):
-        listing = os.listdir(path)
-        for filename in listing:
-            fullpath = os.path.join(path, filename)
-            _build_filelist(fullpath, filelist, tmpdir)
-    else:
-        try:
-            # pylint: disable=unspecified-encoding consider-using-with
-            open(path)
-        except IOError as err:
-            logger.error(err)
-            return
-        if tarfile.is_tarfile(path) and tmpdir is not None:
-            with tarfile.open(path) as tar:
-                try:
-                    tar.extractall(path=tmpdir)
-                except Exception as msg:
-                    logger.warning(
-                        f'{path}: Unable to fully extract tar archive: {msg}')
-        elif zipfile.is_zipfile(path) and tmpdir is not None:
-            with zipfile.ZipFile(path) as zipf:
-                try:
-                    zipf.extractall(path=tmpdir)
-                except Exception as msg:
-                    logger.warning(
-                        f'{path}: Unable to fully extract zip archive: {msg}')
-        else:
-            filelist.append(path)
-
-
-def _read_trace_files():
-    """
-    Read trace files from a given path and return a stream object.
-    Trace metadata are not yet updated.
-
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
     :param inventory: ObsPy Inventory object
     :type inventory: :class:`obspy.core.inventory.Inventory`
     :param ssp_event: SSPEvent object
     :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
     :param picks: list of picks
     :type picks: list of :class:`sourcespec.ssp_event.Pick`
-
-    :return: ObsPy Stream object
-    :rtype: :class:`obspy.core.stream.Stream`
     """
-    # phase 1: build a file list
-    # ph 1.1: create a temporary dir and run '_build_filelist()'
-    #         to move files to it and extract all tar archives
-    tmpdir = tempfile.mkdtemp()
-    filelist = []
-    for trace_path in config.options.trace_path:
-        _build_filelist(trace_path, filelist, tmpdir)
-    # ph 1.2: rerun '_build_filelist()' in tmpdir to add to the
-    #         filelist all the extraceted files
-    listing = os.listdir(tmpdir)
-    for filename in listing:
-        fullpath = os.path.join(tmpdir, filename)
-        _build_filelist(fullpath, filelist, None)
-    # phase 2: build a stream object from the file list
-    st = Stream()
-    for filename in sorted(filelist):
-        try:
-            tmpst = read(filename, fsize=False)
-        except Exception:
-            logger.warning(
-                f'{filename}: Unable to read file as a trace: skipping')
-            continue
-        # TODO: optionally we could already call select_components here
-        #tmpst = select_components(tmpst)
-        for trace in tmpst.traces:
-            # only use the station specified by the command line option
-            # "--station", if any
-            if (config.options.station is not None and
-                    trace.stats.station != config.options.station):
-                continue
-            st.append(trace)
-    shutil.rmtree(tmpdir)
-    return st
-# -----------------------------------------------------------------------------
-
-
-def _log_event_info(ssp_event):
-    """
-    Log event information.
-
-    :param ssp_event: SSPEvent object
-    :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
-    """
-    for line in str(ssp_event).splitlines():
-        logger.info(line)
-    logger.info('---------------------------------------------------')
-
-
-def _skip_traces_from_config(traceid):
-    """
-    Skip traces with unknown channel orientation or ignored from config file.
-
-    :param traceid: Trace ID.
-    :type traceid: str
-
-    :raises: RuntimeError if traceid is ignored from config file.
-    """
-    network, station, location, channel = traceid.split('.')
-    orientation_codes = config.vertical_channel_codes +\
-        config.horizontal_channel_codes_1 +\
-        config.horizontal_channel_codes_2
-    orientation = channel[-1]
-    if orientation not in orientation_codes:
-        raise RuntimeError(
-            f'{traceid}: Unknown channel orientation: '
-            f'"{orientation}": skipping trace'
-        )
-    # build a list of all possible ids, from station only
-    # to full net.sta.loc.chan
-    ss = [
-        station,
-        '.'.join((network, station)),
-        '.'.join((network, station, location)),
-        '.'.join((network, station, location, channel)),
-    ]
-    if config.use_traceids is not None:
-        # - combine all ignore_traceids in a single regex
-        # - escape the dots, otherwise they are interpreted as any character
-        # - add a dot before the first asterisk, to avoid a pattern error
-        combined = (
-            "(" + ")|(".join(config.use_traceids) + ")"
-        ).replace('.', r'\.').replace('(*', '(.*')
-        if not any(re.match(combined, s) for s in ss):
-            raise RuntimeError(f'{traceid}: ignored from config file')
-    if config.ignore_traceids is not None:
-        # - combine all ignore_traceids in a single regex
-        # - escape the dots, otherwise they are interpreted as any character
-        # - add a dot before the first asterisk, to avoid a pattern error
-        combined = (
-            "(" + ")|(".join(config.ignore_traceids) + ")"
-        ).replace('.', r'\.').replace('(*', '(.*')
-        if any(re.match(combined, s) for s in ss):
-            raise RuntimeError(f'{traceid}: ignored from config file')
-
-
-def select_components(st):
-    """
-    Select requested components from stream
-
-    :param st: ObsPy Stream object
-    :type st: :class:`obspy.core.stream.Stream`
-
-    :return: ObsPy Stream object
-    :rtype: :class:`obspy.core.stream.Stream`
-    """
-    traces_to_keep = []
-    for trace in st:
-        try:
-            _skip_traces_from_config(trace.id)
-        except RuntimeError as e:
-            logger.warning(str(e))
-            continue
-        # TODO: should we also filter by station here?
-        # only use the station specified by the command line option
-        # "--station", if any
-        #if (config.options.station is not None and
-        #        trace.stats.station != config.options.station):
-        #    continue
-        traces_to_keep.append(trace)
-    # in-place update of st
-    st.traces[:] = traces_to_keep[:]
-
-
-def read_event_and_picks(trace1=None):
-    """
-    Read event and phase picks
-
-    :param trace1: ObsPy Trace object containing event info (optional)
-    :type trace1: :class:`obspy.core.stream.Stream`
-
-    :return: (ssp_event, picks)
-    :rtype: tuple of
-        :class:`sourcespec.ssp_event.SSPEvent`,
-        list of :class:`sourcespec.ssp_event.Pick`
-    """
-    picks = []
-    ssp_event = None
-    # parse hypocenter file
-    if config.options.hypo_file is not None:
-        ssp_event, picks, file_format = parse_hypo_file(
-            config.options.hypo_file, config.options.evid)
-        config.hypo_file_format = file_format
-    # parse pick file
-    if config.options.pick_file is not None:
-        picks = parse_hypo71_picks()
-    # parse QML file
-    if config.options.qml_file is not None:
-        ssp_event, picks = parse_qml()
-    if ssp_event is not None:
-        _log_event_info(ssp_event)
-
-    # if ssp_event is still None, get it from first trace
-    if ssp_event is None and trace1 is not None:
-        try:
-            ssp_event = trace1.stats.event
-            _log_event_info(ssp_event)
-        except AttributeError:
-            logger.error('No hypocenter information found.')
-            sys.stderr.write(
-                '\n'
-                'Use "-q" or "-H" options to provide hypocenter information\n'
-                'or add hypocenter information to the SAC file header\n'
-                '(if you use the SAC format).\n'
-            )
-            ssp_exit(1)
-    # TODO: log also if trace1 is None?
-
-    return (ssp_event, picks)
-
-
-def augment_event(ssp_event):
-    """
-    Add velocity info to hypocenter
-    and add event name from/to config.options
-
-    The augmented event is stored in config.event
-
-    :param ssp_event: Evento to be augmented
-    :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
-    """
-    # add velocity info to hypocenter
-    try:
-        _hypo_vel(ssp_event.hypocenter)
-    except Exception as e:
-        logger.error(
-            f'Unable to compute velocity at hypocenter: {e}\n')
-        ssp_exit(1)
-    if config.options.evname is not None:
-        # add evname from command line, if any, overriding the one in ssp_event
-        ssp_event.name = config.options.evname
-    else:
-        # add evname from ssp_event, if any, to config file
-        config.options.evname = ssp_event.name
-    # add event to config file
-    config.event = ssp_event
+    _add_instrtype(trace)
+    _add_inventory(trace, inventory)
+    _check_instrtype(trace)
+    _add_coords(trace)
+    _add_event(trace, ssp_event)
+    _add_picks(trace, picks)
+    trace.stats.ignore = False
 
 
 def augment_traces(st, inventory, ssp_event, picks):
     """
     Add all required information to trace headers.
-    Remove problematic traces.
+
+    Only the traces that satisfy the conditions in the config file are kept.
+    Problematic traces are also removed.
 
     :param st: Traces to be augmented
     :type st: :class:`obspy.core.stream.Stream`
@@ -588,17 +400,14 @@ def augment_traces(st, inventory, ssp_event, picks):
     :param picks: list of picks
     :type picks: list of :class:`sourcespec.ssp_event.Pick`
     """
+    # First, select the components based on the config options
+    _select_components(st)
+    # Then, augment the traces and remove the problematic ones
     traces_to_keep = []
     for trace in st:
         _correct_traceid(trace)
         try:
-            _add_instrtype(trace)
-            _add_inventory(trace, inventory)
-            _check_instrtype(trace)
-            _add_coords(trace)
-            _add_event(trace, ssp_event)
-            _add_picks(trace, picks)
-            trace.stats.ignore = False
+            _augment_trace(trace, inventory, ssp_event, picks)
         except Exception as err:
             for line in str(err).splitlines():
                 logger.warning(line)
@@ -607,27 +416,3 @@ def augment_traces(st, inventory, ssp_event, picks):
     # in-place update of st
     st.traces[:] = traces_to_keep[:]
     _complete_picks(st)
-
-
-def read_station_inventory():
-    """read station metadata into an ObsPy ``Inventory`` object"""
-    inventory = read_station_metadata(config.station_metadata)
-    return inventory
-
-
-# Public interface:
-def read_traces():
-    """
-    Read trace files
-
-    :return: Traces
-    :rtype: :class:`obspy.core.stream.Stream`
-    """
-    logger.info('Reading traces...')
-    st = _read_trace_files()
-    logger.info('Reading traces: done')
-    logger.info('---------------------------------------------------')
-    if len(st) == 0:
-        logger.error('No trace loaded')
-        ssp_exit(1)
-    return st
