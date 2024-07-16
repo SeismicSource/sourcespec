@@ -581,7 +581,7 @@ def _command_line_interface():
     """Command line interface"""
     # pylint: disable=import-outside-toplevel
     from obspy import read, Stream
-    from .ssp_read_station_metadata import read_station_metadata
+    from .input import read_station_metadata
     args = _parse_arguments()
     st = Stream()
     for file in args.infile:
