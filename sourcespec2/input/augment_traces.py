@@ -20,7 +20,7 @@ import logging
 import contextlib
 from obspy.core.util import AttribDict
 from ..setup import config
-from .event_metadata import override_event_depth
+from .event_parsers import override_event_depth
 from .station_metadata import PAZ
 from .sac_header import (
     is_SAC_trace,
