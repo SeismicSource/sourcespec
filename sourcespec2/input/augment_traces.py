@@ -24,7 +24,7 @@ from .station_metadata import PAZ
 from .sac_header import (
     compute_sensitivity_from_SAC,
     get_instrument_from_SAC, get_station_coordinates_from_SAC,
-    get_event_from_SAC, get_picks_from_SAC)
+    get_picks_from_SAC)
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -293,21 +293,15 @@ def _add_coords(trace):
 _add_coords.skipped = []  # noqa
 
 
-def _add_event(trace, ssp_event=None):
+def _add_event(trace, ssp_event):
     """
     Add ssp_event object to trace.
 
     :param trace: ObsPy Trace object
     :type trace: :class:`obspy.core.trace.Trace`
-    :param ssp_event: SSPEvent object (default: None)
+    :param ssp_event: SSPEvent object
     :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
     """
-    if ssp_event is None:
-        # Try to get hypocenter information from the SAC header
-        try:
-            ssp_event = get_event_from_SAC(trace)
-        except Exception:
-            return
     trace.stats.event = ssp_event
 
 
