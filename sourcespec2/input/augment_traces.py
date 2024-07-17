@@ -325,13 +325,13 @@ def _add_coords(trace):
 _add_coords.skipped = []  # noqa
 
 
-def _add_event(trace, ssp_event=None):
+def _add_event(trace, ssp_event):
     """
     Add ssp_event object to trace.
 
     :param trace: ObsPy Trace object
     :type trace: :class:`obspy.core.trace.Trace`
-    :param ssp_event: SSPEvent object (default: None)
+    :param ssp_event: SSPEvent object
     :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
     """
     depth_override = getattr(config.options, 'depth', None)
