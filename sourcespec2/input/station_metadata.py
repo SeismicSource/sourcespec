@@ -182,6 +182,45 @@ def _read_paz_file(file):
     return paz.to_inventory()
 
 
+def parse_asdf_inventory(asdf_file):
+    """
+    Read station metadata from ASDF file
+
+    :param asdf_file: full path to ASDF file
+    :type asdf_file: str
+
+    :return: inventory
+    :rtype: :class:`~obspy.core.inventory.inventory.Inventory`
+    """
+    inventory = Inventory()
+
+    try:
+        # pylint: disable=import-outside-toplevel
+        # pyasdf is not a hard dependency, so we import it here
+        # and check for ImportError
+        import pyasdf
+    except ImportError:
+        logger.error(
+            'Error importing pyasdf. '
+            'See https://seismicdata.github.io/pyasdf/ for installation '
+            'instructions.'
+        )
+        ssp_exit(1)
+    try:
+        ds = pyasdf.ASDFDataSet(asdf_file, mode='r')
+    except Exception as err:
+        logger.error(err)
+        ssp_exit(1)
+    else:
+        for nw_stat_code in ds.waveforms.list():
+            if 'StationXML' in ds.waveforms[nw_stat_code]:
+                station_inv = ds.waveforms[nw_stat_code].StationXML
+                inventory += station_inv
+        ds._close()
+
+    return inventory
+
+
 def read_station_metadata():
     """
     Read station metadata into an ObsPy ``Inventory`` object.
@@ -213,7 +252,10 @@ def read_station_metadata():
             continue
         logger.info(f'Reading station metadata from file: {file}')
         try:
-            inventory += read_inventory(file)
+            if os.path.splitext(file)[-1].lower() in ('.asdf', '.h5'):
+                inventory += parse_asdf_inventory(file)
+            else:
+                inventory += read_inventory(file)
         except Exception:
             msg1 = f'Unable to parse file "{file}" as Inventory'
             try:
