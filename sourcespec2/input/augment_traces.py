@@ -387,7 +387,9 @@ def augment_traces(st, inventory, ssp_event, picks):
 
     :param st: Traces to be augmented
     :type st: :class:`obspy.core.stream.Stream`
-    :param inventory: Station metadata
+    :param inventory: Station metadata. If it is None or an empty Inventory
+        object, the code will try to read the station metadata from the
+        trace headers (only SAC format is supported).
     :type inventory: :class:`obspy.core.inventory.Inventory`
     :param ssp_event: Event information
     :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`

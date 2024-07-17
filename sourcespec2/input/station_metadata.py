@@ -188,8 +188,16 @@ def read_station_metadata():
 
     :return: inventory
     :rtype: :class:`~obspy.core.inventory.inventory.Inventory`
+
+    .. note::
+        - Station metadata can be in StationXML, dataless SEED, SEED RESP,
+          PAZ (SAC polezero format) format.
+        - An empty inventory is returned if the station metadata path is
+          not set in the configuration or if no valid files are found
     """
     inventory = Inventory()
+    if not config.station_metadata:
+        return inventory
     logger.info('Reading station metadata...')
     metadata_path = config.station_metadata
     if os.path.isdir(metadata_path):
