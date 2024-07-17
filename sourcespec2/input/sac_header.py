@@ -137,10 +137,16 @@ def get_event_from_SAC(trace):
         raise RuntimeError(
             f'{trace.id}: not a SAC trace: cannot get hypocenter from header'
         ) from e
-    evla = sac_hdr['evla']
-    evlo = sac_hdr['evlo']
-    evdp = sac_hdr['evdp']
-    begin = sac_hdr['b']
+    try:
+        evla = sac_hdr['evla']
+        evlo = sac_hdr['evlo']
+        evdp = sac_hdr['evdp']
+        begin = sac_hdr['b']
+    except KeyError as e:
+        raise RuntimeError(
+            f'{trace.id}: cannot find hypocenter information in SAC header: '
+            f'{e}'
+        ) from e
     starttime = trace.stats.starttime
     try:
         tori = sac_hdr['o']
