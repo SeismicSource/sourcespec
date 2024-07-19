@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CECILL-2.1
 """
 Read station metadata in StationXML, dataless SEED, SEED RESP,
-PAZ (SAC polezero format).
+PAZ (SAC polezero format), ASDF
 
 :copyright:
     2012-2024 Claudio Satriano <satriano@ipgp.fr>
@@ -16,6 +16,7 @@ import logging
 from obspy import read_inventory
 from obspy.core.inventory import Inventory, Network, Station, Channel, Response
 from ..setup import config
+from .station_metadata_parsers import parse_asdf_inventory
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -182,46 +183,21 @@ def _read_paz_file(file):
     return paz.to_inventory()
 
 
-def parse_asdf_inventory(asdf_file):
+def _read_asdf_inventory():
     """
-    Read station metadata from ASDF file
-
-    :param asdf_file: full path to ASDF file
-    :type asdf_file: str
+    Read station metadata from ASDF file specified in the configuration.
 
     :return: inventory
     :rtype: :class:`~obspy.core.inventory.inventory.Inventory`
     """
-    inventory = Inventory()
-
-    try:
-        # pylint: disable=import-outside-toplevel
-        # pyasdf is not a hard dependency, so we import it here
-        # and check for ImportError
-        import pyasdf
-    except ImportError:
-        logger.error(
-            'Error importing pyasdf. '
-            'See https://seismicdata.github.io/pyasdf/ for installation '
-            'instructions.'
-        )
-        ssp_exit(1)
-    try:
-        ds = pyasdf.ASDFDataSet(asdf_file, mode='r')
-    except Exception as err:
-        logger.error(err)
-        ssp_exit(1)
-    else:
-        for nw_stat_code in ds.waveforms.list():
-            if 'StationXML' in ds.waveforms[nw_stat_code]:
-                station_inv = ds.waveforms[nw_stat_code].StationXML
-                inventory += station_inv
-        ds._close()
-
-    return inventory
+    asdf_file = config.options.asdf_file
+    if not asdf_file:
+        return Inventory()
+    logger.info(f'Reading station metadata from ASDF file: {asdf_file}')
+    return parse_asdf_inventory(asdf_file)
 
 
-def read_station_metadata():
+def _read_station_metadata_from_files():
     """
     Read station metadata into an ObsPy ``Inventory`` object.
 
@@ -235,10 +211,9 @@ def read_station_metadata():
           not set in the configuration or if no valid files are found
     """
     inventory = Inventory()
-    if not config.station_metadata:
-        return inventory
-    logger.info('Reading station metadata...')
     metadata_path = config.station_metadata
+    if not metadata_path:
+        return inventory
     if os.path.isdir(metadata_path):
         filelist = [
             os.path.join(metadata_path, file)
@@ -252,10 +227,7 @@ def read_station_metadata():
             continue
         logger.info(f'Reading station metadata from file: {file}')
         try:
-            if os.path.splitext(file)[-1].lower() in ('.asdf', '.h5'):
-                inventory += parse_asdf_inventory(file)
-            else:
-                inventory += read_inventory(file)
+            inventory += read_inventory(file)
         except Exception:
             msg1 = f'Unable to parse file "{file}" as Inventory'
             try:
@@ -264,6 +236,19 @@ def read_station_metadata():
                 logger.warning(msg1)
                 logger.warning(msg2)
                 continue
-    logger.info('Reading station metadata: done')
+    return inventory
+
+
+def read_station_metadata():
+    """
+    Read station metadata.
+
+    :return: inventory
+    :rtype: :class:`~obspy.core.inventory.inventory.Inventory`
+    """
+    logger.info('Reading station metadata...')
+    inventory = _read_station_metadata_from_files() + _read_asdf_inventory()
+    nstations = len(inventory.get_contents()['stations'])
+    logger.info(f'Reading station metadata: {nstations} stations read')
     logger.info('---------------------------------------------------')
     return inventory
