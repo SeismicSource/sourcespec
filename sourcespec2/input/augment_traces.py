@@ -21,7 +21,7 @@ import contextlib
 from obspy.core.util import AttribDict
 from ..setup import config
 from .event_parsers import override_event_depth
-from .station_metadata import PAZ
+from .station_metadata_parsers import PAZ
 from .sac_header import (
     is_SAC_trace,
     compute_sensitivity_from_SAC,
