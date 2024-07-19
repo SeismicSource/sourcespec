@@ -98,7 +98,10 @@ def _read_asdf_traces():
     asdf_file = config.options.asdf_file
     if not asdf_file:
         return Stream()
-    return _filter_by_station(parse_asdf_traces(asdf_file))
+    asdf_tag = config.options.asdf_tag
+    return _filter_by_station(
+        parse_asdf_traces(asdf_file, tag=asdf_tag, read_headers=True)
+    )
 
 
 def _read_trace_files():
