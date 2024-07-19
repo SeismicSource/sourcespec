@@ -118,7 +118,7 @@ def _init_parser(description, epilog, nargs):
         help='get picks and hypocenter information from QuakeML FILE',
         metavar='FILE'
     )
-    parser.add_argument(
+    group.add_argument(
         '-a', '--asdffile', dest='asdf_file',
         action='store', default=None,
         help='get picks, hypocenter information, traces and metadata from\n'
