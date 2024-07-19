@@ -10,3 +10,4 @@ Station metadata parsers for SourceSpec.
     (http://www.cecill.info/licences.en.html)
 """
 from .asdf_inventory import parse_asdf_inventory  # noqa
+from .paz import read_paz_file, PAZ  # noqa
