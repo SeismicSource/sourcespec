@@ -13,6 +13,6 @@ from .asdf_event import parse_asdf_event_picks  # noqa
 from .hypo71 import parse_hypo71_hypocenter, parse_hypo71_picks  # noqa
 from .hypo2000 import parse_hypo2000_file  # noqa
 from .obspy_catalog import parse_obspy_catalog  # noqa
-from .quakeml import parse_qml_file  # noqa
+from .quakeml import parse_qml_event_picks  # noqa
 from .source_spec_event import parse_source_spec_event_file  # noqa
 from .override_event_depth import override_event_depth  # noqa
