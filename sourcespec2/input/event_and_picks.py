@@ -20,8 +20,13 @@ import logging
 
 from ..setup import config, ssp_exit
 from .event_parsers import (
-    parse_hypo71_hypocenter, parse_hypo71_picks, parse_hypo2000_file,
-    parse_qml_file, parse_source_spec_event_file, override_event_depth
+    parse_hypo71_hypocenter,
+    parse_hypo71_picks,
+    parse_hypo2000_file,
+    parse_source_spec_event_file,
+    parse_qml_file,
+    parse_asdf_event_picks,
+    override_event_depth
 )
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
@@ -104,6 +109,9 @@ def read_event_and_picks(trace1=None):
     # parse QML file
     if config.options.qml_file is not None:
         ssp_event, picks = parse_qml_file()
+    # parse ASDF file
+    if config.options.asdf_file is not None:
+        ssp_event, picks = parse_asdf_event_picks(config.options.asdf_file)
     if ssp_event is not None:
         override_event_depth(ssp_event, depth_override)
         _log_event_info(ssp_event)
