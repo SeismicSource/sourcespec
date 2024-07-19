@@ -126,6 +126,12 @@ def _init_parser(description, epilog, nargs):
         metavar='FILE'
     )
     parser.add_argument(
+        '-g', '--tag', dest='asdf_tag',
+        action='store', default=None,
+        help='tag to use when reading traces from ASDF file',
+        metavar='TAG'
+    )
+    parser.add_argument(
         '-H', '--hypocenter', dest='hypo_file',
         action='store', default=None,
         help='get hypocenter information from FILE.\n'
