@@ -107,6 +107,7 @@ def _read_asdf_traces():
     if not asdf_file:
         return Stream()
     asdf_tag = config.options.asdf_tag
+    logger.info(f'Reading traces from ASDF file: {asdf_file}')
     return _filter_by_station(
         parse_asdf_traces(asdf_file, tag=asdf_tag, read_headers=True)
     )
@@ -174,9 +175,10 @@ def read_traces():
     logger.info('Reading traces...')
     stream = _read_asdf_traces() + _read_trace_files()
     _read_event_from_traces(stream)
-    logger.info('Reading traces: done')
+    ntraces = len(stream)
+    logger.info(f'Reading traces: {ntraces} traces loaded')
     logger.info('---------------------------------------------------')
-    if len(stream) == 0:
+    if not ntraces:
         logger.error('No trace loaded')
         ssp_exit(1)
     return stream
