@@ -62,8 +62,63 @@ def _parse_hypo_file(hypo_file, event_id=None):
             err_msgs.append(msg)
     # If we arrive here, the file was not recognized as valid
     for msg in err_msgs:
-        logger.error(msg)
-    ssp_exit(1)
+        logger.warning(msg)
+    picks = []
+    ssp_event = None
+    file_format = None
+    return ssp_event, picks, file_format
+
+
+def _replace_event(old_event, new_event, old_source, new_source):
+    """
+    Replace old event with new event.
+
+    :param old_event: Old SSPEvent object
+    :type old_event: :class:`sourcespec.ssp_event.SSPEvent`
+    :param new_event: New SSPEvent object
+    :type new_event: :class:`sourcespec.ssp_event.SSPEvent`
+    :param old_source: Old source
+    :type old_source: str
+    :param new_source: New source
+    :type new_source: str
+
+    :return: New SSPEvent object, new source
+    :rtype: tuple
+    """
+    if new_event is None:
+        return old_event, old_source
+    if old_event is not None:
+        logger.warning(
+            f'Replacing event information found in {old_source} '
+            f'with information from {new_source}'
+        )
+    return new_event, new_source
+
+
+def _replace_picks(old_picks, new_picks, old_source, new_source):
+    """
+    Replace old picks with new picks.
+
+    :param old_picks: Old picks
+    :type old_picks: list of :class:`sourcespec.ssp_event.Pick`
+    :param new_picks: New picks
+    :type new_picks: list of :class:`sourcespec.ssp_event.Pick`
+    :param old_source: Old source
+    :type old_source: str
+    :param new_source: New source
+    :type new_source: str
+
+    :return: New picks, new source
+    :rtype: tuple
+    """
+    if not new_picks:
+        return old_picks, old_source
+    if old_picks:
+        logger.warning(
+            f'Replacing picks found in {old_source} '
+            f'with picks from {new_source}'
+        )
+    return new_picks, new_source
 
 
 def _log_event_info(ssp_event):
@@ -89,23 +144,57 @@ def read_event_and_picks(trace1=None):
     :rtype: tuple of
         :class:`sourcespec.ssp_event.SSPEvent`,
         list of :class:`sourcespec.ssp_event.Pick`
+
+    .. note::
+        The function reads event and phase picks from the following sources,
+        from the less prioritary to the most prioritary:
+        - ASDF file
+        - QML file
+        - Hypocenter file
+        - Pick file
+
+        If trace1 is provided and contains event information, then this
+        information is used if no other source is found.
     """
     picks = []
     ssp_event = None
-    # parse hypocenter file
-    if getattr(config.options, 'hypo_file', None):
-        ssp_event, picks, file_format = _parse_hypo_file(
-            config.options.hypo_file, config.options.evid)
+    asdf_file = getattr(config.options, 'asdf_file', None)
+    hypo_file = getattr(config.options, 'hypo_file', None)
+    pick_file = getattr(config.options, 'pick_file', None)
+    qml_file = getattr(config.options, 'qml_file', None)
+    _event_source = None
+    _picks_source = None
+    # parse ASDF file, lowest priority
+    if asdf_file is not None:
+        ssp_event, picks = parse_asdf_event_picks(asdf_file)
+        _event_source = _picks_source = asdf_file
+    # parse QML file, possibly replacing event and picks
+    if qml_file is not None:
+        _new_ssp_event, _new_picks = parse_qml_event_picks(qml_file)
+        ssp_event, _event_source = _replace_event(
+            ssp_event, _new_ssp_event, _event_source, qml_file
+        )
+        picks, _picks_source = _replace_picks(
+            picks, _new_picks, _picks_source, qml_file
+        )
+    # parse hypocenter file, possibly replacing event and picks
+    if hypo_file is not None:
+        _new_ssp_event, _new_picks, file_format = _parse_hypo_file(
+            hypo_file, config.options.evid)
+        # this is needed when writing the output file in hypo71 format
         config.hypo_file_format = file_format
-    # parse pick file
-    if getattr(config.options, 'pick_file', None):
-        picks = parse_hypo71_picks()
-    # parse QML file
-    if getattr(config.options, 'qml_file', None):
-        ssp_event, picks = parse_qml_event_picks(config.options.qml_file)
-    # parse ASDF file
-    if getattr(config.options, 'asdf_file', None):
-        ssp_event, picks = parse_asdf_event_picks(config.options.asdf_file)
+        ssp_event, _event_source = _replace_event(
+            ssp_event, _new_ssp_event, _event_source, hypo_file
+        )
+        picks, _picks_source = _replace_picks(
+            picks, _new_picks, _picks_source, hypo_file
+        )
+    # parse pick file, possibly replacing picks
+    if pick_file is not None:
+        _new_picks = parse_hypo71_picks()
+        picks, _picks_source = _replace_picks(
+            picks, _new_picks, _picks_source, pick_file
+        )
     if ssp_event is not None:
         _log_event_info(ssp_event)
 

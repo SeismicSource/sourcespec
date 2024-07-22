@@ -13,7 +13,7 @@ import os
 import logging
 from datetime import datetime
 from obspy import UTCDateTime
-from ...setup import config, ssp_exit
+from ...setup import config
 from ...ssp_event import SSPEvent
 from ...ssp_pick import SSPPick
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
@@ -81,9 +81,9 @@ def parse_hypo71_picks():
         return picks
     try:
         _is_hypo71_picks(pick_file)
-    except Exception as err:
-        logger.error(err)
-        ssp_exit(1)
+    except TypeError as err:
+        logger.warning(err)
+        return picks
     with open(pick_file, encoding='ascii') as fp:
         for line in fp:
             # remove newline
