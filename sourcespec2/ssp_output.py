@@ -416,8 +416,9 @@ def _make_symlinks():
         config.options.hypo_file,
         config.options.pick_file,
         config.options.qml_file,
-        config.options.asdf_file,
     ]
+    with contextlib.suppress(TypeError):
+        filelist += list(config.options.asdf_path)
     for filename in filelist:
         if filename is None or not os.path.exists(filename):
             continue
