@@ -52,12 +52,12 @@ def _parse_event_metadata(obspy_event):
     """
     # No need to parse event name from the ObsPy event if event name is given
     # in the command line
-    if config.options.evname is None:
-        parse_event_name_from_description = config.qml_event_description
-        event_description_regex = config.qml_event_description_regex
-    else:
+    if getattr(config.options, 'evname', None):
         parse_event_name_from_description = False
         event_description_regex = None
+    else:
+        parse_event_name_from_description = config.qml_event_description
+        event_description_regex = config.qml_event_description_regex
     ssp_event = SSPEvent()
     ssp_event.event_id = _get_evid_from_resource_id(
         str(obspy_event.resource_id.id))
@@ -294,7 +294,7 @@ def parse_obspy_catalog(obspy_catalog, event_id=None, file_name=''):
     :return: a tuple of (SSPEvent, picks)
     :rtype: tuple
     """
-    event_id = event_id or config.options.evid
+    event_id = event_id or getattr(config.options, 'evid', None)
     try:
         obspy_event = _get_event_from_obspy_catalog(
             obspy_catalog, event_id, file_name)
