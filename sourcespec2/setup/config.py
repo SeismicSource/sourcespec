@@ -125,7 +125,7 @@ class _Config(dict):
         :param other: The dictionary with the new values
         :type other: dict
 
-        :raises ValueError: If an error occurs while parsing the options
+        :raises ValueError: If an error occurs while parsing the parameters
         """
         for key, value in other.items():
             self[key] = value
@@ -182,7 +182,7 @@ class _Config(dict):
         """
         Validate the configuration.
 
-        :raises ValueError: If an error occurs while validating the options
+        :raises ValueError: If an error occurs while validating the parameters
         """
         config_obj = ConfigObj(self, configspec=parse_configspec())
         val = Validator()
@@ -214,7 +214,7 @@ class _Config(dict):
         """
         Check the deprecated configuration parameters.
 
-        :raises ValueError: If an error occurs while parsing the options
+        :raises ValueError: If an error occurs while parsing the parameters
         """
         deprecation_msgs = check_deprecated_config_params(self)
         if not deprecation_msgs:
@@ -236,7 +236,7 @@ class _Config(dict):
         """
         Check the mandatory configuration parameters.
 
-        :raises ValueError: If an error occurs while parsing the options
+        :raises ValueError: If an error occurs while parsing the parameters
         """
         messages = []
         for par in mandatory_config_params:
@@ -249,9 +249,9 @@ class _Config(dict):
 
     def _check_force_list(self):
         """
-        Check the force_list options and convert them to lists of floats.
+        Check the force_list parameters and convert them to lists of floats.
 
-        :raises ValueError: If an error occurs while parsing the options
+        :raises ValueError: If an error occurs while parsing the parameters
         """
         try:
             for param in [
@@ -275,7 +275,7 @@ class _Config(dict):
         Check that the lists describing the velocity and density models
         have the same length.
 
-        :raises ValueError: If an error occurs while parsing the options
+        :raises ValueError: If an error occurs while parsing the parameters
         """
         # Check that the tt velocity models have the same length
         n_vp = _none_lenght(config.vp)
@@ -308,9 +308,9 @@ class _Config(dict):
 
     def _check_Er_freq_range(self):
         """
-        Check the Er_freq_range option.
+        Check the Er_freq_range parameter.
 
-        :raises ValueError: If an error occurs while parsing the options
+        :raises ValueError: If an error occurs while parsing the parameters
         """
         if self['Er_freq_range'] is None:
             self['Er_freq_range'] = [None, None]
@@ -326,17 +326,17 @@ class _Config(dict):
 
     def _check_html_report(self):
         """
-        Check the html_report option.
+        Check the html_report parameter.
         """
         if self['html_report']:
             if not self['plot_save']:
                 self['warnings'].append(
-                    'The "html_report" option is selected but "plot_save" '
+                    'The "html_report" parameter is selected but "plot_save" '
                     'is "False". HTML report will have no plots.'
                 )
             if self['plot_save_format'] not in ['png', 'svg']:
                 self['warnings'].append(
-                    'The "html_report" option is selected but '
+                    'The "html_report" parameter is selected but '
                     '"plot_save_format" is not "png" or "svg". '
                     'HTML report will have no plots.'
                 )
