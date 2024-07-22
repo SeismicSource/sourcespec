@@ -411,14 +411,17 @@ def _make_symlinks():
     out_data_dir = os.path.join(outdir, 'input_files')
     rel_path = os.path.relpath(config.workdir, out_data_dir)
     os.makedirs(out_data_dir, exist_ok=True)
-    filelist =\
-        list(config.options.trace_path) +\
-        [
-            config.options.station_metadata,
-            config.options.hypo_file,
-            config.options.pick_file,
-            config.options.qml_file,
-        ]
+    try:
+        filelist = list(config.options.trace_path)
+    except TypeError:
+        filelist = []
+    filelist += [
+        config.options.station_metadata,
+        config.options.hypo_file,
+        config.options.pick_file,
+        config.options.qml_file,
+        config.options.asdf_file,
+    ]
     for filename in filelist:
         if filename is None or not os.path.exists(filename):
             continue
