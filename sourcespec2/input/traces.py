@@ -94,14 +94,17 @@ def _read_asdf_traces():
     :return: ObsPy Stream object
     :rtype: :class:`obspy.core.stream.Stream`
     """
-    asdf_file = config.options.asdf_file
-    if not asdf_file:
-        return Stream()
-    asdf_tag = config.options.asdf_tag
-    logger.info(f'Reading traces from ASDF file: {asdf_file}')
-    return _filter_by_station(
-        parse_asdf_traces(asdf_file, tag=asdf_tag, read_headers=True)
-    )
+    stream = Stream()
+    asdf_path = getattr(config.options, 'asdf_path', None)
+    if not asdf_path:
+        return stream
+    asdf_tag = getattr(config.options, 'asdf_tag', None)
+    for asdf_file in asdf_path:
+        logger.info(f'Reading traces from ASDF file: {asdf_file}')
+        stream += _filter_by_station(
+            parse_asdf_traces(asdf_file, tag=asdf_tag, read_headers=True)
+        )
+    return stream
 
 
 def _read_trace_files():
