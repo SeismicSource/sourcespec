@@ -24,7 +24,6 @@ import tempfile
 from obspy import read
 from obspy.core import Stream
 from ..setup import config, ssp_exit
-from .sac_header import get_event_from_SAC
 from .trace_parsers import parse_asdf_traces
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
@@ -140,23 +139,6 @@ def _read_trace_files():
     return st
 
 
-def _read_event_from_traces(stream):
-    """
-    Read event information from trace headers.
-    The event information is stored in the trace.stats.event attribute.
-
-    Currently supports only the SAC header.
-
-    :param stream: ObsPy Stream object
-    :type stream: :class:`obspy.core.stream.Stream`
-    """
-    for trace in stream:
-        try:
-            trace.stats.event = get_event_from_SAC(trace)
-        except RuntimeError:
-            continue
-
-
 def read_traces():
     """
     Read traces from the files or paths specified in the configuration.
@@ -166,7 +148,6 @@ def read_traces():
     """
     logger.info('Reading traces...')
     stream = _read_asdf_traces() + _read_trace_files()
-    _read_event_from_traces(stream)
     ntraces = len(stream)
     logger.info(f'Reading traces: {ntraces} traces loaded')
     logger.info('---------------------------------------------------')
