@@ -49,12 +49,14 @@ def _read_event_and_picks_from_stream(stream):
             try:
                 ssp_event = read_event_from_SAC(trace)
             except RuntimeError as err:
-                logger.warning(err)
+                _read_event_and_picks_from_stream.event_warnings.append(err)
         try:
             picks += read_picks_from_SAC(trace)
         except RuntimeError as err:
-            logger.warning(err)
+            _read_event_and_picks_from_stream.picks_warnings.append(err)
     return ssp_event, picks
+_read_event_and_picks_from_stream.event_warnings = []  # noqa
+_read_event_and_picks_from_stream.picks_warnings = []  # noqa
 
 
 # pylint: disable=inconsistent-return-statements
@@ -152,15 +154,33 @@ def _replace_picks(old_picks, new_picks, old_source, new_source):
     return new_picks, new_source
 
 
-def _log_event_info(ssp_event):
+def _log_event_and_pick_info(ssp_event, picks, event_source, picks_source):
     """
     Log event information.
 
     :param ssp_event: SSPEvent object
     :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
+    :param picks: List of Pick objects
+    :type picks: list of :class:`sourcespec.ssp_event.Pick`
+    :param event_source: Event source
+    :type event_source: str
+    :param picks_source: Picks source
     """
-    for line in str(ssp_event).splitlines():
-        logger.info(line)
+    if ssp_event is None:
+        # only log warnings if no event information was found
+        for warning in _read_event_and_picks_from_stream.event_warnings:
+            logger.warning(warning)
+    else:
+        logger.info(f'Event information read from: {event_source}')
+        for line in str(ssp_event).splitlines():
+            logger.info(line)
+    if not picks:
+        # only log warnings if no pick information was found
+        for warning in _read_event_and_picks_from_stream.picks_warnings:
+            logger.warning(warning)
+    else:
+        logger.info(f'Pick information read from: {picks_source}')
+        logger.info(f'{len(picks)} picks read')
     logger.info('---------------------------------------------------')
 
 
@@ -235,8 +255,7 @@ def read_event_and_picks(stream=None):
         picks, _picks_source = _replace_picks(
             picks, _new_picks, _picks_source, pick_file
         )
-    if ssp_event is not None:
-        _log_event_info(ssp_event)
+    _log_event_and_pick_info(ssp_event, picks, _event_source, _picks_source)
 
     if ssp_event is None:
         logger.error('No hypocenter information found.')
