@@ -43,5 +43,7 @@ def parse_asdf_event_picks(asdf_file, event_id=None):
         obspy_catalog = pyasdf.ASDFDataSet(asdf_file, mode='r').events
         return parse_obspy_catalog(obspy_catalog, event_id, asdf_file)
     except Exception as err:
-        logger.error(err)
-        ssp_exit(1)
+        logger.warning(err)
+        ssp_event = None
+        picks = []
+        return ssp_event, picks
