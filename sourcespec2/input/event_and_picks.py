@@ -26,9 +26,44 @@ from .event_parsers import (
     parse_source_spec_event_file,
     parse_qml_event_picks,
     parse_asdf_event_picks,
-    override_event_depth
+    read_event_from_SAC,
+    read_picks_from_SAC,
+    override_event_depth,
 )
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
+
+
+def _read_event_and_picks_from_stream(stream):
+    """
+    Read event and phase picks from a stream.
+
+    :param stream: ObsPy Stream object containing event info and phase picks
+    :type stream: :class:`obspy.core.stream.Stream`
+
+    :return: (ssp_event, picks)
+    :rtype: tuple of
+        :class:`sourcespec.ssp_event.SSPEvent`,
+        list of :class:`sourcespec.ssp_event.Pick`
+
+    .. note::
+        Currently only SAC files are supported.
+    """
+    depth_override = getattr(config.options, 'depth', None)
+    ssp_event = None
+    picks = []
+    for trace in stream:
+        if ssp_event is None:
+            try:
+                ssp_event = read_event_from_SAC(trace)
+                logger.info(f'{trace.id}: event info read from SAC header')
+                override_event_depth(ssp_event, depth_override)
+            except RuntimeError as err:
+                logger.warning(err)
+        try:
+            picks += read_picks_from_SAC(trace)
+        except RuntimeError as err:
+            logger.warning(err)
+    return ssp_event, picks
 
 
 # pylint: disable=inconsistent-return-statements
@@ -138,12 +173,13 @@ def _log_event_info(ssp_event):
     logger.info('---------------------------------------------------')
 
 
-def read_event_and_picks(trace1=None):
+def read_event_and_picks(stream=None):
     """
     Read event and phase picks
 
-    :param trace1: ObsPy Trace object containing event info (optional)
-    :type trace1: :class:`obspy.core.stream.Stream`
+    :param stream: ObsPy Stream object containing event info and phase picks
+        (optional)
+    :type stream: :class:`obspy.core.stream.Stream`
 
     :return: (ssp_event, picks)
     :rtype: tuple of
@@ -153,27 +189,35 @@ def read_event_and_picks(trace1=None):
     .. note::
         The function reads event and phase picks from the following sources,
         from the less prioritary to the most prioritary:
+        - SAC trace headers
         - ASDF file
         - QML file
         - Hypocenter file
         - Pick file
-
-        If trace1 is provided and contains event information, then this
-        information is used if no other source is found.
     """
     picks = []
     ssp_event = None
+    _event_source = None
+    _picks_source = None
+    # first, try to read event and picks from stream (SAC trace headers)
+    if stream is not None:
+        ssp_event, picks = _read_event_and_picks_from_stream(stream)
+        _event_source = 'traces'
+        _picks_source = 'traces'
     depth_override = getattr(config.options, 'depth', None)
     asdf_file = getattr(config.options, 'asdf_file', None)
     hypo_file = getattr(config.options, 'hypo_file', None)
     pick_file = getattr(config.options, 'pick_file', None)
     qml_file = getattr(config.options, 'qml_file', None)
-    _event_source = None
-    _picks_source = None
-    # parse ASDF file, lowest priority
+    # parse ASDF file, possibly replacing event and picks
     if asdf_file is not None:
-        ssp_event, picks = parse_asdf_event_picks(asdf_file)
-        _event_source = _picks_source = asdf_file
+        _new_ssp_event, _new_picks = parse_asdf_event_picks(asdf_file)
+        ssp_event, _event_source = _replace_event(
+            ssp_event, _new_ssp_event, _event_source, asdf_file
+        )
+        picks, _picks_source = _replace_picks(
+            picks, _new_picks, _picks_source, asdf_file
+        )
     # parse QML file, possibly replacing event and picks
     if qml_file is not None:
         _new_ssp_event, _new_picks = parse_qml_event_picks(qml_file)
@@ -205,20 +249,14 @@ def read_event_and_picks(trace1=None):
         override_event_depth(ssp_event, depth_override)
         _log_event_info(ssp_event)
 
-    # if ssp_event is still None, get it from first trace
-    if ssp_event is None and trace1 is not None:
-        try:
-            ssp_event = trace1.stats.event
-            _log_event_info(ssp_event)
-        except AttributeError:
-            logger.error('No hypocenter information found.')
-            sys.stderr.write(
-                '\n'
-                'Use "-q" or "-H" options to provide hypocenter information\n'
-                'or add hypocenter information to the SAC file header\n'
-                '(if you use the SAC format).\n'
-            )
-            ssp_exit(1)
-    # TODO: log also if trace1 is None?
+    if ssp_event is None:
+        logger.error('No hypocenter information found.')
+        sys.stderr.write(
+            '\n'
+            'Use "-q" or "-H" options to provide hypocenter information\n'
+            'or add hypocenter information to the SAC file header\n'
+            '(if you use the SAC format).\n'
+        )
+        ssp_exit(1)
 
-    return (ssp_event, picks)
+    return ssp_event, picks
