@@ -20,15 +20,13 @@ import logging
 import contextlib
 from obspy.core.util import AttribDict
 from ..setup import config
-from .event_parsers import override_event_depth
 from .station_metadata_parsers import PAZ
 from .sac_header import (
     is_SAC_trace,
     compute_sensitivity_from_SAC,
     get_instrument_from_SAC,
-    get_station_coordinates_from_SAC,
-    get_event_from_SAC,
-    get_picks_from_SAC)
+    get_station_coordinates_from_SAC
+)
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -334,15 +332,6 @@ def _add_event(trace, ssp_event):
     :param ssp_event: SSPEvent object
     :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
     """
-    depth_override = getattr(config.options, 'depth', None)
-    if ssp_event is None:
-        # Try to get hypocenter information from the SAC header
-        try:
-            ssp_event = get_event_from_SAC(trace)
-            logger.info(f'{trace.id}: event info read from SAC header')
-            override_event_depth(ssp_event, depth_override)
-        except Exception:
-            return
     trace.stats.event = ssp_event
 
 
@@ -357,12 +346,8 @@ def _add_picks(trace, picks=None):
     """
     if picks is None:
         picks = []
-    trace_picks = []
-    with contextlib.suppress(Exception):
-        trace_picks = get_picks_from_SAC(trace)
-    for pick in picks:
-        if pick.station == trace.stats.station:
-            trace_picks.append(pick)
+    trace_picks = [
+        pick for pick in picks if pick.station == trace.stats.station]
     trace.stats.picks = trace_picks
     # Create empty dicts for arrivals, travel_times and takeoff angles.
     # They will be used later.
