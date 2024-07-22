@@ -10,8 +10,8 @@ Config class for sourcespec.
     (http://www.cecill.info/licences.en.html)
 """
 import os
-import types
 import contextlib
+import warnings
 from collections import defaultdict
 from .configobj_helpers import parse_configspec, get_default_config_obj
 from .mandatory_deprecated import (
@@ -65,6 +65,69 @@ def _none_lenght(input_list):
 # ---- End Helper functions ----
 
 
+class _Options():
+    """
+    Options class for sourcespec, with builtin checks for API users.
+    """
+    def __init__(self):
+        self._trace_path = None
+        self._asdf_path = None
+
+    def __getitem__(self, key):
+        """Make attributes accessible as dictionary keys."""
+        return getattr(self, key)
+
+    def __setitem__(self, key, value):
+        """Make attributes accessible as dictionary keys."""
+        setattr(self, key, value)
+
+    def __str__(self):
+        """Return a dict-like representation of the object."""
+        return str({
+            k: getattr(self, k) for k in dir(self) if not k.startswith('_')}
+        )
+
+    @property
+    def trace_path(self):
+        """Path to the trace files. Must be a list."""
+        return self._trace_path
+
+    @trace_path.setter
+    def trace_path(self, value):
+        if value is None or isinstance(value, (list, tuple)):
+            self._trace_path = value
+        else:
+            warnings.warn(
+                '"trace_path" must be a list. Converting to a list with one '
+                'element.'
+            )
+            self._trace_path = [value]
+
+    @trace_path.deleter
+    def trace_path(self):
+        self._trace_path = None
+
+    @property
+    def asdf_path(self):
+        """Path to the ASDF files. Must be a list."""
+        return self._asdf_path
+
+    @asdf_path.setter
+    def asdf_path(self, value):
+        if value is None or isinstance(value, (list, tuple)):
+            self._asdf_path = value
+        else:
+            warnings.warn(
+                '"asdf_path" must be a list. Converting to a list with one '
+                'element.'
+            )
+            self._asdf_path = [value]
+
+    @asdf_path.deleter
+    def asdf_path(self):
+        self._asdf_path = None
+
+
 class _Config(dict):
     """
     Config class for sourcespec.
@@ -81,14 +144,14 @@ class _Config(dict):
     """
     def __init__(self):
         # Additional config values that must exist for the code to run without
-        # errors. Tey must be defined using the dict syntax.
+        # errors. They must be defined using the dict syntax.
         self['running_from_command_line'] = False
         self['vertical_channel_codes'] = ['Z']
         self['horizontal_channel_codes_1'] = ['N', 'R']
         self['horizontal_channel_codes_2'] = ['E', 'T']
         self['TRACEID_MAP'] = None
-        # Empty options object, for compatibility with the command line version
-        self['options'] = types.SimpleNamespace()
+        # options object with some built-in checks for API users
+        self['options'] = _Options()
         # A list of warnings to be issued when logger is set up
         self['warnings'] = []
         # Create a dict to store figure paths
