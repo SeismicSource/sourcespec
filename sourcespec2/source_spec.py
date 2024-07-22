@@ -167,12 +167,11 @@ def main():
     # Read all required information from disk
     from .input import read_traces
     st = read_traces()
-    trace1 = st[0] if len(st) else None
     st.sort()
     from .input import read_station_metadata
     inventory = read_station_metadata()
     from .input import read_event_and_picks
-    ssp_event, picks = read_event_and_picks(trace1)
+    ssp_event, picks = read_event_and_picks(st)
 
     # Now that we have an evid, we can rename the outdir and the log file
     from .setup import move_outdir, remove_old_outdir

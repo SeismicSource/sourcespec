@@ -24,7 +24,7 @@ from .station_metadata_parsers import PAZ
 from .sac_header import (
     compute_sensitivity_from_SAC,
     get_instrument_from_SAC, get_station_coordinates_from_SAC,
-    get_picks_from_SAC)
+)
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -316,12 +316,8 @@ def _add_picks(trace, picks=None):
     """
     if picks is None:
         picks = []
-    trace_picks = []
-    with contextlib.suppress(Exception):
-        trace_picks = get_picks_from_SAC(trace)
-    for pick in picks:
-        if pick.station == trace.stats.station:
-            trace_picks.append(pick)
+    trace_picks = [
+        pick for pick in picks if pick.station == trace.stats.station]
     trace.stats.picks = trace_picks
     # Create empty dicts for arrivals, travel_times and takeoff angles.
     # They will be used later.
