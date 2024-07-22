@@ -26,11 +26,14 @@ def _read_asdf_inventory():
     :return: inventory
     :rtype: :class:`~obspy.core.inventory.inventory.Inventory`
     """
-    asdf_file = config.options.asdf_file
-    if not asdf_file:
-        return Inventory()
-    logger.info(f'Reading station metadata from ASDF file: {asdf_file}')
-    return parse_asdf_inventory(asdf_file)
+    inventory = Inventory()
+    asdf_path = getattr(config.options, 'asdf_path', None)
+    if not asdf_path:
+        return inventory
+    for asdf_file in asdf_path:
+        logger.info(f'Reading station metadata from ASDF file: {asdf_file}')
+        inventory += parse_asdf_inventory(asdf_file)
+    return inventory
 
 
 def _read_station_metadata_from_files():

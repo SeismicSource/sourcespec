@@ -68,6 +68,31 @@ _read_event_and_picks_from_stream.event_warnings = []  # noqa
 _read_event_and_picks_from_stream.picks_warnings = []  # noqa
 
 
+def _read_event_and_picks_from_ASDF_file_list(filelist):
+    """
+    Read event and phase picks from a list of ASDF files.
+
+    :param filelist: List of ASDF files
+    :type filelist: list of str
+
+    :return: (ssp_event, picks, event_source)
+    :rtype: tuple of
+        :class:`sourcespec.ssp_event.SSPEvent`,
+        list of :class:`sourcespec.ssp_event.Pick`,
+        str
+    """
+    ssp_event = None
+    picks = []
+    event_source = None
+    for asdf_file in filelist:
+        _ssp_event, _picks = parse_asdf_event_picks(asdf_file)
+        if ssp_event is None:
+            ssp_event = _ssp_event
+            event_source = asdf_file
+        picks += _picks
+    return ssp_event, picks, event_source
+
+
 # pylint: disable=inconsistent-return-statements
 def _parse_hypo_file(hypo_file, event_id=None):
     """
@@ -217,35 +242,36 @@ def read_event_and_picks(stream=None):
     """
     picks = []
     ssp_event = None
-    _event_source = None
-    _picks_source = None
+    event_source = None
+    picks_source = None
     # first, try to read event and picks from stream (SAC trace headers)
     if stream is not None:
         ssp_event, picks = _read_event_and_picks_from_stream(stream)
-        _event_source = 'traces'
-        _picks_source = 'traces'
+        event_source = 'traces'
+        picks_source = 'traces'
     depth_override = getattr(config.options, 'depth', None)
-    asdf_file = getattr(config.options, 'asdf_file', None)
+    asdf_path = getattr(config.options, 'asdf_path', None)
     hypo_file = getattr(config.options, 'hypo_file', None)
     pick_file = getattr(config.options, 'pick_file', None)
     qml_file = getattr(config.options, 'qml_file', None)
     # parse ASDF file, possibly replacing event and picks
-    if asdf_file is not None:
-        _new_ssp_event, _new_picks = parse_asdf_event_picks(asdf_file)
-        ssp_event, _event_source = _replace_event(
-            ssp_event, _new_ssp_event, _event_source, asdf_file
+    if asdf_path is not None:
+        _new_ssp_event, _new_picks, _new_event_source =\
+            _read_event_and_picks_from_ASDF_file_list(asdf_path)
+        ssp_event, event_source = _replace_event(
+            ssp_event, _new_ssp_event, event_source, _new_event_source
         )
-        picks, _picks_source = _replace_picks(
-            picks, _new_picks, _picks_source, asdf_file
+        picks, picks_source = _replace_picks(
+            picks, _new_picks, picks_source, 'ASDF files'
         )
     # parse QML file, possibly replacing event and picks
     if qml_file is not None:
         _new_ssp_event, _new_picks = parse_qml_event_picks(qml_file)
-        ssp_event, _event_source = _replace_event(
-            ssp_event, _new_ssp_event, _event_source, qml_file
+        ssp_event, event_source = _replace_event(
+            ssp_event, _new_ssp_event, event_source, qml_file
         )
-        picks, _picks_source = _replace_picks(
-            picks, _new_picks, _picks_source, qml_file
+        picks, picks_source = _replace_picks(
+            picks, _new_picks, picks_source, qml_file
         )
     # parse hypocenter file, possibly replacing event and picks
     if hypo_file is not None:
@@ -253,22 +279,22 @@ def read_event_and_picks(stream=None):
             hypo_file, config.options.evid)
         # this is needed when writing the output file in hypo71 format
         config.hypo_file_format = file_format
-        ssp_event, _event_source = _replace_event(
-            ssp_event, _new_ssp_event, _event_source, hypo_file
+        ssp_event, event_source = _replace_event(
+            ssp_event, _new_ssp_event, event_source, hypo_file
         )
-        picks, _picks_source = _replace_picks(
-            picks, _new_picks, _picks_source, hypo_file
+        picks, picks_source = _replace_picks(
+            picks, _new_picks, picks_source, hypo_file
         )
     # parse pick file, possibly replacing picks
     if pick_file is not None:
         _new_picks = parse_hypo71_picks()
-        picks, _picks_source = _replace_picks(
-            picks, _new_picks, _picks_source, pick_file
+        picks, picks_source = _replace_picks(
+            picks, _new_picks, picks_source, pick_file
         )
     if ssp_event is not None:
         override_event_depth(ssp_event, depth_override)
         _log_event_and_pick_info(
-            ssp_event, picks, _event_source, _picks_source)
+            ssp_event, picks, event_source, picks_source)
     else:
         logger.error('No hypocenter information found.')
         sys.stderr.write(

@@ -119,11 +119,11 @@ def _init_parser(description, epilog, nargs):
         metavar='FILE'
     )
     group.add_argument(
-        '-a', '--asdffile', dest='asdf_file',
+        '-a', '--asdf_path', nargs=nargs,
         action='store', default=None,
         help='get picks, hypocenter information, traces and metadata from\n'
-             'ASDF FILE',
-        metavar='FILE'
+             'one or more ASDF files',
+        metavar='ASDF_FILE'
     )
     parser.add_argument(
         '-g', '--tag', dest='asdf_tag',
