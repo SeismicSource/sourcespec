@@ -99,18 +99,18 @@ def read_event_and_picks(trace1=None):
     ssp_event = None
     depth_override = getattr(config.options, 'depth', None)
     # parse hypocenter file
-    if config.options.hypo_file is not None:
+    if getattr(config.options, 'hypo_file', None):
         ssp_event, picks, file_format = _parse_hypo_file(
             config.options.hypo_file, config.options.evid)
         config.hypo_file_format = file_format
     # parse pick file
-    if config.options.pick_file is not None:
+    if getattr(config.options, 'pick_file', None):
         picks = parse_hypo71_picks()
     # parse QML file
-    if config.options.qml_file is not None:
+    if getattr(config.options, 'qml_file', None):
         ssp_event, picks = parse_qml_event_picks(config.options.qml_file)
     # parse ASDF file
-    if config.options.asdf_file is not None:
+    if getattr(config.options, 'asdf_file', None):
         ssp_event, picks = parse_asdf_event_picks(config.options.asdf_file)
     if ssp_event is not None:
         override_event_depth(ssp_event, depth_override)
