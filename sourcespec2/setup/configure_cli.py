@@ -277,6 +277,10 @@ def configure_cli(options=None, progname='source_spec', config_overrides=None):
         # trace_path is a list
         options.trace_path = [
             _fix_and_expand_path(path) for path in options.trace_path]
+    if getattr(options, 'asdf_path', None):
+        # asdf_path is a list
+        options.asdf_path = [
+            _fix_and_expand_path(path) for path in options.asdf_path]
     if getattr(options, 'qml_file', None):
         options.qml_file = _fix_and_expand_path(options.qml_file)
     if getattr(options, 'hypo_file', None):
