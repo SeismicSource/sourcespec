@@ -80,7 +80,7 @@ def _filter_by_station(input_stream):
     :return: Stream object
     :rtype: :class:`obspy.core.stream.Stream`
     """
-    if config.options.station is None:
+    if getattr(config.options, 'station', None) is None:
         return input_stream
     return Stream([
         trace for trace in input_stream.traces
@@ -112,7 +112,7 @@ def _read_trace_files():
     :return: ObsPy Stream object
     :rtype: :class:`obspy.core.stream.Stream`
     """
-    if config.options.trace_path is None:
+    if getattr(config.options, 'trace_path', None) is None:
         return Stream()
     # phase 1: build a file list
     # ph 1.1: create a temporary dir and run '_build_filelist()'
