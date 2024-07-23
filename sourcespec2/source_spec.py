@@ -169,7 +169,7 @@ def main():
     st = read_traces()
     st.sort()
     from .input import read_station_metadata
-    inventory = read_station_metadata()
+    inventory = read_station_metadata(st)
     from .input import read_event_and_picks
     ssp_event, picks = read_event_and_picks(st)
 
