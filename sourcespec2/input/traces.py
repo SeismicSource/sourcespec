@@ -18,6 +18,7 @@ Read traces in multiple formats.
 import os
 import logging
 import warnings
+import contextlib
 import shutil
 import tarfile
 import zipfile
@@ -26,6 +27,8 @@ from obspy import read
 from obspy.core import Stream
 from ..setup import config, ssp_exit
 from .trace_parsers import parse_asdf_traces
+from .station_metadata_parsers import get_instrument_from_SAC
+from .instrument_type import get_instrument_type
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Silence specific ObsPy SAC sample spacing warning (see obspy#3408)
 warnings.filterwarnings(
@@ -150,6 +153,60 @@ def _read_trace_files():
     return st
 
 
+def _correct_traceids(stream):
+    """
+    Correct traceids from config.TRACEID_MAP, if available.
+
+    :param stream: ObsPy Stream object
+    :type stream: :class:`obspy.core.stream.Stream`
+    """
+    if config.TRACEID_MAP is None:
+        return
+    for trace in stream:
+        with contextlib.suppress(KeyError):
+            traceid = config.TRACEID_MAP[trace.get_id()]
+            net, sta, loc, chan = traceid.split('.')
+            trace.stats.network = net
+            trace.stats.station = sta
+            trace.stats.location = loc
+            trace.stats.channel = chan
+
+
+def _update_non_standard_trace_ids(stream):
+    """
+    Update non-standard trace IDs with a standard SEED ID obtained from the
+    instrument type.
+
+    :param stream: Stream object
+    :type stream: :class:`obspy.core
+
+    .. note::
+        Currently only SAC files are supported.
+    """
+    traces_to_skip = []
+    for trace in stream:
+        if not hasattr(trace.stats, 'sac'):
+            continue
+        instrtype = get_instrument_type(trace)
+        if instrtype is not None:
+            continue
+        try:
+            instrtype, band_code, instr_code = get_instrument_from_SAC(trace)
+        except RuntimeError as e:
+            logger.warning(e)
+            traces_to_skip.append(trace)
+            continue
+        old_id = trace.id
+        orientation = trace.stats.channel[-1]
+        trace.stats.channel = ''.join((band_code, instr_code, orientation))
+        msg = f'{old_id}: non-standard trace ID updated to {trace.id}'
+        if msg not in _update_non_standard_trace_ids.msgs:
+            logger.info(msg)
+            _update_non_standard_trace_ids.msgs.append(msg)
+    stream.traces = [trace for trace in stream if trace not in traces_to_skip]
+_update_non_standard_trace_ids.msgs = []  # noqa
+
+
 def read_traces():
     """
     Read traces from the files or paths specified in the configuration.
@@ -159,6 +216,8 @@ def read_traces():
     """
     logger.info('Reading traces...')
     stream = _read_asdf_traces() + _read_trace_files()
+    _correct_traceids(stream)
+    _update_non_standard_trace_ids(stream)
     ntraces = len(stream)
     logger.info(f'Reading traces: {ntraces} traces loaded')
     logger.info('---------------------------------------------------')
