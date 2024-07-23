@@ -42,8 +42,7 @@ def compute_sensitivity_from_SAC(trace):
         sensitivity = eval(inp, {}, namespace)  # pylint: disable=eval-used
     except NameError as msg:
         hdr_field = str(msg).split()[1]
-        logger.error(f'SAC header field {hdr_field} does not exist')
-        ssp_exit(1)
+        ssp_exit(f'SAC header field {hdr_field} does not exist')
     return sensitivity
 
 

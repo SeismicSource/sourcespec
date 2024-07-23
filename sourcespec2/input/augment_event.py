@@ -48,16 +48,15 @@ def augment_event(ssp_event):
 
     The augmented event is stored in config.event
 
-    :param ssp_event: Evento to be augmented
+    :param ssp_event: Event to be augmented
     :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
     """
     # add velocity info to hypocenter
     try:
         _hypo_vel(ssp_event.hypocenter)
     except Exception as e:
-        logger.error(
+        ssp_exit(
             f'Unable to compute velocity at hypocenter: {e}\n')
-        ssp_exit(1)
     if config.options.evname is not None:
         # add evname from command line, if any, overriding the one in ssp_event
         ssp_event.name = config.options.evname

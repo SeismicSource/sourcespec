@@ -241,8 +241,7 @@ def _parse_obspy_event(obspy_event):
         ssp_event = _parse_event_metadata(obspy_event)
         picks = _parse_picks_from_obspy_event(obspy_event)
     except Exception as err:
-        logger.error(err)
-        ssp_exit(1)
+        ssp_exit(err)
     log_messages = []
     with contextlib.suppress(Exception):
         _parse_moment_tensor_from_obspy_event(obspy_event, ssp_event)
@@ -287,8 +286,7 @@ def parse_obspy_catalog(obspy_catalog, event_id=None, file_name=''):
         obspy_event = _get_event_from_obspy_catalog(
             obspy_catalog, event_id, file_name)
     except Exception as err:
-        logger.error(err)
-        ssp_exit(1)
+        ssp_exit(err)
     else:
         ssp_event, picks = _parse_obspy_event(obspy_event)
     return ssp_event, picks
