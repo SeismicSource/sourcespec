@@ -949,8 +949,7 @@ def _build_signal_and_noise_spectral_streams(signal_st, noise_st, original_st):
         spec_st.append(spec)
         specnoise_st.append(specnoise)
     if not spec_st:
-        logger.error('No spectra left! Exiting.')
-        ssp_exit()
+        ssp_exit('No spectra left! Exiting.')
     # build H component
     _build_H(
         spec_st, specnoise_st, config.vertical_channel_codes, config.wave_type)
