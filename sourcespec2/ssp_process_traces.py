@@ -549,8 +549,7 @@ def process_traces(st):
             continue
 
     if len(out_st) == 0:
-        logger.error('No traces left! Exiting.')
-        ssp_exit()
+        ssp_exit('No traces left! Exiting.')
 
     # Rotate traces, if SH or SV is requested
     if config.wave_type in ['SH', 'SV']:

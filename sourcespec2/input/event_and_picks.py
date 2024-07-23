@@ -284,13 +284,14 @@ def read_event_and_picks(stream=None):
     _log_event_and_pick_info(ssp_event, picks, event_source, picks_source)
 
     if ssp_event is None:
-        logger.error('No hypocenter information found.')
-        sys.stderr.write(
-            '\n'
-            'Use "-q" or "-H" options to provide hypocenter information\n'
-            'or add hypocenter information to the SAC file header\n'
-            '(if you use the SAC format).\n'
+        ssp_exit(
+            'No hypocenter information found.',
+            extra_message=(
+                '\n'
+                'Use "-q" or "-H" options to provide hypocenter information\n'
+                'or add hypocenter information to the SAC file header\n'
+                '(if you use the SAC format).\n'
+            )
         )
-        ssp_exit(1)
 
     return ssp_event, picks

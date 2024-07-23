@@ -45,10 +45,10 @@ def _open_sqlite_db(db_file):
     try:
         conn = sqlite3.connect(db_file, timeout=60)
     except Exception as msg:
-        logger.error(msg)
-        logger.info(
-            f'Please check whether "{db_file}" is a valid SQLite file.')
-        ssp_exit(1)
+        ssp_exit(
+            f'{msg}\n'
+            f'Please check whether "{db_file}" is a valid SQLite file.'
+        )
     return conn, conn.cursor()
 
 
@@ -65,21 +65,17 @@ def _check_db_version(cursor, db_file):
     if db_version == DB_VERSION:
         return
     if db_version > DB_VERSION:
-        logger.error(
+        ssp_exit(
             f'"{db_file}" has a newer database version: '
             f'"{db_version}" Current supported version is "{DB_VERSION}".'
         )
-        ssp_exit(1)
-    logger.error(
+    ssp_exit(
         f'"{db_file}" has an old database version: '
         f'"{db_version}" Current supported version is "{DB_VERSION}".'
-    )
-    logger.info(
-        'Use the following command to update your database '
+        '\nUse the following command to update your database '
         '(the current database will be backed up):\n\n'
         f'  source_spec --updatedb {db_file}\n'
     )
-    ssp_exit(1)
 
 
 def _set_db_version(cursor):
@@ -101,14 +97,13 @@ def _log_db_write_error(db_err, db_file):
     :param db_file: SQLite database file
     :type db_file: str
     """
-    logger.error(f'Unable to insert values: {db_err}')
-    logger.info('Maybe your sqlite database has an old format.')
-    logger.info(
-        'Use the following command to update your database '
+    ssp_exit(
+        f'Unable to insert values: {db_err}'
+        '\nMaybe your sqlite database has an old format.'
+        '\nUse the following command to update your database '
         '(the current database will be backed up):\n\n'
         f'  source_spec --updatedb {db_file}\n'
     )
-    ssp_exit(1)
 
 
 def _create_stations_table(cursor, db_file):
@@ -195,7 +190,6 @@ def _write_stations_table(cursor, db_file, sspec_output):
             cursor.execute(sql_insert_into_stations, t)
         except Exception as msg:
             _log_db_write_error(msg, db_file)
-            ssp_exit(1)
     return nobs
 
 
@@ -393,7 +387,6 @@ def _write_events_table(cursor, db_file, sspec_output, nobs):
         cursor.execute(sql_insert_into_events, t)
     except Exception as msg:
         _log_db_write_error(msg, db_file)
-        ssp_exit(1)
 
 
 def write_sqlite(sspec_output):
