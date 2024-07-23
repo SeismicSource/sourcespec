@@ -16,6 +16,7 @@ Read traces in multiple formats.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import re
 import logging
 import contextlib
 import shutil
@@ -199,6 +200,69 @@ def _update_non_standard_trace_ids(stream):
 _update_non_standard_trace_ids.msgs = []  # noqa
 
 
+def _should_keep_trace(traceid):
+    """
+    Check if trace should be kept.
+
+    :param traceid: Trace ID.
+    :type traceid: str
+
+    :raises: RuntimeError if traceid is to be skipped.
+    """
+    network, station, location, channel = traceid.split('.')
+    orientation_codes = config.vertical_channel_codes +\
+        config.horizontal_channel_codes_1 +\
+        config.horizontal_channel_codes_2
+    orientation = channel[-1]
+    if orientation not in orientation_codes:
+        raise RuntimeError(
+            f'{traceid}: Unknown channel orientation: '
+            f'"{orientation}": skipping trace'
+        )
+    # build a list of all possible ids, from station only
+    # to full net.sta.loc.chan
+    ss = [
+        station,
+        '.'.join((network, station)),
+        '.'.join((network, station, location)),
+        '.'.join((network, station, location, channel)),
+    ]
+    if config.use_traceids is not None:
+        combined = (
+            "(" + ")|(".join(config.use_traceids) + ")"
+        ).replace('.', r'\.')
+        if not any(re.match(combined, s) for s in ss):
+            raise RuntimeError(f'{traceid}: ignored from config file')
+    if config.ignore_traceids is not None:
+        combined = (
+            "(" + ")|(".join(config.ignore_traceids) + ")"
+        ).replace('.', r'\.')
+        if any(re.match(combined, s) for s in ss):
+            raise RuntimeError(f'{traceid}: ignored from config file')
+
+
+def _select_requested_components(stream):
+    """
+    Select requested components from stream
+
+    :param stream: ObsPy Stream object
+    :type stream: :class:`obspy.core.stream.Stream`
+
+    :return: ObsPy Stream object
+    :rtype: :class:`obspy.core.stream.Stream`
+    """
+    traces_to_keep = []
+    for trace in stream:
+        try:
+            _should_keep_trace(trace.id)
+        except RuntimeError as e:
+            logger.warning(str(e))
+            continue
+        traces_to_keep.append(trace)
+    # in-place update of st
+    stream.traces[:] = traces_to_keep[:]
+
+
 def read_traces():
     """
     Read traces from the files or paths specified in the configuration.
@@ -210,6 +274,7 @@ def read_traces():
     stream = _read_asdf_traces() + _read_trace_files()
     _correct_traceids(stream)
     _update_non_standard_trace_ids(stream)
+    _select_requested_components(stream)
     ntraces = len(stream)
     logger.info(f'Reading traces: {ntraces} traces loaded')
     logger.info('---------------------------------------------------')
