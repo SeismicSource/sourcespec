@@ -15,82 +15,11 @@ Augment traces with station and event metadata.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-import re
 import logging
 import contextlib
 from obspy.core.util import AttribDict
-from ..setup import config
 from .instrument_type import get_instrument_type
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
-
-
-def _skip_traces_from_config(traceid):
-    """
-    Skip traces with unknown channel orientation or ignored from config file.
-
-    :param traceid: Trace ID.
-    :type traceid: str
-
-    :raises: RuntimeError if traceid is ignored from config file.
-    """
-    network, station, location, channel = traceid.split('.')
-    orientation_codes = config.vertical_channel_codes +\
-        config.horizontal_channel_codes_1 +\
-        config.horizontal_channel_codes_2
-    orientation = channel[-1]
-    if orientation not in orientation_codes:
-        raise RuntimeError(
-            f'{traceid}: Unknown channel orientation: '
-            f'"{orientation}": skipping trace'
-        )
-    # build a list of all possible ids, from station only
-    # to full net.sta.loc.chan
-    ss = [
-        station,
-        '.'.join((network, station)),
-        '.'.join((network, station, location)),
-        '.'.join((network, station, location, channel)),
-    ]
-    if config.use_traceids is not None:
-        combined = (
-            "(" + ")|(".join(config.use_traceids) + ")"
-        ).replace('.', r'\.')
-        if not any(re.match(combined, s) for s in ss):
-            raise RuntimeError(f'{traceid}: ignored from config file')
-    if config.ignore_traceids is not None:
-        combined = (
-            "(" + ")|(".join(config.ignore_traceids) + ")"
-        ).replace('.', r'\.')
-        if any(re.match(combined, s) for s in ss):
-            raise RuntimeError(f'{traceid}: ignored from config file')
-
-
-def _select_components(st):
-    """
-    Select requested components from stream
-
-    :param st: ObsPy Stream object
-    :type st: :class:`obspy.core.stream.Stream`
-
-    :return: ObsPy Stream object
-    :rtype: :class:`obspy.core.stream.Stream`
-    """
-    traces_to_keep = []
-    for trace in st:
-        try:
-            _skip_traces_from_config(trace.id)
-        except RuntimeError as e:
-            logger.warning(str(e))
-            continue
-        # TODO: should we also filter by station here?
-        # only use the station specified by the command line option
-        # "--station", if any
-        #if (config.options.station is not None and
-        #        trace.stats.station != config.options.station):
-        #    continue
-        traces_to_keep.append(trace)
-    # in-place update of st
-    st.traces[:] = traces_to_keep[:]
 
 
 def _add_instrtype(trace):
@@ -294,29 +223,23 @@ def _augment_trace(trace, inventory, ssp_event, picks):
     trace.stats.ignore = False
 
 
-def augment_traces(st, inventory, ssp_event, picks):
+def augment_traces(stream, inventory, ssp_event, picks):
     """
     Add all required information to trace headers.
 
-    Only the traces that satisfy the conditions in the config file are kept.
-    Problematic traces are also removed.
+    Trace with no or incomplete metadata are skipped.
 
-    :param st: Traces to be augmented
-    :type st: :class:`obspy.core.stream.Stream`
-    :param inventory: Station metadata. If it is None or an empty Inventory
-        object, the code will try to read the station metadata from the
-        trace headers (only SAC format is supported).
+    :param stream: Traces to be augmented
+    :type stream: :class:`obspy.core.stream.Stream`
+    :param inventory: Station metadata
     :type inventory: :class:`obspy.core.inventory.Inventory`
     :param ssp_event: Event information
     :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
     :param picks: list of picks
     :type picks: list of :class:`sourcespec.ssp_event.Pick`
     """
-    # First, select the components based on the config options
-    _select_components(st)
-    # Then, augment the traces and remove the problematic ones
     traces_to_keep = []
-    for trace in st:
+    for trace in stream:
         try:
             _augment_trace(trace, inventory, ssp_event, picks)
         except Exception as err:
@@ -325,5 +248,5 @@ def augment_traces(st, inventory, ssp_event, picks):
             continue
         traces_to_keep.append(trace)
     # in-place update of st
-    st.traces[:] = traces_to_keep[:]
-    _complete_picks(st)
+    stream.traces[:] = traces_to_keep[:]
+    _complete_picks(stream)
