@@ -92,12 +92,11 @@ def parse_asdf_traces(asdf_file, tag=None, read_headers=False):
         # and check for ImportError
         import pyasdf
     except ImportError:
-        logger.error(
+        ssp_exit(
             'Error importing pyasdf. '
             'See https://seismicdata.github.io/pyasdf/ for installation '
             'instructions.'
         )
-        ssp_exit(1)
     stream = Stream()
     try:
         ds = pyasdf.ASDFDataSet(asdf_file, mode='r')

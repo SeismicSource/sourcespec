@@ -285,6 +285,5 @@ def read_traces():
     logger.info(f'Reading traces: {ntraces} traces loaded')
     logger.info('---------------------------------------------------')
     if not ntraces:
-        logger.error('No trace loaded')
-        ssp_exit(1)
+        ssp_exit('No traces loaded')
     return stream

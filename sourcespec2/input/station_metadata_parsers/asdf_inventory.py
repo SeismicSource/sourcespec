@@ -31,12 +31,11 @@ def parse_asdf_inventory(asdf_file):
         # and check for ImportError
         import pyasdf
     except ImportError:
-        logger.error(
+        ssp_exit(
             'Error importing pyasdf. '
             'See https://seismicdata.github.io/pyasdf/ for installation '
             'instructions.'
         )
-        ssp_exit(1)
     inventory = Inventory()
     try:
         ds = pyasdf.ASDFDataSet(asdf_file, mode='r')
