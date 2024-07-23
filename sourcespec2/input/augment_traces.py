@@ -20,10 +20,11 @@ import logging
 import contextlib
 from obspy.core.util import AttribDict
 from ..setup import config
-from .station_metadata_parsers import PAZ
-from .sac_header import (
+from .station_metadata_parsers import (
+    PAZ,
     compute_sensitivity_from_SAC,
-    get_instrument_from_SAC, get_station_coordinates_from_SAC,
+    get_instrument_from_SAC,
+    get_station_coordinates_from_SAC,
 )
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
