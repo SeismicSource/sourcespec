@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: CECILL-2.1
 """
-Read metadata from SAC file headers.
+Read station metadata from SAC file headers.
 
 :copyright:
     2023-2026 Claudio Satriano <satriano@ipgp.fr>
@@ -13,7 +13,7 @@ import re
 import logging
 import contextlib
 from obspy.core.util import AttribDict
-from ..setup import config, ssp_exit
+from ...setup import config, ssp_exit
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -60,7 +60,7 @@ def compute_sensitivity_from_SAC(trace):
 
 # handpicked list of instruments, instrtypes and band/instr codes,
 # mainly for ISNet compatibility
-instruments = {
+_instruments = {
     'CMG-5T': {'instrtype': 'acc', 'band_code': 'H', 'instr_code': 'N'},
     'CMG-40T': {'instrtype': 'broadb', 'band_code': 'H', 'instr_code': 'H'},
     'TRILLIUM': {'instrtype': 'broadb', 'band_code': 'H', 'instr_code': 'H'},
@@ -80,7 +80,7 @@ def get_instrument_from_SAC(trace):
     :rtype: tuple
     """
     try:
-        codes = instruments[trace.stats.sac.kinst]
+        codes = _instruments[trace.stats.sac.kinst]
         instrtype = codes['instrtype']
         band_code = codes['band_code']
         instr_code = codes['instr_code']
