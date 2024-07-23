@@ -113,7 +113,10 @@ def get_station_coordinates_from_SAC(trace):
         stlo = trace.stats.sac.stlo
         stel = trace.stats.sac.get('stel', 0.)
         coords = AttribDict(latitude=stla, longitude=stlo, elevation=stel)
-        logger.info(
-            f'{trace.id}: station coordinates read from SAC header')
+        msg = f'{trace.id}: station coordinates read from SAC header'
+        if msg not in get_station_coordinates_from_SAC.msgs:
+            logger.info(msg)
+            get_station_coordinates_from_SAC.msgs.append(msg)
         return coords
     return None
+get_station_coordinates_from_SAC.msgs = []  # noqa
