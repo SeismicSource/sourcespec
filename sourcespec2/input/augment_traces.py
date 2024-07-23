@@ -20,12 +20,7 @@ import logging
 import contextlib
 from obspy.core.util import AttribDict
 from ..setup import config
-from .station_metadata_parsers import (
-    PAZ,
-    compute_sensitivity_from_SAC,
-    get_instrument_from_SAC,
-    get_station_coordinates_from_SAC,
-)
+from .instrument_type import get_instrument_type
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -104,24 +99,6 @@ def _select_components(st):
     st.traces[:] = traces_to_keep[:]
 
 
-def _correct_traceid(trace):
-    """
-    Correct traceid from config.TRACEID_MAP, if available.
-
-    :param trace: ObsPy Trace object
-    :type trace: :class:`obspy.core.trace.Trace`
-    """
-    if config.TRACEID_MAP is None:
-        return
-    with contextlib.suppress(KeyError):
-        traceid = config.TRACEID_MAP[trace.get_id()]
-        net, sta, loc, chan = traceid.split('.')
-        trace.stats.network = net
-        trace.stats.station = sta
-        trace.stats.location = loc
-        trace.stats.channel = chan
-
-
 def _add_instrtype(trace):
     """
     Add instrtype to trace.
@@ -129,30 +106,7 @@ def _add_instrtype(trace):
     :param trace: ObsPy Trace object
     :type trace: :class:`obspy.core.trace.Trace`
     """
-    instrtype = None
-    band_code = None
-    instr_code = None
-    trace.stats.instrtype = None
-    # First, try to get the instrtype from channel name
-    chan = trace.stats.channel
-    if len(chan) > 2:
-        band_code = chan[0]
-        instr_code = chan[1]
-    if instr_code in config.INSTR_CODES_VEL:
-        # SEED standard band codes from higher to lower sampling rate
-        # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
-        if band_code in ['G', 'D', 'E', 'S']:
-            instrtype = 'shortp'
-        if band_code in ['F', 'C', 'H', 'B']:
-            instrtype = 'broadb'
-    if instr_code in config.INSTR_CODES_ACC:
-        instrtype = 'acc'
-    if instrtype is None:
-        # Let's see if there is an instrument name in SAC header (ISNet format)
-        # In this case, we define band and instrument codes a posteriori
-        instrtype, band_code, instr_code = get_instrument_from_SAC(trace)
-        orientation = trace.stats.channel[-1]
-        trace.stats.channel = ''.join((band_code, instr_code, orientation))
+    instrtype = get_instrument_type(trace)
     trace.stats.instrtype = instrtype
     trace.stats.info = f'{trace.id} {trace.stats.instrtype}'
 
@@ -179,30 +133,6 @@ def _add_inventory(trace, inventory):
         inv.networks[0].stations[0].code = sta
         inv.networks[0].stations[0].channels[0].code = chan
         inv.networks[0].stations[0].channels[0].location_code = loc
-    # If a "sensitivity" config option is provided, override the Inventory
-    # object with a new one constructed from the sensitivity value
-    if config.sensitivity is not None:
-        # save coordinates from the inventory, if available
-        coords = None
-        with contextlib.suppress(Exception):
-            coords = inv.get_coordinates(trace.id, trace.stats.starttime)
-        paz = PAZ()
-        paz.seedID = trace.id
-        paz.sensitivity = compute_sensitivity_from_SAC(trace)
-        paz.poles = []
-        paz.zeros = []
-        if inv:
-            logger.warning(
-                f'Overriding response for {trace.id} with constant '
-                f'sensitivity {paz.sensitivity}')
-        inv = paz.to_inventory()
-        # restore coordinates, if available
-        if coords is not None:
-            chan = inv.networks[0].stations[0].channels[0]
-            chan.latitude = coords['latitude']
-            chan.longitude = coords['longitude']
-            chan.elevation = coords['elevation']
-            chan.depth = coords['local_depth']
     trace.stats.inventory = inv
 
 
@@ -266,24 +196,19 @@ def _add_coords(trace):
         # if coordinates are not found
         coords = trace.stats.inventory.get_coordinates(
                     trace.id, trace.stats.starttime)
-    if coords is not None:
-        # Build an AttribDict and make sure that coordinates are floats
-        coords = AttribDict({
-            key: float(value) for key, value in coords.items()})
-        coords = (
-            None if (
-                coords.longitude == 0 and coords.latitude == 0 and
-                coords.local_depth == 123456 and coords.elevation == 123456)
-            else coords)
-    if coords is None:
-        # If we still don't have trace coordinates,
-        # we try to get them from SAC header
-        coords = get_station_coordinates_from_SAC(trace)
     if coords is None:
         # Give up!
         _add_coords.skipped.append(trace.id)
         raise RuntimeError(
             f'{trace.id}: could not find coords for trace: skipping trace')
+    # Build an AttribDict and make sure that coordinates are floats
+    coords = AttribDict({
+        key: float(value) for key, value in coords.items()})
+    coords = (
+        None if (
+            coords.longitude == 0 and coords.latitude == 0 and
+            coords.local_depth == 123456 and coords.elevation == 123456)
+        else coords)
     if coords.latitude == coords.longitude == 0:
         logger.warning(
             f'{trace.id}: trace has latitude and longitude equal to zero!')
@@ -398,7 +323,6 @@ def augment_traces(st, inventory, ssp_event, picks):
     # Then, augment the traces and remove the problematic ones
     traces_to_keep = []
     for trace in st:
-        _correct_traceid(trace)
         try:
             _augment_trace(trace, inventory, ssp_event, picks)
         except Exception as err:
