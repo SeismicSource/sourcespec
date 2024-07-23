@@ -65,67 +65,36 @@ def _none_lenght(input_list):
 # ---- End Helper functions ----
 
 
-class _Options():
+class _Options(dict):
     """
     Options class for sourcespec, with builtin checks for API users.
     """
-    def __init__(self):
-        self._trace_path = None
-        self._asdf_path = None
-
-    def __getitem__(self, key):
-        """Make attributes accessible as dictionary keys."""
-        return getattr(self, key)
-
     def __setitem__(self, key, value):
-        """Make attributes accessible as dictionary keys."""
-        setattr(self, key, value)
+        """
+        Make Config keys accessible as attributes.
 
-    def __str__(self):
-        """Return a dict-like representation of the object."""
-        return str({
-            k: getattr(self, k) for k in dir(self) if not k.startswith('_')}
-        )
-
-    @property
-    def trace_path(self):
-        """Path to the trace files. Must be a list."""
-        return self._trace_path
-
-    @trace_path.setter
-    def trace_path(self, value):
-        if value is None or isinstance(value, (list, tuple)):
-            self._trace_path = value
-        else:
+        Perform specific checks for some parameters.
+        """
+        if (
+            key in ['trace_path', 'asdf_path'] and
+            (value is not None and not isinstance(value, (list, tuple)))
+        ):
             warnings.warn(
-                '"trace_path" must be a list. Converting to a list with one '
+                f'"{key}" must be a list. Converting to a list with one '
                 'element.'
             )
-            self._trace_path = [value]
+            value = [value]
+        super().__setattr__(key, value)
+        super().__setitem__(key, value)
 
-    @trace_path.deleter
-    def trace_path(self):
-        self._trace_path = None
+    def __getattr__(self, key):
+        """Make Config keys accessible as attributes."""
+        try:
+            return self.__getitem__(key)
+        except KeyError as err:
+            raise AttributeError(err) from err
 
-    @property
-    def asdf_path(self):
-        """Path to the ASDF files. Must be a list."""
-        return self._asdf_path
-
-    @asdf_path.setter
-    def asdf_path(self, value):
-        if value is None or isinstance(value, (list, tuple)):
-            self._asdf_path = value
-        else:
-            warnings.warn(
-                '"asdf_path" must be a list. Converting to a list with one '
-                'element.'
-            )
-            self._asdf_path = [value]
-
-    @asdf_path.deleter
-    def asdf_path(self):
-        self._asdf_path = None
+    __setattr__ = __setitem__
 
 
 class _Config(dict):
@@ -180,6 +149,11 @@ class _Config(dict):
             raise AttributeError(err) from err
 
     __setattr__ = __setitem__
+
+    def clear(self):
+        """Clear the configuration and the options."""
+        self['options'].clear()
+        super().clear()
 
     def update(self, other):
         """
