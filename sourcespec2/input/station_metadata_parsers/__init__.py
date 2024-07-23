@@ -11,3 +11,7 @@ Station metadata parsers for SourceSpec.
 """
 from .asdf_inventory import parse_asdf_inventory  # noqa
 from .paz import read_paz_file, PAZ  # noqa
+from .sac_station_metadata import (  # noqa
+    compute_sensitivity_from_SAC, get_instrument_from_SAC,
+    get_station_coordinates_from_SAC,
+)
