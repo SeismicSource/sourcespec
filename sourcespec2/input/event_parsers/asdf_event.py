@@ -33,12 +33,11 @@ def parse_asdf_event_picks(asdf_file, event_id=None):
         # and check for ImportError
         import pyasdf
     except ImportError:
-        logger.error(
+        ssp_exit(
             'Error importing pyasdf. '
             'See https://seismicdata.github.io/pyasdf/ for installation '
             'instructions.'
         )
-        ssp_exit(1)
     try:
         obspy_catalog = pyasdf.ASDFDataSet(asdf_file, mode='r').events
         return parse_obspy_catalog(obspy_catalog, event_id, asdf_file)

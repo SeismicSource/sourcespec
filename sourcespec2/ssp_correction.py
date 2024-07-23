@@ -39,8 +39,7 @@ def station_correction(spec_st):
     try:
         residual = read_spectra(res_filepath)
     except Exception as msg:
-        logger.error(msg)
-        ssp_exit(1)
+        ssp_exit(msg)
 
     H_specs = [
         spec for spec in spec_st
