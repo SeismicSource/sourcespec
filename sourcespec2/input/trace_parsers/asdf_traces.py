@@ -17,7 +17,8 @@ from ...setup import ssp_exit
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-def _parse_asdf_trace_headers(ds, stream, header_key, nw_stat_codes, tag):
+def _parse_asdf_trace_headers(
+        ds, stream, header_key, nw_stat_codes, trace_tags):
     """
     Parse ASDF trace headers.
 
@@ -29,15 +30,13 @@ def _parse_asdf_trace_headers(ds, stream, header_key, nw_stat_codes, tag):
     :type header_key: str
     :param nw_stat_codes: Network and station codes
     :type nw_stat_codes: list
-    :param tag: waveform tag(s) in ASDF file
-    :type tag: str or list of str
+    :param trace_tags: waveform tag(s) in ASDF file
+    :type trace_tags: str or list of str
     """
     # pylint: disable=import-outside-toplevel
     from pyasdf.utils import AuxiliaryDataContainer
-    if not isinstance(tag, (list, tuple)):
-        trace_tags = [tag]
-    else:
-        trace_tags = tag
+    if not isinstance(trace_tags, (list, tuple)):
+        trace_tags = [trace_tags]
     if len(trace_tags) == 1 and len(stream) > 1:
         trace_tags *= len(stream)
     for nw_stat_code, tr, tag in zip(nw_stat_codes, stream.traces, trace_tags):
@@ -118,10 +117,10 @@ def parse_asdf_traces(asdf_file, tag=None, read_headers=False):
     trace_tags = []
     for nw_stat_code in ds.waveforms.list():
         wf_tags = ds.waveforms[nw_stat_code].get_waveform_tags()
-        # If tag is not specified, take first available tag
         if not tag:
-            # Maybe this should be logged
             tag = wf_tags[0]
+            logger.info(
+                f'No ASDF tag specified, taking first available tag: {tag}')
         if tag in wf_tags:
             station_st = ds.waveforms[nw_stat_code][tag]
             stream.extend(station_st)
@@ -143,7 +142,7 @@ def parse_asdf_traces(asdf_file, tag=None, read_headers=False):
     else:
         header_key = None
     if read_headers and header_key:
-        _parse_asdf_trace_headers(ds, stream, header_key,
-                                  nw_stat_codes, trace_tags)
+        _parse_asdf_trace_headers(
+            ds, stream, header_key, nw_stat_codes, trace_tags)
     ds._close()
     return stream
