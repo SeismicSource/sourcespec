@@ -71,7 +71,7 @@ def write_qml(sspec_output):
     :param sspec_output: Output from spectral inversion.
     :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
     """
-    if not config.options.qml_file:
+    if not getattr(config.options, 'qml_file', None):
         config.qml_file_out = None
         return
     qml_file = config.options.qml_file
