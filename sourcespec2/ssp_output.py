@@ -287,7 +287,7 @@ def _write_parfile(sspec_output):
         parfile.write(
             f'\n*** Run completed on: {config.end_of_run} '
             f'{config.end_of_run_tz}')
-        if config.options.run_id:
+        if getattr(config.options, 'run_id', None):
             parfile.write(f'\n*** Run ID: {config.options.run_id}')
         _write_author_and_agency_to_parfile(parfile)
 
@@ -373,7 +373,7 @@ def _write_hypo71(sspec_output):
     :param sspec_output: Output of the spectral inversion.
     :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
     """
-    if not config.options.hypo_file:
+    if not getattr(config.options, 'hypo_file', None):
         return
     if config.hypo_file_format != 'hypo71':
         return
@@ -411,17 +411,18 @@ def _make_symlinks():
     out_data_dir = os.path.join(outdir, 'input_files')
     rel_path = os.path.relpath(config.workdir, out_data_dir)
     os.makedirs(out_data_dir, exist_ok=True)
-    try:
-        filelist = list(config.options.trace_path)
-    except TypeError:
-        filelist = []
-    filelist += [
-        config.options.station_metadata,
-        config.options.hypo_file,
-        config.options.pick_file,
-        config.options.qml_file,
-    ]
-    with contextlib.suppress(TypeError):
+    filelist = []
+    with contextlib.suppress(AttributeError, TypeError):
+        filelist += list(config.options.trace_path)
+    with contextlib.suppress(AttributeError):
+        filelist += [config.options.station_metadata]
+    with contextlib.suppress(AttributeError):
+        filelist += [config.options.hypo_file]
+    with contextlib.suppress(AttributeError):
+        filelist += [config.options.pick_file]
+    with contextlib.suppress(AttributeError):
+        filelist += [config.options.qml_file]
+    with contextlib.suppress(AttributeError, TypeError):
         filelist += list(config.options.asdf_path)
     for filename in filelist:
         if filename is None or not os.path.exists(filename):
@@ -450,7 +451,7 @@ def write_output(sspec_output):
     tz = get_localzone()
     config.end_of_run_tz = tz.tzname(config.end_of_run)
     run_info.run_completed = f'{config.end_of_run} {config.end_of_run_tz}'
-    if config.options.run_id:
+    if getattr(config.options, 'run_id', None):
         run_info.run_id = config.options.run_id
     run_info.author_name = config.author_name
     run_info.author_email = config.author_email
