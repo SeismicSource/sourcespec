@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CECILL-2.1
 """
 Read station metadata in StationXML, dataless SEED, SEED RESP,
-PAZ (SAC polezero format).
+PAZ (SAC polezero format), ASDF
 
 :copyright:
     2012-2024 Claudio Satriano <satriano@ipgp.fr>
@@ -11,178 +11,179 @@ PAZ (SAC polezero format).
     (http://www.cecill.info/licences.en.html)
 """
 import os
-import re
 import logging
+import contextlib
 from obspy import read_inventory
-from obspy.core.inventory import Inventory, Network, Station, Channel, Response
+from obspy.core.inventory import Inventory
 from ..setup import config
+from .station_metadata_parsers import (
+    PAZ,
+    read_paz_file, parse_asdf_inventory,
+    compute_sensitivity_from_SAC,
+    get_station_coordinates_from_SAC
+)
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-class PAZ():
-    """Instrument response defined through poles and zeros."""
-    zeros = []
-    poles = []
-    sensitivity = 1.
-    _seedID = None
-    network = None
-    station = None
-    location = None
-    channel = None
-    input_units = None
-    linenum = None
-
-    def __init__(self, file=None):
-        """
-        Init PAZ object.
-
-        :param file: path to the PAZ file
-        :type file: str
-        """
-        if file is not None:
-            self._read(file)
-
-    def __str__(self):
-        return (
-            f'PAZ: {self.seedID}'
-            f'  zeros: {self.zeros}'
-            f'  poles: {self.poles}'
-            f'  sensitivity: {self.sensitivity}'
-            f'  input_units: {self.input_units}'
-        )
-
-    @property
-    def seedID(self):
-        """Return the seedID."""
-        return self._seedID
-
-    @seedID.setter
-    def seedID(self, seedID):
-        try:
-            self.network, self.station, self.location, self.channel =\
-                seedID.split('.')
-        except ValueError as e:
-            raise ValueError(
-                f'Invalid seedID "{seedID}". '
-                'SeedID must be in the form NET.STA.LOC.CHAN'
-            ) from e
-        self._seedID = seedID
-        self._guess_input_units()
-
-    def _guess_input_units(self):
-        """
-        Guess the input units from the seedID.
-        """
-        if len(self.channel) < 3:
-            return
-        instr_code = self.channel[1]
-        self.input_units = None
-        if instr_code in config.INSTR_CODES_VEL:
-            band_code = self.channel[0]
-            # SEED standard band codes for velocity channels
-            # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming
-            if band_code in ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'S']:
-                self.input_units = 'M/S'
-        elif instr_code in config.INSTR_CODES_ACC:
-            self.input_units = 'M/S**2'
-
-    def _read(self, file):
-        """Read a PAZ file."""
-        # We cannot use the "with" statement here because we need to keep
-        # self.lines alive as an iterator
-        # pylint: disable=consider-using-with
-        fp = open(file, 'r', encoding='ascii')  # sourcery skip
-        # pylint: enable=consider-using-with
-        self.lines = enumerate(fp, start=1)
-        while True:
-            try:
-                self._parse_paz_file_lines()
-            except StopIteration:
-                break
-            except Exception as e:
-                raise TypeError(
-                    f'Unable to parse file "{file}" as PAZ file. '
-                    f'Error at line {self.linenum}: {e}'
-                ) from e
-        fp.close()
-
-    def _parse_paz_file_lines(self):
-        """Parse a line or a set of lines of a PAZ file."""
-        self.linenum, line = next(self.lines)
-        word = line.split()
-        if not word:
-            return
-        what = word[0].lower()
-        if what in ['poles', 'zeros']:
-            nvalues = int(word[1])
-            poles_zeros = []
-            for _ in range(nvalues):
-                self.linenum, line = next(self.lines)
-                value = complex(*map(float, line.split()))
-                poles_zeros.append(value)
-            setattr(self, what, poles_zeros)
-        elif what == 'constant':
-            self.sensitivity = float(word[1])
-
-    def to_inventory(self):
-        """
-        Convert PAZ object to an Inventory object.
-        """
-        resp = Response().from_paz(
-            self.zeros, self.poles, stage_gain=self.sensitivity,
-            input_units=self.input_units, output_units='COUNTS')
-        resp.instrument_sensitivity.value = self.sensitivity
-        channel = Channel(
-            code=self.channel, location_code=self.location, response=resp,
-            latitude=0, longitude=0, elevation=123456, depth=123456)
-        station = Station(
-            code=self.station, channels=[channel, ],
-            latitude=0, longitude=0, elevation=123456)
-        network = Network(
-            code=self.network, stations=[station, ])
-        return Inventory(networks=[network, ])
-
-
-def _read_paz_file(file):
+def _update_coords(obj, coords):
     """
-    Read a paz file into an ``Inventory`` object.
+    Update coordinates the given object.
 
-    :note:
-    - paz file must have ".pz" or ".paz" suffix (or no suffix)
-    - paz file name (without prefix and suffix) can have
-      the trace_id (NET.STA.LOC.CHAN) of the corresponding trace in the last
-      part of his name (e.g., 20110208_1600.NOW.IV.CRAC.00.EHZ.paz),
-      otherwise it will be treaten as a generic paz.
+    :param obj: ObsPy Station or Channel object
+    :type obj: :class:`obspy.core.inventory.station.Station`
+        or :class:`obspy.core.inventory.channel.Channel`
+    :param coords: Dictionary containing coordinates
+    :type coords: dict
+    """
+    obj.latitude = coords['latitude']
+    obj.longitude = coords['longitude']
+    obj.elevation = coords['elevation']
+    with contextlib.suppress(KeyError):
+        obj.depth = coords['local_depth']
 
-    :param file: path to the PAZ file
-    :type file: str
+
+def _update_inventory_with_trace_coords(trace, inventory):
+    """
+    Update inventory with station coordinates from a trace.
+
+    The inventory is updated in place.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param inventory: ObsPy Inventory object to update
+    :type inventory: :class:`obspy.core
+
+    .. note::
+        Currently only SAC files are supported.
+    """
+    if not hasattr(trace.stats, 'sac'):
+        return
+    # get coordinates from SAC headers
+    sac_coords = get_station_coordinates_from_SAC(trace)
+    if sac_coords is None:
+        return
+    for net in inventory:
+        if net.code != trace.stats.network:
+            continue
+        for sta in net:
+            if sta.code != trace.stats.station:
+                continue
+            for chan in sta:
+                if chan.location_code != trace.stats.location:
+                    continue
+                if chan.code != trace.stats.channel:
+                    continue
+                _update_coords(chan, sac_coords)
+            _update_coords(sta, sac_coords)
+
+
+def _update_inventory_with_trace_sensitivity(trace, inventory):
+    """
+    Update inventory with sensitivity from a trace.
+
+    :param trace: ObsPy trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param inventory: ObsPy Inventory object to update
+    :type inventory: :class:`obspy.core.inventory.inventory.Inventory`
+
+    :return: inventory
+    :rtype: :class:`~obspy.core.inventory.inventory.Inventory`
+
+    .. note::
+        Currently only SAC files are supported.
+    """
+    if not hasattr(trace.stats, 'sac'):
+        return inventory
+    update_inventory = inventory.copy()
+    trace_inv = update_inventory.select(
+        network=trace.stats.network,
+        station=trace.stats.station,
+        location=trace.stats.location,
+        channel=trace.stats.channel,
+        starttime=trace.stats.starttime
+    )
+    # save coordinates from the inventory, if available
+    coords = None
+    with contextlib.suppress(Exception):
+        coords = trace_inv.get_coordinates(
+            trace.id, trace.stats.starttime)
+    paz = PAZ()
+    paz.seedID = trace.id
+    paz.sensitivity = compute_sensitivity_from_SAC(trace)
+    paz.poles = []
+    paz.zeros = []
+    if trace_inv:
+        logger.warning(
+            f'Overriding response for {trace.id} with constant '
+            f'sensitivity {paz.sensitivity}')
+    # override the trace_inv object with a new one constructed from the
+    # sensitivity value
+    trace_inv = paz.to_inventory()
+    # restore coordinates, if available
+    if coords is not None:
+        for sta in trace_inv[0].stations:
+            _update_coords(sta, coords)
+            for chan in sta.channels:
+                _update_coords(chan, coords)
+    else:
+        _update_inventory_with_trace_coords(trace, trace_inv)
+    # update inventory
+    update_inventory = update_inventory.remove(
+        network=trace.stats.network,
+        station=trace.stats.station,
+        location=trace.stats.location,
+        channel=trace.stats.channel
+    ) + trace_inv
+    return update_inventory
+
+
+def _update_inventory_from_stream(stream, inventory):
+    """
+    Update inventory with station metadata from a stream.
+
+    :param stream: ObsPy Stream object containing station metadata
+    :type stream: :class:`obspy.core.stream.Stream`
+    :param inventory: ObsPy Inventory object to update
+    :type inventory: :class:`obspy.core.inventory.inventory.Inventory`
+
+    :return: inventory
+    :rtype: :class:`~obspy.core.inventory.inventory.Inventory`
+
+    .. note::
+        Currently only SAC files are supported.
+    """
+    update_inventory = inventory.copy()
+    for trace in stream:
+        # ignore traces that are not in SAC format
+        if not hasattr(trace.stats, 'sac'):
+            continue
+        _update_inventory_with_trace_coords(trace, update_inventory)
+        # If a "sensitivity" config option is provided, override the Inventory
+        # object with a new one constructed from the sensitivity value
+        if config.sensitivity is not None:
+            update_inventory = _update_inventory_with_trace_sensitivity(
+                trace, update_inventory)
+    return update_inventory
+
+
+def _read_asdf_inventory():
+    """
+    Read station metadata from ASDF file specified in the configuration.
 
     :return: inventory
     :rtype: :class:`~obspy.core.inventory.inventory.Inventory`
     """
-    bname = os.path.basename(file)
-    # strip .pz suffix, if there
-    bname = re.sub('.pz$', '', bname)
-    # strip .paz suffix, if there
-    bname = re.sub('.paz$', '', bname)
-    # we assume that the last four fields of bname
-    # (separated by '.') are the trace_id
-    trace_id = '.'.join(bname.split('.')[-4:])
-    paz = PAZ(file)
-    try:
-        paz.seedID = trace_id
-    except ValueError:
-        paz.seedID = 'XX.GENERIC.XX.XXX'
-        logger.info(f'Using generic trace ID for PAZ file {file}')
-    if paz.input_units is None:
-        paz.input_units = 'M/S'
-        logger.warning(
-            f'Cannot find input units for ID "{paz.seedID}". '
-            'Defaulting to M/S')
-    return paz.to_inventory()
+    inventory = Inventory()
+    asdf_path = getattr(config.options, 'asdf_path', None)
+    if not asdf_path:
+        return inventory
+    for asdf_file in asdf_path:
+        logger.info(f'Reading station metadata from ASDF file: {asdf_file}')
+        inventory += parse_asdf_inventory(asdf_file)
+    return inventory
 
 
-def read_station_metadata():
+def _read_station_metadata_from_files():
     """
     Read station metadata into an ObsPy ``Inventory`` object.
 
@@ -196,10 +197,9 @@ def read_station_metadata():
           not set in the configuration or if no valid files are found
     """
     inventory = Inventory()
-    if not config.station_metadata:
-        return inventory
-    logger.info('Reading station metadata...')
     metadata_path = config.station_metadata
+    if not metadata_path:
+        return inventory
     if os.path.isdir(metadata_path):
         filelist = [
             os.path.join(metadata_path, file)
@@ -217,11 +217,29 @@ def read_station_metadata():
         except Exception:
             msg1 = f'Unable to parse file "{file}" as Inventory'
             try:
-                inventory += _read_paz_file(file)
+                inventory += read_paz_file(file)
             except Exception as msg2:
                 logger.warning(msg1)
                 logger.warning(msg2)
                 continue
-    logger.info('Reading station metadata: done')
+    return inventory
+
+
+def read_station_metadata(stream=None):
+    """
+    Read station metadata.
+
+    :param stream: ObsPy Stream object containing station metadata (optional)
+    :type stream: :class:`obspy.core.stream.Stream`
+
+    :return: inventory
+    :rtype: :class:`~obspy.core.inventory.inventory.Inventory`
+    """
+    logger.info('Reading station metadata...')
+    inventory = _read_station_metadata_from_files() + _read_asdf_inventory()
+    if stream is not None:
+        inventory = _update_inventory_from_stream(stream, inventory)
+    nstations = len(inventory.get_contents()['stations'])
+    logger.info(f'Reading station metadata: {nstations} stations read')
     logger.info('---------------------------------------------------')
     return inventory

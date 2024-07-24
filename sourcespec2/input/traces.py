@@ -16,7 +16,9 @@ Read traces in multiple formats.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import re
 import logging
+import contextlib
 import shutil
 import tarfile
 import zipfile
@@ -24,7 +26,9 @@ import tempfile
 from obspy import read
 from obspy.core import Stream
 from ..setup import config, ssp_exit
-from .sac_header import get_event_from_SAC
+from .trace_parsers import parse_asdf_traces
+from .station_metadata_parsers import get_instrument_from_SAC
+from .instrument_type import get_instrument_type
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -69,13 +73,56 @@ def _build_filelist(path, filelist, tmpdir):
             filelist.append(path)
 
 
-def _read_trace_files():
+def _filter_by_station(input_stream):
     """
-    Read trace files from the path specified in the configuration file.
+    Select traces for a given station, if specified in the configuration.
+
+    :param input_stream: Input stream to filter
+    :type tmpst: :class:`obspy.core.stream.Stream`
+
+    :return: Stream object
+    :rtype: :class:`obspy.core.stream.Stream`
+    """
+    if getattr(config.options, 'station', None) is None:
+        return input_stream
+    return Stream([
+        trace for trace in input_stream.traces
+        if trace.stats.station == config.options.station
+    ])
+
+
+def _read_asdf_traces():
+    """
+    Read traces from ASDF file specified in the configuration.
 
     :return: ObsPy Stream object
     :rtype: :class:`obspy.core.stream.Stream`
     """
+    stream = Stream()
+    asdf_path = getattr(config.options, 'asdf_path', None)
+    if not asdf_path:
+        return stream
+    asdf_tags = getattr(config.options, 'asdf_tag', None)
+    # Allow 1 tag for all ASDF files or 1 tag for each ASDF file
+    if isinstance(asdf_tags, str):
+        asdf_tags = [asdf_tags] * len(asdf_path)
+    for asdf_file, asdf_tag in zip(asdf_path, asdf_tags):
+        logger.info(f'Reading traces from ASDF file: {asdf_file}')
+        stream += _filter_by_station(
+            parse_asdf_traces(asdf_file, tag=asdf_tag, read_headers=True)
+        )
+    return stream
+
+
+def _read_trace_files():
+    """
+    Read trace files from the path specified in the configuration.
+
+    :return: ObsPy Stream object
+    :rtype: :class:`obspy.core.stream.Stream`
+    """
+    if getattr(config.options, 'trace_path', None) is None:
+        return Stream()
     # phase 1: build a file list
     # ph 1.1: create a temporary dir and run '_build_filelist()'
     #         to move files to it and extract all tar archives
@@ -93,52 +140,147 @@ def _read_trace_files():
     st = Stream()
     for filename in sorted(filelist):
         try:
-            tmpst = read(filename, fsize=False)
-        except Exception:
+            st += _filter_by_station(read(filename, fsize=False))
+        except (TypeError, FileNotFoundError):
             logger.warning(
                 f'{filename}: Unable to read file as a trace: skipping')
             continue
-        for trace in tmpst.traces:
-            # only use the station specified by the command line option
-            # "--station", if any
-            if (config.options.station is not None and
-                    trace.stats.station != config.options.station):
-                continue
-            st.append(trace)
     shutil.rmtree(tmpdir)
     return st
 
 
-def _read_event_from_traces(stream):
+def _correct_traceids(stream):
     """
-    Read event information from trace headers.
-    The event information is stored in the trace.stats.event attribute.
-
-    Currently supports only the SAC header.
+    Correct traceids from config.TRACEID_MAP, if available.
 
     :param stream: ObsPy Stream object
     :type stream: :class:`obspy.core.stream.Stream`
     """
+    if config.TRACEID_MAP is None:
+        return
+    for trace in stream:
+        with contextlib.suppress(KeyError):
+            traceid = config.TRACEID_MAP[trace.get_id()]
+            net, sta, loc, chan = traceid.split('.')
+            trace.stats.network = net
+            trace.stats.station = sta
+            trace.stats.location = loc
+            trace.stats.channel = chan
+
+
+def _update_non_standard_trace_ids(stream):
+    """
+    Update non-standard trace IDs with a standard SEED ID obtained from the
+    instrument type.
+
+    :param stream: Stream object
+    :type stream: :class:`obspy.core
+
+    .. note::
+        Currently only SAC files are supported.
+    """
+    traces_to_skip = []
+    for trace in stream:
+        if not hasattr(trace.stats, 'sac'):
+            continue
+        instrtype = get_instrument_type(trace)
+        if instrtype is not None:
+            continue
+        try:
+            instrtype, band_code, instr_code = get_instrument_from_SAC(trace)
+        except RuntimeError as e:
+            logger.warning(e)
+            traces_to_skip.append(trace)
+            continue
+        old_id = trace.id
+        orientation = trace.stats.channel[-1]
+        trace.stats.channel = ''.join((band_code, instr_code, orientation))
+        msg = f'{old_id}: non-standard trace ID updated to {trace.id}'
+        if msg not in _update_non_standard_trace_ids.msgs:
+            logger.info(msg)
+            _update_non_standard_trace_ids.msgs.append(msg)
+    stream.traces = [trace for trace in stream if trace not in traces_to_skip]
+_update_non_standard_trace_ids.msgs = []  # noqa
+
+
+def _should_keep_trace(traceid):
+    """
+    Check if trace should be kept.
+
+    :param traceid: Trace ID.
+    :type traceid: str
+
+    :raises: RuntimeError if traceid is to be skipped.
+    """
+    network, station, location, channel = traceid.split('.')
+    orientation_codes = config.vertical_channel_codes +\
+        config.horizontal_channel_codes_1 +\
+        config.horizontal_channel_codes_2
+    orientation = channel[-1]
+    if orientation not in orientation_codes:
+        raise RuntimeError(
+            f'{traceid}: Unknown channel orientation: '
+            f'"{orientation}": skipping trace'
+        )
+    # build a list of all possible ids, from station only
+    # to full net.sta.loc.chan
+    ss = [
+        station,
+        '.'.join((network, station)),
+        '.'.join((network, station, location)),
+        '.'.join((network, station, location, channel)),
+    ]
+    if config.use_traceids is not None:
+        combined = (
+            "(" + ")|(".join(config.use_traceids) + ")"
+        ).replace('.', r'\.')
+        if not any(re.match(combined, s) for s in ss):
+            raise RuntimeError(f'{traceid}: ignored from config file')
+    if config.ignore_traceids is not None:
+        combined = (
+            "(" + ")|(".join(config.ignore_traceids) + ")"
+        ).replace('.', r'\.')
+        if any(re.match(combined, s) for s in ss):
+            raise RuntimeError(f'{traceid}: ignored from config file')
+
+
+def _select_requested_components(stream):
+    """
+    Select requested components from stream
+
+    :param stream: ObsPy Stream object
+    :type stream: :class:`obspy.core.stream.Stream`
+
+    :return: ObsPy Stream object
+    :rtype: :class:`obspy.core.stream.Stream`
+    """
+    traces_to_keep = []
     for trace in stream:
         try:
-            trace.stats.event = get_event_from_SAC(trace)
-        except RuntimeError:
+            _should_keep_trace(trace.id)
+        except RuntimeError as e:
+            logger.warning(str(e))
             continue
+        traces_to_keep.append(trace)
+    # in-place update of st
+    stream.traces[:] = traces_to_keep[:]
 
 
 def read_traces():
     """
-    Read trace files
+    Read traces from the files or paths specified in the configuration.
 
     :return: Traces
     :rtype: :class:`obspy.core.stream.Stream`
     """
     logger.info('Reading traces...')
-    stream = _read_trace_files()
-    _read_event_from_traces(stream)
-    logger.info('Reading traces: done')
+    stream = _read_asdf_traces() + _read_trace_files()
+    _correct_traceids(stream)
+    _update_non_standard_trace_ids(stream)
+    _select_requested_components(stream)
+    ntraces = len(stream)
+    logger.info(f'Reading traces: {ntraces} traces loaded')
     logger.info('---------------------------------------------------')
-    if len(stream) == 0:
-        logger.error('No trace loaded')
-        ssp_exit(1)
+    if not ntraces:
+        ssp_exit('No traces loaded')
     return stream

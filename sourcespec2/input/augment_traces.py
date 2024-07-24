@@ -15,104 +15,11 @@ Augment traces with station and event metadata.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-import re
 import logging
 import contextlib
 from obspy.core.util import AttribDict
-from ..setup import config
-from .station_metadata import PAZ
-from .sac_header import (
-    compute_sensitivity_from_SAC,
-    get_instrument_from_SAC, get_station_coordinates_from_SAC,
-    get_picks_from_SAC)
+from .instrument_type import get_instrument_type
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
-
-
-def _skip_traces_from_config(traceid):
-    """
-    Skip traces with unknown channel orientation or ignored from config file.
-
-    :param traceid: Trace ID.
-    :type traceid: str
-
-    :raises: RuntimeError if traceid is ignored from config file.
-    """
-    network, station, location, channel = traceid.split('.')
-    orientation_codes = config.vertical_channel_codes +\
-        config.horizontal_channel_codes_1 +\
-        config.horizontal_channel_codes_2
-    orientation = channel[-1]
-    if orientation not in orientation_codes:
-        raise RuntimeError(
-            f'{traceid}: Unknown channel orientation: '
-            f'"{orientation}": skipping trace'
-        )
-    # build a list of all possible ids, from station only
-    # to full net.sta.loc.chan
-    ss = [
-        station,
-        '.'.join((network, station)),
-        '.'.join((network, station, location)),
-        '.'.join((network, station, location, channel)),
-    ]
-    if config.use_traceids is not None:
-        combined = (
-            "(" + ")|(".join(config.use_traceids) + ")"
-        ).replace('.', r'\.')
-        if not any(re.match(combined, s) for s in ss):
-            raise RuntimeError(f'{traceid}: ignored from config file')
-    if config.ignore_traceids is not None:
-        combined = (
-            "(" + ")|(".join(config.ignore_traceids) + ")"
-        ).replace('.', r'\.')
-        if any(re.match(combined, s) for s in ss):
-            raise RuntimeError(f'{traceid}: ignored from config file')
-
-
-def _select_components(st):
-    """
-    Select requested components from stream
-
-    :param st: ObsPy Stream object
-    :type st: :class:`obspy.core.stream.Stream`
-
-    :return: ObsPy Stream object
-    :rtype: :class:`obspy.core.stream.Stream`
-    """
-    traces_to_keep = []
-    for trace in st:
-        try:
-            _skip_traces_from_config(trace.id)
-        except RuntimeError as e:
-            logger.warning(str(e))
-            continue
-        # TODO: should we also filter by station here?
-        # only use the station specified by the command line option
-        # "--station", if any
-        #if (config.options.station is not None and
-        #        trace.stats.station != config.options.station):
-        #    continue
-        traces_to_keep.append(trace)
-    # in-place update of st
-    st.traces[:] = traces_to_keep[:]
-
-
-def _correct_traceid(trace):
-    """
-    Correct traceid from config.TRACEID_MAP, if available.
-
-    :param trace: ObsPy Trace object
-    :type trace: :class:`obspy.core.trace.Trace`
-    """
-    if config.TRACEID_MAP is None:
-        return
-    with contextlib.suppress(KeyError):
-        traceid = config.TRACEID_MAP[trace.get_id()]
-        net, sta, loc, chan = traceid.split('.')
-        trace.stats.network = net
-        trace.stats.station = sta
-        trace.stats.location = loc
-        trace.stats.channel = chan
 
 
 def _add_instrtype(trace):
@@ -122,30 +29,7 @@ def _add_instrtype(trace):
     :param trace: ObsPy Trace object
     :type trace: :class:`obspy.core.trace.Trace`
     """
-    instrtype = None
-    band_code = None
-    instr_code = None
-    trace.stats.instrtype = None
-    # First, try to get the instrtype from channel name
-    chan = trace.stats.channel
-    if len(chan) > 2:
-        band_code = chan[0]
-        instr_code = chan[1]
-    if instr_code in config.INSTR_CODES_VEL:
-        # SEED standard band codes from higher to lower sampling rate
-        # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
-        if band_code in ['G', 'D', 'E', 'S']:
-            instrtype = 'shortp'
-        if band_code in ['F', 'C', 'H', 'B']:
-            instrtype = 'broadb'
-    if instr_code in config.INSTR_CODES_ACC:
-        instrtype = 'acc'
-    if instrtype is None:
-        # Let's see if there is an instrument name in SAC header (ISNet format)
-        # In this case, we define band and instrument codes a posteriori
-        instrtype, band_code, instr_code = get_instrument_from_SAC(trace)
-        orientation = trace.stats.channel[-1]
-        trace.stats.channel = ''.join((band_code, instr_code, orientation))
+    instrtype = get_instrument_type(trace)
     trace.stats.instrtype = instrtype
     trace.stats.info = f'{trace.id} {trace.stats.instrtype}'
 
@@ -172,30 +56,6 @@ def _add_inventory(trace, inventory):
         inv.networks[0].stations[0].code = sta
         inv.networks[0].stations[0].channels[0].code = chan
         inv.networks[0].stations[0].channels[0].location_code = loc
-    # If a "sensitivity" config option is provided, override the Inventory
-    # object with a new one constructed from the sensitivity value
-    if config.sensitivity is not None:
-        # save coordinates from the inventory, if available
-        coords = None
-        with contextlib.suppress(Exception):
-            coords = inv.get_coordinates(trace.id, trace.stats.starttime)
-        paz = PAZ()
-        paz.seedID = trace.id
-        paz.sensitivity = compute_sensitivity_from_SAC(trace)
-        paz.poles = []
-        paz.zeros = []
-        if inv:
-            logger.warning(
-                f'Overriding response for {trace.id} with constant '
-                f'sensitivity {paz.sensitivity}')
-        inv = paz.to_inventory()
-        # restore coordinates, if available
-        if coords is not None:
-            chan = inv.networks[0].stations[0].channels[0]
-            chan.latitude = coords['latitude']
-            chan.longitude = coords['longitude']
-            chan.elevation = coords['elevation']
-            chan.depth = coords['local_depth']
     trace.stats.inventory = inv
 
 
@@ -259,24 +119,19 @@ def _add_coords(trace):
         # if coordinates are not found
         coords = trace.stats.inventory.get_coordinates(
                     trace.id, trace.stats.starttime)
-    if coords is not None:
-        # Build an AttribDict and make sure that coordinates are floats
-        coords = AttribDict({
-            key: float(value) for key, value in coords.items()})
-        coords = (
-            None if (
-                coords.longitude == 0 and coords.latitude == 0 and
-                coords.local_depth == 123456 and coords.elevation == 123456)
-            else coords)
-    if coords is None:
-        # If we still don't have trace coordinates,
-        # we try to get them from SAC header
-        coords = get_station_coordinates_from_SAC(trace)
     if coords is None:
         # Give up!
         _add_coords.skipped.append(trace.id)
         raise RuntimeError(
             f'{trace.id}: could not find coords for trace: skipping trace')
+    # Build an AttribDict and make sure that coordinates are floats
+    coords = AttribDict({
+        key: float(value) for key, value in coords.items()})
+    coords = (
+        None if (
+            coords.longitude == 0 and coords.latitude == 0 and
+            coords.local_depth == 123456 and coords.elevation == 123456)
+        else coords)
     if coords.latitude == coords.longitude == 0:
         logger.warning(
             f'{trace.id}: trace has latitude and longitude equal to zero!')
@@ -310,12 +165,8 @@ def _add_picks(trace, picks=None):
     """
     if picks is None:
         picks = []
-    trace_picks = []
-    with contextlib.suppress(Exception):
-        trace_picks = get_picks_from_SAC(trace)
-    for pick in picks:
-        if pick.station == trace.stats.station:
-            trace_picks.append(pick)
+    trace_picks = [
+        pick for pick in picks if pick.station == trace.stats.station]
     trace.stats.picks = trace_picks
     # Create empty dicts for arrivals, travel_times and takeoff angles.
     # They will be used later.
@@ -372,30 +223,23 @@ def _augment_trace(trace, inventory, ssp_event, picks):
     trace.stats.ignore = False
 
 
-def augment_traces(st, inventory, ssp_event, picks):
+def augment_traces(stream, inventory, ssp_event, picks):
     """
     Add all required information to trace headers.
 
-    Only the traces that satisfy the conditions in the config file are kept.
-    Problematic traces are also removed.
+    Trace with no or incomplete metadata are skipped.
 
-    :param st: Traces to be augmented
-    :type st: :class:`obspy.core.stream.Stream`
-    :param inventory: Station metadata. If it is None or an empty Inventory
-        object, the code will try to read the station metadata from the
-        trace headers (only SAC format is supported).
+    :param stream: Traces to be augmented
+    :type stream: :class:`obspy.core.stream.Stream`
+    :param inventory: Station metadata
     :type inventory: :class:`obspy.core.inventory.Inventory`
     :param ssp_event: Event information
     :type ssp_event: :class:`sourcespec.ssp_event.SSPEvent`
     :param picks: list of picks
     :type picks: list of :class:`sourcespec.ssp_event.Pick`
     """
-    # First, select the components based on the config options
-    _select_components(st)
-    # Then, augment the traces and remove the problematic ones
     traces_to_keep = []
-    for trace in st:
-        _correct_traceid(trace)
+    for trace in stream:
         try:
             _augment_trace(trace, inventory, ssp_event, picks)
         except Exception as err:
@@ -404,5 +248,5 @@ def augment_traces(st, inventory, ssp_event, picks):
             continue
         traces_to_keep.append(trace)
     # in-place update of st
-    st.traces[:] = traces_to_keep[:]
-    _complete_picks(st)
+    stream.traces[:] = traces_to_keep[:]
+    _complete_picks(stream)

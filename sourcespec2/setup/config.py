@@ -10,8 +10,8 @@ Config class for sourcespec.
     (http://www.cecill.info/licences.en.html)
 """
 import os
-import types
 import contextlib
+import warnings
 from collections import defaultdict
 from .configobj_helpers import parse_configspec, get_default_config_obj
 from .mandatory_deprecated import (
@@ -65,6 +65,38 @@ def _none_lenght(input_list):
 # ---- End Helper functions ----
 
 
+class _Options(dict):
+    """
+    Options class for sourcespec, with builtin checks for API users.
+    """
+    def __setitem__(self, key, value):
+        """
+        Make Config keys accessible as attributes.
+
+        Perform specific checks for some parameters.
+        """
+        if (
+            key in ['trace_path', 'asdf_path'] and
+            (value is not None and not isinstance(value, (list, tuple)))
+        ):
+            warnings.warn(
+                f'"{key}" must be a list. Converting to a list with one '
+                'element.'
+            )
+            value = [value]
+        super().__setattr__(key, value)
+        super().__setitem__(key, value)
+
+    def __getattr__(self, key):
+        """Make Config keys accessible as attributes."""
+        try:
+            return self.__getitem__(key)
+        except KeyError as err:
+            raise AttributeError(err) from err
+
+    __setattr__ = __setitem__
+
+
 class _Config(dict):
     """
     Config class for sourcespec.
@@ -81,14 +113,14 @@ class _Config(dict):
     """
     def __init__(self):
         # Additional config values that must exist for the code to run without
-        # errors. Tey must be defined using the dict syntax.
+        # errors. They must be defined using the dict syntax.
         self['running_from_command_line'] = False
         self['vertical_channel_codes'] = ['Z']
         self['horizontal_channel_codes_1'] = ['N', 'R']
         self['horizontal_channel_codes_2'] = ['E', 'T']
         self['TRACEID_MAP'] = None
-        # Empty options object, for compatibility with the command line version
-        self['options'] = types.SimpleNamespace()
+        # options object with some built-in checks for API users
+        self['options'] = _Options()
         # A list of warnings to be issued when logger is set up
         self['warnings'] = []
         # Create a dict to store figure paths
@@ -118,6 +150,11 @@ class _Config(dict):
 
     __setattr__ = __setitem__
 
+    def clear(self):
+        """Clear the configuration and the options."""
+        self['options'].clear()
+        super().clear()
+
     def update(self, other):
         """
         Update the configuration with the values from another dictionary.
@@ -125,7 +162,7 @@ class _Config(dict):
         :param other: The dictionary with the new values
         :type other: dict
 
-        :raises ValueError: If an error occurs while parsing the options
+        :raises ValueError: If an error occurs while parsing the parameters
         """
         for key, value in other.items():
             self[key] = value
@@ -182,7 +219,7 @@ class _Config(dict):
         """
         Validate the configuration.
 
-        :raises ValueError: If an error occurs while validating the options
+        :raises ValueError: If an error occurs while validating the parameters
         """
         config_obj = ConfigObj(self, configspec=parse_configspec())
         val = Validator()
@@ -214,7 +251,7 @@ class _Config(dict):
         """
         Check the deprecated configuration parameters.
 
-        :raises ValueError: If an error occurs while parsing the options
+        :raises ValueError: If an error occurs while parsing the parameters
         """
         deprecation_msgs = []
         for param, msgs in deprecated_config_params.items():
@@ -243,7 +280,7 @@ class _Config(dict):
         """
         Check the mandatory configuration parameters.
 
-        :raises ValueError: If an error occurs while parsing the options
+        :raises ValueError: If an error occurs while parsing the parameters
         """
         messages = []
         for par in mandatory_config_params:
@@ -256,9 +293,9 @@ class _Config(dict):
 
     def _check_force_list(self):
         """
-        Check the force_list options and convert them to lists of floats.
+        Check the force_list parameters and convert them to lists of floats.
 
-        :raises ValueError: If an error occurs while parsing the options
+        :raises ValueError: If an error occurs while parsing the parameters
         """
         try:
             for param in [
@@ -274,7 +311,7 @@ class _Config(dict):
         """
         Check that the lists describing the source model have the same length.
 
-        :raises ValueError: If an error occurs while parsing the options
+        :raises ValueError: If an error occurs while parsing the parameters
         """
         n_vp_source = _none_lenght(self['vp_source'])
         n_vs_source = _none_lenght(self['vs_source'])
@@ -291,9 +328,9 @@ class _Config(dict):
 
     def _check_Er_freq_range(self):
         """
-        Check the Er_freq_range option.
+        Check the Er_freq_range parameter.
 
-        :raises ValueError: If an error occurs while parsing the options
+        :raises ValueError: If an error occurs while parsing the parameters
         """
         if self['Er_freq_range'] is None:
             self['Er_freq_range'] = [None, None]
@@ -309,17 +346,17 @@ class _Config(dict):
 
     def _check_html_report(self):
         """
-        Check the html_report option.
+        Check the html_report parameter.
         """
         if self['html_report']:
             if not self['plot_save']:
                 self['warnings'].append(
-                    'The "html_report" option is selected but "plot_save" '
+                    'The "html_report" parameter is selected but "plot_save" '
                     'is "False". HTML report will have no plots.'
                 )
             if self['plot_save_format'] not in ['png', 'svg']:
                 self['warnings'].append(
-                    'The "html_report" option is selected but '
+                    'The "html_report" parameter is selected but '
                     '"plot_save_format" is not "png" or "svg". '
                     'HTML report will have no plots.'
                 )
