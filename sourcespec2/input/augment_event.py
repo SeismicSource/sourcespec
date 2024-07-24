@@ -57,7 +57,7 @@ def augment_event(ssp_event):
     except Exception as e:
         ssp_exit(
             f'Unable to compute velocity at hypocenter: {e}\n')
-    if config.options.evname is not None:
+    if getattr(config.options, 'evname', None) is not None:
         # add evname from command line, if any, overriding the one in ssp_event
         ssp_event.name = config.options.evname
     else:
