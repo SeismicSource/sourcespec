@@ -102,8 +102,11 @@ def _read_asdf_traces():
     asdf_path = getattr(config.options, 'asdf_path', None)
     if not asdf_path:
         return stream
-    asdf_tag = getattr(config.options, 'asdf_tag', None)
-    for asdf_file in asdf_path:
+    asdf_tags = getattr(config.options, 'asdf_tag', None)
+    # Allow 1 tag for all ASDF files or 1 tag for each ASDF file
+    if isinstance(asdf_tags, type('')):
+        asdf_tags = [asdf_tags] * len(asdf_path)
+    for asdf_file, asdf_tag in zip(asdf_path, asdf_tags):
         logger.info(f'Reading traces from ASDF file: {asdf_file}')
         stream += _filter_by_station(
             parse_asdf_traces(asdf_file, tag=asdf_tag, read_headers=True)
