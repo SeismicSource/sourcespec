@@ -52,7 +52,7 @@ def ssp_run(st, inventory, ssp_event, picks, allow_exit=False):
 
     # Create output folder if required, save config and setup logging
     from .setup import get_outdir_path, save_config, setup_logging
-    if config.options.outdir:
+    if getattr(config.options, 'outdir', None):
         outdir = get_outdir_path(ssp_event.event_id)
         if not os.path.exists(outdir):
             os.makedirs(outdir)
