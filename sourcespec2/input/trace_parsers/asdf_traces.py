@@ -30,7 +30,7 @@ def _parse_asdf_trace_headers(
     :type header_key: str
     :param nw_stat_codes: Network and station codes
     :type nw_stat_codes: list
-    :param trace_tags: waveform tag(s) in ASDF file
+    :param trace_tags: trace tag(s) in ASDF file
     :type trace_tags: str or list of str
     """
     # pylint: disable=import-outside-toplevel
@@ -85,7 +85,7 @@ def parse_asdf_traces(asdf_file, tag=None, read_headers=False):
 
     :param asdf_file: full path to ASDF file
     :type asdf_file: str
-    :param tag: waveform tag in ASDF file (may contain wildcards)
+    :param tag: trace tag in ASDF file (may contain wildcards)
     :type tag: str
     :param read_headers: flag to control reading of (non-standard)
         trace headers
