@@ -87,7 +87,7 @@ setup(
     install_requires=[
         'numpy>=1.10',
         'scipy>=0.17',
-        'matplotlib>=3.2',
+        'matplotlib>=3.2,<3.10',
         'pillow>=4.0.0',
         'obspy>=1.2.0',
         'pyproj',

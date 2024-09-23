@@ -230,11 +230,11 @@ def _check_library_versions():
     MATPLOTLIB_VERSION_STR = matplotlib.__version__
     MATPLOTLIB_VERSION = MATPLOTLIB_VERSION_STR.split('.')[:3]
     MATPLOTLIB_VERSION = tuple(map(int, MATPLOTLIB_VERSION))
-    MAX_MATPLOTLIB_VERSION = (3, 9, 0)
+    MAX_MATPLOTLIB_VERSION = (3, 10, 0)
     if MATPLOTLIB_VERSION >= MAX_MATPLOTLIB_VERSION:
         MAX_MATPLOTLIB_VERSION_STR = '.'.join(map(str, MAX_MATPLOTLIB_VERSION))
         sys.stderr.write(
-            f'ERROR: Matplotlib >= {MAX_MATPLOTLIB_VERSION_STR}'
+            f'ERROR: Matplotlib >= {MAX_MATPLOTLIB_VERSION_STR} '
             'is not yet supported. Please use a less recent version'
             f' You have version: {MATPLOTLIB_VERSION_STR}\n'
         )

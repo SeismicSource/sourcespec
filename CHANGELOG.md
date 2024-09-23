@@ -12,6 +12,7 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 - Spectral plots: show information on the reason why a fit failed
 - `plot_sourcepars`: possibility of selecting the latest runid for each event
 - `plot_sourcepars`: new plot type: static stress drop vs. depth
+- Support for Matplotlib 3.9
 
 ### Config file
 
