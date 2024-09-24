@@ -1,5 +1,6 @@
 include CHANGELOG.md
 include README.md
+exclude README_pkg.md
 include LICENSE.txt
 include CONTRIBUTORS.txt
 # include only files in docs, not subdirs like _build
