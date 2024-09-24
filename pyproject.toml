@@ -1,0 +1,84 @@
+[build-system]
+requires = ["setuptools>=64", "versioneer[toml]"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sourcespec"
+dynamic = ["version", "readme"]
+authors = [
+    { name = "Claudio Satriano", email = "satriano@ipgp.fr" },
+]
+description = "Earthquake source parameters from P- or S-wave displacement spectra"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: CEA CNRS Inria Logiciel Libre License, version 2.1 (CeCILL-2.1)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+requires-python = ">=3.7"
+dependencies = [
+    "numpy>=1.10",
+    "scipy>=0.17",
+    "matplotlib>=3.2,<3.10",
+    "pillow>=4.0.0",
+    "obspy>=1.2.0",
+    "pyproj",
+    "tzlocal",
+    "pyyaml>=5.1",
+    "h5py",
+]
+
+[project.license]
+text = "CeCILL Free Software License Agreement, Version 2.1"
+
+[project.urls]
+Homepage = "https://sourcespec.seismicsource.org"
+Source = "https://github.com/SeismicSource/sourcespec"
+Documentation = "https://sourcespec.readthedocs.io"
+
+[project.scripts]
+source_spec = "sourcespec.source_spec:main"
+source_model = "sourcespec.source_model:main"
+source_residuals = "sourcespec.source_residuals:main"
+clipping_detection = "sourcespec.clipping_detection:main"
+plot_sourcepars = "sourcespec.plot_sourcepars:main"
+
+[tool.setuptools]
+include-package-data = true
+platforms = [
+    "OS",
+    "Independent",
+]
+
+[tool.setuptools.packages.find]
+include = ["sourcespec", "sourcespec.*"]
+
+[tool.setuptools.package-data]
+"*" = ["LICENSE"]
+"sourcespec.config_files" = ["*.yaml", "*.conf"]
+"sourcespec.html_report_template" = ["*.html", "*.css"]
+
+[tool.setuptools.dynamic]
+version = {attr = "sourcespec.__version__"}
+
+[tool.versioneer]
+VCS = "git"
+style = "pep440"
+versionfile_source = "sourcespec/_version.py"
+versionfile_build = "sourcespec/_version.py"
+tag_prefix = "v"
+parentdir_prefix = "sourcespec-"
+
+[tool.pylama]
+skip = "build/*,versioneer.py,*/_version.py,*/configobj/*,*/adjustText/*"

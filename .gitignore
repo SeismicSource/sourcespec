@@ -26,3 +26,4 @@ sourcespec.egg-info/
 dist/
 build/
 RELEASE-VERSION
+README_pkg.md
