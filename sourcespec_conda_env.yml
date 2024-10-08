@@ -1,6 +1,5 @@
 name: sourcespec
 channels:
-  - defaults
   - conda-forge
 dependencies:
   - python>=3.7
@@ -10,7 +9,7 @@ dependencies:
   - matplotlib>=3.2
   - pillow>=4.0.0
   - obspy>=1.2.0
-  - pyproj
+  - pyproj>=3.7
   - tzlocal
   - pyyaml>=5.1
   - h5py
