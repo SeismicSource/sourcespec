@@ -14,6 +14,7 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 
 ### Plotting
 
+- New plot: raw traces
 - Stacked spectra: color spectral curves according to the weighting function
 - Spectral plots: show information on the reason why a fit failed
 - `plot_sourcepars`: possibility of selecting the latest runid for each event

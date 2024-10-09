@@ -122,15 +122,17 @@ def _make_fig(config, nlines, ncols):
 
 
 # Keep track of saved figure numbers to avoid saving the same figure twice
-SAVED_FIGURE_NUMBERS = []
+SAVED_FIGURE_CODES = []
 # Bounding box for saving figures
 BBOX = None
 
 
-def _savefig(config, figures, force_numbering=False):
+def _savefig(config, figures, suffix, force_numbering=False):
     global BBOX  # pylint: disable=global-statement
     evid = config.event.event_id
     figfile_base = os.path.join(config.options.outdir, f'{evid}.traces.')
+    if suffix is not None:
+        figfile_base += f'{suffix}.'
     fmt = config.plot_save_format
     if BBOX is None:
         pad_inches = matplotlib.rcParams['savefig.pad_inches']
@@ -147,7 +149,8 @@ def _savefig(config, figures, force_numbering=False):
     else:
         figfiles = [f'{figfile_base}{n:02d}.{fmt}' for n in range(nfigures)]
     for n in range(nfigures):
-        if n in SAVED_FIGURE_NUMBERS:
+        figcode = f'{suffix}.{n}' if suffix is not None else str(n)
+        if figcode in SAVED_FIGURE_CODES:
             continue
         if fmt == 'pdf_multipage':
             pdf.savefig(figures[n], bbox_inches=BBOX)
@@ -157,8 +160,9 @@ def _savefig(config, figures, force_numbering=False):
             plt.close(figures[n])
             # dereference the figure to free up memory
             figures[n] = None
-        SAVED_FIGURE_NUMBERS.append(n)
-        config.figures['traces'].append(figfiles[n])
+        SAVED_FIGURE_CODES.append(figcode)
+        figkey = f'traces_{suffix}' if suffix is not None else 'traces'
+        config.figures[figkey].append(figfiles[n])
         logger.info(f'Trace plots saved to: {figfiles[n]}')
     if fmt == 'pdf_multipage':
         pdf.close()
@@ -232,7 +236,7 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
             rectangle_patch_origin = 2. / 3
             rectangle_patch_height = 1. / 3
     # dim out ignored traces
-    alpha = 0.3 if trace.stats.ignore else 1.0
+    alpha = 0.3 if getattr(trace.stats, 'ignore', False) else 1.0
     times = trace.times() + trace.stats.time_offset
     if config.plot_save_format == 'png':
         ax.plot(
@@ -246,13 +250,18 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
     ax.text(0.05, trace.data.mean(), trace.stats.channel,
             fontsize=8, color=color, transform=trans3, zorder=22,
             path_effects=path_effects)
-    _text = f'S/N: {trace.stats.sn_ratio:.1f}'
-    ax.text(0.95, trace.data.mean(), _text, ha='right',
-            fontsize=8, color=color, transform=trans3, zorder=22,
-            path_effects=path_effects)
+    with contextlib.suppress(AttributeError):
+        sn_ratio = trace.stats.sn_ratio
+        _text = f'S/N: {sn_ratio:.1f}'
+        ax.text(0.95, trace.data.mean(), _text, ha='right',
+                fontsize=8, color=color, transform=trans3, zorder=22,
+                path_effects=path_effects)
     starttime = trace.stats.starttime - trace.stats.time_offset
     for phase in 'P', 'S':
-        a = trace.stats.arrivals[phase][1] - starttime
+        try:
+            a = trace.stats.arrivals[phase][1] - starttime
+        except KeyError:
+            continue
         text = trace.stats.arrivals[phase][0]
         ax.axvline(a, linestyle='--',
                    color=phase_label_color[phase], zorder=21)
@@ -269,21 +278,20 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
             transform=trans, color='#eeeeee',
             zorder=-1)
         ax.add_patch(rect)
-    # Signal window
-    if config.wave_type[0] == 'S':
-        t1 = trace.stats.arrivals['S1'][1] - starttime
-        t2 = trace.stats.arrivals['S2'][1] - starttime
-    elif config.wave_type[0] == 'P':
-        t1 = trace.stats.arrivals['P1'][1] - starttime
-        t2 = trace.stats.arrivals['P2'][1] - starttime
-    rect = patches.Rectangle(
-        (t1, rectangle_patch_origin),
-        width=(t2 - t1), height=rectangle_patch_height,
-        transform=trans, color='yellow',
-        alpha=0.5, zorder=-1)
-    ax.add_patch(rect)
+        if config.wave_type[0] == 'S':
+            t1 = trace.stats.arrivals['S1'][1] - starttime
+            t2 = trace.stats.arrivals['S2'][1] - starttime
+        elif config.wave_type[0] == 'P':
+            t1 = trace.stats.arrivals['P1'][1] - starttime
+            t2 = trace.stats.arrivals['P2'][1] - starttime
+        rect = patches.Rectangle(
+            (t1, rectangle_patch_origin),
+            width=(t2 - t1), height=rectangle_patch_height,
+            transform=trans, color='yellow',
+            alpha=0.5, zorder=-1)
+        ax.add_patch(rect)
     # Reason why trace is ignored
-    if trace.stats.ignore:
+    if getattr(trace.stats, 'ignore', False):
         _text = trace.stats.ignore_reason
         color = 'black'
         ax.text(
@@ -300,13 +308,16 @@ def _add_station_info_text(trace, ax, path_effects):
     text_y = 0.01
     color = 'black'
     id_no_channel = '.'.join(trace.id.split('.')[:-1])
-    fmin_str = _freq_string(trace.stats.filter.freqmin)
-    fmax_str = _freq_string(trace.stats.filter.freqmax)
     station_info_text = (
         f'{id_no_channel} {trace.stats.instrtype} '
-        f'{trace.stats.hypo_dist:.1f} km ({trace.stats.epi_dist:.1f} km)\n'
-        f'filter: {fmin_str} - {fmax_str} Hz'
+        f'{trace.stats.hypo_dist:.1f} km ({trace.stats.epi_dist:.1f} km)'
     )
+    if getattr(trace.stats, 'processed', False):
+        fmin_str = _freq_string(trace.stats.filter.freqmin)
+        fmax_str = _freq_string(trace.stats.filter.freqmax)
+        station_info_text += f'\nfilter: {fmin_str} - {fmax_str} Hz'
+    else:
+        station_info_text += '\nraw trace'
     ax.text(
         0.05, text_y, station_info_text, fontsize=8,
         horizontalalignment='left', verticalalignment='bottom', color=color,
@@ -333,8 +344,15 @@ def _set_ylim(axes):
 
 def _trim_traces(config, st):
     for trace in st:
-        t1 = trace.stats.arrivals['N1'][1]
-        t2 = trace.stats.arrivals['S2'][1] + 2 * config.win_length
+        try:
+            t1 = trace.stats.arrivals['N1'][1]
+            t2 = trace.stats.arrivals['S2'][1] + 2 * config.win_length
+            if t2 < t1:
+                # this can happen for raw traces
+                raise KeyError
+        except KeyError:
+            t1 = trace.stats.starttime
+            t2 = trace.stats.endtime
         trace.trim(starttime=t1, endtime=t2)
     # compute time offset for correctly aligning traces when plotting
     min_starttime = min(tr.stats.starttime for tr in st)
@@ -342,9 +360,9 @@ def _trim_traces(config, st):
         trace.stats.time_offset = trace.stats.starttime - min_starttime
 
 
-def plot_traces(config, st, ncols=None, block=True):
+def plot_traces(config, st, ncols=None, block=True, suffix=None):
     """
-    Plot traces in the original instrument unit (velocity or acceleration).
+    Plot raw (counts) or processed traces (instrument units and filtered).
 
     Display to screen and/or save to file.
     """
@@ -382,6 +400,12 @@ def plot_traces(config, st, ncols=None, block=True):
             channel=f'{code}*')
         if not config.plot_traces_ignored:
             st_sel = Stream(tr for tr in st_sel if not tr.stats.ignore)
+        processed = [getattr(tr.stats, 'processed', False) for tr in st_sel]
+        if len(set(processed)) > 1:
+            raise ValueError(
+                'All traces with the same band+instrument code must have the '
+                'same processed status')
+        processed = processed[0]
         if not st_sel:
             continue
         plotn += 1
@@ -394,23 +418,27 @@ def plot_traces(config, st, ncols=None, block=True):
                 config.plot_save_format != 'pdf_multipage'
             ):
                 # save figure here to free up memory
-                _savefig(config, figures, force_numbering=True)
+                _savefig(config, figures, suffix, force_numbering=True)
             fig, axes = _make_fig(config, nlines, ncols)
             figures.append(fig)
             plotn = 1
         ax = axes[plotn - 1]
-        if config.trace_units == 'auto':
-            instrtype = [
-                t.stats.instrtype for t in st_sel.traces
-                if t.stats.channel[:-1] == code][0]
+        if not processed:
+            ylabel = 'Counts'
         else:
-            instrtype = config.trace_units
-        if instrtype in ['acc']:
-            ax.set_ylabel('Acceleration (m/s²)', fontsize=8, labelpad=0)
-        elif instrtype in ['broadb', 'shortp', 'vel']:
-            ax.set_ylabel('Velocity (m/s)', fontsize=8, labelpad=0)
-        elif instrtype in ['disp']:
-            ax.set_ylabel('Displacement (m)', fontsize=8, labelpad=0)
+            if config.trace_units == 'auto':
+                instrtype = [
+                    t.stats.instrtype for t in st_sel.traces
+                    if t.stats.channel[:-1] == code][0]
+            else:
+                instrtype = config.trace_units
+            if instrtype in ['acc']:
+                ylabel = 'Acceleration (m/s²)'
+            elif instrtype in ['broadb', 'shortp', 'vel']:
+                ylabel = 'Velocity (m/s)'
+            elif instrtype in ['disp']:
+                ylabel = 'Displacement (m)'
+        ax.set_ylabel(ylabel, fontsize=8, labelpad=0)
         # Custom transformation for plotting phase labels:
         # x coords are data, y coords are axes
         trans =\
@@ -437,4 +465,4 @@ def plot_traces(config, st, ncols=None, block=True):
     if config.plot_show:
         plt.show(block=block)
     if config.plot_save:
-        _savefig(config, figures)
+        _savefig(config, figures, suffix)

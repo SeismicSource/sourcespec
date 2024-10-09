@@ -216,6 +216,7 @@ def _process_trace(config, trace):
     filter_trace(config, trace_process)
     # Check if the trace has significant signal to noise ratio
     _check_sn_ratio(config, trace_process)
+    trace_process.stats.processed = True
     return trace_process
 
 
