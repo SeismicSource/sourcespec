@@ -6,6 +6,12 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 
 ## unreleased
 
+### Processing
+
+- New config parameter `refine_theoretical_arrivals` to refine the
+  theoretical P and S arrival times using a simple autopicker based on the
+  smoothed envelope of the trace
+
 ### Plotting
 
 - Stacked spectra: color spectral curves according to the weighting function
@@ -16,6 +22,8 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 
 ### Config file
 
+- New config parameters: `refine_theoretical_arrivals`, `autopick_freqmin`,
+  `autopick_debug_plot`
 - Improved documentation for the `sn_min` and `spectral_sn_min` parameters
 
 ### Bugfixes

@@ -24,6 +24,7 @@ from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
     remove_instr_response, station_to_event_position)
 from sourcespec.ssp_wave_arrival import add_arrival_to_trace
+from sourcespec.ssp_wave_picking import refine_trace_picks
 from sourcespec.clipping_detection import (
     compute_clipping_score, clipping_peaks)
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
@@ -270,6 +271,10 @@ def _add_arrivals(config, trace):
                 f'{trace.id}: Unable to get {phase} arrival time: '
                 'skipping trace'
             ) from e
+    if config.refine_theoretical_arrivals:
+        freqmin = config.autopick_freqmin
+        debug = config.autopick_debug_plot
+        refine_trace_picks(trace, freqmin, debug)
 
 
 def _define_signal_and_noise_windows(config, trace):
