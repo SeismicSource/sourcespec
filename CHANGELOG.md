@@ -31,6 +31,8 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 - Fix for rejected spectra still being plotted in the stacked spectra plot
 - Fix for corner case where all the inversion errors are zero
 - Fix I/O error when reading PAZ files
+- Fix for event ids in SourceSpec event file being only numbers: they are now
+  correctly interpreted as strings
 
 ## v1.8 - 2024-04-07
 

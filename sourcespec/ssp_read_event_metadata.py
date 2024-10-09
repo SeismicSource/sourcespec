@@ -406,6 +406,9 @@ def _parse_source_spec_event_file(event_file, event_id=None):
         raise TypeError(
             'This is a valid YAML file, but it does not contain the key: '
             '"- event_id:", preceded by a dash (-).')
+    # make sure that all the event_id are a string
+    for ev in events:
+        ev['event_id'] = str(ev['event_id'])
     if event_id is not None:
         _events = [ev for ev in events if ev.get('event_id') == event_id]
         try:
