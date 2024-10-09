@@ -6,6 +6,10 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 
 ## unreleased
 
+### Input/output
+
+- Link to supplementary files and plots in the HTML report
+
 ### Processing
 
 - New config parameter `refine_theoretical_arrivals` to refine the

@@ -969,6 +969,29 @@ def _add_downloadable_files_to_html(config, templates, replacements):
         '{QUAKEML_FILE_LINK}': quakeml_file_link
     })
 
+    suppl_file_list = [
+        os.path.basename(fig) for fig in config.figures['traces_raw']
+    ]
+    suppl_file_list += [
+        os.path.basename(fig) for fig in config.figures['spectra_weight']
+    ]
+    supplementary_files = ''.join(
+        f'<a href="{suppl_file}">{suppl_file}</a></br>\n'
+        for suppl_file in suppl_file_list
+    )
+    if supplementary_files:
+        with open(
+            templates.supplementary_file_links_html, encoding='utf-8'
+        ) as fp:
+            supplementary_file_links = fp.read()
+        supplementary_file_links = supplementary_file_links\
+            .replace('{SUPPLEMENTARY_FILES}', supplementary_files)
+    else:
+        supplementary_file_links = ''
+    replacements.update({
+        '{SUPPLEMENTARY_FILE_LINKS}': supplementary_file_links
+    })
+
 
 class HTMLtemplates:
     """Class to hold paths to HTML templates."""
@@ -987,6 +1010,8 @@ class HTMLtemplates:
             template_dir, 'station_table_row.html')
         self.quakeml_file_link_html = os.path.join(
             template_dir, 'quakeml_file_link.html')
+        self.supplementary_file_links_html = os.path.join(
+            template_dir, 'supplementary_file_links.html')
 
 
 def _cleanup_html(text):
