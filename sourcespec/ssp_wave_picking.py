@@ -18,38 +18,54 @@ logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 def _refine_theo_pick_time(
         trace, phase, theo_pick_time, s_minus_p, freqmin, debug=False):
     """
-    Refine theoretical pick time through the analysis of the smoothed envelope
-    of the trace.
+    Refine theoretical pick time through the analysis of the smoothed
+    and contrasted envelope of the trace.
     """
     tr = trace.copy()
-    # demean, highpass, normalize
+    # Demean, highpass, normalize
     tr.detrend('demean')
     tr.filter('highpass', freq=freqmin, corners=2)
     tr.normalize()
-    # smoothed envelope
-    tr_smooth = tr.copy()
-    tr_smooth.data = np.abs(tr_smooth.data)
+    # Build the envelope, smooth it and increase the contrast
+    tr_envelope = tr.copy()
+    tr_envelope.data = np.abs(tr_envelope.data)
     if phase == 'P':
         # Less smoothing for P phases
         npts = int(0.02*s_minus_p/tr.stats.delta)
     else:
         # More smoothing for S phases
-        npts = int(0.1*s_minus_p/tr.stats.delta)
+        npts = int(0.05*s_minus_p/tr.stats.delta)
     for _ in range(10):
-        tr_smooth.data = smooth(tr_smooth.data, npts)
-    tr_smooth.normalize()
+        tr_envelope.data = smooth(tr_envelope.data, npts)
+    # Increase the contrast by rising to a certain power
+    power = 3 if phase == 'P' else 6
+    tr_envelope.data = tr_envelope.data**power
+    tr_envelope.normalize()
     # Cut the trace around the theoretical pick time
-    tr_cut = tr_smooth.copy()
+    tr_cut = tr_envelope.copy()
     cut_t0 = theo_pick_time - 0.7*s_minus_p
     cut_t1 = theo_pick_time + 0.3*s_minus_p
     tr_cut.trim(cut_t0, cut_t1)
-    # cut shift is used for debug plots
-    cut_shift = tr_smooth.stats.starttime - tr_cut.stats.starttime
-    # cut again up to the maximum amplitude
-    max_time = tr_cut.stats.starttime + tr_cut.times()[np.argmax(tr_cut.data)]
-    tr_cut.trim(
-        starttime=tr_cut.stats.starttime,
-        endtime=max_time)
+    # Threshold the cut trace, then cut it again up to its maximum
+    rms = np.sqrt(np.mean(tr_cut.data**2))
+    threshold = 0.1 if phase == 'P' else 0.8
+    threshold *= rms
+    # Loop to try to find a threshold that gives a cut trace
+    # with at least 5 samples
+    for _ in range(10):
+        _tmp_tr_cut = tr_cut.copy()
+        _tmp_tr_cut.data[_tmp_tr_cut.data >= threshold] = threshold
+        max_time =\
+            _tmp_tr_cut.stats.starttime +\
+            _tmp_tr_cut.times()[np.argmax(_tmp_tr_cut.data)]
+        _tmp_tr_cut.trim(
+            starttime=tr_cut.stats.starttime,
+            endtime=max_time)
+        if len(_tmp_tr_cut.data) < 5:
+            threshold *= 2
+        else:
+            tr_cut = _tmp_tr_cut.copy()
+            break
     # Remove a linear function defined by first/last sample of the trace
     tr_cut_detrend = tr_cut.copy()
     tr_cut_detrend.detrend('simple')
@@ -76,7 +92,8 @@ def _refine_theo_pick_time(
         _fig, ax = plt.subplots(figsize=(10, 5))
         ax.set_ylim(-1.1, 1.1)
         ax.plot(tr.times(), tr.data, 'k', lw=0.5)
-        ax.plot(tr.times(), tr_smooth.data, 'r')
+        ax.plot(tr.times(), tr_envelope.data, 'r')
+        cut_shift = tr_envelope.stats.starttime - tr_cut.stats.starttime
         ax.plot(tr_cut.times()-cut_shift, tr_cut.data, 'b', lw=2)
         ax.plot(
             tr_cut_detrend.times()-cut_shift, tr_cut_detrend.data, 'g', lw=4)
@@ -105,7 +122,7 @@ def _refine_theo_pick_time(
 def refine_trace_picks(trace, freqmin, debug=False):
     """
     Refine theoretical pick times through the analysis of the smoothed
-    envelope of the trace.
+    and contrasted envelope of the trace.
     """
     p_arrival_phase = trace.stats.arrivals['P'][0]
     p_arrival_time = trace.stats.arrivals['P'][1]
