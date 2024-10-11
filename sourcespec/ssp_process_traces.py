@@ -478,9 +478,12 @@ def _skip_ignored(config, st):
         '.'.join((network, station, location, channel)),
     ]
     if config.use_traceids is not None:
+        # - combine all ignore_traceids in a single regex
+        # - escape the dots, otherwise they are interpreted as any character
+        # - add a dot before the first asterisk, to avoid a pattern error
         combined = (
             "(" + ")|(".join(config.use_traceids) + ")"
-        ).replace('.', r'\.')
+        ).replace('.', r'\.').replace('(*', '(.*')
         if not any(re.match(combined, s) for s in ss):
             _skip_stream_and_raise(
                 st,
@@ -488,9 +491,12 @@ def _skip_ignored(config, st):
                 short_reason='ignored from config'
             )
     if config.ignore_traceids is not None:
+        # - combine all ignore_traceids in a single regex
+        # - escape the dots, otherwise they are interpreted as any character
+        # - add a dot before the first asterisk, to avoid a pattern error
         combined = (
             "(" + ")|(".join(config.ignore_traceids) + ")"
-        ).replace('.', r'\.')
+        ).replace('.', r'\.').replace('(*', '(.*')
         if any(re.match(combined, s) for s in ss):
             _skip_stream_and_raise(
                 st,
