@@ -251,9 +251,6 @@ def _add_station_to_event_position(trace):
     try:
         station_to_event_position(trace)
     except Exception as e:
-        # add a zero hypocentral distance to avoid errors
-        # when plotting raw traces
-        trace.stats.hypo_dist = 0
         _skip_trace_and_raise(
             trace,
             reason=f'unable to compute hypocentral distance: {e}',

@@ -385,10 +385,13 @@ def plot_traces(config, st, ncols=None, block=True, suffix=None):
     # Plot!
     plotn = 0
     if config.plot_traces_ignored:
-        stalist = sorted({(tr.stats.hypo_dist, tr.id[:-1]) for tr in st})
+        stalist = sorted({
+            (getattr(tr.stats, 'hypo_dist', 0), tr.id[:-1])
+            for tr in st
+        })
     else:
         stalist = sorted({
-            (tr.stats.hypo_dist, tr.id[:-1])
+            (getattr(tr.stats, 'hypo_dist', 0), tr.id[:-1])
             for tr in st
             if not tr.stats.ignore
         })
