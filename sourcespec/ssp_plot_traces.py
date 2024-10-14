@@ -423,9 +423,8 @@ def plot_traces(config, st, ncols=None, block=True, suffix=None):
             figures.append(fig)
             plotn = 1
         ax = axes[plotn - 1]
-        if not processed:
-            ylabel = 'Counts'
-        else:
+        ylabel = 'Counts'
+        if processed:
             if config.trace_units == 'auto':
                 instrtype = [
                     t.stats.instrtype for t in st_sel.traces
