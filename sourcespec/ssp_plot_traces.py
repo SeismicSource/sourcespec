@@ -450,10 +450,14 @@ def plot_traces(config, st, ncols=None, block=True, suffix=None):
         trans3 = transforms.offset_copy(trans2, fig=fig, x=0, y=0.1)
 
         _trim_traces(config, st_sel)
-        max_values = [abs(tr.max()) for tr in st_sel]
+        max_values = [abs(tr.max()) for tr in st_sel if len(tr.data)]
         ntraces = len(max_values)
+        if ntraces == 0:
+            continue
         tmax = max(max_values)
         for trace in st_sel:
+            if len(trace.data) == 0:
+                continue
             _plot_trace(
                 config, trace, ntraces, tmax, ax, trans, trans3, path_effects)
 
