@@ -44,11 +44,11 @@ def parse_qml(config):
         return ssp_event, picks
     try:
         qml_event = _get_event_from_qml(qml_file, event_id)
-        ssp_event = _parse_qml_event(
+        ssp_event, qml_origin = _parse_qml_event(
             qml_event,
             parse_event_name_from_description=qml_event_description,
             event_description_regex=qml_event_description_regex)
-        picks = _parse_picks_from_qml_event(qml_event)
+        picks = _parse_picks_from_qml_event(qml_event, qml_origin)
     except Exception as err:
         logger.error(err)
         ssp_exit(1)
@@ -142,7 +142,7 @@ def _parse_qml_event(
     ssp_event.hypocenter.depth.value = origin.depth
     ssp_event.hypocenter.depth.units = 'm'
     ssp_event.hypocenter.origin_time = origin.time
-    return ssp_event
+    return ssp_event, origin
 
 
 def _parse_magnitude_from_qml_event(qml_event, ssp_event):
@@ -177,7 +177,7 @@ def _parse_focal_mechanism_from_qml_event(qml_event, ssp_event):
     ssp_event.focal_mechanism.rake = nodal_plane.rake
 
 
-def _parse_picks_from_qml_event(ev):
+def _parse_picks_from_qml_event(ev, origin):
     picks = []
     for pck in ev.picks:
         pick = SSPPick()
@@ -192,9 +192,17 @@ def _parse_picks_from_qml_event(ev):
             pick.flag = 'E'
         elif pck.onset == 'impulsive':
             pick.flag = 'I'
-        try:
+        pick.phase = None
+        if pck.phase_hint:
             pick.phase = pck.phase_hint[:1]
-        except Exception:
+        else:
+            # try to get the phase from the arrival object that uses this pick
+            pick_id = pck.resource_id.id
+            arrivals = [
+                arr for arr in origin.arrivals if arr.pick_id.id == pick_id]
+            if arrivals:
+                pick.phase = arrivals[0].phase[:1]
+        if pick.phase is None:
             # ignore picks with no phase hint
             continue
         if pck.polarity == 'negative':

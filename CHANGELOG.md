@@ -38,6 +38,10 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 - Fix I/O error when reading PAZ files
 - Fix for event ids in SourceSpec event file being only numbers: they are now
   correctly interpreted as strings
+- Fix for ignored picks for certain kind of QuakeML files (like the ones from
+  USGS) where the phase name is not in the `<phase_hint>` attribute of the
+  `<pick>` element but in the `<phase>` attribute of the corresponding
+  `<arrival>` element
 
 ## v1.8 - 2024-04-07
 
