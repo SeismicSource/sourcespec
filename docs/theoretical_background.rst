@@ -188,13 +188,8 @@ coefficient and convert it to seismic moment units:
    M^{p|s}_x(f) \equiv
    \mathcal{G}(r) \times
    \frac{4 \pi \rho_h^{1/2} \rho_r^{1/2} c_h^{5/2} c_r^{1/2}}
-        {2 R_{\Theta\Phi}}
-   \times S^{p|s}_x(f) =
-          M_O \times
-          \frac{1}{1+\left(\frac{f}{f^{p|s}_c}\right)^2}
-          \times
-          e^{- \pi f t^*}
-
+        {F R_{\Theta\Phi}}
+   \times S^{p|s}_x(f)
 
 Then the spectrum is converted in units of magnitude:
 
@@ -216,11 +211,16 @@ three components (e.g., Z, N, E) through the root sum of squares:
              \left( Y^{p|s}_e(f) \right)^2
           }
 
-The data vector is compared to the theoretical model:
+The data vector is compared to the theoretical model :math:`M^{p|s}_{theo}(f)`
+which incorporates the Brune's spectrum of the seismic moment and the inelastic
+attenuation. This model is also converted in magnitude units:
 
 .. math::
 
    Y^{p|s}(f) =
+          \frac{2}{3}
+          \left[ \log_{10} \left( M^{p|s}_{theo}(f) \right) - 9.1 \right]
+          =
           \frac{2}{3}
           \left[ \log_{10} \left(
                     M_O \times
