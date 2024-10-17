@@ -457,6 +457,9 @@ def parse_hypo_file(hypo_file, event_id=None):
     :returns:
         A tuple of (SSPEvent, picks, format).
     """
+    if not os.path.exists(hypo_file):
+        logger.error(f'{hypo_file}: No such file or directory')
+        ssp_exit(1)
     err_msgs = []
     parsers = {
         'ssp_event_file': _parse_source_spec_event_file,
