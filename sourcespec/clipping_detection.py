@@ -392,6 +392,7 @@ Two methods are implemented:
 """
     parser = argparse.ArgumentParser(
         description=description,
+        epilog='Use "%(prog)s <command> -h" for help on a specific command',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     subparser = parser.add_subparsers(dest='command')
