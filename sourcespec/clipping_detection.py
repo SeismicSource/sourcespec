@@ -285,6 +285,53 @@ def compute_clipping_score(trace, remove_baseline=False, debug=False):
     return clipping_score
 
 
+def check_min_amplitude(trace, min_amplitude_ratio):
+    """
+    Check if trace amplitude is above a minimum threshold computed from the
+    instrument sensitivity.
+
+    Parameters
+    ----------
+    trace : :class:`~obspy.core.trace.Trace`
+        Trace to check. Must have an attached inventory.
+    min_amplitude_fraction : float
+        Minimum trace amplitude, as a fraction of the overall sensitivity of
+        the instrument, to check for clipping. Valid values are between 0 and
+        1.
+
+    Returns
+    -------
+    bool
+        True if trace amplitude is above the minimum threshold,
+        False otherwise.
+    trace_max : float
+        Maximum amplitude of the trace, in counts
+    min_threshold : float
+        Minimum amplitude threshold, in counts
+    """
+    trace_max = np.max(np.abs(trace.data))
+    if min_amplitude_ratio is None:
+        return True, trace_max, None
+    if min_amplitude_ratio <= 0:
+        raise ValueError(
+            'min_amplitude_ratio must be a strictly positive value')
+    if not getattr(trace.stats, 'inventory', None):
+        raise RuntimeError(
+            f'{trace.id}: cannot get instrtype from inventory: '
+            'inventory is empty: skipping trace')
+    try:
+        resp = trace.stats.inventory.get_response(
+            trace.id, trace.stats.starttime)
+    except Exception as e:
+        raise RuntimeError(
+            f'{trace.id}: cannot get response from inventory: {e}'
+        ) from e
+    overall_sensitivity = resp.instrument_sensitivity.value
+    min_threshold = overall_sensitivity/min_amplitude_ratio
+    amplitude_test = trace_max > min_threshold
+    return amplitude_test, trace_max, min_threshold
+
+
 def _get_plotting_axes():
     """Get matplotlib axes for plotting"""
     # pylint: disable=import-outside-toplevel unused-import
@@ -409,6 +456,24 @@ Two methods are implemented:
         help='Remove trace baseline before processing',
         default=False)
     common_parser.add_argument(
+        '--min-amplitude-ratio', '-m', type=float, default=None,
+        help='Minimum ratio between the overall sensitivity of the '
+        'instrument and the maximum amplitude of the trace (both in counts), '
+        'to actually perform the clipping check. '
+        'Traces with max_amp < (sensitivity / MIN_AMPLITUDE_RATIO) '
+        'will not be checked for clipping. '
+        'It must be a strictly positive value. Default is None, meaning no '
+        'amplitude check is performed. '
+        'This option requires providing a station metadata file or dir.')
+    common_parser.add_argument(
+        '--station-metadata', '-w', dest='station_metadata',
+        action='store', default=None,
+        help='get station metadata from FILE (directory or single file '
+        'name). Supported format: StationXML, dataless SEED, SEED '
+        'RESP, PAZ (SAC polezero format). Station metadata is used to '
+        'check clipping against the instrument response.',
+        metavar='FILE')
+    common_parser.add_argument(
         '--debug', '-d', action='store_true',
         help='Plot trace, samples histogram, kernel density, and clipping '
         'parameters', default=False)
@@ -434,7 +499,48 @@ Two methods are implemented:
         sys.stderr.write(
             'Error: at least one positional argument is required.\n')
         sys.exit(2)
+    if (
+        args.min_amplitude_ratio is not None and
+        args.station_metadata is None
+    ):
+        parser.error(
+            '--min-amplitude-ratio requires --station-metadata option')
+    if (
+        args.min_amplitude_ratio is not None and
+        args.min_amplitude_ratio <= 0
+    ):
+        parser.error(
+            '--min-amplitude-ratio must be a strictly positive value')
     return args
+
+
+def _add_inventory(trace, inventory):
+    """Add inventory to trace."""
+    if not inventory:
+        return
+    net, sta, loc, chan = trace.id.split('.')
+    inv = inventory.select(
+            network=net, station=sta, location=loc, channel=chan)
+    if inv is None:
+        raise RuntimeError(
+            f'{trace.id}: cannot get instrtype from inventory: '
+            'inventory is empty: skipping trace')
+    trace.stats.inventory = inv
+
+
+def _run_amplitude_check(trace, args):
+    """
+    Run amplitude check method. Raise exception if amplitude is below
+    minimum threshold.
+    """
+    _add_inventory(trace, args.inv)
+    min_ampl_test, tr_max, min_thresh = check_min_amplitude(
+        trace, args.min_amplitude_ratio)
+    if not min_ampl_test:
+        raise RuntimeError(
+            f'{trace.id}: max amplitude ({tr_max:.1f}) below minimum '
+            f'threshold ({min_thresh:.1f}): skipping clipping check'
+        )
 
 
 # ainsi codes for fancy output
@@ -449,7 +555,7 @@ def _run_clipping_peaks(trace, args):
     trace_clipped, properties = clipping_peaks(
         trace, args.sensitivity, args.clipping_percentile, args.debug)
     msg = (
-        f'{trace.id} - '
+        f'{trace.id}: '
         f'total peaks: {properties["npeaks"]}, '
         f'clipped peaks: {properties["npeaks_clipped"]}'
     )
@@ -468,13 +574,14 @@ def _run_clipping_score(trace, args):
         color = YELLOW
     else:
         color = RED
-    print(f'{trace.id} - clipping score: {color}{score:.2f}%{RESET}')
+    print(f'{trace.id}: clipping score: {color}{score:.2f}%{RESET}')
 
 
 def _command_line_interface():
     """Command line interface"""
     # pylint: disable=import-outside-toplevel
     from obspy import read, Stream
+    from sourcespec.ssp_read_station_metadata import read_station_metadata
     args = _parse_arguments()
     st = Stream()
     for file in args.infile:
@@ -487,7 +594,13 @@ def _command_line_interface():
     if not st:
         print('No traces found')
         return
+    args.inv = read_station_metadata(args.station_metadata)
     for tr in st:
+        try:
+            _run_amplitude_check(tr, args)
+        except RuntimeError as msg:
+            print(msg)
+            continue
         if args.command == 'clipping_peaks':
             _run_clipping_peaks(tr, args)
         elif args.command == 'clipping_score':

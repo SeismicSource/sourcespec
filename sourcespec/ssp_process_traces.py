@@ -26,7 +26,7 @@ from sourcespec.ssp_util import (
 from sourcespec.ssp_wave_arrival import add_arrival_to_trace
 from sourcespec.ssp_wave_picking import refine_trace_picks
 from sourcespec.clipping_detection import (
-    compute_clipping_score, clipping_peaks)
+    check_min_amplitude, compute_clipping_score, clipping_peaks)
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -108,7 +108,18 @@ def _check_clipping(config, trace):
         t2 = trace.stats.arrivals['S2'][1]
     elif config.wave_type[0] == 'P':
         t2 = trace.stats.arrivals['P2'][1]
+    else:
+        # this should never happen
+        raise ValueError(f'Unknown wave type: {config.wave_type[0]}')
     tr = trace.copy().trim(t1, t2)
+    min_ampl_test, tr_max, min_thresh = check_min_amplitude(
+        tr, config.clipping_min_amplitude_ratio)
+    if not min_ampl_test:
+        logger.info(
+            f'{trace.id}: max amplitude ({tr_max:.1f}) below minimum '
+            f'threshold ({min_thresh:.1f}): skipping clipping check'
+        )
+        return
     if config.clipping_detection_algorithm == 'clipping_score':
         score = compute_clipping_score(
             tr, config.remove_baseline, config.clipping_debug_plot)

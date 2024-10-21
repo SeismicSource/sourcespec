@@ -15,6 +15,8 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 - New config parameter `refine_theoretical_arrivals` to refine the
   theoretical P and S arrival times using a simple autopicker based on the
   smoothed envelope of the trace
+- New config parameter `clipping_min_amplitude_ratio` to set a threshold for
+  trace amplitude below which the trace is not checked for clipping
 
 ### Plotting
 
@@ -29,6 +31,7 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 
 - New config parameters: `refine_theoretical_arrivals`, `autopick_freqmin`,
   `autopick_debug_plot`
+- New config parameter `clipping_min_amplitude_ratio`
 - Improved documentation for the `sn_min` and `spectral_sn_min` parameters
 
 ### Bugfixes
