@@ -360,6 +360,27 @@ def _trim_traces(config, st):
         trace.stats.time_offset = trace.stats.starttime - min_starttime
 
 
+def _get_ylabel(config, st_sel, processed):
+    if config.correct_instrumental_response and not processed:
+        return 'Counts'
+    if config.trace_units == 'auto':
+        instrtype = [t.stats.instrtype for t in st_sel.traces]
+        if len(set(instrtype)) > 1:
+            raise ValueError(
+                'All traces with the same band+instrument code must have the '
+                'same instrument type')
+        instrtype = instrtype[0]
+    else:
+        instrtype = config.trace_units
+    if instrtype in ['acc']:
+        return 'Acceleration (m/s²)'
+    if instrtype in ['broadb', 'shortp', 'vel']:
+        return 'Velocity (m/s)'
+    if instrtype in ['disp']:
+        return 'Displacement (m)'
+    raise ValueError(f'Unknown instrument type: {instrtype}')
+
+
 def plot_traces(config, st, ncols=None, block=True, suffix=None):
     """
     Plot raw (counts) or processed traces (instrument units and filtered).
@@ -426,20 +447,7 @@ def plot_traces(config, st, ncols=None, block=True, suffix=None):
             figures.append(fig)
             plotn = 1
         ax = axes[plotn - 1]
-        ylabel = 'Counts'
-        if processed:
-            if config.trace_units == 'auto':
-                instrtype = [
-                    t.stats.instrtype for t in st_sel.traces
-                    if t.stats.channel[:-1] == code][0]
-            else:
-                instrtype = config.trace_units
-            if instrtype in ['acc']:
-                ylabel = 'Acceleration (m/s²)'
-            elif instrtype in ['broadb', 'shortp', 'vel']:
-                ylabel = 'Velocity (m/s)'
-            elif instrtype in ['disp']:
-                ylabel = 'Displacement (m)'
+        ylabel = _get_ylabel(config, st_sel, processed)
         ax.set_ylabel(ylabel, fontsize=8, labelpad=0)
         # Custom transformation for plotting phase labels:
         # x coords are data, y coords are axes
