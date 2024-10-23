@@ -25,13 +25,14 @@ def read_event_from_SAC(trace):
 
     :return: Event information
     :rtype: :class:`ssp_event.SSPEvent`
+
+    :raises: ValueError if trace is not a SAC trace
+    :raises: RuntimeError if hypocenter information is not found in header
     """
     try:
         sac_hdr = trace.stats.sac
     except AttributeError as e:
-        raise RuntimeError(
-            f'{trace.id}: not a SAC trace: cannot get hypocenter from header'
-        ) from e
+        raise ValueError(f'{trace.id}: not a SAC trace') from e
     try:
         evla = sac_hdr['evla']
         evlo = sac_hdr['evlo']
@@ -85,13 +86,14 @@ def read_picks_from_SAC(trace):
 
     :return: List of picks
     :rtype: list of :class:`ssp_pick.SSPPick`
+
+    :raises: ValueError if trace is not a SAC trace
+    :raises: RuntimeError if pick information is not found in header
     """
     try:
         sac_hdr = trace.stats.sac
     except AttributeError as e:
-        raise RuntimeError(
-            f'{trace.id}: not a SAC trace: cannot get picks from header'
-        ) from e
+        raise ValueError(f'{trace.id}: not a SAC trace') from e
     trace_picks = []
     pick_fields = (
         'a', 't0', 't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9')
