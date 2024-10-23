@@ -15,7 +15,6 @@ Read event and phase picks.
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
-import sys
 import logging
 from ..setup import config, ssp_exit
 from .event_parsers import (
