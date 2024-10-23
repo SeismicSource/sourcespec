@@ -327,4 +327,3 @@ Here is the default config file, generated through ``source_spec -S``::
 def setup(app):
     """Add custom functions to Sphinx."""
     app.connect('builder-inited', write_configfile)
-    app.add_js_file('version-alert.js')
