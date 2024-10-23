@@ -10,7 +10,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 
 :Copyright: 2011-2024 Claudio Satriano satriano@ipgp.fr
 :Release: |release|
-:Date:    |today|
+:Date:    |release date|
 
 SourceSpec is a collection of command line tools to compute earthquake source
 parameters (seismic moment, corner frequency, radiated energy, source size,
