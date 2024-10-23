@@ -49,10 +49,16 @@ def _read_event_and_picks_from_stream(stream):
                 ssp_event = read_event_from_SAC(trace)
             except RuntimeError as err:
                 _read_event_and_picks_from_stream.event_warnings.append(err)
+            except ValueError:
+                # ValueError is raised when trace is not in SAC format
+                continue
         try:
             picks += read_picks_from_SAC(trace)
         except RuntimeError as err:
             _read_event_and_picks_from_stream.picks_warnings.append(err)
+        except ValueError:
+            # ValueError is raised when trace is not in SAC format
+            continue
     return ssp_event, picks
 _read_event_and_picks_from_stream.event_warnings = []  # noqa
 _read_event_and_picks_from_stream.picks_warnings = []  # noqa
@@ -191,6 +197,7 @@ def _log_event_and_pick_info(ssp_event, picks, event_source, picks_source):
     :param picks_source: Picks source
     """
     if ssp_event is None:
+        logger.warning('No event information found')
         # only log warnings if no event information was found
         for warning in _read_event_and_picks_from_stream.event_warnings:
             logger.warning(warning)
@@ -198,7 +205,9 @@ def _log_event_and_pick_info(ssp_event, picks, event_source, picks_source):
         logger.info(f'Event information read from: {event_source}')
         for line in str(ssp_event).splitlines():
             logger.info(line)
+    logger.info('---------------------------------------------------')
     if not picks:
+        logger.warning('No pick information found')
         # only log warnings if no pick information was found
         for warning in _read_event_and_picks_from_stream.picks_warnings:
             logger.warning(warning)
