@@ -18,6 +18,10 @@
     <script src="https://cdn.jsdelivr.net/npm/lightgallery@2.7.2/lightgallery.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lightgallery@2.7.2/plugins/zoom/lg-zoom.umd.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@2.7.2/css/lightgallery-bundle.min.css">
+    <!-- highlight.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/intellij-light.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/properties.min.js"></script>
   </head>
 
   <body>
@@ -494,31 +498,52 @@
               <th scope="row">Input Files:</th>
               <td>
                 <a href="{INPUT_FILES}">
-                  {INPUT_FILES}
+                  {INPUT_FILES_TEXT}
                 </a>
               </td>
             </tr>
             <tr>
               <th scope="row">Configuration:</th>
               <td>
-                <a href="{CONF_FILE}" type="text/plain">
-                  {CONF_FILE_BNAME}
+                <button type="button" class="btn btn-outline-secondary"
+                  data-toggle="modal" data-target="#fileModal"
+                  data-filename="{CONF_FILE}"
+                  data-language="properties"
+                  data-description="Configuration file"
+                  id="config_file_button" style="display: none;">
+                </button>
+                <a href="{CONF_FILE}" type="text/plain"
+                  id="config_file_link" style="display: none;">
                 </a>
               </td>
             </tr>
             <tr>
               <th scope="row">Output:</th>
               <td>
-                <a href="{YAML_FILE}" type="application/x-yaml">
-                  {YAML_FILE_BNAME}
+                <button type="button" class="btn btn-outline-secondary"
+                  data-toggle="modal" data-target="#fileModal"
+                  data-filename="{YAML_FILE}"
+                  data-language="yaml"
+                  data-description="Output file"
+                  id="output_file_button" style="display: none;">
+                </button>
+                <a href="{YAML_FILE}" type="application/x-yaml"
+                  id="output_file_link" style="display: none;">
                 </a>
               </td>
             </tr>
             <tr>
               <th scope="row">Log:</th>
               <td>
-                <a href="{LOG_FILE}" type="text/plain">
-                  {LOG_FILE_BNAME}
+                <button type="button" class="btn btn-outline-secondary"
+                  data-toggle="modal" data-target="#fileModal"
+                  data-filename="{LOG_FILE}"
+                  data-language="text"
+                  data-description="Log file"
+                  id="log_file_button" style="display: none;">
+                </button>
+                <a href="{LOG_FILE}" type="text/plain"
+                  id="log_file_link" style="display: none;">
                 </a>
               </td>
             </tr>
@@ -527,6 +552,23 @@
           </tbody>
         </table>
       </div> <!-- dontprint -->
+
+      <!-- Modal window for showing text file contents -->
+      <div class="modal fade" id="fileModal" tabindex="-1" role="dialog" aria-labelledby="fileModalLongTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document" style="min-width:90%">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="fileModalLongTitle"></h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <pre id="file_content"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
 
       </div>
     </div>
@@ -639,6 +681,53 @@
           }
         }
       }
+      </script>
+      <script>
+        // script to display text files in modal window
+        function setup_file_access(id_prefix) {
+          var button = $('#' + id_prefix + '_button');
+          var link = $('#' + id_prefix + '_link');
+          var filename = link.attr('href');
+          fetch(filename)
+            .catch(error => {
+              link.css('display', 'inline');
+              link.html(filename);
+            })
+            .then(response => response.text())
+            .then(text => {
+              button.css('display', 'inline');
+              button.html(filename);
+            });
+        }
+        // set up the modal for all files
+        setup_file_access('config_file');
+        setup_file_access('output_file');
+        setup_file_access('log_file');
+        setup_file_access('quakeml_file');
+        $('#fileModal').on('show.bs.modal', function(event) {
+          var button = $(event.relatedTarget);
+          var filename = button.data('filename');
+          var language = button.data('language');
+          var description = button.data('description');
+          var modal = $(this);
+          modal.find('#fileModalLongTitle')
+            .html(
+              description +
+              '&nbsp;&nbsp;<a href="' +
+              filename +
+              '" download>&nbsp;<i class="fas fa-download"></i></a>'
+            );
+          fetch(filename)
+            .catch(error => {
+              modal.find('#file_content')
+                .html('Error loading file');
+            })
+            .then(response => response.text())
+            .then(text => {
+              modal.find('#file_content')
+                .html(hljs.highlight(text, {language: language}).value);
+            });
+        });
       </script>
   </body>
 </html>

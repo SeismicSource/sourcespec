@@ -8,7 +8,10 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 
 ### Input/output
 
-- Link to supplementary files and plots in the HTML report
+- HTML report improvements:
+  - Link to supplementary files and plots in the HTML report
+  - Display configuration, log and output files in a modal window with syntax
+    highlighting (only when the HTML report is served by a web server)
 
 ### Processing
 

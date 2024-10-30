@@ -940,6 +940,8 @@ def _add_downloadable_files_to_html(config, templates, replacements):
     """Add links to downloadable files to HTML report."""
     # symlink to input files (not supported on Windows)
     input_files = '' if os.name == 'nt' else 'input_files'
+    input_files_text = '' if os.name == 'nt'\
+        else 'Click to navigate to input files'
     evid = config.event.event_id
     config_file = f'{evid}.ssp.conf'
     yaml_file = f'{evid}.ssp.yaml'
@@ -947,11 +949,9 @@ def _add_downloadable_files_to_html(config, templates, replacements):
 
     replacements.update({
         '{INPUT_FILES}': input_files,
-        '{CONF_FILE_BNAME}': config_file,
+        '{INPUT_FILES_TEXT}': input_files_text,
         '{CONF_FILE}': config_file,
-        '{YAML_FILE_BNAME}': yaml_file,
         '{YAML_FILE}': yaml_file,
-        '{LOG_FILE_BNAME}': log_file,
         '{LOG_FILE}': log_file,
     })
 
@@ -961,8 +961,7 @@ def _add_downloadable_files_to_html(config, templates, replacements):
         with open(templates.quakeml_file_link_html, encoding='utf-8') as fp:
             quakeml_file_link = fp.read()
         quakeml_file_link = quakeml_file_link\
-            .replace('{QUAKEML_FILE}', quakeml_file)\
-            .replace('{QUAKEML_FILE_BNAME}', quakeml_file)
+            .replace('{QUAKEML_FILE}', quakeml_file)
     else:
         quakeml_file_link = ''
     replacements.update({

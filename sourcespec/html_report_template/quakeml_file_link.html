@@ -1,8 +1,15 @@
             <tr>
               <th scope="row">QuakeML:</th>
               <td>
-                <a href="{QUAKEML_FILE}" type="text/plain">
-                  {QUAKEML_FILE_BNAME}
+                <button type="button" class="btn btn-outline-secondary"
+                  data-toggle="modal" data-target="#fileModal"
+                  data-filename="{QUAKEML_FILE}"
+                  data-language="xml"
+                  data-description="QuakeML file"
+                  id="quakeml_file_button" style="display: none;">
+                </button>
+                <a href="{QUAKEML_FILE}" type="text/plain"
+                  id="quakeml_file_link" style="display: none;">
                 </a>
               </td>
             </tr>
