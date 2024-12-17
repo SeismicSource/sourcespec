@@ -254,15 +254,20 @@ def compute_summary_statistics(config, sspec_output):
                 logarithmic=False
             )
 
+    # Log info on summary statistics for each parameter
+    # Note that numpy.float64 are cast to float to display them in the log
+    # in a more readable way
     params_name = ('Mw', 'fc', 't_star')
     means = sspec_output.mean_values()
-    sourcepar_mean = {par: means[par] for par in params_name}
+    sourcepar_mean = {par: float(means[par]) for par in params_name}
     logger.info(f'params_mean: {sourcepar_mean}')
     means_weight = sspec_output.weighted_mean_values()
-    sourcepar_mean_weight = {par: means_weight[par] for par in params_name}
+    sourcepar_mean_weight = {
+        par: float(means_weight[par]) for par in params_name}
     logger.info(f'params_mean_weighted: {sourcepar_mean_weight}')
     percentiles = sspec_output.percentiles_values()
-    sourcepar_percentiles = {par: percentiles[par] for par in params_name}
+    sourcepar_percentiles = {
+        par: float(percentiles[par]) for par in params_name}
     logger.info(f'params_percentiles: {sourcepar_percentiles}')
     logger.info('Computing summary statistics: done')
     logger.info('---------------------------------------------------')

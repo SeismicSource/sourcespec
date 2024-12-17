@@ -8,6 +8,7 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 
 ### Input/output
 
+- Fix `np.float64` being printed in logs and YAML output when using NumPy>=2
 - HTML report improvements:
   - Link to supplementary files and plots in the HTML report
   - Display configuration, log and output files in a modal window with syntax
