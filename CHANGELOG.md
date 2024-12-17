@@ -29,6 +29,8 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
 - `plot_sourcepars`: possibility of selecting the latest runid for each event
 - `plot_sourcepars`: new plot type: static stress drop vs. depth
 - Support for Matplotlib 3.9
+- Maps: use PlateCarree projection for small maps (map diagonal below 100 km),
+  which speeds up the plotting
 
 ### Config file
 

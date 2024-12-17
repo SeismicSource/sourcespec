@@ -338,9 +338,42 @@ def _add_gridlines_to_orthographic_axes(ax, bounding_box):
         xlocs=xticks, ylocs=yticks)
 
 
-def _make_geoaxes_mercator(config, fig, buonding_box, maxdiagonal):
+def _get_ax_projection(maxdiagonal, max_map_diagonal=100, tiler=None):
     """
-    Create a GeoAxes with Mercator projection and optionally add map tiles.
+    Return the best projection for the given map diagonal.
+
+    Uses the PlateCarree projection for small maps
+    (maxdiagonal < max_map_diagonal) and the Mercator projection
+    (or Tiler projection) for larger maps.
+    """
+    if maxdiagonal < max_map_diagonal:
+        logger.info(
+            f'Map diagonal below {max_map_diagonal} km '
+            f'({maxdiagonal:.3f} km): '
+            'using PlateCarree projection for small maps')
+        return ccrs.PlateCarree()
+    if tiler is not None:
+        tiler_projection = tiler.crs
+        projection_name = str(type(tiler_projection)).replace(
+            '<class \'cartopy.crs.', '').replace('\'>', '')
+        logger.info(
+            f'Map diagonal above {max_map_diagonal} km '
+            f'({maxdiagonal:.3f} km): '
+            f'using tiles projection ({projection_name}) for large maps')
+        return tiler_projection
+    logger.info(
+        f'Map diagonal above {max_map_diagonal} km '
+        f'({maxdiagonal:.3f} km): '
+        'using Mercator projection for large maps')
+    return ccrs.Mercator()
+
+
+def _make_geoaxes_planar(config, fig, buonding_box, maxdiagonal):
+    """
+    Create a GeoAxes with a planar projection and optionally add map tiles.
+
+    Uses the PlateCarree projection for small maps (maxdiagonal < 100 km)
+    and the Mercator projection (or Tiler projection) for larger maps.
     """
     land_10m = cfeature.NaturalEarthFeature(
         'physical', 'land', '10m',
@@ -353,7 +386,8 @@ def _make_geoaxes_mercator(config, fig, buonding_box, maxdiagonal):
     map_style = config.plot_map_style
     api_key = config.plot_map_api_key
     if map_style == 'no_basemap':
-        ax = fig.add_subplot(111, projection=ccrs.Mercator())
+        ax_projection = _get_ax_projection(maxdiagonal)
+        ax = fig.add_subplot(111, projection=ax_projection)
         ax.add_feature(land_10m, zorder=ZORDER_BASEMAP)
         ax.add_feature(ocean_10m, zorder=ZORDER_BASEMAP)
     else:
@@ -362,7 +396,8 @@ def _make_geoaxes_mercator(config, fig, buonding_box, maxdiagonal):
             TILER[map_style](apikey=api_key),
             tile_dir
         )
-        ax = fig.add_subplot(111, projection=tiler.crs)
+        ax_projection = _get_ax_projection(maxdiagonal, tiler=tiler)
+        ax = fig.add_subplot(111, projection=ax_projection)
     ax.set_extent(buonding_box, crs=ccrs.Geodetic())
     ax.global_projection = False
     ax.maxdiagonal = maxdiagonal
@@ -431,7 +466,7 @@ def _make_basemap(config, maxdist):
     ax0.set_axis_off()
     _add_event_info(config.event, ax0)
     if maxdist < 3000:  # km
-        ax = _make_geoaxes_mercator(config, fig, bounding_box, maxdiagonal)
+        ax = _make_geoaxes_planar(config, fig, bounding_box, maxdiagonal)
     else:
         ax = _make_geoaxes_orthographic(fig, evlo, evla, bounding_box)
     _add_coastlines(config, ax)
