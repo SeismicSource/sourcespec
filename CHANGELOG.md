@@ -51,6 +51,8 @@ Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
   USGS) where the phase name is not in the `<phase_hint>` attribute of the
   `<pick>` element but in the `<phase>` attribute of the corresponding
   `<arrival>` element
+- Stabilize the computation of derivatives in the Okal geometrical spreading
+  model, thus avoiding numerical instabilities.
 
 ## v1.8 - 2024-04-07
 

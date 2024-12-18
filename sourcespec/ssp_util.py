@@ -398,7 +398,8 @@ def geom_spread_teleseismic(
     # angular distance (dd, also called the aperture of the ray tube).
     # We use a finite difference approximation, and we increase the aperture
     # until we get a non-zero value.
-    aperture = 0.1  # degrees
+    # As a first guess, we set the aperture to half the angular distance
+    aperture = angular_distance/2
     for _ in range(10):
         dtdd = _compute_dtdd(
             angular_distance, aperture, source_depth_in_km, phase_list)
