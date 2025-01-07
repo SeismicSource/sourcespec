@@ -4,7 +4,7 @@
 Grid importance sampling using a k-d tree.
 
 :copyright:
-    2022-2024 Claudio Satriano <satriano@ipgp.fr>
+    2022-2025 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)

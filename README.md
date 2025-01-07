@@ -10,7 +10,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 [![docs-badge]][docs-link]
 [![DOI-badge]][DOI-link]
 
-Copyright (c) 2011-2024 Claudio Satriano <satriano@ipgp.fr>
+Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 
 ## Description
 
@@ -424,7 +424,7 @@ Don't hesitate sending me pull requests with new features and/or bugfixes!
 
 If you used SourceSpec for a scientific paper, please cite it as:
 
-> Satriano, C. (2024). SourceSpec – Earthquake source parameters from
+> Satriano, C. (2025). SourceSpec – Earthquake source parameters from
 > P- or S-wave displacement spectra (X.Y).
 > [doi: 10.5281/ZENODO.3688587]
 

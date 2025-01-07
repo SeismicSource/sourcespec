@@ -4,7 +4,7 @@
 Classes for spectral inversion routines.
 
 :copyright:
-    2017-2024 Claudio Satriano <satriano@ipgp.fr>
+    2017-2025 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)

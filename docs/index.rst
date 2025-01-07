@@ -8,7 +8,7 @@ SourceSpec documentation
 
 Earthquake source parameters from P- or S-wave displacement spectra
 
-:Copyright: 2011-2024 Claudio Satriano satriano@ipgp.fr
+:Copyright: 2011-2025 Claudio Satriano satriano@ipgp.fr
 :Release: |release|
 :Date:    |release date|
 
