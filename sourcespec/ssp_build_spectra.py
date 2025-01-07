@@ -29,7 +29,8 @@ from sourcespec.spectrum import Spectrum, SpectrumStream
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
     smooth, cosine_taper, moment_to_mag, MediumProperties,
-    geom_spread_r_power_n, geom_spread_boatwright, geom_spread_teleseismic)
+    geom_spread_r_power_n, geom_spread_r_power_n_segmented,
+    geom_spread_boatwright, geom_spread_teleseismic)
 from sourcespec.ssp_process_traces import filter_trace
 from sourcespec.ssp_correction import station_correction
 from sourcespec.ssp_radiation_pattern import get_radiation_pattern_coefficient
@@ -273,6 +274,12 @@ def _geometrical_spreading_coefficient(config, spec):
     if config.geom_spread_model == 'r_power_n':
         exponent = config.geom_spread_n_exponent
         return geom_spread_r_power_n(hypo_dist_in_km, exponent)
+    if config.geom_spread_model == 'r_power_n_segmented':
+        exponents = config.geom_spread_n_exponents
+        hinge_distances = config.geom_spread_n_distances
+        assert(len(hinge_distances)) == (len(exponents) - 1)
+        return geom_spread_r_power_n_segmented(hypo_dist_in_km, exponents,
+                                               hinge_distances)
     if config.geom_spread_model == 'boatwright':
         cutoff_dist_in_km = config.geom_spread_cutoff_distance
         return geom_spread_boatwright(
