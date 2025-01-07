@@ -267,6 +267,53 @@ def geom_spread_r_power_n(hypo_dist_in_km, exponent):
     return dist**exponent
 
 
+def geom_spread_r_power_n_segmented(hypo_dist_in_km, exponents, hinge_distances):
+    """
+    Geometrical spreading function defined as piecewise continuous powerlaw,
+    as defined in Boore (2003), eq. 9
+
+    :param hypo_dist_in_km: Hypocentral distance (km).
+    :type hypo_dist_in_km: float
+    :param exponents: Exponents for different powerlaw segments
+    :type hinge_distances: numpy.ndarray
+    :param hinge_distances: Distances between different powerlaw segments
+    :type exponent: numpy.ndarray
+    :return: Geometrical spreading correction (for distance in m)
+    :rtype: float
+    """
+    if np.isscalar(hypo_dist_in_km):
+        hypo_dist_in_km = np.array([hypo_dist_in_km], dtype='float')
+        is_scalar = True
+    else:
+        hypo_dist_in_km = np.asarray(hypo_dist_in_km, dtype='float')
+        is_scalar = False
+
+    Rref = 1.
+    hinge_distances = np.hstack([[Rref], hinge_distances or []])
+    exponents = -np.asarray(exponents)
+
+    ## Do not allow distances less than Rref (1 km)
+    hypo_dist_in_km = np.maximum(Rref, hypo_dist_in_km)
+
+    Zhinges = (hinge_distances[:-1] / hinge_distances[1:]) ** exponents[:-1]
+    Zhinges = np.cumprod(Zhinges)
+
+    R0, p0 = hinge_distances[0], exponents[0]
+    Z = (R0 / hypo_dist_in_km) ** p0
+    for n in range(1, len(hinge_distances)):
+        Rn, pn = hinge_distances[n], exponents[n]
+        idxs = hypo_dist_in_km > Rn
+        Z[idxs] = Zhinges[n-1] * ((Rn / hypo_dist_in_km[idxs]) ** pn)
+
+    ## Convert spreading correction to metric distance
+    Z *= 1e3
+
+    if is_scalar:
+        Z = Z[0]
+
+    return Z
+
+
 def _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist):
     """
     Geometrical spreading coefficient from Boatwright et al. (2002), eq. 8.
