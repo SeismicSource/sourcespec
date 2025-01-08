@@ -4,7 +4,7 @@
 Read station metadata from ASDF files.
 
 :copyright:
-    2012-2024 Claudio Satriano <satriano@ipgp.fr>
+    2012-2025 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
