@@ -9,7 +9,7 @@ Augment event with velocity info and event name.
     2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Emanuela Matrullo <matrullo@geologie.ens.fr>
 
-    2015-2024 Claudio Satriano <satriano@ipgp.fr>,
+    2015-2025 Claudio Satriano <satriano@ipgp.fr>,
               Sophie Lambotte <sophie.lambotte@unistra.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
