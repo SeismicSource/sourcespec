@@ -289,7 +289,9 @@ def geom_spread_r_power_n_segmented(hypo_dist_in_km, exponents,
         hypo_dist_in_km = np.asarray(hypo_dist_in_km, dtype='float')
         is_scalar = False
     Rref = 1.
-    hinge_distances = np.hstack([[Rref], hinge_distances or []])
+    if hinge_distances is None:
+        hinge_distances = []
+    hinge_distances = np.hstack([[Rref], hinge_distances])
     exponents = -np.asarray(exponents)
     # Do not allow distances less than Rref (1 km)
     hypo_dist_in_km = np.maximum(Rref, hypo_dist_in_km)
