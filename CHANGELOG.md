@@ -16,6 +16,9 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 
 ### Processing
 
+- New option `r_power_n_segmented` for the `geom_spread_model` config parameter
+  to use a segmented geometrical spreading model with different powers for
+  different distance ranges
 - New config parameter `refine_theoretical_arrivals` to refine the
   theoretical P and S arrival times using a simple autopicker based on the
   smoothed envelope of the trace
@@ -35,6 +38,8 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 
 ### Config file
 
+- New option `r_power_n_segmented` for the `geom_spread_model` config parameter
+- New config parameters: `geom_spread_n_exponents`, `geom_spread_n_distances`
 - New config parameters: `refine_theoretical_arrivals`, `autopick_freqmin`,
   `autopick_debug_plot`
 - New config parameter `clipping_min_amplitude_ratio`
