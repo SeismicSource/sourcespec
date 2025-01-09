@@ -179,12 +179,11 @@ def geom_spread_teleseismic(
     :rtype: float
     """
     # Don't need to specify coordinates, since we use a spherically symmetric
-    # Earth; don't need to specify a config object, since we use the global
-    # model (iasp91)
+    # Earth
     medium_properties_source = MediumProperties(
-        0, 0, source_depth_in_km, None)
+        0, 0, source_depth_in_km)
     medium_properties_station = MediumProperties(
-        0, 0, station_depth_in_km, None)
+        0, 0, station_depth_in_km)
     if phase == 'P':
         v_source = medium_properties_source.get_from_taup('vp')
         v_station = medium_properties_station.get_from_taup('vp')
