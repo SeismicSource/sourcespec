@@ -276,9 +276,9 @@ def geom_spread_r_power_n_segmented(hypo_dist_in_km, exponents,
     :param hypo_dist_in_km: Hypocentral distance (km).
     :type hypo_dist_in_km: float
     :param exponents: Exponents for different powerlaw segments
+    :type exponents: numpy.ndarray
+    :param hinge_distances: Distances defining start of powerlaw segments
     :type hinge_distances: numpy.ndarray
-    :param hinge_distances: Distances between different powerlaw segments
-    :type exponent: numpy.ndarray
     :return: Geometrical spreading correction (for distance in m)
     :rtype: float
     """
@@ -288,8 +288,8 @@ def geom_spread_r_power_n_segmented(hypo_dist_in_km, exponents,
     else:
         hypo_dist_in_km = np.asarray(hypo_dist_in_km, dtype='float')
         is_scalar = False
-    Rref = 1.
-    hinge_distances = np.hstack([[Rref], hinge_distances or []])
+    hinge_distances = np.asarray(hinge_distances)
+    Rref = hinge_distances[0]
     exponents = -np.asarray(exponents)
     # Do not allow distances less than Rref (1 km)
     hypo_dist_in_km = np.maximum(Rref, hypo_dist_in_km)
