@@ -57,7 +57,7 @@ def geom_spread_r_power_n_segmented(hypo_dist_in_km, exponents,
     hinge_distances = np.asarray(hinge_distances)
     Rref = hinge_distances[0]
     exponents = -np.asarray(exponents)
-    # Do not allow distances less than Rref (1 km)
+    # Do not allow distances less than Rref
     hypo_dist_in_km = np.maximum(Rref, hypo_dist_in_km)
     Zhinges = (hinge_distances[:-1] / hinge_distances[1:]) ** exponents[:-1]
     Zhinges = np.cumprod(Zhinges)
