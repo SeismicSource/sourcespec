@@ -280,8 +280,8 @@ def _geometrical_spreading_coefficient(config, spec):
         if len(hinge_distances) != len(exponents):
             raise ValueError(
                 f'The number of exponents must be equal to the number of '
-                f'hinge distances. You provided {len(exponents)} exponents and '
-                f'{len(hinge_distances)} hinge distances'
+                f'hinge distances. You provided {len(exponents)} exponents '
+                f'and {len(hinge_distances)} hinge distances'
             )
         return geom_spread_r_power_n_segmented(hypo_dist_in_km, exponents,
                                                hinge_distances)
