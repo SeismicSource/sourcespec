@@ -28,7 +28,8 @@ from obspy.core import Stream
 from sourcespec.spectrum import Spectrum, SpectrumStream
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
-    smooth, cosine_taper, moment_to_mag, MediumProperties,
+    smooth, cosine_taper, moment_to_mag, MediumProperties)
+from sourcespec.ssp_geom_spreading import (
     geom_spread_r_power_n, geom_spread_r_power_n_segmented,
     geom_spread_boatwright, geom_spread_teleseismic)
 from sourcespec.ssp_process_traces import filter_trace
