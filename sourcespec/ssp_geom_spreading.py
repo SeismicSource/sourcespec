@@ -325,30 +325,45 @@ def plot_geom_spread_models(source_depth, epi_dists, models=None,
     :type source_depth: float
     :param epi_dists: Epicentral distances (km).
     :type epi_dists: numpy.ndarray
+
     :param models: List of tuples where each tuple contains:
-        - The model name (str)
-        - A dictionary of model parameters
-            (or None if the model has no parameters or to use defaults).
+
+        - The model name.
+        - A dictionary of model parameters (or ``None`` if the model has no
+          parameters or to use defaults).
+
         Valid model names are:
-        - 'r_power_n': rⁿ geometrical spreading
-        - 'r_power_n_segmented': Piecewise continuous powerlaw, as defined in
-            Boore (2003), eq. 9
-        - 'boatwright': Boatwright et al. (2002)
-        - 'teleseismic': Teleseismic (Okal, 1992)
-        If None, defaults to [('r_power_n', {'exponent': 1})].
-    :type models: dict
-    :param plottype: Type of plot scaling
-        ('linlin', 'linlog', 'loglin', 'loglog').
+
+        - ``'r_power_n'``: rⁿ geometrical spreading.
+        - ``'r_power_n_segmented'``: Piecewise continuous power law,
+          as defined in Boore (2003), eq. 9.
+        - ``'boatwright'``: Boatwright et al. (2002).
+        - ``'teleseismic'``: Teleseismic (Okal, 1992).
+
+        If ``None``, defaults to ``[('r_power_n', {'exponent': 1})]``.
+    :type models: list[tuple[str, dict or None]]
+
+    :param plottype: Type of plot scaling. Options:
+
+        - ``'linlin'``
+        - ``'linlog'``
+        - ``'loglin'``
+        - ``'loglog'``
     :type plottype: str
-    :param xaxis: X-axis type ('epi_dist' or 'hypo_dist').
+
+    :param xaxis: X-axis type. Options:
+
+        - ``'epi_dist'``: Epicentral distance.
+        - ``'hypo_dist'``: Hypocentral distance.
     :type xaxis: str
+
     :param return_fig: If True, return the figure instead of showing it.
     :type return_fig: bool
 
-    :return: Matplotlib figure, if return_fig is True.
+    :return: Matplotlib figure, if ``return_fig`` is True.
     :rtype: matplotlib.figure.Figure
 
-    Examples:
+    :examples:
 
     >>> import numpy as np
     >>> source_depth = 10
