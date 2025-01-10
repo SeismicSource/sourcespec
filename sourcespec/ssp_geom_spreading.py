@@ -349,6 +349,7 @@ def plot_geom_spread_models(source_depth, epi_dists, models=None,
     :rtype: matplotlib.figure.Figure
 
     Examples:
+
     >>> import numpy as np
     >>> source_depth = 10
     >>> epi_dists = np.arange(10, 1000, 10)
