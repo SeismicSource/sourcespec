@@ -123,6 +123,11 @@ ssp_event
 .. automodule:: ssp_event
    :members:
 
+ssp_geom_spreading
+------------------
+.. automodule:: ssp_geom_spreading
+   :members:
+
 ssp_grid_sampling
 -----------------
 .. automodule:: ssp_grid_sampling
