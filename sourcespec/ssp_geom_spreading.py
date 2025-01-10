@@ -93,6 +93,7 @@ def _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist):
     :return: Geometrical spreading correction (in m)
     :rtype: numpy.ndarray
     """
+    freqs = np.atleast_1d(freqs).astype(float)
     exponent = np.ones_like(freqs)
     low_freq = freqs <= 0.2
     mid_freq = np.logical_and(freqs > 0.2, freqs <= 0.25)
@@ -100,7 +101,8 @@ def _boatwright_above_cutoff_dist(freqs, cutoff_dist, dist):
     exponent[low_freq] = 0.5
     exponent[mid_freq] = 0.5 + 2 * np.log10(5 * freqs[mid_freq])
     exponent[high_freq] = 0.7
-    return cutoff_dist * (dist / cutoff_dist)**exponent
+    coeff = cutoff_dist * (dist / cutoff_dist)**exponent
+    return coeff[0] if len(coeff) == 1 else coeff
 
 
 def geom_spread_boatwright(hypo_dist_in_km, cutoff_dist_in_km, freqs):
@@ -229,3 +231,215 @@ def geom_spread_teleseismic(
     # We return the inverse of Okal's coefficient, since we use it to correct
     # the amplitude
     return earth_radius / spreading_coeff
+
+
+# ------------------------- Plotting functions -------------------------
+
+LINEWIDTH = 2.5
+ZORDER = 0
+
+
+def _plot_r_power_n(ax, x_data, hypo_dists, model_params):
+    default_params = {'exponent': 1}
+    params = model_params or default_params
+    coeff = geom_spread_r_power_n(hypo_dists, **params)
+    label = f'r^{params["exponent"]}'
+    ax.plot(
+        x_data, coeff,
+        label=label, linewidth=LINEWIDTH, zorder=ZORDER)
+    print(f'Done with r_power_n, params: {params}')
+
+
+def _plot_r_power_n_segmented(ax, x_data, hypo_dists, model_params):
+    default_params = {
+        'exponents': np.array((1, 0, 0.5)),
+        'hinge_distances': np.array((1, 70, 130)),
+    }
+    params = model_params or default_params
+    coeff = geom_spread_r_power_n_segmented(hypo_dists, **params)
+    exponents_str = ', '.join(map(str, params['exponents']))
+    hinges_str = ', '.join(map(str, params['hinge_distances']))
+    label = (
+        f'Segmented r^n (exponents: {exponents_str}, '
+        f'hinges: {hinges_str} km)'
+    )
+    ax.plot(
+        x_data, coeff,
+        label=label, linewidth=LINEWIDTH, zorder=ZORDER)
+    print(f'Done with r_power_n_segmented, params: {params}')
+
+
+def _plot_boatwright(ax, x_data, hypo_dists, model_params):
+    default_params = {
+        'cutoff_dist_in_km': 200,
+        'freqs': np.array((0.))
+    }
+    params = model_params or default_params
+    # set params['freqs'] to 0, if not provided
+    params['freqs'] = params.get('freqs', 0.)
+    freqs = np.atleast_1d(params['freqs'])
+    if len(freqs) > 1:
+        raise ValueError(
+            'Multiple frequencies not supported for plotting '
+            'Boatwright model'
+        )
+    coeff = [
+        geom_spread_boatwright(d, **params)
+        for d in hypo_dists
+    ]
+    label = (
+        f'Boatwright (cutoff: {params["cutoff_dist_in_km"]} km, '
+        f'freqs: {params["freqs"]} Hz)'
+    )
+    ax.plot(
+        x_data, coeff,
+        label=label, linewidth=LINEWIDTH, zorder=ZORDER)
+    print(f'Done with boatwright, params: {params}')
+
+
+def _plot_teleseismic(ax, x_data, angular_dist, source_depth, model_params):
+    default_params = {'phase': 'P', 'station_depth_in_km': 0}
+    params = model_params or default_params
+    # set params['station_depth_in_km'] to 0, if not provided
+    params['station_depth_in_km'] = (
+        params.get('station_depth_in_km', 0))
+    gst = np.vectorize(geom_spread_teleseismic)
+    coeff = gst(angular_dist, source_depth, **params)
+    label = (
+        f'Teleseismic {params["phase"]} '
+        f'(station depth: {params["station_depth_in_km"]} km)'
+    )
+    ax.plot(
+        x_data, coeff,
+        label=label, linewidth=LINEWIDTH, zorder=ZORDER)
+    print(f'Done with teleseismic, params: {params}')
+
+
+def plot_geom_spread_models(source_depth, epi_dists, models=None,
+                            plottype='linlog', xaxis='epi_dist',
+                            return_fig=False):
+    """
+    Plot geometrical spreading coefficients for different models.
+
+    :param source_depth: Source depth (km).
+    :type source_depth: float
+    :param epi_dists: Epicentral distances (km).
+    :type epi_dists: numpy.ndarray
+    :param models: List of tuples where each tuple contains:
+        - The model name (str)
+        - A dictionary of model parameters
+            (or None if the model has no parameters or to use defaults).
+        Valid model names are:
+        - 'r_power_n': rⁿ geometrical spreading
+        - 'r_power_n_segmented': Piecewise continuous powerlaw, as defined in
+            Boore (2003), eq. 9
+        - 'boatwright': Boatwright et al. (2002)
+        - 'teleseismic': Teleseismic (Okal, 1992)
+        If None, defaults to [('r_power_n', {'exponent': 1})].
+    :type models: dict
+    :param plottype: Type of plot scaling
+        ('linlin', 'linlog', 'loglin', 'loglog').
+    :type plottype: str
+    :param xaxis: X-axis type ('epi_dist' or 'hypo_dist').
+    :type xaxis: str
+    :param return_fig: If True, return the figure instead of showing it.
+    :type return_fig: bool
+
+    :return: Matplotlib figure, if return_fig is True.
+    :rtype: matplotlib.figure.Figure
+
+    Examples:
+    >>> import numpy as np
+    >>> source_depth = 10
+    >>> epi_dists = np.arange(10, 1000, 10)
+    >>> models = [
+    >>>     ('r_power_n', {'exponent': 1}),
+    >>>     ('boatwright', {'cutoff_dist_in_km': 100}),
+    >>>     ('boatwright', {'cutoff_dist_in_km': 200, 'freqs': 0}),
+    >>>     ('boatwright', {'cutoff_dist_in_km': 200, 'freqs': 10}),
+    >>>     ('teleseismic', {'phase': 'P'}),
+    >>>     ('teleseismic', {'phase': 'S'}),
+    >>> ]
+    >>> plot_geom_spread_models(
+    >>>     source_depth, epi_dists, models=models,
+    >>>     plottype='linlog', xaxis='epi_dist')
+
+    >>> import numpy as np
+    >>> source_depth = 0
+    >>> epi_dists = np.arange(1, 1000, 1)
+    >>> models = [
+    >>>     ('r_power_n', {'exponent': 1}),
+    >>>     ('r_power_n_segmented', None),
+    >>> ]
+    >>> plot_geom_spread_models(
+    >>>     source_depth, epi_dists, models=models,
+    >>>     plottype='loglog', xaxis='hypo_dist')
+    """
+    # Lazy import matplotlib, since it's only needed for this function
+    # pylint: disable=import-outside-toplevel
+    import matplotlib.pyplot as plt
+
+    # source depth must be a float
+    source_depth = float(source_depth)
+    # epi_dists must be a numpy array
+    epi_dists = np.atleast_1d(epi_dists)
+    hypo_dists = np.sqrt(epi_dists**2 + source_depth**2)
+    angular_dist = epi_dists / 111.111
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    if xaxis == 'epi_dist':
+        x_data = epi_dists
+        x_label = 'Epicentral distance (km)'
+    elif xaxis == 'hypo_dist':
+        x_data = hypo_dists
+        x_label = 'Hypocentral distance (km)'
+    else:
+        raise ValueError(f'Invalid xaxis: {xaxis}')
+    if plottype == 'linlin':
+        ax.set_xscale('linear')
+        ax.set_yscale('linear')
+    elif plottype == 'linlog':
+        ax.set_xscale('linear')
+        ax.set_yscale('log')
+    elif plottype == 'loglin':
+        ax.set_xscale('log')
+        ax.set_yscale('linear')
+    elif plottype == 'loglog':
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+    else:
+        raise ValueError(f'Invalid plottype: {plottype}')
+
+    # Set default model if none is provided
+    if models is None:
+        models = [('r_power_n', {'exponent': 1})]
+
+    print('Computing and plotting geometrical spreading coefficients...')
+    # pylint: disable=global-statement, invalid-name
+    global ZORDER
+    for model_name, model_params in models:
+        ZORDER += 10
+        if model_name == 'r_power_n':
+            _plot_r_power_n(ax, x_data, hypo_dists, model_params)
+        elif model_name == 'r_power_n_segmented':
+            _plot_r_power_n_segmented(ax, x_data, hypo_dists, model_params)
+        elif model_name == 'boatwright':
+            _plot_boatwright(ax, x_data, hypo_dists, model_params)
+        elif model_name == 'teleseismic':
+            _plot_teleseismic(ax, x_data, angular_dist, source_depth,
+                              model_params)
+        else:
+            raise ValueError(f'Invalid model name: {model_name}')
+
+    ax.minorticks_on()
+    ax.grid(True, which='major', linestyle='-', linewidth=0.75)
+    ax.grid(True, which='minor', linestyle='--', linewidth=0.5)
+    ax.legend()
+    ax.set_xlabel(x_label)
+    ax.set_ylabel('Geometrical spreading coefficient')
+    ax.set_title(f'Source depth: {source_depth} km')
+
+    if return_fig:
+        return fig
+    plt.show()
