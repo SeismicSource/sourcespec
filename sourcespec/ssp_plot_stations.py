@@ -47,6 +47,10 @@ with contextlib.suppress(Exception):
     # Ignore Shapely deprecation warnings, since they depend on Cartopy
     from shapely.errors import ShapelyDeprecationWarning
     warnings.filterwarnings('ignore', category=ShapelyDeprecationWarning)
+    # Ignore shapely RuntimeWarnings. They are produced by Cartopy when
+    # plotting coastlines, but the result seems to be correct.
+    warnings.filterwarnings(
+        'ignore', category=RuntimeWarning, module='shapely')
 TILER = {
     'hillshade': EsriHillshade,
     'hillshade_dark': EsriHillshadeDark,
