@@ -38,8 +38,9 @@ from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
-mpl_logger = logging.getLogger('matplotlib')
-mpl_logger.setLevel(logging.WARNING)
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
+# Reduce logging level for pyproj to avoid DEBUG messages
+logging.getLogger('pyproj').setLevel(logging.WARNING)
 # The following code fails with Sphinx and with Shapely<1,8, so we need to
 # ignore any exception
 with contextlib.suppress(Exception):

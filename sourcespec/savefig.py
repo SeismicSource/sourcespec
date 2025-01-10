@@ -14,11 +14,9 @@ import logging
 import warnings
 from PIL import Image
 # Reduce logging level for PIL to avoid DEBUG messages
-pil_logger = logging.getLogger('PIL')
-pil_logger.setLevel(logging.WARNING)
+logging.getLogger('PIL').setLevel(logging.WARNING)
 # Reduce logging level for fontTools to avoid DEBUG messages
-mpl_logger = logging.getLogger('fontTools')
-mpl_logger.setLevel(logging.WARNING)
+logging.getLogger('fontTools').setLevel(logging.WARNING)
 # Silence PIL warnings about transparency needing RGBA, since we remove the
 # alpha channel anyway (see below)
 warnings.filterwarnings('ignore', message='Palette images with Transparency')

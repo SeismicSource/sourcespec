@@ -25,8 +25,7 @@ from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
-mpl_logger = logging.getLogger('matplotlib')
-mpl_logger.setLevel(logging.WARNING)
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 
 class ScalarFormatter(sf):

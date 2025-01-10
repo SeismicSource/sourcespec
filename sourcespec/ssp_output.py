@@ -26,6 +26,8 @@ from sourcespec.ssp_qml_output import write_qml
 from sourcespec.ssp_sqlite_output import write_sqlite
 from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
+# reduce logging level for tzlocal
+logging.getLogger('tzlocal').setLevel(logging.WARNING)
 
 
 def _write_author_and_agency_to_parfile(config, parfile):

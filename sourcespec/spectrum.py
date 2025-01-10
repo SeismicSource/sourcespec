@@ -18,10 +18,15 @@ import glob
 import copy
 import fnmatch
 import warnings
+import logging
 import math
-import h5py
 import yaml
 import numpy as np
+# Reduce logging loevel for h5py.
+# For h5py, this has to be done before importing the module.
+logging.getLogger('h5py').setLevel(logging.WARNING)
+# pylint: disable=wrong-import-position
+import h5py  # noqa: E402
 
 
 def signal_fft(signal, delta):

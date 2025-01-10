@@ -21,8 +21,7 @@ from sourcespec._version import get_versions
 from sourcespec.savefig import savefig
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
-mpl_logger = logging.getLogger('matplotlib')
-mpl_logger.setLevel(logging.WARNING)
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 
 class PlotParam():
