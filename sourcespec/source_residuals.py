@@ -78,7 +78,7 @@ def read_residuals(resfiles_dir):
     if not resfiles:
         sys.exit(f'No residual file found in directory: {resfiles_dir}')
     residual_dict = defaultdict(SpectrumStream)
-    for resfile in resfiles:
+    for resfile in sorted(resfiles):
         print(f'Found residual file: {resfile}')
         residual_st = read_spectra(resfile)
         for spec in residual_st:
