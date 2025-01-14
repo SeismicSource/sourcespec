@@ -421,7 +421,7 @@ def _build_spectrum(config, trace):
     # smooth
     try:
         _smooth_spectrum(spec, config.spectral_smooth_width_decades)
-    except Exception as e:
+    except ValueError as e:
         raise RuntimeError(
             f'{spec.id}: Error smoothing spectrum: '
             f'skipping spectrum\n{str(e)}'
