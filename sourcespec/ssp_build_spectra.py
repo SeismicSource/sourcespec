@@ -419,7 +419,13 @@ def _build_spectrum(config, trace):
     # for radiated_energy()
     spec.stats.coeff = coeff
     # smooth
-    _smooth_spectrum(spec, config.spectral_smooth_width_decades)
+    try:
+        _smooth_spectrum(spec, config.spectral_smooth_width_decades)
+    except Exception as e:
+        raise RuntimeError(
+            f'{spec.id}: Error smoothing spectrum: '
+            f'skipping spectrum\n{str(e)}'
+        ) from e
     return spec
 
 
