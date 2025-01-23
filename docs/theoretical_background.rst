@@ -555,7 +555,7 @@ station and :math:`r` is the hypocentral distance.
 
 
 Station Residuals
------------------
+=================
 Station-specific effects can be determined by running ``source_spec`` on several
 events and computing the average of station residuals between observed and
 inverted spectra. These averages are obtained through the command
