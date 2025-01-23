@@ -32,6 +32,8 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 - Spectral plots: show information on the reason why a fit failed
 - `plot_sourcepars`: possibility of selecting the latest runid for each event
 - `plot_sourcepars`: new plot type: static stress drop vs. depth
+- `plot_sourcepars`: option to color data points in scatter plot by another
+  parameter
 - Support for Matplotlib 3.9
 - Maps: use PlateCarree projection for small maps (map diagonal below 100 km),
   which speeds up the plotting

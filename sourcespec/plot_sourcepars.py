@@ -23,6 +23,37 @@ from scipy.optimize import curve_fit
 valid_plot_types = [
     'fc', 'Er', 'ssd', 'ra', 'Mo', 't_star', 'Qo', 'sigma_a',
     'fc_mw', 'Er_mw', 'ssd_mw', 'ssd_depth']
+# the parameter base color is the same as in ssp_plot_params_stats.py
+valid_parameters = {
+    'depth': ('Depth', 'km', 'lin', '#1E90FF'),
+    'nsta': ('Number of Stations', None, 'lin', '#F0C300'),
+    'Mo': ('Seismic Moment', 'N·m', 'log', '#EE5835'),
+    'fc': ('Corner Frequency', 'Hz', 'log', '#6FBA6C'),
+    'ssd': ('Static Stress Drop', 'MPa', 'log', '#D4ADD2'),
+    'ra': ('Source Radius', 'm', 'lin', '#FAAC64'),
+    't_star': ('T star', 's', 'lin', '#9EBAE2'),
+    'Qo': ('Qo', None, 'lin', '#C07131'),
+    'Er': ('Radiated Energy', 'N·m', 'log', '#00E3E9'),
+    'sigma_a': ('Apparent Stress', 'MPa', 'log', '#943B99'),
+}
+
+
+def get_param_label(parameter):
+    """
+    Get the label for the parameter.
+    """
+    p_name, p_units = valid_parameters[parameter][:2]
+    return f'{p_name} ({p_units})' if p_units is not None else p_name
+
+
+def get_colormap(parameter):
+    """
+    Get a colormap for the parameter.
+    """
+    _, _, scale, base_color = valid_parameters[parameter]
+    cmap = plt.cm.colors.LinearSegmentedColormap.from_list(
+        'custom', ['black', base_color, 'white'])
+    return cmap, scale
 
 
 class Annot():
@@ -158,6 +189,17 @@ def parse_args():
              'depending on the -H option. '
              'Default is "fc_mw"'
     )
+    valid_parameters_str = str(list(
+        valid_parameters.keys()))[1:-1].replace("'", "\"")
+    parser.add_argument(
+        '-c', '--colorby', default=None,
+        help='Color the data points by this parameter. '
+             f'One of: {valid_parameters_str}. '
+             'Default is None')
+    parser.add_argument(
+        '-C', '--colormap', default=None,
+        help='Force using a specific colormap instead of the default one for '
+             'the colorby parameter. Any Matplotlib colormap is accepted. ')
     parser.add_argument(
         '-r', '--runid', default=None,
         help='Only select a specific runid. Default is all. Use "latest" to '
@@ -209,6 +251,9 @@ def parse_args():
     args = parser.parse_args()
     if args.plot_type not in valid_plot_types:
         msg = f'Plot type must be one of {valid_plot_types_str}'
+        raise ValueError(msg)
+    if args.colorby is not None and args.colorby not in valid_parameters:
+        msg = f'Colorby parameter must be one of {valid_parameters_str}'
         raise ValueError(msg)
     if args.statistics not in ['mean', 'wmean', 'pctl']:
         msg = 'Statistics must be "mean", "wmean" or "pctl"'
@@ -434,7 +479,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         ax = ax_Mo.twiny()
         ax.set_xlim(xlim_mag)
         ax.set_xlabel('Mw')
-        ax_Mo.set_xlabel('Mo (N·m)')
+        ax_Mo.set_xlabel(get_param_label('Mo'))
         return fig, ax, ax_Mo
 
     def _add_grid(self, ax):
@@ -585,7 +630,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         cm = ax.pcolormesh(
             mw_bins[:-1], Er_bins[:-1], counts.T,
             cmap='magma_r', shading='auto')
-        cbaxes = fig.add_axes([0.15, 0.15, 0.02, 0.2])
+        cbaxes = fig.add_axes([0.80, 0.15, 0.02, 0.2])
         plt.colorbar(cm, cax=cbaxes, orientation='vertical', label='counts')
         return len(Er)
 
@@ -613,7 +658,8 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         cbaxes = fig.add_axes([0.15, 0.15, 0.02, 0.2])
         plt.colorbar(cm, cax=cbaxes, orientation='vertical', label='counts')
 
-    def _scatter_fc_mw(self, fig, ax, wave_type='S'):
+    def _scatter_fc_mw(
+            self, fig, ax, wave_type='S', colorby=None, colormap=None):
         """Plot the scatter plot of fc vs mw."""
         cond = self.wave_type == wave_type
         evids = self.evids[cond]
@@ -625,20 +671,47 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         fc = self.fc[cond]
         fc_err_minus = self.fc_err_minus[cond]
         fc_err_plus = self.fc_err_plus[cond]
-        alpha = 1
+        if colorby is not None:
+            color = getattr(self, colorby)[cond]
+            cmap, units = get_colormap(colorby)
+            if colormap is not None:
+                cmap = plt.get_cmap(colormap)
+            label = get_param_label(colorby)
+            norm = plt.cm.colors.LogNorm() if units == 'log' else None
+            mfc = 'none'
+            mec = 'none'
+            ecolor = 'black'
+            errorbar_alpha = 0.5
+            scatter_alpha = 1
+        else:
+            color = 'none'
+            cmap = None
+            norm = None
+            mfc = ecolor = '#FCBA25'
+            mec = 'black'
+            errorbar_alpha = 1
+            scatter_alpha = 0
         ax.errorbar(
             mw, fc,
             xerr=[mw_err_minus, mw_err_plus],
             yerr=[fc_err_minus, fc_err_plus],
-            fmt='o', mec='black', mfc='#FCBA25', ecolor='#FCBA25',
-            alpha=alpha)
-        ax.scatter(mw, fc, alpha=0, picker=True, zorder=20)
+            fmt='o', mec=mec, mfc=mfc, ecolor=ecolor,
+            alpha=errorbar_alpha)
+        sc = ax.scatter(
+            mw, fc, alpha=scatter_alpha, c=color, cmap=cmap, norm=norm,
+            edgecolors='black',
+            picker=True, zorder=20)
+        if colorby is not None:
+            cbaxes = fig.add_axes([0.15, 0.15, 0.02, 0.2])
+            if len(label) > 10:
+                label = label.replace(' (', '\n(')
+            plt.colorbar(sc, cax=cbaxes, label=label)
         yformat = 'fc {:.2f} Hz'
         annot = Annot(mw, fc, evids, yformat)
         fig.canvas.mpl_connect('pick_event', annot)
         return len(fc)
 
-    def _scatter_Er_mw(self, fig, ax):
+    def _scatter_Er_mw(self, fig, ax, colorby=None, colormap=None):
         """Plot the scatter plot of Er vs mw."""
         # Er can be NaN
         cond = ~np.isnan(self.Er)
@@ -649,45 +722,140 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         Er_err_minus = self.Er_err_minus[cond]
         Er_err_plus = self.Er_err_plus[cond]
         evids = self.evids[cond]
-        alpha = 1
+        if colorby is not None:
+            color = getattr(self, colorby)[cond]
+            cmap, units = get_colormap(colorby)
+            if colormap is not None:
+                cmap = plt.get_cmap(colormap)
+            label = get_param_label(colorby)
+            norm = plt.cm.colors.LogNorm() if units == 'log' else None
+            mfc = 'none'
+            mec = 'none'
+            ecolor = 'black'
+            errorbar_alpha = 0.5
+            scatter_alpha = 1
+        else:
+            color = 'none'
+            cmap = None
+            norm = None
+            mfc = ecolor = '#FCBA25'
+            mec = 'black'
+            errorbar_alpha = 1
+            scatter_alpha = 0
         ax.errorbar(
             mw, Er,
             xerr=[mw_err_minus, mw_err_plus],
             yerr=[Er_err_minus, Er_err_plus],
-            fmt='o', mec='black', mfc='#FCBA25', ecolor='#FCBA25',
-            alpha=alpha)
-        ax.scatter(mw, Er, alpha=0, picker=True, zorder=20)
+            fmt='o', mec=mec, mfc=mfc, ecolor=ecolor,
+            alpha=errorbar_alpha)
+        sc = ax.scatter(
+            mw, Er, alpha=scatter_alpha, c=color, cmap=cmap, norm=norm,
+            edgecolors='black',
+            picker=True, zorder=20)
+        if colorby is not None:
+            cbaxes = fig.add_axes([0.80, 0.15, 0.02, 0.2])
+            if len(label) > 10:
+                label = label.replace(' (', '\n(')
+            plt.colorbar(sc, cax=cbaxes, label=label)
         yformat = 'Er {:.1e} N·m'
         annot = Annot(mw, Er, evids, yformat)
         fig.canvas.mpl_connect('pick_event', annot)
         return len(Er)
 
-    def _scatter_ssd_mw(self, fig, ax):
+    def _scatter_ssd_mw(self, fig, ax, colorby=None, colormap=None):
         """Plot the scatter plot of ssd vs mw."""
-        alpha = 1
+        cond = ~np.isnan(self.ssd)
+        mw = self.mw[cond]
+        mw_err_minus = self.mw_err_minus[cond]
+        mw_err_plus = self.mw_err_plus[cond]
+        ssd = self.ssd[cond]
+        ssd_err_minus = self.ssd_err_minus[cond]
+        ssd_err_plus = self.ssd_err_plus[cond]
+        evids = self.evids[cond]
+        if colorby is not None:
+            color = getattr(self, colorby)[cond]
+            cmap, units = get_colormap(colorby)
+            if colormap is not None:
+                cmap = plt.get_cmap(colormap)
+            label = get_param_label(colorby)
+            norm = plt.cm.colors.LogNorm() if units == 'log' else None
+            mfc = 'none'
+            mec = 'none'
+            ecolor = 'black'
+            errorbar_alpha = 0.5
+            scatter_alpha = 1
+        else:
+            color = 'none'
+            cmap = None
+            norm = None
+            mfc = ecolor = '#FCBA25'
+            mec = 'black'
+            errorbar_alpha = 1
+            scatter_alpha = 0
         ax.errorbar(
-            self.mw, self.ssd,
-            xerr=[self.mw_err_minus, self.mw_err_plus],
-            yerr=[self.ssd_err_minus, self.ssd_err_plus],
-            fmt='o', mec='black', mfc='#FCBA25', ecolor='#FCBA25',
-            alpha=alpha)
-        ax.scatter(self.mw, self.ssd, alpha=0, picker=True, zorder=20)
+            mw, ssd,
+            xerr=[mw_err_minus, mw_err_plus],
+            yerr=[ssd_err_minus, ssd_err_plus],
+            fmt='o', mec=mec, mfc=mfc, ecolor=ecolor,
+            alpha=errorbar_alpha)
+        sc = ax.scatter(
+            mw, ssd, alpha=scatter_alpha, c=color, cmap=cmap, norm=norm,
+            edgecolors='black',
+            picker=True, zorder=20)
+        if colorby is not None:
+            cbaxes = fig.add_axes([0.80, 0.15, 0.02, 0.2])
+            if len(label) > 10:
+                label = label.replace(' (', '\n(')
+            plt.colorbar(sc, cax=cbaxes, label=label)
         yformat = 'ssd {:.2e} MPa'
-        annot = Annot(self.mw, self.ssd, self.evids, yformat)
+        annot = Annot(mw, ssd, evids, yformat)
         fig.canvas.mpl_connect('pick_event', annot)
 
-    def _scatter_ssd_depth(self, fig, ax):
+    def _scatter_ssd_depth(self, fig, ax, colorby=None, colormap=None):
         """Plot the scatter plot of ssd vs depth."""
-        alpha = 1
+        cond = ~np.isnan(self.ssd)
+        depth = self.depth[cond]
+        ssd = self.ssd[cond]
+        ssd_err_minus = self.ssd_err_minus[cond]
+        ssd_err_plus = self.ssd_err_plus[cond]
+        evids = self.evids[cond]
+        if colorby is not None:
+            color = getattr(self, colorby)[cond]
+            cmap, units = get_colormap(colorby)
+            if colormap is not None:
+                cmap = plt.get_cmap(colormap)
+            label = get_param_label(colorby)
+            norm = plt.cm.colors.LogNorm() if units == 'log' else None
+            mfc = 'none'
+            mec = 'none'
+            ecolor = 'black'
+            errorbar_alpha = 0.5
+            scatter_alpha = 1
+        else:
+            color = 'none'
+            cmap = None
+            norm = None
+            mfc = ecolor = '#FCBA25'
+            mec = 'black'
+            errorbar_alpha = 1
+            scatter_alpha = 0
         ax.errorbar(
-            self.depth, self.ssd,
+            depth, ssd,
             xerr=None,
-            yerr=[self.ssd_err_minus, self.ssd_err_plus],
-            fmt='o', mec='black', mfc='#FCBA25', ecolor='#FCBA25',
-            alpha=alpha)
-        ax.scatter(self.depth, self.ssd, alpha=0, picker=True, zorder=20)
+            yerr=[ssd_err_minus, ssd_err_plus],
+            fmt='o', mec=mec, mfc=mfc, ecolor=ecolor,
+            alpha=errorbar_alpha)
+        sc = ax.scatter(
+            depth, ssd, alpha=scatter_alpha, c=color, cmap=cmap, norm=norm,
+            edgecolors='black',
+            picker=True, zorder=20)
+        if colorby is not None:
+            cbaxes = fig.add_axes([0.80, 0.15, 0.02, 0.2])
+            if len(label) > 10:
+                label = label.replace(' (', '\n(')
+            plt.colorbar(sc, cax=cbaxes, label=label)
         yformat = 'ssd {:.2e} MPa'
-        annot = Annot(self.depth, self.ssd, self.evids, yformat)
+        annot = Annot(depth, ssd, evids, yformat)
         fig.canvas.mpl_connect('pick_event', annot)
 
     def _fit_fc_mw(self, vel, k_parameter, ax, slope=False):
@@ -728,7 +896,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
                 color='red', backgroundcolor='white', zorder=50)
 
     def plot_fc_mw(self, hist=False, fit=False, slope=False, nbins=None,
-                   wave_type='S'):
+                   wave_type='S', colorby=None, colormap=None):
         """
         Plot the logarithm of the corner frequency vs the moment magnitude.
 
@@ -740,6 +908,14 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             If True, plot a linear regression of fc vs mw.
         slope : bool
             If True, also fit the slope of the linear regression.
+        nbins : int
+            Number of bins for the 2D histogram.
+        wave_type : str
+            One of "P", "S", "SV" or "SH". Default is "S".
+        colorby : str
+            Color the data points by the given parameter.
+        colormap : str
+            Use this colormap for the colorby parameter instead of the default.
         """
         fig, ax, ax_Mo = self._make_mw_axis()
         ax_Mo.set_yscale('log')
@@ -757,16 +933,18 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         if hist:
             npoints = self._2d_hist_fc_mw(fig, ax, nbins, wave_type)
         else:
-            npoints = self._scatter_fc_mw(fig, ax, wave_type)
+            npoints = self._scatter_fc_mw(
+                fig, ax, wave_type, colorby, colormap)
         if fit:
             self._fit_fc_mw(vel, k, ax, slope=slope)
         extra_text = 'Stress drop curves'
         self._set_plot_title(ax, npoints, extra_text)
         self._add_grid(ax_Mo)
-        ax_Mo.set_ylabel('fc (Hz)')
+        ax_Mo.set_ylabel(get_param_label('fc'))
         plt.show()
 
-    def plot_Er_mw(self, hist=False, fit=False, nbins=None):
+    def plot_Er_mw(self, hist=False, fit=False, nbins=None,
+                   colorby=None, colormap=None):
         """
         Plot the logarithm of the radiated energy vs the moment magnitude.
 
@@ -776,8 +954,12 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             If True, plot a 2D histogram instead of a scatter plot.
         fit : bool
             If True, plot a linear regression of Er vs mw.
-        slope : bool
-            If True, also fit the slope of the linear regression.
+        nbins : int
+            Number of bins for the 2D histogram.
+        colorby : str
+            Color the data points by the given parameter.
+        colormap : str
+            Use this colormap for the colorby parameter instead of the default.
         """
         fig, ax, ax_Mo = self._make_mw_axis()
         ax_Mo.set_yscale('log')
@@ -788,17 +970,18 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         if hist:
             npoints = self._2d_hist_Er_mw(fig, ax, nbins)
         else:
-            npoints = self._scatter_Er_mw(fig, ax)
+            npoints = self._scatter_Er_mw(fig, ax, colorby, colormap)
         if fit:
             raise NotImplementedError('Fit not implemented yet for Er_mw')
 
         extra_text = 'Apparent stress curves'
         self._set_plot_title(ax, npoints, extra_text)
         self._add_grid(ax_Mo)
-        ax_Mo.set_ylabel('Er (N·m)')
+        ax_Mo.set_ylabel(get_param_label('Er'))
         plt.show()
 
-    def plot_ssd_mw(self, hist=False, fit=False, nbins=None):
+    def plot_ssd_mw(self, hist=False, fit=False, nbins=None,
+                    colorby=None, colormap=None):
         """
         Plot the logarithm of static stress drop vs moment magnitude.
 
@@ -808,8 +991,12 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             If True, plot a 2D histogram instead of a scatter plot.
         fit : bool
             If True, plot a linear regression of ssd vs mw.
-        slope : bool
-            If True, also fit the slope of the linear regression.
+        nbins : int
+            Number of bins for the 2D histogram.
+        colorby : str
+            Color the data points by the given parameter.
+        colormap : str
+            Use this colormap for the colorby parameter instead of the default.
         """
         fig, ax, ax_Mo = self._make_mw_axis()
         ax_Mo.set_yscale('log')
@@ -823,16 +1010,17 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         if hist:
             self._2d_hist_ssd_mw(fig, ax, nbins)
         else:
-            self._scatter_ssd_mw(fig, ax)
+            self._scatter_ssd_mw(fig, ax, colorby, colormap)
         if fit:
             raise NotImplementedError('Fit not implemented yet for ssd_mw')
 
         self._set_plot_title(ax)
         self._add_grid(ax_Mo)
-        ax_Mo.set_ylabel('ssd (MPa)')
+        ax_Mo.set_ylabel(get_param_label('ssd'))
         plt.show()
 
-    def plot_ssd_depth(self, hist=False, fit=False, nbins=None):
+    def plot_ssd_depth(self, hist=False, fit=False, nbins=None,
+                       colorby=None, colormap=None):
         """
         Plot the logarithm of static stress drop vs depth.
 
@@ -842,12 +1030,16 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             If True, plot a 2D histogram instead of a scatter plot.
         fit : bool
             If True, plot a linear regression of ssd vs depth.
-        slope : bool
-            If True, also fit the slope of the linear regression.
+        nbins : int
+            Number of bins for the 2D histogram.
+        colorby : str
+            Color the data points by the given parameter.
+        colormap : str
+            Use this colormap for the colorby parameter instead of the default.
         """
-        fig, ax = plt.subplots()
-        ax.set_xlabel('Depth (km)')
-        ax.set_ylabel('ssd (MPa)')
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.set_xlabel(get_param_label('depth'))
+        ax.set_ylabel(get_param_label('ssd'))
         ax.set_yscale('log')
         ax.set_ylim(1e-3, 1e3)
 
@@ -855,27 +1047,18 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             raise NotImplementedError(
                 'Histogram not implemented yet for ssd_depth')
         else:
-            self._scatter_ssd_depth(fig, ax)
+            self._scatter_ssd_depth(fig, ax, colorby, colormap)
         if fit:
             raise NotImplementedError(
                 'Fit not implemented yet for ssd_depth')
 
         self._set_plot_title(ax)
+        self._add_grid(ax)
         plt.show()
 
     def plot_hist(self, param_name, nbins=None, wave_type='S'):
         """Plot a histogram of the given parameter."""
-        parameters = {
-            'fc': ('Corner Frequency', 'Hz', 'log'),
-            'ssd': ('Static Stress Drop', 'MPa', 'log'),
-            'ra': ('Source Radius', 'm', 'lin'),
-            'Mo': ('Seismic Moment', 'N·m', 'log'),
-            't_star': ('T star', 's', 'lin'),
-            'Qo': ('Qo', None, 'lin'),
-            'Er': ('Radiated Energy', 'N·m', 'log'),
-            'sigma_a': ('Apparent Stress', 'MPa', 'log'),
-        }
-        description, unit, log = parameters[param_name]
+        _, unit, log, color = valid_parameters[param_name]
         log = log == 'log'
         values = getattr(self, param_name)
         if param_name == 'fc':
@@ -905,7 +1088,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             maxval = np.max(np.abs(values))
             bins = np.linspace(0, maxval, nbins)
         _fig, ax = plt.subplots()
-        ax.hist(values, bins=bins)
+        ax.hist(values, bins=bins, color=color)
         ax.axvline(values_mean, color='red')
         txt = (
             f'  mean: {values_mean:.1e}'
@@ -919,10 +1102,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             transform=ax.get_xaxis_transform())
         if log:
             ax.set_xscale('log')
-        if unit is not None:
-            ax.set_xlabel(f'{description} ({unit})')
-        else:
-            ax.set_xlabel(f'{description}')
+        ax.set_xlabel(get_param_label(param_name))
         ax.set_ylabel('Counts')
         title = f'{nvalues} values, {nbins} bins - {self.stat}'
         if self.runid is not None:
@@ -949,13 +1129,20 @@ def run():
 
     if args.plot_type == 'fc_mw':
         params.plot_fc_mw(
-            args.hist, args.fit, args.slope, args.nbins, args.wave_type)
+            args.hist, args.fit, args.slope, args.nbins, args.wave_type,
+            args.colorby, args.colormap)
     elif args.plot_type == 'Er_mw':
-        params.plot_Er_mw(args.hist, args.fit, args.nbins)
+        params.plot_Er_mw(
+            args.hist, args.fit, args.nbins,
+            args.colorby, args.colormap)
     elif args.plot_type == 'ssd_mw':
-        params.plot_ssd_mw(args.hist, args.fit, args.nbins)
+        params.plot_ssd_mw(
+            args.hist, args.fit, args.nbins,
+            args.colorby, args.colormap)
     elif args.plot_type == 'ssd_depth':
-        params.plot_ssd_depth(args.hist, args.fit, args.nbins)
+        params.plot_ssd_depth(
+            args.hist, args.fit, args.nbins,
+            args.colorby, args.colormap)
     elif args.plot_type in valid_plot_types:
         params.plot_hist(args.plot_type, args.nbins, args.wave_type)
 
