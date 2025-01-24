@@ -37,6 +37,7 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 - Support for Matplotlib 3.9
 - Maps: use PlateCarree projection for small maps (map diagonal below 100 km),
   which speeds up the plotting
+- Maps: possibility to use a GeoTIFF file as a basemap
 
 ### Config file
 
@@ -45,6 +46,9 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 - New config parameters: `refine_theoretical_arrivals`, `autopick_freqmin`,
   `autopick_debug_plot`
 - New config parameter `clipping_min_amplitude_ratio`
+- New option `geotiff` for `plot_map_style` to use a GeoTIFF file as a basemap
+- New config parameters: `plot_map_geotiff_filepath`,
+  `plot_map_geotiff_grayscale`, `plot_map_geotiff_attribution`
 - Improved documentation for the `sn_min` and `spectral_sn_min` parameters
 
 ### Bugfixes

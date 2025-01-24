@@ -274,6 +274,66 @@ def _add_tiles(config, ax, tiler, alpha=1):
             tile_zoom_level -= 1
 
 
+def _read_geotiff(tif_file, grayscale=False):
+    """Read geotiff file."""
+    # lazy import rasterio, since it is not a mandatory dependency
+    # pylint: disable=import-outside-toplevel
+    import rasterio
+    from rasterio.warp import transform_bounds
+    with rasterio.open(tif_file) as src:
+        # Get the bounding box in the raster's CRS
+        bounds = src.bounds
+        # Get the CRS of the raster
+        src_crs = src.crs
+        # Define the target CRS (WGS84 for lon/lat)
+        dst_crs = "EPSG:4326"
+        # Transform bounds to WGS84
+        lonmin, latmin, lonmax, latmax = transform_bounds(
+            src_crs, dst_crs, *bounds)
+        tif_bbox = (lonmin, lonmax, latmin, latmax)
+        # Read the raster as a 3D array (bands, rows, columns)
+        if not grayscale and src.count >= 3:
+            basemap = src.read([1, 2, 3])  # Read the first three bands (RGB)
+            # Transpose to (rows, columns, bands) for plotting
+            basemap = basemap.transpose((1, 2, 0))
+        else:
+            basemap = src.read(1)
+    return basemap, tif_bbox
+
+
+def _add_geotiff(config, ax):
+    """Add geotiff to basemap."""
+    tif_file = config.plot_map_geotiff_filepath
+    grayscale = config.plot_map_geotiff_grayscale
+    if tif_file is None:
+        logger.warning(
+            'No GeoTIFF file specified. Basemap will not be plotted.')
+        return
+    if not os.path.isfile(tif_file):
+        logger.warning(
+            f'GeoTIFF file "{tif_file}" not found. '
+            'Basemap will not be plotted.')
+        return
+    # pylint: disable=import-outside-toplevel
+    from rasterio.errors import RasterioError
+    try:
+        basemap, tif_bbox = _read_geotiff(tif_file, grayscale)
+    except (RasterioError, OSError) as msg:
+        logger.warning(
+            f'Error reading GeoTIFF file "{tif_file}": {msg}. '
+            'Basemap will not be plotted.')
+        return
+    # Plot the raster
+    if grayscale:
+        ax.imshow(
+            basemap, extent=tif_bbox, origin='upper', cmap='gray',
+            zorder=ZORDER_BASEMAP)
+    else:
+        ax.imshow(
+            basemap, extent=tif_bbox, origin='upper',
+            zorder=ZORDER_BASEMAP)
+
+
 def _add_coastlines(config, ax):
     """Add coastlines and borders to basemap."""
     if config.plot_coastline_resolution == 'no_coastline':
@@ -390,11 +450,14 @@ def _make_geoaxes_planar(config, fig, buonding_box, maxdiagonal):
         facecolor=cfeature.COLORS['water'])
     map_style = config.plot_map_style
     api_key = config.plot_map_api_key
-    if map_style == 'no_basemap':
+    if map_style in ['no_basemap', 'geotiff']:
         ax_projection = _get_ax_projection(maxdiagonal)
         ax = fig.add_subplot(111, projection=ax_projection)
-        ax.add_feature(land_10m, zorder=ZORDER_BASEMAP)
-        ax.add_feature(ocean_10m, zorder=ZORDER_BASEMAP)
+        if map_style == 'no_basemap':
+            ax.add_feature(land_10m, zorder=ZORDER_BASEMAP)
+            ax.add_feature(ocean_10m, zorder=ZORDER_BASEMAP)
+        else:
+            _add_geotiff(config, ax)
     else:
         tile_dir = 'maptiles'
         tiler = CachedTiler(
@@ -406,7 +469,7 @@ def _make_geoaxes_planar(config, fig, buonding_box, maxdiagonal):
     ax.set_extent(buonding_box, crs=ccrs.Geodetic())
     ax.global_projection = False
     ax.maxdiagonal = maxdiagonal
-    if map_style != 'no_basemap':
+    if map_style not in ['no_basemap', 'geotiff']:
         if map_style in ['hillshade', 'hillshade_dark']:
             # add a sea mask to the hillshade map
             ax.add_feature(ocean_10m, zorder=ZORDER_TILES+1)
@@ -415,8 +478,10 @@ def _make_geoaxes_planar(config, fig, buonding_box, maxdiagonal):
         ax.attribution_text = 'Map powered by Esri and Natural Earth'
     elif map_style == 'stamen_terrain':
         ax.attribution_text = 'Map powered by Stamen Design and Natural Earth'
-    else:
+    elif map_style == 'no_basemap':
         ax.attribution_text = 'Map powered by Natural Earth'
+    else:
+        ax.attribution_text = config.plot_map_geotiff_attribution
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     return ax
 
@@ -439,7 +504,7 @@ def _make_geoaxes_orthographic(fig, evlo, evla, bounding_box):
 
 def _make_basemap(config, maxdist):
     """
-    Create basemap with tiles, coastlines, hypocenter
+    Create basemap with tiles (optional), coastlines (optional), hypocenter
     and distance circles.
     """
     g = Geod(ellps='WGS84')

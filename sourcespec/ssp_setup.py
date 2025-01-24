@@ -180,6 +180,18 @@ def _check_cartopy_version():
         raise ImportError(msg) from e
 
 
+def _check_rasterio_version():
+    # pylint: disable=import-outside-toplevel, unused-import
+    try:
+        import rasterio  # NOQA
+    except ImportError as e:
+        msg = (
+            '\nPlease install rasterio to plot GeoTIFF files.\n'
+            'How to install: https://rasterio.readthedocs.io/en/stable/\n'
+        )
+        raise ImportError(msg) from e
+
+
 def _check_pyproj_version():
     # pylint: disable=import-outside-toplevel
     try:
@@ -805,6 +817,8 @@ def configure(options, progname, config_overrides=None):
         try:
             _check_cartopy_version()
             _check_pyproj_version()
+            if config.plot_map_style == 'geotiff':
+                _check_rasterio_version()
         except ImportError as err:
             for msg in config.warnings:
                 print(msg)
