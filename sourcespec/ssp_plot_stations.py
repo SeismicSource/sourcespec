@@ -13,6 +13,7 @@ import os
 import logging
 import contextlib
 import warnings
+from copy import deepcopy
 import numpy as np
 import cartopy.crs as ccrs
 import cartopy.io.shapereader as shpreader
@@ -560,7 +561,11 @@ def _make_basemap(config, maxdist):
         _plot_epicenter_as_beachball(ax, event)
     except Exception:
         _plot_epicenter_as_star(ax, event)
-    return ax0, ax, circle_texts
+    return {
+        'ax0': ax0,
+        'ax': ax,
+        'circle_texts': circle_texts
+    }
 
 
 def _add_footer(config, ax, attribution_text=None):
@@ -795,12 +800,14 @@ def _savefig(config, fig, vname):
 
 
 def _make_station_map(
-        config, lonlat_dist, st_ids, values, outliers, vmean, verr, vname):
+        config, basemap_data, lonlat_dist, st_ids, values, outliers,
+        vmean, verr, vname):
     """
     Make a map of stations with the given values.
     """
-    maxdist = np.max(lonlat_dist[:, 2])
-    ax0, ax, circle_texts = _make_basemap(config, maxdist)
+    ax0 = basemap_data['ax0']
+    ax = basemap_data['ax']
+    circle_texts = basemap_data['circle_texts']
     _add_main_title(ax0, vname, vmean, verr)
     cmap, norm, cbar_extend = _get_cmap_and_norm(
         values, outliers, vname, vmean, verr)
@@ -858,13 +865,16 @@ def plot_stations(config, sspec_output):
     mag_outliers = np.array([stationpar[k]['Mw'].outlier for k in st_ids])
     summary_mag = summary_values['Mw']
     summary_mag_err = summary_uncertainties['Mw']
+    basemap_data = _make_basemap(config, maxdist)
+    # make a copy of the basemap data for the second plot, before modifying it
+    basemap_data2 = deepcopy(basemap_data)
     _make_station_map(
-        config, lonlat_dist, st_ids,
+        config, basemap_data, lonlat_dist, st_ids,
         mag, mag_outliers, summary_mag, summary_mag_err, 'mag')
     fc = np.array([stationpar[k]['fc'].value for k in st_ids])
     fc_outliers = np.array([stationpar[k]['fc'].outlier for k in st_ids])
     summary_fc = summary_values['fc']
     summary_fc_err = summary_uncertainties['fc']
     _make_station_map(
-        config, lonlat_dist, st_ids,
+        config, basemap_data2, lonlat_dist, st_ids,
         fc, fc_outliers, summary_fc, summary_fc_err, 'fc')
