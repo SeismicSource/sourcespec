@@ -290,6 +290,10 @@ def _read_geotiff(tif_file, grayscale=False):
         # Transform bounds to WGS84
         lonmin, latmin, lonmax, latmax = transform_bounds(
             src_crs, dst_crs, *bounds)
+        logger.info(
+            f'GeoTIFF bounding box: '
+            f'lonmin={lonmin:.3f} lonmax={lonmax:.3f} '
+            f'latmin={latmin:.3f} latmax={latmax:.3f}')
         tif_bbox = (lonmin, lonmax, latmin, latmax)
         # Read the raster as a 3D array (bands, rows, columns)
         if not grayscale and src.count >= 3:
