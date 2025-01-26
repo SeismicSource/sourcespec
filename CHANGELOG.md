@@ -64,6 +64,7 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
   `<arrival>` element
 - Stabilize the computation of derivatives in the Okal geometrical spreading
   model, thus avoiding numerical instabilities.
+- Spped up map plotting when using coastlines
 
 ## v1.8 - 2024-04-07
 

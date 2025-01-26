@@ -17,8 +17,9 @@ import numpy as np
 import cartopy.crs as ccrs
 import cartopy.io.shapereader as shpreader
 import cartopy.feature as cfeature
+from shapely.geometry import box
 from obspy.imaging.beachball import beach
-from pyproj import Geod
+import pyproj
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -45,12 +46,17 @@ logging.getLogger('pyproj').setLevel(logging.WARNING)
 # ignore any exception
 with contextlib.suppress(Exception):
     # Ignore Shapely deprecation warnings, since they depend on Cartopy
+    # pylint: disable=ungrouped-imports
     from shapely.errors import ShapelyDeprecationWarning
     warnings.filterwarnings('ignore', category=ShapelyDeprecationWarning)
     # Ignore shapely RuntimeWarnings. They are produced by Cartopy when
     # plotting coastlines, but the result seems to be correct.
     warnings.filterwarnings(
         'ignore', category=RuntimeWarning, module='shapely')
+# Make pyproj calculations faster by using the global context for
+# pyproj < 3.7
+if pyproj.__version__ < '3.7':
+    pyproj.set_use_global_context(active=True)
 TILER = {
     'hillshade': EsriHillshade,
     'hillshade_dark': EsriHillshadeDark,
@@ -148,7 +154,7 @@ def _get_circles_step(maxdist, ncircles):
 
 def _plot_circles(ax, evlo, evla, distances):
     geodetic_transform = ccrs.PlateCarree()
-    g = Geod(ellps='WGS84')
+    g = pyproj.Geod(ellps='WGS84')
     texts = []
     maxdist = np.max(distances)
     for dist in distances:
@@ -363,14 +369,18 @@ def _add_coastlines(config, ax):
         )
     shpfile = shpreader.gshhs(coastline_resolution)
     shp = shpreader.Reader(shpfile)
+    # bounding box of the axes to clip the coastlines
+    bbox = box(*ax.get_extent(ccrs.PlateCarree()))
     with warnings.catch_warnings():
         # silent a warning on:
         # "Shapefile shape has invalid polygon: no exterior rings found"
         warnings.simplefilter('ignore')
-        ax.add_geometries(
-            shp.geometries(), ccrs.PlateCarree(),
-            edgecolor='black', facecolor='none',
-            zorder=ZORDER_COASTLINES)
+        for geometry in shp.geometries():
+            if geometry.intersects(bbox):
+                ax.add_geometries(
+                    [geometry.intersection(bbox)], ccrs.PlateCarree(),
+                    edgecolor='black', facecolor='none',
+                    zorder=ZORDER_COASTLINES)
     ax.add_feature(
         cfeature.BORDERS, edgecolor='black', facecolor='none',
         zorder=ZORDER_COASTLINES)
@@ -511,7 +521,7 @@ def _make_basemap(config, maxdist):
     Create basemap with tiles (optional), coastlines (optional), hypocenter
     and distance circles.
     """
-    g = Geod(ellps='WGS84')
+    g = pyproj.Geod(ellps='WGS84')
     event = config.event
     evlo = event.hypocenter.longitude.value_in_deg
     evla = event.hypocenter.latitude.value_in_deg
