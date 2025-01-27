@@ -12,6 +12,7 @@ Save Matplotlib figure. Optimize PNG format using PIL.
 import io
 import logging
 import warnings
+import threading
 from PIL import Image
 # Reduce logging level for PIL to avoid DEBUG messages
 logging.getLogger('PIL').setLevel(logging.WARNING)
@@ -22,7 +23,7 @@ logging.getLogger('fontTools').setLevel(logging.WARNING)
 warnings.filterwarnings('ignore', message='Palette images with Transparency')
 
 
-def savefig(fig, figfile, fmt, quantize_colors=True, **kwargs):
+def _savefig(fig, figfile, fmt, quantize_colors=True, **kwargs):
     """Save Matplotlib figure. Optimize PNG format using PIL."""
     if fmt == 'png':
         buf = io.BytesIO()
@@ -39,3 +40,33 @@ def savefig(fig, figfile, fmt, quantize_colors=True, **kwargs):
         img.close()
     else:
         fig.savefig(figfile, **kwargs)
+
+
+def savefig(fig, figfile, fmt, quantize_colors=True, use_threading=True,
+            **kwargs):
+    """
+    Save Matplotlib figure. Optimize PNG format using PIL.
+
+    Parameters
+    ----------
+    fig : matplotlib.figure.Figure
+        Matplotlib figure to save.
+    figfile : str
+        Output file name.
+    fmt : str
+        Output format (e.g., 'png', 'pdf', 'svg').
+    quantize_colors : bool, optional
+        If True (default), reduce the number of colors in the PNG image.
+    use_threading : bool, optional
+        If True (default), save the figure in a separate thread.
+    **kwargs
+        Additional keyword arguments for `fig.savefig`.
+    """
+    if use_threading:
+        threading.Thread(
+            target=_savefig,
+            args=(fig, figfile, fmt, quantize_colors),
+            kwargs=kwargs
+        ).start()
+    else:
+        _savefig(fig, figfile, fmt, quantize_colors, **kwargs)

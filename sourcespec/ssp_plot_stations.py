@@ -13,7 +13,6 @@ import os
 import logging
 import contextlib
 import warnings
-import threading
 from copy import deepcopy
 import numpy as np
 import cartopy.crs as ccrs
@@ -869,12 +868,9 @@ def plot_stations(config, sspec_output):
     basemap_data = _make_basemap(config, maxdist)
     # make a copy of the basemap data for the second plot, before modifying it
     basemap_data2 = deepcopy(basemap_data)
-    # plot the first map in a separate thread to avoid blocking
-    # the plotting of the second map
-    map_thread = threading.Thread(target=_make_station_map, args=(
+    _make_station_map(
         config, basemap_data, lonlat_dist, st_ids,
-        mag, mag_outliers, summary_mag, summary_mag_err, 'mag'))
-    map_thread.start()
+        mag, mag_outliers, summary_mag, summary_mag_err, 'mag')
     fc = np.array([stationpar[k]['fc'].value for k in st_ids])
     fc_outliers = np.array([stationpar[k]['fc'].outlier for k in st_ids])
     summary_fc = summary_values['fc']

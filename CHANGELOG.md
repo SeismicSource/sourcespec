@@ -38,6 +38,7 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 - Maps: use PlateCarree projection for small maps (map diagonal below 100 km),
   which speeds up the plotting
 - Maps: possibility to use a GeoTIFF file as a basemap
+- Use threading to speed up saving plots to disk
 
 ### Config file
 
