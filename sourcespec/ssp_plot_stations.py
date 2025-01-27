@@ -286,6 +286,8 @@ def _read_geotiff(tif_file, grayscale=False):
     # lazy import rasterio, since it is not a mandatory dependency
     # pylint: disable=import-outside-toplevel
     import rasterio
+    # reduce log level for rasterio to avoid DEBUG messages
+    logging.getLogger('rasterio').setLevel(logging.WARNING)
     from rasterio.warp import transform_bounds
     with rasterio.open(tif_file) as src:
         # Get the bounding box in the raster's CRS
