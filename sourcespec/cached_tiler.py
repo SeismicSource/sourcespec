@@ -33,6 +33,9 @@ class CachedTiler():
 
     def __getattr__(self, name):
         """__getattr__ method."""
+        # Avoid RecursionError when using deepcopy on CachedTiler
+        if name == '__setstate__':
+            raise AttributeError(name)
         # Mimic the tiler interface, but for methods, ensure that the "self"
         # that is passed through continues to be CachedTiler, and not the
         # contained tiler instance.
