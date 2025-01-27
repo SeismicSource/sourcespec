@@ -332,14 +332,21 @@ def _add_geotiff(config, ax):
             'Basemap will not be plotted.')
         return
     # pylint: disable=import-outside-toplevel
-    from rasterio.errors import RasterioError
-    try:
-        tif_raster, tif_bbox = _read_geotiff(tif_file, grayscale)
-    except (RasterioError, OSError) as msg:
-        logger.warning(
-            f'Error reading GeoTIFF file "{tif_file}": {msg}. '
-            'Basemap will not be plotted.')
-        return
+    from rasterio.errors import RasterioError, NotGeoreferencedWarning
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', NotGeoreferencedWarning)
+        try:
+            tif_raster, tif_bbox = _read_geotiff(tif_file, grayscale)
+        except (RasterioError, OSError) as msg:
+            logger.warning(
+                f'Error reading GeoTIFF file "{tif_file}": {msg}. '
+                'Basemap will not be plotted.')
+            return
+        except NotGeoreferencedWarning:
+            logger.warning(
+                f'GeoTIFF file "{tif_file}" is not georeferenced. '
+                'Basemap will not be plotted.')
+            return
     # Plot the raster
     if grayscale:
         ax.imshow(
