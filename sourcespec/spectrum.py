@@ -792,12 +792,21 @@ def read_spectra(pathname, format='HDF5'):
         raise FileNotFoundError(f'No files found matching "{pathname}"')
     spectra = SpectrumStream()
     for fname in filelist:
+        # if fname is a directory raise an error
+        if os.path.isdir(fname):
+            raise IsADirectoryError(
+                f'Error reading spectra from "{fname}": '
+                'is a directory'
+            )
         if format == 'HDF5':
             with h5py.File(fname, 'r') as fp:
                 try:
                     main_group = fp['spectra']
                 except KeyError as e:
-                    raise ValueError('No spectra found in HDF5 file') from e
+                    raise ValueError(
+                        f'Error reading spectra from "{fname}": '
+                        'No spectra found in HDF5 file'
+                    ) from e
                 for group in main_group.values():
                     spectra.append(_read_spectrum_from_hdf5_group(group))
         elif format == 'TEXT':
