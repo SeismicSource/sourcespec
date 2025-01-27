@@ -62,6 +62,6 @@ def station_correction(spec_st, config):
         spec_corr.data_logspaced = mag_to_moment(spec_corr.data_mag_logspaced)
         spec_st.append(spec_corr)
         logger.info(
-            f'{spec_corr.id} corrected, frequency range is: '
+            f'{spec_corr.id}: corrected, frequency range is: '
             f'{fmin:.2f} {fmax:.2f} Hz')
     return spec_st
