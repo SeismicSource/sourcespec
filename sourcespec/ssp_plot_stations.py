@@ -371,7 +371,8 @@ def _add_coastlines(config, ax):
     shpfile = shpreader.gshhs(coastline_resolution)
     shp = shpreader.Reader(shpfile)
     # bounding box of the axes to clip the coastlines
-    bbox = box(*ax.get_extent(ccrs.PlateCarree()))
+    lonmin, lonmax, latmin, latmax = ax.get_extent(ccrs.PlateCarree())
+    bbox = box(lonmin, latmin, lonmax, latmax)
     with warnings.catch_warnings():
         # silent a warning on:
         # "Shapefile shape has invalid polygon: no exterior rings found"
