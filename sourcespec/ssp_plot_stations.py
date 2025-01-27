@@ -289,6 +289,9 @@ def _read_geotiff(tif_file, grayscale=False):
     # reduce log level for rasterio to avoid DEBUG messages
     logging.getLogger('rasterio').setLevel(logging.WARNING)
     from rasterio.warp import transform_bounds
+    # use official projection parameters from EPSG
+    # (overriding the ones from GeoTIFF keys)
+    os.environ['GTIFF_SRS_SOURCE'] = 'EPSG'
     with rasterio.open(tif_file) as src:
         # Get the bounding box in the raster's CRS
         bounds = src.bounds
