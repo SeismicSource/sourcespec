@@ -306,12 +306,12 @@ def _read_geotiff(tif_file, grayscale=False):
         tif_bbox = (lonmin, lonmax, latmin, latmax)
         # Read the raster as a 3D array (bands, rows, columns)
         if not grayscale and src.count >= 3:
-            basemap = src.read([1, 2, 3])  # Read the first three bands (RGB)
+            tif_raster = src.read([1, 2, 3])  # Read the first three bands (RGB)
             # Transpose to (rows, columns, bands) for plotting
-            basemap = basemap.transpose((1, 2, 0))
+            tif_raster = tif_raster.transpose((1, 2, 0))
         else:
-            basemap = src.read(1)
-    return basemap, tif_bbox
+            tif_raster = src.read(1)
+    return tif_raster, tif_bbox
 
 
 def _add_geotiff(config, ax):
@@ -330,7 +330,7 @@ def _add_geotiff(config, ax):
     # pylint: disable=import-outside-toplevel
     from rasterio.errors import RasterioError
     try:
-        basemap, tif_bbox = _read_geotiff(tif_file, grayscale)
+        tif_raster, tif_bbox = _read_geotiff(tif_file, grayscale)
     except (RasterioError, OSError) as msg:
         logger.warning(
             f'Error reading GeoTIFF file "{tif_file}": {msg}. '
@@ -339,11 +339,11 @@ def _add_geotiff(config, ax):
     # Plot the raster
     if grayscale:
         ax.imshow(
-            basemap, extent=tif_bbox, origin='upper', cmap='gray',
+            tif_raster, extent=tif_bbox, origin='upper', cmap='gray',
             transform=ccrs.PlateCarree(), zorder=ZORDER_BASEMAP)
     else:
         ax.imshow(
-            basemap, extent=tif_bbox, origin='upper',
+            tif_raster, extent=tif_bbox, origin='upper',
             transform=ccrs.PlateCarree(), zorder=ZORDER_BASEMAP)
 
 
