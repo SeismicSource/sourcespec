@@ -338,11 +338,11 @@ def _add_geotiff(config, ax):
     if grayscale:
         ax.imshow(
             basemap, extent=tif_bbox, origin='upper', cmap='gray',
-            zorder=ZORDER_BASEMAP)
+            transform=ccrs.PlateCarree(), zorder=ZORDER_BASEMAP)
     else:
         ax.imshow(
             basemap, extent=tif_bbox, origin='upper',
-            zorder=ZORDER_BASEMAP)
+            transform=ccrs.PlateCarree(), zorder=ZORDER_BASEMAP)
 
 
 def _add_coastlines(config, ax):
@@ -468,12 +468,6 @@ def _make_geoaxes_planar(config, fig, buonding_box, maxdiagonal):
     api_key = config.plot_map_api_key
     if map_style in ['no_basemap', 'geotiff']:
         ax_projection = _get_ax_projection(maxdiagonal)
-        ax = fig.add_subplot(111, projection=ax_projection)
-        if map_style == 'no_basemap':
-            ax.add_feature(land_10m, zorder=ZORDER_BASEMAP)
-            ax.add_feature(ocean_10m, zorder=ZORDER_BASEMAP)
-        else:
-            _add_geotiff(config, ax)
     else:
         tile_dir = 'maptiles'
         tiler = CachedTiler(
@@ -481,10 +475,17 @@ def _make_geoaxes_planar(config, fig, buonding_box, maxdiagonal):
             tile_dir
         )
         ax_projection = _get_ax_projection(maxdiagonal, tiler=tiler)
-        ax = fig.add_subplot(111, projection=ax_projection)
-    ax.set_extent(buonding_box, crs=ccrs.Geodetic())
+    ax = fig.add_subplot(111, projection=ax_projection)
+    ax.set_extent(buonding_box, crs=ccrs.PlateCarree())
     ax.global_projection = False
     ax.maxdiagonal = maxdiagonal
+    if map_style == 'geotiff':
+        _add_geotiff(config, ax)
+        ax.attribution_text = config.plot_map_geotiff_attribution
+    elif map_style == 'no_basemap':
+        ax.add_feature(land_10m, zorder=ZORDER_BASEMAP)
+        ax.add_feature(ocean_10m, zorder=ZORDER_BASEMAP)
+        ax.attribution_text = 'Map powered by Natural Earth'
     if map_style not in ['no_basemap', 'geotiff']:
         if map_style in ['hillshade', 'hillshade_dark']:
             # add a sea mask to the hillshade map
@@ -494,10 +495,6 @@ def _make_geoaxes_planar(config, fig, buonding_box, maxdiagonal):
         ax.attribution_text = 'Map powered by Esri and Natural Earth'
     elif map_style == 'stamen_terrain':
         ax.attribution_text = 'Map powered by Stamen Design and Natural Earth'
-    elif map_style == 'no_basemap':
-        ax.attribution_text = 'Map powered by Natural Earth'
-    else:
-        ax.attribution_text = config.plot_map_geotiff_attribution
     ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
     return ax
 
