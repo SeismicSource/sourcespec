@@ -49,7 +49,11 @@ def station_correction(spec_st, config):
         spec_corr = spec.copy()
         # uncorrected spectrum will have component name 'h'
         spec.stats.channel = f'{spec.stats.channel[:-1]}h'
-        spec_corr.data_mag -= corr.data_mag
+        try:
+            spec_corr.data_mag -= corr.data_mag
+        except ValueError as msg:
+            logger.error(f'Cannot correct spectrum {spec.id}: {msg}')
+            continue
         # interpolate the corrected data_mag to logspaced frequencies
         f = interp1d(freq, spec_corr.data_mag, fill_value='extrapolate')
         spec_corr.data_mag_logspaced = f(spec_corr.freq_logspaced)
