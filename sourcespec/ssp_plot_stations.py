@@ -282,7 +282,7 @@ def _add_tiles(config, ax, tiler, alpha=1):
 
 
 def _read_geotiff(tif_file, grayscale=False):
-    """Read geotiff file."""
+    """Read GeoTIFF file."""
     # lazy import rasterio, since it is not a mandatory dependency
     # pylint: disable=import-outside-toplevel
     import rasterio
@@ -296,9 +296,9 @@ def _read_geotiff(tif_file, grayscale=False):
         # Get the bounding box in the raster's CRS
         bounds = src.bounds
         # Get the CRS of the raster
-        src_crs = src.crs
+        src_crs = src.crs or 'EPSG:4326'
         # Define the target CRS (WGS84 for lon/lat)
-        dst_crs = "EPSG:4326"
+        dst_crs = 'EPSG:4326'
         # Transform bounds to WGS84
         lonmin, latmin, lonmax, latmax = transform_bounds(
             src_crs, dst_crs, *bounds)
@@ -309,7 +309,8 @@ def _read_geotiff(tif_file, grayscale=False):
         tif_bbox = (lonmin, lonmax, latmin, latmax)
         # Read the raster as a 3D array (bands, rows, columns)
         if not grayscale and src.count >= 3:
-            tif_raster = src.read([1, 2, 3])  # Read the first three bands (RGB)
+            # Read the first three bands (RGB)
+            tif_raster = src.read([1, 2, 3])
             # Transpose to (rows, columns, bands) for plotting
             tif_raster = tif_raster.transpose((1, 2, 0))
         else:
@@ -318,7 +319,7 @@ def _read_geotiff(tif_file, grayscale=False):
 
 
 def _add_geotiff(config, ax):
-    """Add geotiff to basemap."""
+    """Add GeoTIFF to basemap."""
     tif_file = config.plot_map_geotiff_filepath
     grayscale = config.plot_map_geotiff_grayscale
     if tif_file is None:
