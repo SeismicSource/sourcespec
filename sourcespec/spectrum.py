@@ -370,6 +370,8 @@ class Spectrum():
         from obspy.core.trace import Trace
         if not isinstance(trace, Trace):
             raise TypeError('Only ObsPy Trace objects are supported')
+        if len(trace.data) < 10:
+            raise ValueError('The trace must have at least 10 samples')
         signal = trace.data
         delta = trace.stats.delta
         amp, freq = signal_fft(signal, delta)

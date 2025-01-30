@@ -384,7 +384,12 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
 
 
 def _build_spectrum(config, trace):
-    spec = Spectrum(obspy_trace=trace)
+    try:
+        spec = Spectrum(obspy_trace=trace)
+    except ValueError as e:
+        raise RuntimeError(
+            f'{trace.id}: Error building spectrum: skipping spectrum\n{str(e)}'
+        ) from e
     spec.stats.instrtype = trace.stats.instrtype
     spec.stats.coords = trace.stats.coords
     spec.stats.event = trace.stats.event

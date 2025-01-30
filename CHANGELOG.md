@@ -65,7 +65,9 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
   `<arrival>` element
 - Stabilize the computation of derivatives in the Okal geometrical spreading
   model, thus avoiding numerical instabilities.
-- Spped up map plotting when using coastlines
+- Speed up map plotting when using coastlines
+- Gently skip building spectra for station with very short data windows (less
+  than 10 samples)
 
 ## v1.8 - 2024-04-07
 
