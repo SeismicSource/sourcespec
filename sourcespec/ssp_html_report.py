@@ -395,6 +395,12 @@ def _add_event_info_to_html(config, replacements):
     event_url = config.event_url
     if event_url is not None:
         event_url = event_url.replace('$EVENTID', evid)
+        event_year = hypo.origin_time.year
+        event_month = hypo.origin_time.month
+        event_day = hypo.origin_time.day
+        event_url = event_url.replace('$YEAR', f'{event_year:04d}')
+        event_url = event_url.replace('$MONTH', f'{event_month:02d}')
+        event_url = event_url.replace('$DAY', f'{event_day:02d}')
         parsed_url = urlparse(event_url)
         if not parsed_url.scheme:
             logger.warning(
