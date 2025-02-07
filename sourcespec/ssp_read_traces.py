@@ -283,19 +283,33 @@ def _build_filelist(path, filelist, tmpdir):
             logger.error(err)
             return
         if tarfile.is_tarfile(path) and tmpdir is not None:
-            with tarfile.open(path) as tar:
-                try:
-                    tar.extractall(path=tmpdir)
-                except Exception as msg:
-                    logger.warning(
-                        f'{path}: Unable to fully extract tar archive: {msg}')
+            try:
+                tar = tarfile.open(path)
+            except tarfile.ReadError:
+                # is_tarfile() gave a false positive, just append the file
+                # to the file list and let ObsPy handle it
+                filelist.append(path)
+                return
+            try:
+                tar.extractall(path=tmpdir)
+            except Exception as msg:
+                logger.warning(
+                    f'{path}: Unable to fully extract tar archive: {msg}')
+            tar.close()
         elif zipfile.is_zipfile(path) and tmpdir is not None:
-            with zipfile.ZipFile(path) as zipf:
-                try:
-                    zipf.extractall(path=tmpdir)
-                except Exception as msg:
-                    logger.warning(
-                        f'{path}: Unable to fully extract zip archive: {msg}')
+            try:
+                zipf = zipfile.ZipFile(path)
+            except zipfile.BadZipFile:
+                # is_zipfile() gave a false positive, just append the file
+                # to the file list and let ObsPy handle it
+                filelist.append(path)
+                return
+            try:
+                zipf.extractall(path=tmpdir)
+            except Exception as msg:
+                logger.warning(
+                    f'{path}: Unable to fully extract zip archive: {msg}')
+            zipf.close()
         else:
             filelist.append(path)
 
