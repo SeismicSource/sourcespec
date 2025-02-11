@@ -36,6 +36,7 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
   parameter
 - `plot_sourcepars`: Gutenberg-Richter plot with optional fit of the
   magnitude of completeness and the a and b values
+- `plot_sourcepars`: new plot type: Mw vs. time
 - Support for Matplotlib 3.9
 - Maps: use PlateCarree projection for small maps (map diagonal below 100 km),
   which speeds up the plotting

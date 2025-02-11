@@ -22,16 +22,18 @@ import matplotlib.pyplot as plt
 import matplotlib.patheffects as patheffects
 import scipy.stats as stats
 from scipy.optimize import curve_fit
+from obspy import UTCDateTime
 
 valid_plot_types = [
     'fc', 'Er', 'ssd', 'ra', 'Mo', 't_star', 'Qo', 'sigma_a',
-    'fc_mw', 'Er_mw', 'ssd_mw', 'ssd_depth', 'GR'
+    'fc_mw', 'Er_mw', 'ssd_mw', 'ssd_depth', 'mw_time', 'GR'
 ]
 # the parameter base color is the same as in ssp_plot_params_stats.py
 valid_parameters = {
     'depth': ('Depth', 'km', 'lin', '#1E90FF'),
     'nsta': ('Number of Stations', None, 'lin', '#F0C300'),
     'Mo': ('Seismic Moment', 'N·m', 'log', '#EE5835'),
+    'Mw': ('Moment Magnitude', None, 'lin', '#EE5835'),
     'fc': ('Corner Frequency', 'Hz', 'log', '#6FBA6C'),
     'ssd': ('Static Stress Drop', 'MPa', 'log', '#D4ADD2'),
     'ra': ('Source Radius', 'm', 'lin', '#FAAC64'),
@@ -64,20 +66,26 @@ class Annot():
     """
     Annotate the plot with the evid, Mw and the value of the parameter.
     """
-    def __init__(self, xdata, ydata, labels, yformat):
+    def __init__(self, xdata, ydata, labels, yformat, xformat=None):
         self.xdata = xdata
         self.ydata = ydata
         self.labels = labels
         self.yformat = yformat
+        self.xformat = xformat
 
     def __call__(self, event):
         ind = event.ind
         x = np.take(self.xdata, ind)
         y = np.take(self.ydata, ind)
         label = np.take(self.labels, ind)
-        for Mw, yvalue, evid in zip(x, y, label):
+        for xvalue, yvalue, evid in zip(x, y, label):
+            xstring = (
+                self.xformat.format(xvalue)
+                if self.xformat is not None
+                else f'Mw {xvalue:.1f}'
+            )
             ystring = self.yformat.format(yvalue)
-            print(f'{evid} Mw {Mw:.1f} {ystring}')
+            print(f'{evid} {xstring} {ystring}')
 
 
 def mag_to_moment(mag, b=0.5):
@@ -377,6 +385,8 @@ def query_event_params_into_numpy(cursor, param, param_type, query_condition):
     result = np.array(cursor.fetchall())
     if len(result) == 0:
         raise ValueError('No events found')
+    if param_type == UTCDateTime:
+        return np.array([UTCDateTime(t) for t in result[:, 0]])
     return result[:, 0].astype(param_type)
 
 
@@ -409,6 +419,8 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             query_condition = ''
         self.evids = query_event_params_into_numpy(
             self.cur, 'evid', str, query_condition)
+        self.time = query_event_params_into_numpy(
+            self.cur, 'orig_time', UTCDateTime, query_condition)
         self.depth = query_event_params_into_numpy(
             self.cur, 'depth', np.float64, query_condition)
         self.vp = query_event_params_into_numpy(
@@ -506,6 +518,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
     def skip_events(self, idx):
         """Skip events with index idx."""
         self.evids = np.delete(self.evids, idx)
+        self.time = np.delete(self.time, idx)
         self.depth = np.delete(self.depth, idx)
         self.vp = np.delete(self.vp, idx)
         self.vs = np.delete(self.vs, idx)
@@ -806,7 +819,8 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             fig, ax, depth, ssd, depth_bins, ssd_bins, cbaxes_location='left')
 
     def _scatter_plot(self, fig, ax, x, y, x_err, y_err, evids, yformat, cond,
-                      colorby=None, colormap=None, cbaxes_location='left'):
+                      colorby=None, colormap=None, cbaxes_location='left',
+                      xformat=None):
         """
         General method to plot scatter plots with error bars and optional
         color coding.
@@ -850,8 +864,9 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
                 raise ValueError('Invalid cbaxes_location')
             if len(label) > 10:
                 label = label.replace(' (', '\n(')
+            cbaxes.set_zorder(1000)
             plt.colorbar(sc, cax=cbaxes, label=label)
-        annot = Annot(x, y, evids, yformat)
+        annot = Annot(x, y, evids, yformat, xformat)
         fig.canvas.mpl_connect('pick_event', annot)
         return len(y)
 
@@ -1127,6 +1142,60 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         self._add_grid(ax)
         plt.show()
 
+    def plot_mw_time(self, colorby=None, colormap=None):
+        """
+        Plot the moment magnitude vs time.
+
+        Parameters
+        ----------
+        colorby : str
+            Color the data points by the given parameter.
+        colormap : str
+            Use this colormap for the colorby parameter instead of the default.
+        """
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.set_zorder(10)
+        ax.patch.set_visible(False)
+        ax.set_xlabel('Time')
+        ax.xaxis.set_major_formatter(
+            plt.matplotlib.dates.DateFormatter('%Y-%m-%d')
+        )
+        ax.set_ylabel(get_param_label('Mw'))
+        mpl_time = np.array([t.matplotlib_date for t in self.time])
+        padding_x = 0.05 * (np.max(mpl_time) - np.min(mpl_time))
+        padding_y = 0.05 * (
+            np.max(self.mw + self.mw_err_plus) -
+            np.min(self.mw - self.mw_err_minus)
+        )
+        ax.set_xlim(np.min(mpl_time) - padding_x, np.max(mpl_time) + padding_x)
+        ax.set_ylim(
+            np.min(self.mw - self.mw_err_minus) - padding_y,
+            np.max(self.mw + self.mw_err_plus) + padding_y
+        )
+        cond = ~np.isnan(self.mw)
+        npoints = self._scatter_plot(
+            fig, ax, mpl_time, self.mw,
+            np.zeros_like(self.time), [self.mw_err_minus, self.mw_err_plus],
+            self.evids, 'Mw {:.2f}', cond,
+            colorby, colormap, cbaxes_location='right', xformat='{}')
+
+        # Add cumulative moment axis
+        ax2 = ax.twinx()
+        ax2.set_zorder(0)
+        ax2.set_ylabel('Cumulative Moment (N·m)')
+        isort = np.argsort(mpl_time)
+        mpl_time = mpl_time[isort]
+        Mo = self.Mo[isort]
+        cumulative_moment = np.cumsum(Mo)
+        ax2.plot(
+            mpl_time, cumulative_moment, color='red', alpha=0.6, lw=2)
+        ax2.set_ylim(0, np.max(cumulative_moment) * 1.1)
+
+        extra_text = 'Mw vs Time'
+        self._set_plot_title(ax, npoints, extra_text, align='left')
+        self._add_grid(ax)
+        plt.show()
+
     def plot_hist(self, param_name, nbins=None, wave_type='S'):
         """
         Plot a histogram of the given parameter.
@@ -1320,6 +1389,8 @@ def run():
         params.plot_ssd_depth(
             args.hist, args.fit, args.nbins,
             args.colorby, args.colormap)
+    elif args.plot_type == 'mw_time':
+        params.plot_mw_time(args.colorby, args.colormap)
     elif args.plot_type == 'GR':
         params.plot_gutenberg_richter(
             args.magmin, args.magmax, args.nbins, args.fit)
