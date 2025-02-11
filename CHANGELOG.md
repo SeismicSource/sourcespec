@@ -34,6 +34,8 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 - `plot_sourcepars`: new plot type: static stress drop vs. depth
 - `plot_sourcepars`: option to color data points in scatter plot by another
   parameter
+- `plot_sourcepars`: Gutenberg-Richter plot with optional fit of the
+  magnitude of completeness and the a and b values
 - Support for Matplotlib 3.9
 - Maps: use PlateCarree projection for small maps (map diagonal below 100 km),
   which speeds up the plotting

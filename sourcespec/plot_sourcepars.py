@@ -13,16 +13,20 @@ plot_sourcepars.py
 """
 import argparse
 import contextlib
+import itertools
 import sys
 import os
 import sqlite3
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as patheffects
+import scipy.stats as stats
 from scipy.optimize import curve_fit
 
 valid_plot_types = [
     'fc', 'Er', 'ssd', 'ra', 'Mo', 't_star', 'Qo', 'sigma_a',
-    'fc_mw', 'Er_mw', 'ssd_mw', 'ssd_depth']
+    'fc_mw', 'Er_mw', 'ssd_mw', 'ssd_depth', 'GR'
+]
 # the parameter base color is the same as in ssp_plot_params_stats.py
 valid_parameters = {
     'depth': ('Depth', 'km', 'lin', '#1E90FF'),
@@ -172,6 +176,103 @@ def calc_r2(x, y, yerr, a, b):
     SS_tot = np.sum(((y - y_mean) / yerr)**2.)
     SS_res = np.sum(((y - y_calc) / yerr)**2.)
     return 1 - SS_res / SS_tot
+
+
+def compute_mc(magnitudes, magn_bin, vector_compl, pval):
+    """
+    Compute the magnitude of completeness of a seismic catalog using the
+    method in Taroni 2023 - TSR, https://doi.org/10.1785/0320230017.
+
+    This code is translated from the original MATLAB code provided by
+    Matteo Taroni.
+
+    Parameters:
+    -----------
+    magnitudes : np.ndarray
+        Vector of magnitudes.
+    magn_bin : float
+        Binning of the magnitudes (e.g., 0.01 or 0.1).
+    vector_compl : np.ndarray
+        Vector of completeness values to analyze.
+    pval : float
+        P-value threshold for the complete part of the catalog (e.g., 0.1).
+
+    Returns:
+    --------
+    mc : float
+        The magnitude of completeness of the catalog.
+    """
+    # Preallocate P-value matrix
+    pvalue_unif = np.zeros((100, len(vector_compl)))
+    # CDF of uniform distribution
+    cdf_unif = stats.uniform()
+    # Loop over different completeness values
+    for i, j in itertools.product(range(len(vector_compl)), range(100)):
+        # Add uniform error to magnitudes
+        magn = magnitudes + (np.random.rand(len(magnitudes)) - 0.5) * magn_bin
+        # Select magnitudes above completeness threshold
+        magn_ok = magn[magn >= vector_compl[i]] - vector_compl[i]
+        # Transformation from exponential to uniform random variables
+        if len(magn_ok) < 2:
+            continue
+        transf = magn_ok[:-1:2] / (magn_ok[:-1:2] + magn_ok[1::2])
+        # Kolmogorov-Smirnov test for uniformity
+        _, pvalue_unif[j, i] = stats.kstest(transf, cdf_unif.cdf)
+    p_mean = np.mean(pvalue_unif, axis=0)
+    # Find the magnitude of completeness (first mean p-value >= Pval)
+    mc_candidates = vector_compl[p_mean >= pval]
+    return np.min(mc_candidates) if mc_candidates.size > 0 else None
+
+
+def fit_gutenberg_richter(bin_centers, cum_nevs, mc):
+    """
+    Fit the Gutenberg-Richter law to the data points.
+
+    Parameters:
+    -----------
+    bin_centers : np.ndarray
+        Bin centers.
+    cum_nevs : np.ndarray
+        Cumulative number of events.
+    mc : float
+        Magnitude of completeness.
+
+    Returns:
+    --------
+    a, b : float
+        G-R law parameters.
+    """
+    def gr_law(mw, a, b):
+        return a - b * mw
+    # discard bins with no events
+    log_cum_nevs = np.log10(cum_nevs[cum_nevs > 0])
+    bin_centers_fit = bin_centers[cum_nevs > 0]
+    # discard bins below the magnitude of completeness
+    log_cum_nevs_fit = log_cum_nevs[bin_centers_fit >= mc]
+    bin_centers_fit = bin_centers_fit[bin_centers_fit >= mc]
+    # with full_output = False, always returns a 2-tuple
+    # pylint: disable-next=unbalanced-tuple-unpacking
+    popt, _ = curve_fit(
+        gr_law, bin_centers_fit, log_cum_nevs_fit,
+        full_output=False
+    )
+    a, b = popt
+    # discard bins which are too far away from the fit and re-fit
+    while True:
+        residuals = log_cum_nevs_fit - gr_law(bin_centers_fit, a, b)
+        std_res = np.std(residuals)
+        cond = np.abs(residuals) < 2 * std_res
+        if np.all(cond):
+            break
+        log_cum_nevs_fit = log_cum_nevs_fit[cond]
+        bin_centers_fit = bin_centers_fit[cond]
+        # pylint: disable-next=unbalanced-tuple-unpacking
+        popt, _ = curve_fit(
+            gr_law, bin_centers_fit, log_cum_nevs_fit, p0=(a, b),
+            full_output=False
+        )
+        a, b = popt
+    return a, b
 
 
 def parse_args():
@@ -491,7 +592,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             True, which='minor', linestyle='solid',
             color='#DDDDDD', zorder=0)
 
-    def _set_plot_title(self, ax, nevs=None, extra_text=None):
+    def _set_plot_title(self, ax, nevs=None, extra_text=None, align='center'):
         """Set the plot title."""
         if nevs is None:
             nevs = len(self.evids)
@@ -508,7 +609,26 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             title += f' - runid: {self.runid}'
         if extra_text is not None:
             title += f'\n{extra_text}'
-        ax.set_title(title, y=0.95, verticalalignment='top')
+        align_options = {
+            'center': (0.5, 0.95, 'center', 'top'),
+            'left': (0.05, 0.95, 'left', 'top'),
+            'right': (0.95, 0.95, 'right', 'top')
+        }
+        try:
+            xpos, ypos, ha, va = align_options[align]
+        except KeyError as e:
+            raise ValueError('Invalid align') from e
+        bbox = {
+            'facecolor': 'white',
+            'edgecolor': 'black',
+            'boxstyle': 'round',
+            'alpha': 0.7
+        }
+        ax.set_title(
+            title, x=xpos, y=ypos,
+            horizontalalignment=ha, verticalalignment=va,
+            bbox=bbox
+        )
 
     def _stress_drop_curves_fc_mw(self, vel, k_parameter, ax):
         """Plot stress-drop curves for different delta_sigma."""
@@ -530,7 +650,8 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             if label.endswith('.0'):
                 label = label[:-2]
             label += ' MPa'
-            ax.text(mw_test[-1], fc_test[-1], label)
+            outline = patheffects.withStroke(linewidth=2, foreground='white')
+            ax.text(mw_test[-1], fc_test[-1], label, path_effects=[outline])
         ax.set_ylim((fc_min * 0.9, fc_max * 1.1))
 
     def _stress_drop_curves_Er_mw(self, mu, ax):
@@ -552,7 +673,8 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             if label.endswith('.0'):
                 label = label[:-2]
             label += ' MPa'
-            ax.text(mw_test[-1], Er_test[-1], label)
+            outline = patheffects.withStroke(linewidth=2, foreground='white')
+            ax.text(mw_test[-1], Er_test[-1], label, path_effects=[outline])
         ax.set_ylim((Er_min * 0.5, Er_max * 2))
 
     def _apparent_stress_curves_Er_mw(self, mu, ax):
@@ -574,7 +696,8 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             if label.endswith('.0'):
                 label = label[:-2]
             label += ' MPa'
-            ax.text(mw_test[-1], Er_test[-1], label)
+            outline = patheffects.withStroke(linewidth=2, foreground='white')
+            ax.text(mw_test[-1], Er_test[-1], label, path_effects=[outline])
         ax.set_ylim((Er_min * 0.5, Er_max * 2))
 
     def _2d_hist(self, fig, ax, x, y, x_bins, y_bins, cbaxes_location):
@@ -1069,6 +1192,101 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         ax.set_title(title)
         plt.show()
 
+    def plot_gutenberg_richter(
+            self, magmin=None, magmax=None, nbins=None, fit=False):
+        """
+        Plot the Gutenberg-Richter law.
+
+        Parameters
+        ----------
+        magmin : float
+            Minimum magnitude for the plot.
+        magmax : float
+            Maximum magnitude for the plot.
+        nbins : int
+            Number of bins for the histogram.
+        fit : bool
+            If True, find the magnitude of completeness and
+            fit the Gutenberg-Richter law to the data.
+        """
+        if magmin is None:
+            magmin = np.floor(np.min(self.mw - self.mw_err_minus))
+        if magmax is None:
+            magmax = np.ceil(np.max(self.mw + self.mw_err_plus))
+        if nbins is None:
+            nbins = int((magmax - magmin) * 10)
+            print(f'Number of bins autoset to: {nbins}')
+
+        bins = np.linspace(magmin, magmax, nbins + 1)
+        hist, bin_edges = np.histogram(self.mw, bins=bins)
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+        cum_nevs = np.cumsum(hist[::-1])[::-1]
+
+        if fit:
+            mc = compute_mc(self.mw, 0.1, bin_centers, 0.1)
+            print(f'Magnitude of completeness: {mc:.2f}')
+            a, b = fit_gutenberg_richter(bin_centers, cum_nevs, mc)
+            print(f'G-R law parameters: a={a:.2f}, b={b:.2f}')
+            mw_fit = np.linspace(mc, magmax, 100)
+            gr_fit = 10**(a - b * mw_fit)
+
+        _fig, ax1 = plt.subplots(figsize=(10, 6))
+        ax1.set_zorder(1)
+        ax1.patch.set_visible(False)
+        ax1.plot(
+            bin_centers, cum_nevs, 'o',
+            color='#FCBA25', markeredgecolor='black', markersize=8,
+            zorder=10)
+        if fit:
+            outline = patheffects.withStroke(linewidth=0.5, foreground='black')
+            bbox = {
+                'facecolor': 'white',
+                'edgecolor': 'black',
+                'boxstyle': 'round',
+                'alpha': 0.7
+            }
+            # plot the G-R law
+            ax1.plot(mw_fit, gr_fit, color='#FCBA25', linewidth=4, zorder=2)
+            xmin, xmax = ax1.get_xlim()
+            # add a label with the G-R law parameters
+            gr_text_x = 0.805
+            gr_text_x_data = xmin + gr_text_x * (xmax - xmin)
+            gr_text_y_data = 10**(a - b * gr_text_x_data)*1.2
+            gr_text = f'G-R params:\na={a:.2f}, b={b:.2f}'
+            ax1.text(
+                gr_text_x, gr_text_y_data, gr_text, color='#FCBA25',
+                transform=ax1.get_yaxis_transform(),
+                horizontalalignment='left', verticalalignment='bottom',
+                path_effects=[outline,], bbox=bbox
+            )
+            # add a vertical line at the magnitude of completeness
+            ax1.axvline(mc, color='red', linestyle='--', zorder=2)
+            # add a label with the magnitude of completeness
+            mc_text_x_data = mc + 0.02 * (xmax - xmin)
+            mc_text = f'$M_C$={mc:.2f}'
+            ax1.text(
+                mc_text_x_data, 0.97, mc_text, color='red',
+                transform=ax1.get_xaxis_transform(),
+                horizontalalignment='left', verticalalignment='top',
+                path_effects=[outline,], bbox=bbox
+            )
+        ax1.set_yscale('log')
+        ax1.set_xlabel('Magnitude (Mw)')
+        ax1.set_ylabel('Cumulative Number of Events', color='#FCBA25')
+        ax1.tick_params(axis='y', labelcolor='#FCBA25')
+
+        ax2 = ax1.twinx()
+        ax2.set_zorder(0)
+        ax2.hist(self.mw, bins=bins, color='#1E90FF', alpha=0.6)
+        ax2.set_ylabel('Number of Events', color='#1E90FF')
+        ax2.tick_params(axis='y', labelcolor='#1E90FF')
+        ax2.set_ylim(0, max(hist) * 1.5)
+
+        extra_text = f'Gutenberg-Richter Law\n{nbins} bins'
+        self._set_plot_title(ax1, extra_text=extra_text, align='right')
+        self._add_grid(ax1)
+        plt.show()
+
 
 def run():
     """Run the script."""
@@ -1102,6 +1320,9 @@ def run():
         params.plot_ssd_depth(
             args.hist, args.fit, args.nbins,
             args.colorby, args.colormap)
+    elif args.plot_type == 'GR':
+        params.plot_gutenberg_richter(
+            args.magmin, args.magmax, args.nbins, args.fit)
     elif args.plot_type in valid_plot_types:
         params.plot_hist(args.plot_type, args.nbins, args.wave_type)
 
