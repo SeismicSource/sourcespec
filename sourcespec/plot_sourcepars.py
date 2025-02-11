@@ -439,11 +439,11 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             self.cur, 'nobs', np.int32, query_condition)
         self.Mo = query_event_params_into_numpy(
             self.cur, f'Mo_{stat}', np.float64, query_condition)
-        self.mw = query_event_params_into_numpy(
+        self.Mw = query_event_params_into_numpy(
             self.cur, f'Mw_{stat}', np.float64, query_condition)
-        self.mw_err_minus = query_event_params_into_numpy(
+        self.Mw_err_minus = query_event_params_into_numpy(
             self.cur, f'Mw_{stat}_err_minus', np.float64, query_condition)
-        self.mw_err_plus = query_event_params_into_numpy(
+        self.Mw_err_plus = query_event_params_into_numpy(
             self.cur, f'Mw_{stat}_err_plus', np.float64, query_condition)
         self.fc = query_event_params_into_numpy(
             self.cur, f'fc_{stat}', np.float64, query_condition)
@@ -528,9 +528,9 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         self.wave_type = np.delete(self.wave_type, idx)
         self.nsta = np.delete(self.nsta, idx)
         self.Mo = np.delete(self.Mo, idx)
-        self.mw = np.delete(self.mw, idx)
-        self.mw_err_minus = np.delete(self.mw_err_minus, idx)
-        self.mw_err_plus = np.delete(self.mw_err_plus, idx)
+        self.Mw = np.delete(self.Mw, idx)
+        self.Mw_err_minus = np.delete(self.Mw_err_minus, idx)
+        self.Mw_err_plus = np.delete(self.Mw_err_plus, idx)
         self.fc = np.delete(self.fc, idx)
         self.fc_err_minus = np.delete(self.fc_err_minus, idx)
         self.fc_err_plus = np.delete(self.fc_err_plus, idx)
@@ -562,9 +562,9 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         if stamax is not None:
             cond = np.logical_and(cond, self.nsta <= stamax)
         if magmin is not None:
-            cond = np.logical_and(cond, self.mw >= magmin)
+            cond = np.logical_and(cond, self.Mw >= magmin)
         if magmax is not None:
-            cond = np.logical_and(cond, self.mw <= magmax)
+            cond = np.logical_and(cond, self.Mw <= magmax)
         if ssdmin is not None:
             cond = np.logical_and(cond, self.ssd >= ssdmin)
         if ssdmax is not None:
@@ -580,11 +580,11 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         if self.args.magmin is not None:
             mag_min = self.args.magmin
         else:
-            mag_min = np.floor(np.min(self.mw - self.mw_err_minus))
+            mag_min = np.floor(np.min(self.Mw - self.Mw_err_minus))
         if self.args.magmax is not None:
             mag_max = self.args.magmax
         else:
-            mag_max = np.ceil(np.max(self.mw + self.mw_err_plus))
+            mag_max = np.ceil(np.max(self.Mw + self.Mw_err_plus))
         xlim_mag = (mag_min, mag_max)
         fig = plt.figure(figsize=(10, 6))
         ax_Mo = fig.add_subplot(111)
@@ -745,7 +745,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         mw_bins = np.linspace(mw_min, mw_max + 0.1, mw_nbins)
         fc_bins = 10**np.linspace(log_fc_min, log_fc_max + 0.1, fc_nbins)
         cond = self.wave_type == wave_type
-        mw = self.mw[cond]
+        mw = self.Mw[cond]
         if len(mw) == 0:
             raise ValueError(f'No events found for wave type "{wave_type}"')
         fc = self.fc[cond]
@@ -769,7 +769,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         self.nbins_x = mw_nbins
         self.nbins_y = Er_nbins
         cond = ~np.isnan(self.Er)
-        mw = self.mw[cond]
+        mw = self.Mw[cond]
         Er = self.Er[cond]
         return self._2d_hist(
             fig, ax, mw, Er, mw_bins, Er_bins, cbaxes_location='right')
@@ -791,7 +791,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         self.nbins_x = mw_nbins
         self.nbins_y = ssd_nbins
         cond = ~np.isnan(self.ssd)
-        mw = self.mw[cond]
+        mw = self.Mw[cond]
         ssd = self.ssd[cond]
         return self._2d_hist(
             fig, ax, mw, ssd, mw_bins, ssd_bins, cbaxes_location='left')
@@ -877,9 +877,9 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         evids = self.evids[cond]
         if len(evids) == 0:
             raise ValueError(f'No events found for wave type "{wave_type}"')
-        mw = self.mw[cond]
-        mw_err_minus = self.mw_err_minus[cond]
-        mw_err_plus = self.mw_err_plus[cond]
+        mw = self.Mw[cond]
+        mw_err_minus = self.Mw_err_minus[cond]
+        mw_err_plus = self.Mw_err_plus[cond]
         fc = self.fc[cond]
         fc_err_minus = self.fc_err_minus[cond]
         fc_err_plus = self.fc_err_plus[cond]
@@ -893,9 +893,9 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
     def _scatter_Er_mw(self, fig, ax, colorby=None, colormap=None):
         """Plot the scatter plot of Er vs mw."""
         cond = ~np.isnan(self.Er)
-        mw = self.mw[cond]
-        mw_err_minus = self.mw_err_minus[cond]
-        mw_err_plus = self.mw_err_plus[cond]
+        mw = self.Mw[cond]
+        mw_err_minus = self.Mw_err_minus[cond]
+        mw_err_plus = self.Mw_err_plus[cond]
         Er = self.Er[cond]
         Er_err_minus = self.Er_err_minus[cond]
         Er_err_plus = self.Er_err_plus[cond]
@@ -911,9 +911,9 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
     def _scatter_ssd_mw(self, fig, ax, colorby=None, colormap=None):
         """Plot the scatter plot of ssd vs mw."""
         cond = ~np.isnan(self.ssd)
-        mw = self.mw[cond]
-        mw_err_minus = self.mw_err_minus[cond]
-        mw_err_plus = self.mw_err_plus[cond]
+        mw = self.Mw[cond]
+        mw_err_minus = self.Mw_err_minus[cond]
+        mw_err_plus = self.Mw_err_plus[cond]
         ssd = self.ssd[cond]
         ssd_err_minus = self.ssd_err_minus[cond]
         ssd_err_plus = self.ssd_err_plus[cond]
@@ -953,7 +953,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
                 return fc_mw_function(mw, a, -0.5)
         y = np.log10(self.fc)
         # pylint: disable=unbalanced-tuple-unpacking
-        popt, _pcov = curve_fit(f, self.mw, y)
+        popt, _pcov = curve_fit(f, self.Mw, y)
         try:
             a, b = popt
         except Exception:
@@ -962,7 +962,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         print(f'a: {a:.1f} b {b:.1f}:')
         slope = (3 / 2) / b
         print(f'slope: {slope:.1f}')
-        r2 = calc_r2(self.mw, y, np.ones_like(y), a, b)
+        r2 = calc_r2(self.Mw, y, np.ones_like(y), a, b)
         print('r2:', r2)
         # print('r2_err:', r2_err)
         delta_sigma = 1. / ((vel * 1000.)**3.) * 10**(a + 9.1 + 0.935)
@@ -1164,18 +1164,18 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         mpl_time = np.array([t.matplotlib_date for t in self.time])
         padding_x = 0.05 * (np.max(mpl_time) - np.min(mpl_time))
         padding_y = 0.05 * (
-            np.max(self.mw + self.mw_err_plus) -
-            np.min(self.mw - self.mw_err_minus)
+            np.max(self.Mw + self.Mw_err_plus) -
+            np.min(self.Mw - self.Mw_err_minus)
         )
         ax.set_xlim(np.min(mpl_time) - padding_x, np.max(mpl_time) + padding_x)
         ax.set_ylim(
-            np.min(self.mw - self.mw_err_minus) - padding_y,
-            np.max(self.mw + self.mw_err_plus) + padding_y
+            np.min(self.Mw - self.Mw_err_minus) - padding_y,
+            np.max(self.Mw + self.Mw_err_plus) + padding_y
         )
-        cond = ~np.isnan(self.mw)
+        cond = ~np.isnan(self.Mw)
         npoints = self._scatter_plot(
-            fig, ax, mpl_time, self.mw,
-            np.zeros_like(self.time), [self.mw_err_minus, self.mw_err_plus],
+            fig, ax, mpl_time, self.Mw,
+            np.zeros_like(self.time), [self.Mw_err_minus, self.Mw_err_plus],
             self.evids, 'Mw {:.2f}', cond,
             colorby, colormap, cbaxes_location='right', xformat='{}')
 
@@ -1279,20 +1279,20 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             fit the Gutenberg-Richter law to the data.
         """
         if magmin is None:
-            magmin = np.floor(np.min(self.mw - self.mw_err_minus))
+            magmin = np.floor(np.min(self.Mw - self.Mw_err_minus))
         if magmax is None:
-            magmax = np.ceil(np.max(self.mw + self.mw_err_plus))
+            magmax = np.ceil(np.max(self.Mw + self.Mw_err_plus))
         if nbins is None:
             nbins = int((magmax - magmin) * 10)
             print(f'Number of bins autoset to: {nbins}')
 
         bins = np.linspace(magmin, magmax, nbins + 1)
-        hist, bin_edges = np.histogram(self.mw, bins=bins)
+        hist, bin_edges = np.histogram(self.Mw, bins=bins)
         bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
         cum_nevs = np.cumsum(hist[::-1])[::-1]
 
         if fit:
-            mc = compute_mc(self.mw, 0.1, bin_centers, 0.1)
+            mc = compute_mc(self.Mw, 0.1, bin_centers, 0.1)
             print(f'Magnitude of completeness: {mc:.2f}')
             a, b = fit_gutenberg_richter(bin_centers, cum_nevs, mc)
             print(f'G-R law parameters: a={a:.2f}, b={b:.2f}')
@@ -1346,7 +1346,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
 
         ax2 = ax1.twinx()
         ax2.set_zorder(0)
-        ax2.hist(self.mw, bins=bins, color='#1E90FF', alpha=0.6)
+        ax2.hist(self.Mw, bins=bins, color='#1E90FF', alpha=0.6)
         ax2.set_ylabel('Number of Events', color='#1E90FF')
         ax2.tick_params(axis='y', labelcolor='#1E90FF')
         ax2.set_ylim(0, max(hist) * 1.5)
