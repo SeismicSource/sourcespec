@@ -100,6 +100,18 @@ def mag_to_moment(mag, b=0.5):
     return np.power(10, (3 * b * mag + 9.1))
 
 
+def moment_to_mag(moment, b=0.5):
+    """
+    Convert moment to magnitude.
+
+    The parameter b is used to change the slope of the fc-Mw stress drop curve.
+
+    The standard value of b is 0.5, which corresponds to a self-similar model.
+    """
+    moment = np.asarray(moment)
+    return (np.log10(moment) - 9.1) / (3 * b)
+
+
 def stress_drop_curve_fc_mw(delta_sigma, vel, mw, k=0.3724, b=-0.5):
     """
     Constant stress drop curve in fc vs Mw.
@@ -1190,6 +1202,23 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         ax2.plot(
             mpl_time, cumulative_moment, color='red', alpha=0.6, lw=2)
         ax2.set_ylim(0, np.max(cumulative_moment) * 1.1)
+        final_moment = cumulative_moment[-1]
+        cum_mag = moment_to_mag(final_moment)
+        cum_mag_text = f'Cumulative\nMw: {cum_mag:.2f}'
+        bbox = {
+            'facecolor': 'white',
+            'edgecolor': 'black',
+            'boxstyle': 'round',
+            'alpha': 0.9
+        }
+        # we add the text to the first axis, so that it is on top,
+        # but we need to transform the coordinates to the second axis
+        ax.text(
+            mpl_time[-1], cumulative_moment[-1],
+            cum_mag_text, color='red',
+            transform=ax2.transData,
+            verticalalignment='bottom', horizontalalignment='left',
+            bbox=bbox, zorder=50)
 
         extra_text = 'Mw vs Time'
         self._set_plot_title(ax, npoints, extra_text, align='left')
