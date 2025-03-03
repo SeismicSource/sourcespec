@@ -301,7 +301,7 @@ downloaded and installed during the setup process.
 
 ### Installing the latest release
 
-### Using Anaconda
+#### Using Anaconda
 
 The following command will automatically create an [Anaconda] environment
 named `sourcespec`, install the required packages and install the latest
