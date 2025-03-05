@@ -24,14 +24,15 @@ def compute_sensitivity_from_SAC(trace, config):
     # Securize the string before calling eval()
     # see https://stackoverflow.com/a/25437733/2021880
     inp = re.sub(r'\.(?![0-9])', '', config.sensitivity)
-    # Check if string contains letters, meaning that
-    # it must contain SAC header fields and trace must be in SAC format
-    namespace = None
-    if re.search(r'[a-zA-Z]', inp):
-        try:
-            namespace = trace.stats.sac
-        except Exception as e:
-            raise TypeError(f'{trace.id}: trace must be in SAC format') from e
+    # Try returning a float conversion of the string
+    with contextlib.suppress(ValueError):
+        return float(inp)
+    # If the above fails, try evaluating the string as a combination of
+    # SAC header fields
+    try:
+        namespace = trace.stats.sac
+    except Exception as e:
+        raise TypeError(f'{trace.id}: trace must be in SAC format') from e
     try:
         sensitivity = eval(inp, {}, namespace)  # pylint: disable=eval-used
     except NameError as msg:

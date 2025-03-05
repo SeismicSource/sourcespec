@@ -71,6 +71,8 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 - Speed up map plotting when using coastlines
 - Gently skip building spectra for station with very short data windows (less
   than 10 samples)
+- Fix for `sensitivity` config parameter always requiring a SAC file. Now, if
+  `sensitivity` is a numerical value, any file format is accepted.
 
 ## v1.8 - 2024-04-07
 
