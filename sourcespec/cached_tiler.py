@@ -39,7 +39,7 @@ class CachedTiler():
         # Mimic the tiler interface, but for methods, ensure that the "self"
         # that is passed through continues to be CachedTiler, and not the
         # contained tiler instance.
-        attr = getattr(self.tiler, name, None)
+        attr = getattr(self.tiler, name)  # raises AttributeError if not found
         if isinstance(attr, types.MethodType):
             attr = types.MethodType(attr.__func__, self)
         return attr
