@@ -32,12 +32,17 @@ def compute_sensitivity_from_SAC(trace, config):
     try:
         namespace = trace.stats.sac
     except Exception as e:
-        raise TypeError(f'{trace.id}: trace must be in SAC format') from e
+        raise TypeError(
+            f'{trace.id}: non-numerical values in the "sensitivity" config '
+            'option are only allowed for SAC traces.'
+        ) from e
     try:
         sensitivity = eval(inp, {}, namespace)  # pylint: disable=eval-used
     except NameError as msg:
         hdr_field = str(msg).split()[1]
-        logger.error(f'SAC header field {hdr_field} does not exist')
+        logger.error(
+            f'SAC header field {hdr_field} in the "sensitivity" config '
+            'option does not exist')
         ssp_exit(1)
     return sensitivity
 

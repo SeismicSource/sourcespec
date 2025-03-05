@@ -107,7 +107,13 @@ def _add_inventory(trace, inventory, config):
             coords = inv.get_coordinates(trace.id, trace.stats.starttime)
         paz = PAZ()
         paz.seedID = trace.id
-        paz.sensitivity = compute_sensitivity_from_SAC(trace, config)
+        try:
+            # try to convert sensitivity to float
+            paz.sensitivity = float(config.sensitivity)
+        except ValueError:
+            # if it fails, try to evaluate it as a string containing
+            # a combination of SAC header fields
+            paz.sensitivity = compute_sensitivity_from_SAC(trace, config)
         paz.poles = []
         paz.zeros = []
         if inv:
