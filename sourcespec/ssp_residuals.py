@@ -58,6 +58,7 @@ def spectral_residuals(config, spec_st, sspec_output):
             res.data_mag = _res_mag
             res.stats.software = 'SourceSpec'
             res.stats.software_version = get_versions()['version']
+            res.stats.runid = config.options.run_id
             residuals.append(res)
     # Save residuals to HDF5 file
     evid = config.event.event_id
