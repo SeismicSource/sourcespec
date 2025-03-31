@@ -186,5 +186,12 @@ def main():
     # write the mean residuals (the stations corrections)
     res_mean_file = 'residual_mean.hdf5'
     res_mean_file = os.path.join(outdir, res_mean_file)
+    if not residual_mean:
+        print(
+            'Mean residuals not computed: not enough spectra.\n'
+            'Minimum number of spectra ("--min_spectra") currently set to: '
+            f'{min_spectra}'
+        )
+        sys.exit(0)
     residual_mean.write(res_mean_file, format='HDF5')
     print(f'Mean station residuals saved to: {res_mean_file}')
