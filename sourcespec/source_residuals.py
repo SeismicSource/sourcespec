@@ -221,15 +221,15 @@ def plot_residuals(residual_dict, residual_mean, outdir):
         stat_id = spec_mean.id
         res = residual_dict[stat_id]
         figurefile = os.path.join(outdir, f'{stat_id}.res.png')
-        fig = plt.figure(dpi=160)
+        fig, ax = plt.subplots(dpi=160)
         for spec in res:
-            plt.semilogx(spec.freq, spec.data_mag, 'b-')
-        plt.semilogx(spec_mean.freq, spec_mean.data_mag, 'r-')
-        plt.xlabel('frequency (Hz)')
-        plt.ylabel('residual amplitude (obs - synth) in magnitude units')
-        plt.title(f'residuals: {stat_id} – {len(res)} records')
+            ax.semilogx(spec.freq, spec.data_mag, 'b-', alpha=0.5)
+        ax.semilogx(spec_mean.freq, spec_mean.data_mag, 'r-', linewidth=2)
+        ax.set_xlabel('frequency (Hz)')
+        ax.set_ylabel('residual amplitude (obs - synth) in magnitude units')
+        ax.set_title(f'residuals: {stat_id} – {len(res)} records')
         fig.savefig(figurefile, bbox_inches='tight')
-        plt.close()
+        plt.close(fig)
         print(f'Residual plot saved to: {figurefile}')
 
 
