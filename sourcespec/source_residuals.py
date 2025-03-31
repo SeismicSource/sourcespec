@@ -16,11 +16,13 @@ import sys
 import os
 from collections import defaultdict
 from argparse import ArgumentParser
+import numpy as np
+from scipy.interpolate import interp1d
 import matplotlib
 import matplotlib.pyplot as plt
 from sourcespec._version import get_versions
 from sourcespec.spectrum import read_spectra
-from sourcespec.ssp_util import moment_to_mag, mag_to_moment
+from sourcespec.ssp_util import mag_to_moment
 from sourcespec.spectrum import SpectrumStream
 matplotlib.use('Agg')  # NOQA
 
@@ -178,24 +180,31 @@ def compute_mean_residuals(residual_dict, min_spectra=20):
 
         freqs_min = [spec.freq.min() for spec in res]
         freqs_max = [spec.freq.max() for spec in res]
+        delta_f_min = min(spec.stats.delta for spec in res)
         freq_min = min(freqs_min)
         freq_max = max(freqs_max)
+        freq_array = np.arange(freq_min, freq_max + delta_f_min, delta_f_min)
 
         spec_mean = None
         for spec in res:
-            spec_slice = spec.slice(freq_min, freq_max, pad=True,
-                                    fill_value=mag_to_moment(0))
-            spec_slice.data_mag = moment_to_mag(spec_slice.data)
-            norm = (spec_slice.data_mag != 0).astype(int)
+            spec_interp = spec.copy()
+            # interpolate to the new frequency array
+            spec_interp.freq = freq_array
+            # spec_slice.data must exist, so we create it as zeros
+            spec_interp.data = np.zeros_like(freq_array)
+            # interpolate data_mag to the new frequency array
+            f = interp1d(spec.freq, spec.data_mag, fill_value='extrapolate')
+            spec_interp.data_mag = f(freq_array)
+            # norm is 1 where data_mag is not zero, 0 otherwise
+            norm = (spec_interp.data_mag != 0).astype(float)
             if spec_mean is None:
-                spec_mean = spec_slice
+                spec_mean = spec_interp
                 norm_mean = norm
             else:
-                try:
-                    spec_mean.data_mag += spec_slice.data_mag
-                except ValueError:
-                    continue
+                spec_mean.data_mag += spec_interp.data_mag
                 norm_mean += norm
+        # Make sure to avoid division by zero
+        norm_mean[norm_mean == 0] = np.nan
         spec_mean.data_mag /= norm_mean
         spec_mean.data = mag_to_moment(spec_mean.data_mag)
         spec_mean.stats.software = 'SourceSpec'

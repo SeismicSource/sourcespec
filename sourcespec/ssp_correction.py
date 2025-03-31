@@ -13,6 +13,7 @@ Spectral station correction calculated from ssp_residuals.
     (http://www.cecill.info/licences.en.html)
 """
 import logging
+import numpy as np
 from scipy.interpolate import interp1d
 from sourcespec.spectrum import read_spectra
 from sourcespec.ssp_util import moment_to_mag, mag_to_moment
@@ -42,15 +43,19 @@ def station_correction(spec_st, config):
         except IndexError:
             continue
         freq = spec.freq
-        fmin = freq.min()
-        fmax = freq.max()
-        corr = corr.slice(fmin, fmax)
-        corr.data_mag = moment_to_mag(corr.data)
+        corr_interp = corr.copy()
+        corr_interp.freq = freq
+        # corr_interp.data must exist, so we create it with zeros
+        corr_interp.data = np.zeros_like(freq)
+        # interpolate the correction to the same frequencies as the spectrum
+        f = interp1d(
+            corr.freq, corr.data_mag, fill_value='extrapolate')
+        corr_interp.data_mag = f(freq)
         spec_corr = spec.copy()
         # uncorrected spectrum will have component name 'h'
         spec.stats.channel = f'{spec.stats.channel[:-1]}h'
         try:
-            spec_corr.data_mag -= corr.data_mag
+            spec_corr.data_mag -= corr_interp.data_mag
         except ValueError as msg:
             logger.error(f'Cannot correct spectrum {spec.id}: {msg}')
             continue
@@ -61,6 +66,8 @@ def station_correction(spec_st, config):
         spec_corr.data = mag_to_moment(spec_corr.data_mag)
         spec_corr.data_logspaced = mag_to_moment(spec_corr.data_mag_logspaced)
         spec_st.append(spec_corr)
+        fmin = freq.min()
+        fmax = freq.max()
         logger.info(
             f'{spec_corr.id}: corrected, frequency range is: '
             f'{fmin:.2f} {fmax:.2f} Hz')

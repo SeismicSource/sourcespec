@@ -24,6 +24,7 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
   smoothed envelope of the trace
 - New config parameter `clipping_min_amplitude_ratio` to set a threshold for
   trace amplitude below which the trace is not checked for clipping
+- Use spectral interpolation to compute and apply station residuals
 
 ### Post-Inversion
 
