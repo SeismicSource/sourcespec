@@ -46,8 +46,16 @@ def spectral_residuals(config, spec_st, sspec_output):
             xdata = spec.freq
             synth_mean_mag = spectral_model(xdata, **sourcepar_summary)
             res = spec.copy()
-            res.data_mag = spec.data_mag - synth_mean_mag
-            res.data = mag_to_moment(res.data_mag)
+            # remove existing data
+            del res.data
+            del res.data_logspaced
+            del res.data_mag
+            del res.data_mag_logspaced
+            # Residuals are computed in magnitude units,
+            # but res.data (moment units) has to be set before res.data_mag
+            _res_mag = spec.data_mag - synth_mean_mag
+            res.data = mag_to_moment(_res_mag)
+            res.data_mag = _res_mag
             res.stats.software = 'SourceSpec'
             res.stats.software_version = get_versions()['version']
             residuals.append(res)

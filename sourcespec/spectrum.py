@@ -189,6 +189,12 @@ class Spectrum():
         self._data = value
         self.stats.npts = len(value)
 
+    @data.deleter
+    def data(self):
+        """Clear the array containing the amplitude spectrum."""
+        self._data = np.array([], dtype=float)
+        self.stats.npts = 0
+
     @property
     def data_mag(self):
         """
@@ -206,6 +212,13 @@ class Spectrum():
         if len(value) > 0 and len(value) != len(self.data):
             raise ValueError('data_mag must have the same length as data')
         self._data_mag = value
+
+    @data_mag.deleter
+    def data_mag(self):
+        """
+        Clear the array containing the amplitude spectrum in magnitude units.
+        """
+        self._data_mag = np.array([], dtype=float)
 
     @property
     def data_logspaced(self):
@@ -225,6 +238,15 @@ class Spectrum():
             value = np.array(value)
         self._data_logspaced = value
         self.stats.npts_logspaced = len(value)
+
+    @data_logspaced.deleter
+    def data_logspaced(self):
+        """
+        Clear the array containing the amplitude spectrum in logspaced
+        frequencies.
+        """
+        self._data_logspaced = np.array([], dtype=float)
+        self.stats.npts_logspaced = 0
 
     @property
     def data_mag_logspaced(self):
@@ -248,6 +270,14 @@ class Spectrum():
                 'data_logspaced'
             )
         self._data_mag_logspaced = value
+
+    @data_mag_logspaced.deleter
+    def data_mag_logspaced(self):
+        """
+        Clear the array containing the amplitude spectrum in logspaced
+        frequencies in magnitude units.
+        """
+        self._data_mag_logspaced = np.array([], dtype=float)
 
     @property
     def freq(self):
