@@ -25,6 +25,11 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 - New config parameter `clipping_min_amplitude_ratio` to set a threshold for
   trace amplitude below which the trace is not checked for clipping
 
+### Post-Inversion
+
+- New option for `source_residuals`: `--runid` to select a specific run when
+  multiple runs exist for the same event
+
 ### Plotting
 
 - New plot: raw traces

@@ -34,14 +34,26 @@ def parse_args():
     parser.add_argument(
         '-m', '--min_spectra', dest='min_spectra', type=int, action='store',
         default='20', help='minimum number of spectra to '
-        'compute residuals (default=20)', metavar='NUMBER')
+        'compute residuals (default=20)', metavar='NUMBER'
+    )
+    parser.add_argument(
+        '-r', '--runid', dest='runid', action='store',
+        default=None, metavar='RUNID',
+        help='Select a specific run when multiple runs exist for the same '
+             'event. If omitted, residuals will be computed using all '
+             'available runs. You can provide a specific RUNID or use '
+             '"latest" or "earliest" to select the most recent or the '
+             'earliest run, based on alphabetical or numerical order.'
+    )
     parser.add_argument(
         '-o', '--outdir', dest='outdir', action='store',
         default='sspec_residuals',
-        help='output directory (default="sspec_residuals")')
+        help='output directory (default="sspec_residuals")'
+    )
     parser.add_argument(
         '-p', '--plot', dest='plot', action='store_true',
-        default=False, help='save residuals plots to file')
+        default=False, help='save residuals plots to file'
+    )
     parser.add_argument(
         'residual_files_dir',
         help='directory containing source_spec residual files '
@@ -50,7 +62,61 @@ def parse_args():
     return parser.parse_args()
 
 
-def read_residuals(resfiles_dir):
+def _filter_by_runid(residual_dict, runid='latest'):
+    """
+    Filter the residual dictionary by the specified runid criteria.
+
+    Parameters
+    ----------
+    residual_dict : dict
+        Dictionary containing residuals for each station.
+    runid : str
+        Criteria to select the runid. Can be 'latest', 'earliest',
+        or a specific runid.
+
+    Returns
+    -------
+    filt_residual_dict : dict
+        Dictionary containing residuals filtered by the specified criteria.
+    """
+    if runid is None:
+        return residual_dict
+    if not isinstance(runid, str):
+        raise ValueError("runid must be a string.")
+    filt_residual_dict = defaultdict(SpectrumStream)
+    if runid not in ['latest', 'earliest']:
+        for spec_st in residual_dict.values():
+            # Filter by specific runid
+            filt_residual_dict[spec_st[0].id].extend(
+                [spec for spec in spec_st if spec.stats.runid == runid]
+            )
+        return filt_residual_dict
+    # Filter by latest or earliest runid
+    for spec_st in residual_dict.values():
+        evids_runids = [
+            (spec.stats.event.event_id, spec.stats.runid)
+            for spec in spec_st
+        ]
+        # Dictionary to store the selected runid for each evid
+        selected_runids = {}
+        for _evid, _runid in evids_runids:
+            if runid == 'latest':
+                selected_runids[_evid] = max(
+                    selected_runids.get(_evid, '0'), _runid, key=int)
+            elif runid == 'earliest':
+                selected_runids[_evid] = min(
+                    selected_runids.get(_evid, '999999'), _runid, key=int)
+        # Convert back to list of tuples
+        filtered_evids_runids = list(selected_runids.items())
+        filt_residual_dict[spec_st[0].id].extend(
+            [spec for spec in spec_st
+                if (spec.stats.event.event_id, spec.stats.runid)
+                in filtered_evids_runids]
+        )
+    return filt_residual_dict
+
+
+def read_residuals(resfiles_dir, runid=None):
     """
     Read residuals from HDF5 files in resfiles_dir.
 
@@ -83,7 +149,7 @@ def read_residuals(resfiles_dir):
         residual_st = read_spectra(resfile)
         for spec in residual_st:
             residual_dict[spec.id].append(spec)
-    return residual_dict
+    return _filter_by_runid(residual_dict, runid)
 
 
 def compute_mean_residuals(residual_dict, min_spectra=20):
@@ -171,7 +237,7 @@ def main():
     """Main function."""
     args = parse_args()
 
-    residual_dict = read_residuals(args.residual_files_dir)
+    residual_dict = read_residuals(args.residual_files_dir, args.runid)
 
     outdir = args.outdir
     if not os.path.exists(outdir):
