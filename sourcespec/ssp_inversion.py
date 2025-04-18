@@ -129,7 +129,12 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
 
 
 def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_logspaced, statId):
-    """Find the frequency range to compute Mw_0 and, possibly, t_star_0."""
+    """
+    Find the frequency range to compute Mw_0 and, possibly, t_star_0.
+    Note that second index is supposed to correspond to fc_0, our initial
+    estimate of the corner frequency, which is essential in the inversion
+    procedure
+    """
     if config.weighting == 'noise':
         # we start where signal-to-noise becomes strong
         idx0 = np.where(weight > 0.5)[0][0]
