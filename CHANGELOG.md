@@ -60,6 +60,8 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 - New config parameters: `plot_map_geotiff_filepath`,
   `plot_map_geotiff_grayscale`, `plot_map_geotiff_attribution`
 - Improved documentation for the `sn_min` and `spectral_sn_min` parameters
+- New option `rp_lower_bound` to avoid overcorrection for stations close to a
+  nodal plane when radiation coefficient is computed from focal mechanism
 
 ### Bugfixes
 

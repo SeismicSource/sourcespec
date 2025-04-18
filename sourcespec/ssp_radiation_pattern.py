@@ -132,6 +132,8 @@ def get_radiation_pattern_coefficient(stats, config):
     # we are interested only in amplitude
     # (P, SV and SH radiation patterns have a sign)
     rp = abs(rp)
+    # Apply water level
+    rp = max(rp, config.rp_lower_bound)
     logger.info(
         f'{traceid}: {wave_type} radiation pattern from focal mechanism: '
         f'{rp:.2f}'
