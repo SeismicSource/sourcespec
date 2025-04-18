@@ -81,6 +81,8 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
   than 10 samples)
 - Fix for `sensitivity` config parameter always requiring a SAC file. Now, if
   `sensitivity` is a numerical value, any file format is accepted.
+- Improved estimation of `fc_0` (initial corner frequency) when inverse
+  frequency weighting is used
 
 ## v1.8 - 2024-04-07
 
