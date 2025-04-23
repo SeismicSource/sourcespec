@@ -29,6 +29,10 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 
 - New option for `source_residuals`: `--runid` to select a specific run when
   multiple runs exist for the same event
+- New option for `source_residuals`: `--exclude` to exclude 1 or more subfolders
+  when parsing residuals files
+- New option for `source_resdiuals`: `--yrange` to specify a fixed range for
+  the Y axis in the plots
 
 ### Plotting
 
@@ -83,6 +87,9 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
   `sensitivity` is a numerical value, any file format is accepted
 - Improved estimation of `fc_0` (initial corner frequency) when inverse
   frequency weighting is used (see [#67])
+- Fix in `source_residuals`: removed extrapolation of individual station
+  residuals beyond their valid frequency range, which was leading to incorrect
+  mean residuals at high frequencies.
 
 ## v1.8 - 2024-04-07
 
