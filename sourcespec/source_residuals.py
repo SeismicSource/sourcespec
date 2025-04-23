@@ -53,6 +53,11 @@ def parse_args():
         help='output directory (default="sspec_residuals")'
     )
     parser.add_argument(
+        '-e', '--exclude', dest='exclude_subdirs', action="append",
+        default=[],
+        help='subfolder to exclude (repeat for multiple subfolders)'
+    )
+    parser.add_argument(
         '-p', '--plot', dest='plot', action='store_true',
         default=False, help='save residuals plots to file'
     )
@@ -118,7 +123,7 @@ def _filter_by_runid(residual_dict, runid='latest'):
     return filt_residual_dict
 
 
-def read_residuals(resfiles_dir, runid=None):
+def read_residuals(resfiles_dir, runid=None, exclude_subdirs=[]):
     """
     Read residuals from HDF5 files in resfiles_dir.
 
@@ -128,6 +133,10 @@ def read_residuals(resfiles_dir, runid=None):
         Directory containing source_spec residual files in HDF5 format.
         Residual files can be in subdirectories (e.g., a subdirectory for
         each event).
+    exclude_subdirs: list of str
+        List of subdirectories (potentially containing residual files)
+        that should not be parsed
+        (default: [])
 
     Returns
     -------
@@ -138,6 +147,7 @@ def read_residuals(resfiles_dir, runid=None):
         sys.exit(f'Error: directory "{resfiles_dir}" does not exist.')
     resfiles = []
     for root, _dirs, files in os.walk(resfiles_dir):
+        _dirs[:] = [d for d in _dirs if d not in exclude_subdirs]
         resfiles.extend(
             os.path.join(root, file)
             for file in files
@@ -248,7 +258,9 @@ def main():
     """Main function."""
     args = parse_args()
 
-    residual_dict = read_residuals(args.residual_files_dir, args.runid)
+    exclude_subdirs = args.exclude_subdirs
+    residual_dict = read_residuals(args.residual_files_dir, args.runid,
+                                    exclude_subdirs=exclude_subdirs)
 
     outdir = args.outdir
     if not os.path.exists(outdir):
