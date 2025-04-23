@@ -272,3 +272,8 @@ def main():
         sys.exit(0)
     residual_mean.write(res_mean_file, format='HDF5')
     print(f'Mean station residuals saved to: {res_mean_file}')
+
+
+
+if __name__ == '__main__':
+    main()
