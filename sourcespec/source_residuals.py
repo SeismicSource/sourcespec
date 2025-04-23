@@ -271,11 +271,14 @@ def main():
     """Main function."""
     args = parse_args()
 
+    runid = args.runid
     exclude_subdirs = args.exclude_subdirs
-    residual_dict = read_residuals(args.residual_files_dir, args.runid,
+    residual_dict = read_residuals(args.residual_files_dir, runid,
                                     exclude_subdirs=exclude_subdirs)
 
     outdir = args.outdir
+    if runid and os.path.split(outdir)[-1] != runid:
+        outdir = os.path.join(outdir, runid)
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
