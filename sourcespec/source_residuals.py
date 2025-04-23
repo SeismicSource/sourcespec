@@ -62,6 +62,11 @@ def parse_args():
         default=False, help='save residuals plots to file'
     )
     parser.add_argument(
+        '-y', '--yrange', dest='yrange', nargs=2, type=float,
+        action='store', default=[-2.5, 2.5],
+        help='min/max range for Y axis (default: -2.5, 2.5)'
+    )
+    parser.add_argument(
         'residual_files_dir',
         help='directory containing source_spec residual files '
              'in HDF5 format. Residual files can be in subdirectories '
@@ -225,7 +230,8 @@ def compute_mean_residuals(residual_dict, min_spectra=20):
     return residual_mean
 
 
-def plot_residuals(residual_dict, residual_mean, outdir):
+def plot_residuals(residual_dict, residual_mean, outdir,
+                    ymin=None, ymax=None):
     """
     Plot residuals.
 
@@ -237,6 +243,12 @@ def plot_residuals(residual_dict, residual_mean, outdir):
         SpectrumStream containing mean residuals for each station.
     outdir : str
         Output directory.
+    ymin : float
+        Lower limit of Y axis
+        (default: None)
+    ymax : float
+        Upper limit of Y axis
+        (default: None)
     """
     for spec_mean in residual_mean:
         stat_id = spec_mean.id
@@ -246,6 +258,7 @@ def plot_residuals(residual_dict, residual_mean, outdir):
         for spec in res:
             ax.semilogx(spec.freq, spec.data_mag, 'b-', alpha=0.5)
         ax.semilogx(spec_mean.freq, spec_mean.data_mag, 'r-', linewidth=2)
+        ax.set_ylim([ymin, ymax])
         ax.set_xlabel('frequency (Hz)')
         ax.set_ylabel('residual amplitude (obs - synth) in magnitude units')
         ax.set_title(f'residuals: {stat_id} – {len(res)} records')
@@ -270,7 +283,9 @@ def main():
     residual_mean = compute_mean_residuals(residual_dict, min_spectra)
 
     if args.plot:
-        plot_residuals(residual_dict, residual_mean, outdir)
+        ymin, ymax = args.yrange
+        plot_residuals(residual_dict, residual_mean, outdir,
+                        ymin=ymin, ymax=ymax)
 
     # write the mean residuals (the stations corrections)
     res_mean_file = 'residual_mean.hdf5'
