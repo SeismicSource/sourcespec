@@ -259,6 +259,8 @@ def plot_residuals(residual_dict, residual_mean, outdir,
             ax.semilogx(spec.freq, spec.data_mag, 'b-', alpha=0.5)
         ax.semilogx(spec_mean.freq, spec_mean.data_mag, 'r-', linewidth=2)
         ax.set_ylim([ymin, ymax])
+        ax.grid(
+            True, which='both', linestyle='solid', color='#DDDDDD', zorder=0)
         ax.set_xlabel('frequency (Hz)')
         ax.set_ylabel('residual amplitude (obs - synth) in magnitude units')
         ax.set_title(f'residuals: {stat_id} – {len(res)} records')
