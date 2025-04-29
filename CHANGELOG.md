@@ -8,7 +8,6 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 
 ### Input/output
 
-- Fix `np.float64` being printed in logs and YAML output when using NumPy>=2
 - HTML report improvements:
   - Link to supplementary files and plots in the HTML report
   - Display configuration, log and output files in a modal window with syntax
@@ -65,6 +64,7 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 
 ### Bugfixes
 
+- Fix `np.float64` being printed in logs and YAML output when using NumPy>=2
 - Fix for rejected spectra still being plotted in the stacked spectra plot
 - Fix for corner case where all the inversion errors are zero
 - Fix I/O error when reading PAZ files
