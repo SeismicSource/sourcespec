@@ -46,7 +46,11 @@ def parse_args():
              'event. If omitted, residuals will be computed using all '
              'available runs. You can provide a specific RUNID or use '
              '"latest" or "earliest" to select the most recent or the '
-             'earliest run, based on alphabetical or numerical order.'
+             'earliest run, based on alphabetical or numerical order. '
+             'If provided, the runid will be also used to create a '
+             'subdirectory within the output directory, unless the '
+             'provided output directory name (see option "--outdir") is '
+             'already the runid.'
     )
     parser.add_argument(
         '-o', '--outdir', dest='outdir', action='store',
@@ -295,6 +299,8 @@ def main():
     )
 
     outdir = args.outdir
+    # If runid is not None, create a subdirectory with the runid, unless
+    # the outdir name is already the runid
     if runid and os.path.split(outdir)[-1] != runid:
         outdir = os.path.join(outdir, runid)
     if not os.path.exists(outdir):
