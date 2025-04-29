@@ -256,7 +256,9 @@ def compute_mean_residuals(residual_dict, min_spectra=20):
         delta_f_min = min(spec.stats.delta for spec in res)
         freq_min = min(freqs_min)
         freq_max = max(freqs_max)
-        freq_array = np.arange(freq_min, freq_max + delta_f_min, delta_f_min)
+        # stop two steps before the maximum frequency,
+        # to avoid border effects
+        freq_array = np.arange(freq_min, freq_max - delta_f_min, delta_f_min)
 
         spec_mean = None
         for spec in res:
