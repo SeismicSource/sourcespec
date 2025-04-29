@@ -271,7 +271,7 @@ def compute_mean_residuals(residual_dict, min_spectra=20):
             # norm is 1 where interpolated data_mag is not nan, 0 otherwise
             norm = (~np.isnan(spec_interp.data_mag)).astype(float)
             # Replace nan data_mag values with zeros for summation
-            spec_interp.data_mag[norm == 0] = 0
+            spec_interp.data_mag[np.isnan(spec_interp.data_mag)] = 0
             if spec_mean is None:
                 spec_mean = spec_interp
                 norm_mean = norm
