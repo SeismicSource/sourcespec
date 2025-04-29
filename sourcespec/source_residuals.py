@@ -59,7 +59,7 @@ def parse_args():
     )
     parser.add_argument(
         '-e', '--exclude', dest='exclude_subdirs', action="append",
-        default=[],
+        default=None,
         help='subfolder to exclude (repeat for multiple subfolders)'
     )
     parser.add_argument(
