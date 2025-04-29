@@ -15,6 +15,7 @@ Compute mean station residuals from source_spec output.
 """
 import sys
 import os
+from glob import glob
 from collections import defaultdict
 from argparse import ArgumentParser
 import numpy as np
@@ -42,7 +43,7 @@ def parse_args():
     parser.add_argument(
         '-r', '--runid', dest='runid', action='store',
         default=None, metavar='RUNID',
-        help='Select a specific run when multiple runs exist for the same '
+        help='select a specific run when multiple runs exist for the same '
              'event. If omitted, residuals will be computed using all '
              'available runs. You can provide a specific RUNID or use '
              '"latest" or "earliest" to select the most recent or the '
@@ -73,9 +74,12 @@ def parse_args():
     )
     parser.add_argument(
         'residual_files_dir',
-        help='directory containing source_spec residual files '
-             'in HDF5 format. Residual files can be in subdirectories '
-             '(e.g., a subdirectory for each event).')
+        help='path to a directory containing SourceSpec residual files in '
+             'HDF5 format. Files may be organized in subdirectories '
+             '(e.g., by event). You may use wildcards to match specific '
+             'subdirectories — remember to quote them to avoid shell '
+             'expansion. Example: "sspec_out/*/run1/"'
+    )
     return parser.parse_args()
 
 
@@ -145,16 +149,62 @@ def _filter_by_runid(residual_dict, runid='latest'):
     return filt_residual_dict
 
 
+def _read_residuals_from_dir(
+        residual_dict, resfiles_dir, exclude_subdirs=None):
+    """
+    Read residuals from HDF5 files from a specified directory and all its
+    subdirectories.
+
+    Parameters
+    ----------
+    residual_dict : dict
+        Dictionary to store residuals for each station.
+    resfiles_dir : str
+        Directory containing source_spec residual files in HDF5 format.
+        Residual files can be in subdirectories (e.g., a subdirectory for
+        each event).
+    exclude_subdirs: list of str
+        List of subdirectories (potentially containing residual files)
+        that should not be parsed
+        (default: None, which means all subdirectories are parsed).
+    """
+    if exclude_subdirs is None:
+        exclude_subdirs = []
+    if not os.path.exists(resfiles_dir):
+        print(f'Skipping directory: {resfiles_dir}: does not exist')
+    resfiles = []
+    for root, _dirs, files in os.walk(resfiles_dir):
+        _dirs[:] = [d for d in _dirs if d not in exclude_subdirs]
+        resfiles.extend(
+            os.path.join(root, file)
+            for file in files
+            if file.endswith('residuals.hdf5')
+        )
+    if not resfiles:
+        print(f'No residual file found in directory: {resfiles_dir}')
+    for resfile in sorted(resfiles):
+        print(f'Found residual file: {resfile}')
+        residual_st = read_spectra(resfile)
+        for spec in residual_st:
+            residual_dict[spec.id].append(spec)
+
+
 def read_residuals(resfiles_dir, runid=None, exclude_subdirs=None):
     """
-    Read residuals from HDF5 files in resfiles_dir.
+    Read residuals from HDF5 files from a specified directory and all its
+    subdirectories. The directory can be specified using wildcards.
 
     Parameters
     ----------
     resfiles_dir : str
         Directory containing source_spec residual files in HDF5 format.
         Residual files can be in subdirectories (e.g., a subdirectory for
-        each event).
+        each event). The subdirectory names can be specified using wildcards.
+    runid : str
+        Only select residuals with the specified runid. If 'latest' or
+        'earliest', select the most recent or the earliest runid,
+        respectively. If None, select all residuals.
+        (default: None)
     exclude_subdirs: list of str
         List of subdirectories (potentially containing residual files)
         that should not be parsed
@@ -167,24 +217,13 @@ def read_residuals(resfiles_dir, runid=None, exclude_subdirs=None):
     """
     if exclude_subdirs is None:
         exclude_subdirs = []
-    if not os.path.exists(resfiles_dir):
-        sys.exit(f'Error: directory "{resfiles_dir}" does not exist.')
-    resfiles = []
-    for root, _dirs, files in os.walk(resfiles_dir):
-        _dirs[:] = [d for d in _dirs if d not in exclude_subdirs]
-        resfiles.extend(
-            os.path.join(root, file)
-            for file in files
-            if file.endswith('residuals.hdf5')
-        )
-    if not resfiles:
-        sys.exit(f'No residual file found in directory: {resfiles_dir}')
     residual_dict = defaultdict(SpectrumStream)
-    for resfile in sorted(resfiles):
-        print(f'Found residual file: {resfile}')
-        residual_st = read_spectra(resfile)
-        for spec in residual_st:
-            residual_dict[spec.id].append(spec)
+    for _resfiles_dir in glob(resfiles_dir):
+        _read_residuals_from_dir(
+            residual_dict,
+            _resfiles_dir,
+            exclude_subdirs=exclude_subdirs
+        )
     return _filter_by_runid(residual_dict, runid)
 
 
@@ -297,6 +336,10 @@ def main():
         args.residual_files_dir, runid,
         exclude_subdirs=exclude_subdirs
     )
+    if not residual_dict:
+        sys.exit(
+            'No residuals found. Please check the provided input directory.'
+        )
 
     outdir = args.outdir
     # If runid is not None, create a subdirectory with the runid, unless
@@ -320,12 +363,11 @@ def main():
     res_mean_file = 'residual_mean.hdf5'
     res_mean_file = os.path.join(outdir, res_mean_file)
     if not residual_mean:
-        print(
+        sys.exit(
             'Mean residuals not computed: not enough spectra.\n'
             'Minimum number of spectra ("--min_spectra") currently set to: '
             f'{min_spectra}'
         )
-        sys.exit(0)
     residual_mean.write(res_mean_file, format='HDF5')
     print(f'Mean station residuals saved to: {res_mean_file}')
 
