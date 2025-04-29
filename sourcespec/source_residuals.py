@@ -7,7 +7,8 @@ Compute mean station residuals from source_spec output.
     2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Agnes Chounet <chounet@ipgp.fr>
 
-    2015-2025 Claudio Satriano <satriano@ipgp.fr>
+    2015-2025 Claudio Satriano <satriano@ipgp.fr>.
+              Kris Vanneste <kris.vanneste@oma.be>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
@@ -140,7 +141,7 @@ def _filter_by_runid(residual_dict, runid='latest'):
     return filt_residual_dict
 
 
-def read_residuals(resfiles_dir, runid=None, exclude_subdirs=[]):
+def read_residuals(resfiles_dir, runid=None, exclude_subdirs=None):
     """
     Read residuals from HDF5 files in resfiles_dir.
 
@@ -153,13 +154,15 @@ def read_residuals(resfiles_dir, runid=None, exclude_subdirs=[]):
     exclude_subdirs: list of str
         List of subdirectories (potentially containing residual files)
         that should not be parsed
-        (default: [])
+        (default: None, which means all subdirectories are parsed).
 
     Returns
     -------
     residual_dict : dict
         Dictionary containing residuals for each station.
     """
+    if exclude_subdirs is None:
+        exclude_subdirs = []
     if not os.path.exists(resfiles_dir):
         sys.exit(f'Error: directory "{resfiles_dir}" does not exist.')
     resfiles = []
@@ -242,8 +245,7 @@ def compute_mean_residuals(residual_dict, min_spectra=20):
     return residual_mean
 
 
-def plot_residuals(residual_dict, residual_mean, outdir,
-                    ymin=None, ymax=None):
+def plot_residuals(residual_dict, residual_mean, outdir, ymin=None, ymax=None):
     """
     Plot residuals.
 
@@ -287,8 +289,10 @@ def main():
 
     runid = args.runid
     exclude_subdirs = args.exclude_subdirs
-    residual_dict = read_residuals(args.residual_files_dir, runid,
-                                    exclude_subdirs=exclude_subdirs)
+    residual_dict = read_residuals(
+        args.residual_files_dir, runid,
+        exclude_subdirs=exclude_subdirs
+    )
 
     outdir = args.outdir
     if runid and os.path.split(outdir)[-1] != runid:
@@ -301,8 +305,10 @@ def main():
 
     if args.plot:
         ymin, ymax = args.yrange
-        plot_residuals(residual_dict, residual_mean, outdir,
-                        ymin=ymin, ymax=ymax)
+        plot_residuals(
+            residual_dict, residual_mean, outdir,
+            ymin=ymin, ymax=ymax
+        )
 
     # write the mean residuals (the stations corrections)
     res_mean_file = 'residual_mean.hdf5'
@@ -316,7 +322,6 @@ def main():
         sys.exit(0)
     residual_mean.write(res_mean_file, format='HDF5')
     print(f'Mean station residuals saved to: {res_mean_file}')
-
 
 
 if __name__ == '__main__':
