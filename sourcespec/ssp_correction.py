@@ -16,7 +16,7 @@ import logging
 import numpy as np
 from scipy.interpolate import interp1d
 from sourcespec.spectrum import read_spectra
-from sourcespec.ssp_util import moment_to_mag, mag_to_moment
+from sourcespec.ssp_util import mag_to_moment
 from sourcespec.ssp_setup import ssp_exit
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
