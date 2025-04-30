@@ -290,7 +290,8 @@ def compute_mean_residuals(residual_dict, min_spectra=20):
     return residual_mean
 
 
-def plot_residuals(residual_dict, residual_mean, outdir, ymin=None, ymax=None):
+def plot_residuals(residual_dict, residual_mean, outdir,
+                   ymin=None, ymax=None, runid=None):
     """
     Plot residuals.
 
@@ -308,6 +309,9 @@ def plot_residuals(residual_dict, residual_mean, outdir, ymin=None, ymax=None):
     ymax : float
         Upper limit of Y axis
         (default: None)
+    runid : str
+        Run ID, to be shown in title
+        (default: None)
     """
     for spec_mean in residual_mean:
         stat_id = spec_mean.id
@@ -322,7 +326,11 @@ def plot_residuals(residual_dict, residual_mean, outdir, ymin=None, ymax=None):
             True, which='both', linestyle='solid', color='#DDDDDD', zorder=0)
         ax.set_xlabel('frequency (Hz)')
         ax.set_ylabel('residual amplitude (obs - synth) in magnitude units')
-        ax.set_title(f'residuals: {stat_id} – {len(res)} records')
+        if runid:
+            title = f'{stat_id} – runid: {runid} - {len(res)} records'
+        else:
+            title = f'{stat_id} – {len(res)} records'
+        ax.set_title(title)
         fig.savefig(figurefile, bbox_inches='tight')
         plt.close(fig)
         print(f'Residual plot saved to: {figurefile}')
@@ -358,7 +366,7 @@ def main():
         ymin, ymax = args.yrange
         plot_residuals(
             residual_dict, residual_mean, outdir,
-            ymin=ymin, ymax=ymax
+            ymin=ymin, ymax=ymax, runid=runid
         )
 
     # write the mean residuals (the stations corrections)
