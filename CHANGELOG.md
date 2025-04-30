@@ -27,12 +27,12 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 
 ### Post-Inversion
 
-- New option for `source_residuals`: `--runid` to select a specific run when
-  multiple runs exist for the same event
-- New option for `source_residuals`: `--exclude` to exclude 1 or more subfolders
-  when parsing residuals files
-- New option for `source_resdiuals`: `--yrange` to specify a fixed range for
-  the Y axis in the plots
+- New options for `source_residuals`:
+  - `--runid` to select a specific run when multiple runs exist for the same
+     event
+  - `--exclude` to exclude 1 or more subfolders when parsing residuals files
+    (see [#68])
+  - `--yrange` to specify a fixed range for the Y axis in the plots (see [#68])
 
 ### Plotting
 
@@ -89,7 +89,7 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
   frequency weighting is used (see [#67])
 - Fix in `source_residuals`: removed extrapolation of individual station
   residuals beyond their valid frequency range, which was leading to incorrect
-  mean residuals at high frequencies.
+  mean residuals at high frequencies (see [#68])
 
 ## v1.8 - 2024-04-07
 
@@ -825,3 +825,4 @@ Initial Python port.
 [#48]: https://github.com/SeismicSource/sourcespec/issues/48
 [#49]: https://github.com/SeismicSource/sourcespec/issues/49
 [#67]: https://github.com/SeismicSource/sourcespec/issues/67
+[#68]: https://github.com/SeismicSource/sourcespec/issues/68
