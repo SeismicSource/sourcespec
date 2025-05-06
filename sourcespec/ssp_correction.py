@@ -42,16 +42,26 @@ def station_correction(spec_st, config):
             corr = residual.select(id=spec.id)[0]
         except IndexError:
             continue
-        freq = spec.freq
+        # both spectrum and residual need to be limited to same freq range
+        freq_min = max(spec.freq.min(), corr.freq.min())
+        freq_max = min(spec.freq.max(), corr.freq.max())
+        delta_f = spec.stats.delta
+        freq = np.arange(freq_min, freq_max, delta_f)
         corr_interp = corr.copy()
         corr_interp.freq = freq
         # corr_interp.data must exist, so we create it with zeros
         corr_interp.data = np.zeros_like(freq)
-        # interpolate the correction to the same frequencies as the spectrum
+        # interpolate the correction to the common frequency range
         f = interp1d(
             corr.freq, corr.data_mag, fill_value='extrapolate')
         corr_interp.data_mag = f(freq)
+        # interpolate original spectrum before correction
         spec_corr = spec.copy()
+        spec_corr.freq = freq
+        spec_corr.data = np.zeros_like(freq)
+        f = interp1d(
+            spec.freq, spec.data_mag, fill_value='extrapolate')
+        spec_corr.data_mag = f(freq)
         # uncorrected spectrum will have component name 'h'
         spec.stats.channel = f'{spec.stats.channel[:-1]}h'
         try:
@@ -60,7 +70,10 @@ def station_correction(spec_st, config):
             logger.error(f'Cannot correct spectrum {spec.id}: {msg}')
             continue
         # interpolate the corrected data_mag to logspaced frequencies
-        f = interp1d(freq, spec_corr.data_mag, fill_value='extrapolate')
+        # Note that spec_corr.freq_logspaced must not change, otherwise
+        # it will be out of sync with the weight used in the inversion.
+        # Instead, we set it to NaN outside the valid frequency range
+        f = interp1d(spec_corr.freq, spec_corr.data_mag, bounds_error=False)
         spec_corr.data_mag_logspaced = f(spec_corr.freq_logspaced)
         # convert mag to moment
         spec_corr.data = mag_to_moment(spec_corr.data_mag)
