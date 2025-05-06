@@ -255,6 +255,15 @@ def _spec_inversion(config, spec, spec_weight):
     # Initial values need to be printed here because Bounds can modify them
     logger.info(f'{statId}: initial values: {initial_values}')
     logger.info(f'{statId}: bounds: {bounds}')
+    # Remove NaN values from log-spaced spectrum
+    # (in case residual correction has been applied)
+    isnan = np.isnan(spec.data_mag_logspaced)
+    if np.sum(isnan) > 0:
+        spec.freq_logspaced = spec.freq_logspaced[~isnan]
+        spec.data_logspaced = spec.data_logspaced[~isnan]
+        spec.data_mag_logspaced = spec.data_mag_logspaced[~isnan]
+        weight = weight[~isnan]
+        yerr = yerr[~isnan]
     try:
         params_opt, params_err, misfit = _curve_fit(
             config, spec, weight, yerr, initial_values, bounds)
