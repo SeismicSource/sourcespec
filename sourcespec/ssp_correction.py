@@ -56,17 +56,14 @@ def station_correction(spec_st, config):
     Parameters
     ----------
     spec_st : SpectrumStream or list of Spectrum
-        List of spectra to be corrected.
+        List of spectra to be corrected. Corrected spectra are appended
+        to the list.
     config : Config
         Configuration object containing the residuals file path.
-
-    Returns
-    -------
-    spec_st : SpectrumStream or list of Spectrum
     """
     res_filepath = config.residuals_filepath
     if res_filepath is None:
-        return spec_st
+        return
     try:
         residual = read_spectra(res_filepath)
     except Exception as msg:
@@ -113,4 +110,3 @@ def station_correction(spec_st, config):
         logger.info(
             f'{spec_corr.id}: corrected, frequency range is: '
             f'{fmin:.2f} {fmax:.2f} Hz')
-    return spec_st
