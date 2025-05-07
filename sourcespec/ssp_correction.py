@@ -21,11 +21,48 @@ from sourcespec.ssp_setup import ssp_exit
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
+def _interpolate_spectrum_to_new_freq_range(spec, new_freq):
+    """
+    Interpolate spectrum to a new frequency range.
+
+    Parameters
+    ----------
+    spec : Spectrum
+        Spectrum to be interpolated.
+    new_freq : array_like
+        New frequency range.
+
+    Returns
+    -------
+    Spectrum
+        Interpolated spectrum.
+    """
+    spec_interp = spec.copy()
+    spec_interp.freq = new_freq
+    # spec_interp.data must exist, so we create it with zeros
+    spec_interp.data = np.zeros_like(new_freq)
+    f = interp1d(
+        spec.freq, spec.data_mag, fill_value='extrapolate')
+    spec_interp.data_mag = f(new_freq)
+    return spec_interp
+
+
 def station_correction(spec_st, config):
     """
     Correct spectra using station-average residuals.
 
     Residuals are obtained from a previous run.
+
+    Parameters
+    ----------
+    spec_st : SpectrumStream or list of Spectrum
+        List of spectra to be corrected.
+    config : Config
+        Configuration object containing the residuals file path.
+
+    Returns
+    -------
+    spec_st : SpectrumStream or list of Spectrum
     """
     res_filepath = config.residuals_filepath
     if res_filepath is None:
@@ -42,40 +79,32 @@ def station_correction(spec_st, config):
             corr = residual.select(id=spec.id)[0]
         except IndexError:
             continue
-        # both spectrum and residual need to be limited to same freq range
+        # Define a common frequency range for the correction and the spectrum
         freq_min = max(spec.freq.min(), corr.freq.min())
         freq_max = min(spec.freq.max(), corr.freq.max())
         delta_f = spec.stats.delta
         freq = np.arange(freq_min, freq_max, delta_f)
-        corr_interp = corr.copy()
-        corr_interp.freq = freq
-        # corr_interp.data must exist, so we create it with zeros
-        corr_interp.data = np.zeros_like(freq)
-        # interpolate the correction to the common frequency range
-        f = interp1d(
-            corr.freq, corr.data_mag, fill_value='extrapolate')
-        corr_interp.data_mag = f(freq)
-        # interpolate original spectrum before correction
-        spec_corr = spec.copy()
-        spec_corr.freq = freq
-        spec_corr.data = np.zeros_like(freq)
-        f = interp1d(
-            spec.freq, spec.data_mag, fill_value='extrapolate')
-        spec_corr.data_mag = f(freq)
-        # uncorrected spectrum will have component name 'h'
+        # Interpolate residual to the common frequency range
+        corr_interp = _interpolate_spectrum_to_new_freq_range(corr, freq)
+        # Interpolate original spectrum before correction
+        spec_corr = _interpolate_spectrum_to_new_freq_range(spec, freq)
+        # Uncorrected spectrum will have component name 'h',
+        # while corrected spectrum will have component name 'H'
         spec.stats.channel = f'{spec.stats.channel[:-1]}h'
+        # Apply correction
         try:
             spec_corr.data_mag -= corr_interp.data_mag
         except ValueError as msg:
             logger.error(f'Cannot correct spectrum {spec.id}: {msg}')
             continue
-        # interpolate the corrected data_mag to logspaced frequencies
+        # Interpolate the corrected data_mag to logspaced frequencies
         # Note that spec_corr.freq_logspaced must not change, otherwise
         # it will be out of sync with the weight used in the inversion.
-        # Instead, we set it to NaN outside the valid frequency range
+        # Instead, we set it to NaN outside the valid frequency range,
+        # through the parameter bounds_error=False.
         f = interp1d(spec_corr.freq, spec_corr.data_mag, bounds_error=False)
         spec_corr.data_mag_logspaced = f(spec_corr.freq_logspaced)
-        # convert mag to moment
+        # Convert mag to moment
         spec_corr.data = mag_to_moment(spec_corr.data_mag)
         spec_corr.data_logspaced = mag_to_moment(spec_corr.data_mag_logspaced)
         spec_st.append(spec_corr)
