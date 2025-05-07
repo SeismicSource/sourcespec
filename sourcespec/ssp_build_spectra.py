@@ -490,7 +490,13 @@ def _build_weight_from_inv_frequency(spec, power=0.25):
 
 def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
     weight = spec.copy()
-    weight.data /= specnoise.data
+    try:
+        weight.data /= specnoise.data
+    except ValueError as e:
+        logger.error(
+            f'{spec.id}: Error building weight from noise: {str(e)}'
+        )
+        ssp_exit(1)
     # save signal-to-noise ratio before log10, smoothing, and normalization
     weight.snratio = weight.data.copy()
     # The inversion is done in magnitude units,
