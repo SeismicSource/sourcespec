@@ -57,7 +57,7 @@ def station_correction(spec_st, config):
     ----------
     spec_st : SpectrumStream or list of Spectrum
         List of spectra to be corrected. Corrected spectra are appended
-        to the list.
+        to the list (component code of uncorrected spectra is renamed to 'h').
     config : Config
         Configuration object containing the residuals file path.
     """
@@ -76,15 +76,20 @@ def station_correction(spec_st, config):
             corr = residual.select(id=spec.id)[0]
         except IndexError:
             continue
-        # Define a common frequency range for the correction and the spectrum
+        # Define common frequency range for the correction and the spectrum
         freq_min = max(spec.freq.min(), corr.freq.min())
         freq_max = min(spec.freq.max(), corr.freq.max())
-        delta_f = spec.stats.delta
-        freq = np.arange(freq_min, freq_max, delta_f)
-        # Interpolate residual to the common frequency range
-        corr_interp = _interpolate_spectrum_to_new_freq_range(corr, freq)
-        # Interpolate original spectrum before correction
-        spec_corr = _interpolate_spectrum_to_new_freq_range(spec, freq)
+        # Note that frequency range of corrected spectrum must not change,
+        # otherwise it will be out of sync with the noise spectrum
+        # and with the weight used in the inversion
+        # Instead, we use NaN values outside the common frequency range
+        # Interpolate residual to frequency range of spectrum,
+        # and set it to NaN outside the common frequency range
+        corr_interp = _interpolate_spectrum_to_new_freq_range(corr, spec.freq)
+        corr_interp.data_mag[corr_interp.freq < freq_min] = np.nan
+        corr_interp.data_mag[corr_interp.freq > freq_max] = np.nan
+        # Copy spectrum before correction
+        spec_corr = spec.copy()
         # Uncorrected spectrum will have component name 'h',
         # while corrected spectrum will have component name 'H'
         spec.stats.channel = f'{spec.stats.channel[:-1]}h'
@@ -95,18 +100,18 @@ def station_correction(spec_st, config):
             logger.error(f'Cannot correct spectrum {spec.id}: {msg}')
             continue
         # Interpolate the corrected data_mag to logspaced frequencies
-        # Note that spec_corr.freq_logspaced must not change, otherwise
-        # it will be out of sync with the weight used in the inversion.
-        # Instead, we set it to NaN outside the valid frequency range,
-        # through the parameter bounds_error=False.
-        f = interp1d(spec_corr.freq, spec_corr.data_mag, bounds_error=False)
+        # We don't allow extrapolation, to make sure logspaced spectrum
+        # is also NaN outside the common frequency range
+        nan_idxs = np.isnan(spec_corr.data_mag)
+        f = interp1d(spec_corr.freq[~nan_idxs], spec_corr.data_mag[~nan_idxs],
+                     bounds_error=False)
         spec_corr.data_mag_logspaced = f(spec_corr.freq_logspaced)
         # Convert mag to moment
         spec_corr.data = mag_to_moment(spec_corr.data_mag)
         spec_corr.data_logspaced = mag_to_moment(spec_corr.data_mag_logspaced)
         spec_st.append(spec_corr)
-        fmin = freq.min()
-        fmax = freq.max()
+        fmin = spec_corr.freq[~nan_idxs].min()
+        fmax = spec_corr.freq[~nan_idxs].max()
         logger.info(
             f'{spec_corr.id}: corrected, frequency range is: '
             f'{fmin:.2f} {fmax:.2f} Hz')
