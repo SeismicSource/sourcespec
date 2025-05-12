@@ -497,6 +497,8 @@ def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
             f'{spec.id}: Error building weight from noise: {str(e)}'
         )
         ssp_exit(1)
+    # replace NaN values with a small value
+    weight.data[np.isnan(weight.data)] = 1e-9
     # save signal-to-noise ratio before log10, smoothing, and normalization
     weight.snratio = weight.data.copy()
     # The inversion is done in magnitude units,
