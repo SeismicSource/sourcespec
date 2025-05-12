@@ -264,8 +264,8 @@ def plot_stacked_spectra(config, spec_st, weight_st, sspec_output):
         # store min/max values for axes limits
         fmins.append(freqs.min())
         fmaxs.append(freqs.max())
-        specmins.append(spec.data.min())
-        specmaxs.append(spec.data.max())
+        specmins.append(np.nanmin(spec.data))
+        specmaxs.append(np.nanmax(spec.data))
     fmin = min(fmins)
     fmax = max(fmaxs)
     ax.set_xlim(fmin, fmax)
