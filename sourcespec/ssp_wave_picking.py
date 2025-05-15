@@ -43,8 +43,12 @@ def _refine_theo_pick_time(
     tr_envelope.normalize()
     # Cut the trace around the theoretical pick time
     tr_cut = tr_envelope.copy()
-    cut_t0 = theo_pick_time - 0.7*s_minus_p
-    cut_t1 = theo_pick_time + 0.3*s_minus_p
+    if phase == 'P':
+        cut_t0 = theo_pick_time - 0.7*s_minus_p
+        cut_t1 = theo_pick_time + 0.3*s_minus_p
+    else:
+        cut_t0 = theo_pick_time - 0.5*s_minus_p
+        cut_t1 = theo_pick_time + 0.5*s_minus_p
     tr_cut.trim(cut_t0, cut_t1)
     # Threshold the cut trace, then cut it again up to its maximum
     rms = np.sqrt(np.mean(tr_cut.data**2))
@@ -69,6 +73,7 @@ def _refine_theo_pick_time(
     # Remove a linear function defined by first/last sample of the trace
     tr_cut_detrend = tr_cut.copy()
     tr_cut_detrend.detrend('simple')
+    # New pick time is the time of the minimum of the detrended trace
     refined_theo_pick_time =\
         tr_cut_detrend.stats.starttime +\
         tr_cut_detrend.times()[np.argmin(tr_cut_detrend.data)]
