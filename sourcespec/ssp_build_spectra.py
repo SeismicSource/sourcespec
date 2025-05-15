@@ -490,7 +490,15 @@ def _build_weight_from_inv_frequency(spec, power=0.25):
 
 def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
     weight = spec.copy()
-    weight.data /= specnoise.data
+    try:
+        weight.data /= specnoise.data
+    except ValueError as e:
+        logger.error(
+            f'{spec.id}: Error building weight from noise: {str(e)}'
+        )
+        ssp_exit(1)
+    # replace NaN values with a small value
+    weight.data[np.isnan(weight.data)] = 1e-9
     # save signal-to-noise ratio before log10, smoothing, and normalization
     weight.snratio = weight.data.copy()
     # The inversion is done in magnitude units,
@@ -732,7 +740,7 @@ def _build_signal_and_noise_spectral_streams(
     for specnoise in specnoise_st:
         specnoise.data_mag = moment_to_mag(specnoise.data)
     # apply station correction if a residual file is specified in config
-    spec_st = station_correction(spec_st, config)
+    station_correction(spec_st, config)
     return spec_st, specnoise_st
 
 
