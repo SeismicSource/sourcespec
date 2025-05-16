@@ -23,7 +23,6 @@ try:
     from scipy.integrate import cumtrapz
 except ImportError:
     from scipy.integrate import cumulative_trapezoid as cumtrapz
-from scipy.interpolate import interp1d
 from obspy.core import Stream
 from sourcespec.spectrum import Spectrum, SpectrumStream
 from sourcespec.ssp_setup import ssp_exit
@@ -349,38 +348,28 @@ def _displacement_to_moment(stats, config):
 
 
 def _smooth_spectrum(spec, smooth_width_decades=0.2):
-    """Smooth spectrum in a log10-freq space."""
+    """
+    Smooth spectrum in a log10-freq space.
+
+    This function also adds to the original spectrum the log-spaced
+    frequencies and data, which are used in the inversion.
+    """
     # 1. Generate log10-spaced frequencies
-    freq = spec.freq
-    _log_freq = np.log10(freq)
-    # frequencies in logarithmic spacing
-    log_df = _log_freq[-1] - _log_freq[-2]
-    freq_logspaced =\
-        10**(np.arange(_log_freq[0], _log_freq[-1] + log_df, log_df))
-    # 2. Reinterpolate data using log10 frequencies
-    # make sure that extrapolation does not create negative values
-    f = interp1d(freq, spec.data, fill_value='extrapolate')
-    data_logspaced = f(freq_logspaced)
-    data_logspaced[data_logspaced <= 0] = np.min(spec.data)
+    spec.make_freq_logspaced()
+    # 2. Interpolate data to log10-spaced frequencies
+    spec.make_logspaced_from_linear()
     # 3. Smooth log10-spaced data points
+    log_df = spec.stats.delta_logspaced
     npts = max(1, int(round(smooth_width_decades / log_df)))
-    data_logspaced = smooth(data_logspaced, window_len=npts)
+    spec.data_logspaced = smooth(spec.data_logspaced, window_len=npts)
     # 4. Reinterpolate to linear frequencies
-    # make sure that extrapolation does not create negative values
-    f = interp1d(freq_logspaced, data_logspaced, fill_value='extrapolate')
-    data = f(freq)
-    data[data <= 0] = np.min(spec.data)
-    spec.data = data
+    spec.make_linear_from_logspaced()
     # 5. Optimize the sampling rate of log spectrum,
     #    based on the width of the smoothing window
-    # make sure that extrapolation does not create negative values
     log_df = smooth_width_decades / 5
-    freq_logspaced =\
-        10**(np.arange(_log_freq[0], _log_freq[-1] + log_df, log_df))
-    spec.freq_logspaced = freq_logspaced
-    data_logspaced = f(freq_logspaced)
-    data_logspaced[data_logspaced <= 0] = np.min(spec.data)
-    spec.data_logspaced = data_logspaced
+    # note: make_freq_logspaced() will reinterpolate the log-spaced data
+    # to the new log-spaced frequencies
+    spec.make_freq_logspaced(log_df)
 
 
 def _build_spectrum(config, trace):
@@ -424,7 +413,7 @@ def _build_spectrum(config, trace):
     # store coeff to correct back data in displacement units
     # for radiated_energy()
     spec.stats.coeff = coeff
-    # smooth
+    # smooth spectrum. This also creates log-spaced frequencies and data
     try:
         _smooth_spectrum(spec, config.spectral_smooth_width_decades)
     except ValueError as e:
@@ -529,8 +518,7 @@ def _build_weight_from_noise(config, spec, specnoise):
         weight = _build_weight_from_ratio(
             spec, specnoise, config.spectral_smooth_width_decades)
     # interpolate to log-frequencies
-    f = interp1d(weight.freq, weight.data, fill_value='extrapolate')
-    weight.data_logspaced = f(weight.freq_logspaced)
+    weight.make_logspaced_from_linear()
     weight.data_logspaced /= np.max(weight.data_logspaced)
     # Make sure weight is positive
     weight.data_logspaced[weight.data_logspaced <= 0] = 0.001
