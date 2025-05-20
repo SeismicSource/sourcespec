@@ -194,14 +194,22 @@ def _cut_signal_noise(config, trace):
         trace_noise.data = trace_noise.data[:npts]
     else:
         tr_noise_id = trace_noise.get_id()[:-1]
+        signal_win = len(trace_signal) * trace_signal.stats.delta
+        noise_win = len(trace_noise) * trace_noise.stats.delta
         if config.weighting == 'noise':
-            msg = f'{tr_noise_id}: truncating signal window to noise length!'
+            msg = (
+                f'{tr_noise_id}: truncating signal window to noise length: '
+                f'{signal_win:.1f} -> {noise_win:.1f} s'
+            )
             trace_signal.data = trace_signal.data[:npts]
             # recompute signal window end time, so that it's plotted correctly
             _recompute_time_window(
                 trace, config.wave_type[0], npts, keep='start')
         else:
-            msg = f'{tr_noise_id}: zero-padding noise window to signal length'
+            msg = (
+                f'{tr_noise_id}: zero-padding noise window to signal length: '
+                f'{noise_win:.1f} -> {signal_win:.1f} s'
+            )
             # Notes:
             # 1. no risk of ringing, as noise has been tapered
             # 2. we use np.pad instead of obspy trim method

@@ -12,6 +12,8 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
   - Link to supplementary files and plots in the HTML report
   - Display configuration, log and output files in a modal window with syntax
     highlighting (only when the HTML report is served by a web server)
+- More informative warning messages when signal windows are truncated or
+  noise windows are zero-padded.
 
 ### Processing
 
