@@ -263,7 +263,9 @@ def _complete_picks(st):
 # FILE PARSING ----------------------------------------------------------------
 def _hypo_vel(hypo, config):
     medium_properties = MediumProperties(
-        hypo.longitude, hypo.latitude, hypo.depth.value_in_km, config)
+        hypo.longitude.value_in_deg, hypo.latitude.value_in_deg,
+        hypo.depth.value_in_km, config
+    )
     hypo.vp = medium_properties.get(mproperty='vp', where='source')
     hypo.vs = medium_properties.get(mproperty='vs', where='source')
     hypo.rho = medium_properties.get(mproperty='rho', where='source')
