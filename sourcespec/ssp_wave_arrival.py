@@ -62,8 +62,8 @@ def _wave_arrival_nll(trace, phase, NLL_time_dir, focmec):
             sta_x, sta_y = grd.project(
                 trace.stats.coords.longitude, trace.stats.coords.latitude)
             grd.sta_x, grd.sta_y = sta_x, sta_y
-        lon = trace.stats.event.hypocenter.longitude
-        lat = trace.stats.event.hypocenter.latitude
+        lon = trace.stats.event.hypocenter.longitude.value_in_deg
+        lat = trace.stats.event.hypocenter.latitude.value_in_deg
         hypo_x, hypo_y = grd.project(lon, lat)
         hypo_z = trace.stats.event.hypocenter.depth.value_in_km
         if grd_type == 'time':

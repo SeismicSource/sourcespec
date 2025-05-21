@@ -99,6 +99,7 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 - Fix in `source_residuals`: removed extrapolation of individual station
   residuals beyond their valid frequency range, which was leading to incorrect
   mean residuals at high frequencies (see [#68])
+- Fix bug preventing reading travel times from NonLinLoc grid files
 
 ## v1.8 - 2024-04-07
 
