@@ -460,6 +460,8 @@ def _snratio_text(spec, ax, color, path_effects):
     if spec.stats.spectral_snratio is None:
         return
     snratio_text = f'S/N: {spec.stats.spectral_snratio:.1f}'
+    if spec.stats.ignore:
+        snratio_text += ' (ignored)'
     ax.text(
         0.95, SNRATIO_TEXT_YPOS, snratio_text, ha='right', va='top',
         fontsize=8, color=color, path_effects=path_effects,

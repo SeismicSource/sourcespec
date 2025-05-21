@@ -44,6 +44,8 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 - New plot: raw traces
 - Stacked spectra: color spectral curves according to the weighting function
 - Spectral plots: show information on the reason why a fit failed
+- Spectral plots: add "ignored" next to the S/N ratio if the spectrum is
+  ignored because of a S/N ratio too low or impossible to compute
 - `plot_sourcepars`: possibility of selecting the latest runid for each event
 - `plot_sourcepars`: new plot type: static stress drop vs. depth
 - `plot_sourcepars`: option to color data points in scatter plot by another
