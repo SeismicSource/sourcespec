@@ -38,13 +38,26 @@ from sourcespec.ssp_radiation_pattern import get_radiation_pattern_coefficient
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-class SpectrumIgnored(Exception):
-    """Spectrum ignored exception"""
+class _IgnoredException(Exception):
+    """
+    Base class for ignored exceptions.
+
+    Not meant to be used directly, but only as a base class for
+    other ignored exceptions.
+    """
     def __init__(self, message, reason):
         # Call the base class constructor with the parameters it needs
         super().__init__(message)
-        # Now for your custom code...
+        # Custom code...
         self.reason = reason
+
+
+class SpectrumIgnored(_IgnoredException):
+    """Spectrum ignored exception"""
+
+
+class TraceIgnored(_IgnoredException):
+    """Trace ignored exception"""
 
 
 def _get_nint(config, trace):
@@ -148,14 +161,18 @@ def _check_data_len(config, trace):
     trace_cut.trim(starttime=t1, endtime=t2, pad=True, fill_value=0)
     npts = len(trace_cut.data)
     if npts == 0:
-        raise RuntimeError(
+        msg = (
             f'{traceId}: No data for the selected cut interval: '
-            'skipping trace')
+            'skipping trace'
+        )
+        raise TraceIgnored(msg, 'no data')
     nzeros = len(np.where(trace_cut.data == 0)[0])
     if nzeros > npts / 4:
-        raise RuntimeError(
+        msg = (
             f'{traceId}: Signal window is zero for more than 25%: '
-            'skipping trace')
+            'skipping trace'
+        )
+        raise TraceIgnored(msg, 'mostly zero signal window')
 
 
 def _cut_signal_noise(config, trace):
@@ -194,12 +211,12 @@ def _cut_signal_noise(config, trace):
         trace_noise.data = trace_noise.data[:npts]
     else:
         tr_noise_id = trace_noise.get_id()[:-1]
-        signal_win = len(trace_signal) * trace_signal.stats.delta
-        noise_win = len(trace_noise) * trace_noise.stats.delta
+        signal_win_length = len(trace_signal) * trace_signal.stats.delta
+        noise_win_length = len(trace_noise) * trace_noise.stats.delta
         if config.weighting == 'noise':
             msg = (
                 f'{tr_noise_id}: truncating signal window to noise length: '
-                f'{signal_win:.1f} -> {noise_win:.1f} s'
+                f'{signal_win_length:.1f} -> {noise_win_length:.1f} s'
             )
             trace_signal.data = trace_signal.data[:npts]
             # recompute signal window end time, so that it's plotted correctly
@@ -208,7 +225,7 @@ def _cut_signal_noise(config, trace):
         else:
             msg = (
                 f'{tr_noise_id}: zero-padding noise window to signal length: '
-                f'{noise_win:.1f} -> {signal_win:.1f} s'
+                f'{noise_win_length:.1f} -> {signal_win_length:.1f} s'
             )
             # Notes:
             # 1. no risk of ringing, as noise has been tapered
@@ -222,6 +239,14 @@ def _cut_signal_noise(config, trace):
             # recompute noise window start time, so that it's plotted correctly
             _recompute_time_window(trace, 'N', len(trace_signal), keep='end')
         logger.warning(msg)
+    signal_win_length = len(trace_signal) * trace_signal.stats.delta
+    win_length_min = config.win_length_min or 0
+    if signal_win_length < win_length_min:
+        msg = (
+            f'{trace.get_id()}: Signal window is too short: '
+            f'{signal_win_length:.1f} s < {win_length_min:.1f}: skipping trace'
+        )
+        raise TraceIgnored(msg, 'window too short')
     return trace_signal, trace_noise
 
 
@@ -256,9 +281,11 @@ def _check_noise_level(trace_signal, trace_noise, config):
         config.weighting == 'noise'
     ):
         # Skip trace if noise level is too low and if noise weighting is used
-        raise RuntimeError(
+        msg = (
             f'{traceId}: Noise level is too low or zero: '
-            'station will be skipped')
+            'station will be skipped'
+        )
+        raise TraceIgnored(msg, 'low noise level')
 
 
 def _geometrical_spreading_coefficient(config, spec):
@@ -670,7 +697,12 @@ def _build_signal_and_noise_streams(config, st):
             signal_st.append(trace_signal)
             noise_st.append(trace_noise)
         except RuntimeError as msg:
-            # RuntimeError is for skipped traces
+            # this should not happen, since the function above
+            # raise a TraceIgnored exception
+            logger.warning(msg)
+            continue
+        except TraceIgnored as msg:
+            _ignore_trace(msg, trace)
             logger.warning(msg)
             continue
     return signal_st, noise_st

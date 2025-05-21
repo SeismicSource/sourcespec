@@ -17,6 +17,9 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 
 ### Processing
 
+- New config parameter `win_length_min` to set a minimum window length for
+  the spectral analysis. Useful when signal and noise windows are automatically
+  defined
 - New option `r_power_n_segmented` for the `geom_spread_model` config parameter
   to use a segmented geometrical spreading model with different powers for
   different distance ranges
@@ -56,6 +59,7 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 
 ### Config file
 
+- New config parameter: `win_length_min`
 - Improved documentation for the `win_length` parameter
 - New option `r_power_n_segmented` for the `geom_spread_model` config parameter
 - New config parameters: `geom_spread_n_exponents`, `geom_spread_n_distances`
