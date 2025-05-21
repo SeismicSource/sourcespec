@@ -8,13 +8,13 @@ Spectral station correction calculated from ssp_residuals.
               Agnes Chounet <chounet@ipgp.fr>
 
     2015-2025 Claudio Satriano <satriano@ipgp.fr>
+              Kris Vanneste <kris.vanneste@oma.be>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
 """
 import logging
 import numpy as np
-from scipy.interpolate import interp1d
 from sourcespec.spectrum import read_spectra
 from sourcespec.ssp_util import mag_to_moment
 from sourcespec.ssp_setup import ssp_exit
@@ -26,10 +26,18 @@ def station_correction(spec_st, config):
     Correct spectra using station-average residuals.
 
     Residuals are obtained from a previous run.
+
+    Parameters
+    ----------
+    spec_st : SpectrumStream or list of Spectrum
+        List of spectra to be corrected. Corrected spectra are appended
+        to the list (component code of uncorrected spectra is renamed to 'h').
+    config : Config
+        Configuration object containing the residuals file path.
     """
     res_filepath = config.residuals_filepath
     if res_filepath is None:
-        return spec_st
+        return
     try:
         residual = read_spectra(res_filepath)
     except Exception as msg:
@@ -42,33 +50,38 @@ def station_correction(spec_st, config):
             corr = residual.select(id=spec.id)[0]
         except IndexError:
             continue
-        freq = spec.freq
+        # Define common frequency range for the correction and the spectrum
+        freq_min = max(spec.freq.min(), corr.freq.min())
+        freq_max = min(spec.freq.max(), corr.freq.max())
+        # Note that frequency range of corrected spectrum must not change,
+        # otherwise it will be out of sync with the noise spectrum
+        # and with the weight used in the inversion
+        # Instead, we use NaN values outside the common frequency range
         corr_interp = corr.copy()
-        corr_interp.freq = freq
-        # corr_interp.data must exist, so we create it with zeros
-        corr_interp.data = np.zeros_like(freq)
-        # interpolate the correction to the same frequencies as the spectrum
-        f = interp1d(
-            corr.freq, corr.data_mag, fill_value='extrapolate')
-        corr_interp.data_mag = f(freq)
+        corr_interp.interp_data_to_new_freq(spec.freq)
+        corr_interp.data_mag[corr_interp.freq < freq_min] = np.nan
+        corr_interp.data_mag[corr_interp.freq > freq_max] = np.nan
+        # Copy spectrum before correction
         spec_corr = spec.copy()
-        # uncorrected spectrum will have component name 'h'
+        # Uncorrected spectrum will have component name 'h',
+        # while corrected spectrum will have component name 'H'
         spec.stats.channel = f'{spec.stats.channel[:-1]}h'
+        # Apply correction
         try:
             spec_corr.data_mag -= corr_interp.data_mag
         except ValueError as msg:
             logger.error(f'Cannot correct spectrum {spec.id}: {msg}')
             continue
-        # interpolate the corrected data_mag to logspaced frequencies
-        f = interp1d(freq, spec_corr.data_mag, fill_value='extrapolate')
-        spec_corr.data_mag_logspaced = f(spec_corr.freq_logspaced)
-        # convert mag to moment
+        # Interpolate the corrected data_mag to logspaced frequencies
+        spec_corr.make_logspaced_from_linear(which='data_mag')
+        # Convert mag to moment
         spec_corr.data = mag_to_moment(spec_corr.data_mag)
         spec_corr.data_logspaced = mag_to_moment(spec_corr.data_mag_logspaced)
         spec_st.append(spec_corr)
-        fmin = freq.min()
-        fmax = freq.max()
+        # Find frequency range of the corrected spectrum and log the result
+        nan_idxs = np.isnan(spec_corr.data_mag)
+        fmin = spec_corr.freq[~nan_idxs].min()
+        fmax = spec_corr.freq[~nan_idxs].max()
         logger.info(
             f'{spec_corr.id}: corrected, frequency range is: '
             f'{fmin:.2f} {fmax:.2f} Hz')
-    return spec_st
