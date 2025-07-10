@@ -105,7 +105,7 @@ def _find_nan_edges(data):
     end_nan_mask_reversed = nan_mask[::-1]
     end_nan_idxs = np.where(
         end_nan_mask_reversed[:np.argmax(~end_nan_mask_reversed)])[0]
-    end_nan_idxs = len(data) - 1 - end_nan_idxs
+    end_nan_idxs = len(data) - 1 - end_nan_idxs[::-1]
     # Concatenate the two arrays. The result can be empty if there are
     # no NaNs at the beginning or end.
     return np.concatenate((start_nan_idxs, end_nan_idxs))
