@@ -622,6 +622,8 @@ class Spectrum():
             raise TypeError('Only ObsPy Trace objects are supported')
         if len(trace.data) < 10:
             raise ValueError('The trace must have at least 10 samples')
+        if np.all(trace.data == 0):
+            raise ValueError('Trace is all zeros')
         signal = trace.data
         delta = trace.stats.delta
         amp, freq = signal_fft(signal, delta)
