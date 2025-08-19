@@ -25,23 +25,27 @@ logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # MISC ------------------------------------------------------------------------
 def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
     """Get minimum and maximum values of spectral amplitude and frequency."""
-    amp_min = amp.min()
-    amp_max = amp.max()
+    # Make use of numpy's nanmin and nanmax functions to ignore NaNs in the
+    # array. Note that amp_min and amp_max can still be NaN if all the array
+    # values are NaN.
+    amp_min = np.nanmin(amp)
+    amp_max = np.nanmax(amp)
     if amp_minmax is None:
         amp_minmax = [amp_min, amp_max]
     else:
-        if amp_min < amp_minmax[0]:
+        if not np.isnan(amp_min) and amp_min < amp_minmax[0]:
             amp_minmax[0] = amp_min
-        if amp_max > amp_minmax[1]:
+        if not np.isnan(amp_max) and amp_max > amp_minmax[1]:
             amp_minmax[1] = amp_max
-    freq_min = freq.min()
-    freq_max = freq.max()
+    # Same for frequency
+    freq_min = np.nanmin(freq)
+    freq_max = np.nanmax(freq)
     if freq_minmax is None:
         freq_minmax = [freq_min, freq_max]
     else:
-        if freq_min < freq_minmax[0]:
+        if not np.isnan(freq_min) and freq_min < freq_minmax[0]:
             freq_minmax[0] = freq_min
-        if freq_max > freq_minmax[1]:
+        if not np.isnan(freq_max) and freq_max > freq_minmax[1]:
             freq_minmax[1] = freq_max
     return amp_minmax, freq_minmax
 

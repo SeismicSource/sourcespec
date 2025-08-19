@@ -437,11 +437,11 @@ def _build_weight_from_frequency(config, spec):
     freq = weight.freq
     weight.data = np.ones_like(weight.data)
     weight.data[freq <= config.f_weight] = config.weight
-    weight.data /= np.max(weight.data)
+    weight.data /= np.nanmax(weight.data)
     freq_logspaced = weight.freq_logspaced
     weight.data_logspaced = np.ones_like(weight.data_logspaced)
     weight.data_logspaced[freq_logspaced <= config.f_weight] = config.weight
-    weight.data_logspaced /= np.max(weight.data_logspaced)
+    weight.data_logspaced /= np.nanmax(weight.data_logspaced)
     return weight
 
 
@@ -465,7 +465,7 @@ def _build_weight_from_inv_frequency(spec, power=0.25):
     # to obtain similar curves regardless of fmin
     # and to avoid too much weight for very low frequencies
     weight.data[i0: i1 + 1] = 1. / (freq[i0: i1 + 1] - freq[i0] + 0.25)**power
-    weight.data /= np.max(weight.data)
+    weight.data /= np.nanmax(weight.data)
     freq_logspaced = weight.freq_logspaced
     weight.data_logspaced *= 0
     i0 = np.where(freq_logspaced >= snr_fmin)[0][0] if snr_fmin else 0
@@ -473,7 +473,7 @@ def _build_weight_from_inv_frequency(spec, power=0.25):
         else len(freq_logspaced) - 1
     weight.data_logspaced[i0: i1 + 1] =\
         1. / (freq_logspaced[i0: i1 + 1] - freq_logspaced[i0] + 0.25)**power
-    weight.data_logspaced /= np.max(weight.data_logspaced)
+    weight.data_logspaced /= np.nanmax(weight.data_logspaced)
     return weight
 
 
@@ -495,7 +495,7 @@ def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
     weight.data = np.log10(weight.data)
     # Weight spectrum is smoothed once more
     _smooth_spectrum(weight, smooth_width_decades)
-    weight.data /= np.max(weight.data)
+    weight.data /= np.nanmax(weight.data)
     # slightly taper weight at low frequencies, to avoid overestimating
     # weight at low frequencies, in cases where noise is underestimated
     cosine_taper(
@@ -522,7 +522,7 @@ def _build_weight_from_noise(config, spec, specnoise):
             spec, specnoise, config.spectral_smooth_width_decades)
     # interpolate to log-frequencies
     weight.make_logspaced_from_linear()
-    weight.data_logspaced /= np.max(weight.data_logspaced)
+    weight.data_logspaced /= np.nanmax(weight.data_logspaced)
     # Make sure weight is positive
     weight.data_logspaced[weight.data_logspaced <= 0] = 0.001
     return weight
