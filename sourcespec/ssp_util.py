@@ -321,11 +321,7 @@ def smooth(signal, window_len=11, window='hanning'):
     else:
         w = eval(f'np.{window}(window_len)')  # pylint: disable=eval-used
     y = np.convolve(w / w.sum(), s, mode='same')
-    yy = y[window_len:-window_len + 1]
-    # check if there are NaN values
-    nanindexes = np.where(np.isnan(yy))
-    yy[nanindexes] = signal[nanindexes]
-    return yy
+    return y[window_len:-window_len + 1]
 
 
 def remove_instr_response(trace, pre_filt=(0.5, 0.6, 40., 45.)):
