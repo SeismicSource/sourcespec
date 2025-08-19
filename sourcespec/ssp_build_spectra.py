@@ -502,7 +502,10 @@ def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
         weight.data,
         min(0.25, weight.stats.delta / 4),
         left_taper=True)
-    # Zero out weight below 0.2 Hz, so that it does not affect the fit
+    # Replace NaN values with a small value
+    weight.data[np.isnan(weight.data)] = 1e-9
+    # Set to a small value weight below 0.2 Hz,
+    # so that it does not affect the fit
     weight.data[weight.data <= 0.2] = 1e-9
     return weight
 
