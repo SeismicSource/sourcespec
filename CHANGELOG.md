@@ -102,6 +102,8 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
   residuals beyond their valid frequency range, which was leading to incorrect
   mean residuals at high frequencies (see [#68])
 - Fix bug preventing reading travel times from NonLinLoc grid files
+- Improved handling of glob patterns in trace ID filtering
+  (`use_traceids` and `ignore_traceids` config parameters)
 
 ## v1.8 - 2024-04-07
 

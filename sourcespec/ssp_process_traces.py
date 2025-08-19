@@ -472,45 +472,55 @@ def _merge_stream(config, st):
     return st[0]
 
 
+def _glob_to_regex(pattern):
+    """
+    Convert a glob-style pattern to a regex pattern.
+    """
+    # Escape regex-special characters except for ? and *
+    pattern = pattern.strip()
+    pattern = re.escape(pattern)            # Escapes all regex chars
+    pattern = pattern.replace(r'\?', '.')   # Convert escaped ? to .
+    pattern = pattern.replace(r'\*', '.*')  # Convert escaped * to .*
+    return pattern
+
+
 def _skip_ignored(config, st):
     """Skip traces ignored from config."""
-    # all traces in the stream have the same id
     traceid = st[0].id
     network, station, location, channel = traceid.split('.')
-    # build a list of all possible ids, from station only
-    # to full net.sta.loc.chan
+
+    # Build all possible IDs: station → full net.sta.loc.chan
     ss = [
         station,
         '.'.join((network, station)),
         '.'.join((network, station, location)),
         '.'.join((network, station, location, channel)),
     ]
-    if config.use_traceids is not None:
-        # - combine all ignore_traceids in a single regex
-        # - escape the dots, otherwise they are interpreted as any character
-        # - add a dot before the first asterisk, to avoid a pattern error
-        combined = (
-            "(" + ")|(".join(config.use_traceids) + ")"
-        ).replace('.', r'\.').replace('(*', '(.*')
-        if not any(re.match(combined, s) for s in ss):
-            _skip_stream_and_raise(
-                st,
-                reason='ignored from config file',
-                short_reason='ignored from config'
-            )
-    if config.ignore_traceids is not None:
-        # - combine all ignore_traceids in a single regex
-        # - escape the dots, otherwise they are interpreted as any character
-        # - add a dot before the first asterisk, to avoid a pattern error
-        combined = (
-            "(" + ")|(".join(config.ignore_traceids) + ")"
-        ).replace('.', r'\.').replace('(*', '(.*')
-        if any(re.match(combined, s) for s in ss):
-            _skip_stream_and_raise(
-                st,
-                reason='ignored from config file',
-                short_reason='ignored from config'
-            )
+
+    def _matches(patterns, strings):
+        """Return True if any string matches any glob pattern."""
+        regex = r'^(' + '|'.join(_glob_to_regex(p) for p in patterns) + r')$'
+        return any(re.match(regex, s) for s in strings)
+
+    if (
+        config.use_traceids is not None and
+        not _matches(config.use_traceids, ss)
+    ):
+        _skip_stream_and_raise(
+            st,
+            reason='ignored from config file',
+            short_reason='ignored from config'
+        )
+
+    if (
+        config.ignore_traceids is not None and
+        _matches(config.ignore_traceids, ss)
+    ):
+        _skip_stream_and_raise(
+            st,
+            reason='ignored from config file',
+            short_reason='ignored from config'
+        )
 
 
 def process_traces(config, st):
