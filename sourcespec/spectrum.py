@@ -112,7 +112,7 @@ def _find_nan_edges(data):
 
 
 def _interpolate_data_to_new_freq(
-        data, freq, new_freq, fill_value='extrapolate', fix_negative=True):
+        data, freq, new_freq, fill_value=np.nan, fix_negative=True):
     """
     Helper function to interpolate data to a new frequency range.
 
@@ -120,6 +120,7 @@ def _interpolate_data_to_new_freq(
     :param freq: The original frequency range.
     :param new_freq: The new frequency range.
     :param fill_value: The value to use for extrapolation.
+        Default is np.nan.
         If 'extrapolate', the data is extrapolated to the new frequency range.
         See scipy.interpolate.interp1d for more details.
     :param fix_negative: If True, negative values are replaced by the
@@ -437,16 +438,14 @@ class Spectrum():
             raise ValueError('Data axis is empty')
         if self.freq_logspaced.size == 0:
             raise ValueError('Logspaced frequency axis is empty')
-        # Find NaN indexes at the beginning and end of the data
+        # Find and remove NaN values at the beginning and end of the data
         nan_idxs = _find_nan_edges(data)
-        # Do not extrapolate if there are NaN values at the beginning or end
-        fill_value = np.nan if nan_idxs.size else 'extrapolate'
         data = np.delete(data, nan_idxs)
         freq = np.delete(self.freq, nan_idxs)
         # Reinterpolate data using log10 frequencies
         data_logspaced = _interpolate_data_to_new_freq(
             data, freq, self.freq_logspaced,
-            fill_value=fill_value, fix_negative=fix_negative
+            fix_negative=fix_negative
         )
         if which == 'data':
             self.data_logspaced = data_logspaced
@@ -494,12 +493,13 @@ class Spectrum():
         else:
             self.data_mag = data
 
-    def interp_data_to_new_freq(self, new_freq, fill_value='extrapolate'):
+    def interp_data_to_new_freq(self, new_freq, fill_value=np.nan):
         """
         Interpolate the linear data to a new frequency axis.
 
         :param new_freq: The new frequency axis.
         :param fill_value: The value to use for extrapolation.
+            Default is np.nan.
             If 'extrapolate', the data is extrapolated to the new frequency
             range. See scipy.interpolate.interp1d for more details.
         """
@@ -520,13 +520,13 @@ class Spectrum():
             )
         self.freq = new_freq
 
-    def interp_data_logspaced_to_new_freq(
-            self, new_freq, fill_value='extrapolate'):
+    def interp_data_logspaced_to_new_freq(self, new_freq, fill_value=np.nan):
         """
         Interpolate the logspaced data to a new frequency axis.
 
         :param new_freq: The new frequency axis.
         :param fill_value: The value to use for extrapolation.
+            Default is np.nan.
             If 'extrapolate', the data is extrapolated to the new frequency
             range. See scipy.interpolate.interp1d for more details.
         """
