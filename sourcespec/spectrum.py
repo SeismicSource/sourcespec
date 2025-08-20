@@ -389,8 +389,15 @@ class Spectrum():
             log_df = log_freq[-1] - log_freq[-2]
         else:
             log_df = delta_logspaced
+        # Make sure frequency range matches exactly
+        n = np.ceil((log_freq[-1] - log_freq[0]) / log_df)
         freq_logspaced =\
-            10**(np.arange(log_freq[0], log_freq[-1] + log_df, log_df))
+            np.logspace(log_freq[0], log_freq[-1], int(n)+1)
+        # Make sure first and last frequencies match exactly between
+        # logspaced and linear frequency axes (since the code above might have
+        # numerical errors)
+        freq_logspaced[0] = self.freq[0]
+        freq_logspaced[-1] = self.freq[-1]
         # If logspaced frequencies already exist,
         # reinterpolate the data to the new logspaced frequencies
         if (
