@@ -134,8 +134,11 @@ def _savefig(config, figures, suffix, force_numbering=False):
         figfile_base += f'{suffix}.'
     fmt = config.plot_save_format
     if BBOX is None:
-        pad_inches = matplotlib.rcParams['savefig.pad_inches']
+        # draw the figure without rendering it,
+        # so that we can get the bounding box
+        figures[0].draw_without_rendering()
         BBOX = figures[0].get_tightbbox(figures[0].canvas.get_renderer())
+        pad_inches = matplotlib.rcParams['savefig.pad_inches']
         BBOX = BBOX.padded(pad_inches)
     nfigures = len(figures)
     if (nfigures == 1 or fmt == 'pdf_multipage') and not force_numbering:
