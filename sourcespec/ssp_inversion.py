@@ -278,7 +278,30 @@ def _spec_inversion(config, spec, spec_weight):
     Mw_err, fc_err, t_star_err = params_err
     inverted_par_str = f'Mw: {Mw:.4f}; fc: {fc:.4f}; t_star: {t_star:.4f}'
     logger.info(f'{statId}: optimal values: {inverted_par_str}')
+
+    # Check if misfit is acceptable
     logger.info(f'{statId}: misfit: {misfit:.3f}')
+    misfit_max = config.pi_misfit_max or np.inf
+    if misfit > misfit_max:
+        spec.stats.ignore = True
+        spec.stats.ignore_reason = 'misfit too high'
+        raise ValueError(
+            f'{statId}: misfit larger than pi_misfit_max: '
+            f'{misfit:.3f} > {misfit_max:.3f}: ignoring inversion results'
+        )
+
+    # Check if fc is well-constrained
+    fc_idx = np.argmin(np.abs(freq_logspaced - fc))
+    fc_weight = weight[fc_idx]
+    logger.info(f'{statId}: spectral weight close to fc: {fc_weight:.3f}')
+    if fc_weight < config.pi_fc_weight_min:
+        spec.stats.ignore = True
+        spec.stats.ignore_reason = 'fc poorly constrained'
+        raise ValueError(
+            f'{statId}: spectral weight close to fc: '
+            f'{fc_weight:.3f} < {config.pi_fc_weight_min:.3f}: '
+            'ignoring inversion results'
+        )
 
     if np.isclose(fc, bounds.fc_min, rtol=0.1):
         spec.stats.ignore = True
@@ -294,15 +317,6 @@ def _spec_inversion(config, spec, spec_weight):
         raise ValueError(
             f'{statId}: optimal fc within 0.1% of fc_max: '
             f'{fc:.3f} ~= {bounds.fc_max:.3f}: ignoring inversion results'
-        )
-
-    misfit_max = config.pi_misfit_max or np.inf
-    if misfit > misfit_max:
-        spec.stats.ignore = True
-        spec.stats.ignore_reason = 'misfit too high'
-        raise ValueError(
-            f'{statId}: misfit larger than pi_misfit_max: '
-            f'{misfit:.3f} > {misfit_max:.3f}: ignoring inversion results'
         )
 
     # Check post-inversion bounds for t_star and fc

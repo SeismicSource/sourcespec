@@ -6,6 +6,9 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 
 ## unreleased
 
+Note: several new config file parameters have been added: please run
+`source_spec -U CONFIG_FILE_NAME` to update your old config file.
+
 ### Input/output
 
 - HTML report improvements:
@@ -34,6 +37,9 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 
 ### Post-Inversion
 
+- New config parameter `pi_fc_weight_min`, which defines the minimum acceptable
+  weight near the inverted fc. This helps flag cases where fc values may be
+  poorly constrained
 - New options for `source_residuals`:
   - `--runid` to select a specific run when multiple runs exist for the same
      event
@@ -76,6 +82,7 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 - Improved documentation for the `sn_min` and `spectral_sn_min` parameters
 - New option `rp_lower_bound` to avoid overcorrection for stations close to a
   nodal plane when radiation coefficient is computed from focal mechanism
+- New config parameter `pi_fc_weight_min`
 
 ### Bugfixes
 
