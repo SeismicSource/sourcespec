@@ -212,7 +212,7 @@ def _cut_signal_noise(config, trace):
         tr_noise_id = trace_noise.get_id()[:-1]
         signal_win_length = len(trace_signal) * trace_signal.stats.delta
         noise_win_length = len(trace_noise) * trace_noise.stats.delta
-        if config.weighting == 'noise':
+        if config.weighting == 'noise' and not config.force_noise_zero_padding:
             msg = (
                 f'{tr_noise_id}: truncating signal window to noise length: '
                 f'{signal_win_length:.1f} -> {noise_win_length:.1f} s'

@@ -20,6 +20,8 @@ Note: several new config file parameters have been added: please run
 
 ### Processing
 
+- New config parameter `force_noise_zero_padding` to force noise window
+  zero-padding regardless of the weighting mode
 - New config parameter `win_length_min` to set a minimum window length for
   the spectral analysis. Useful when signal and noise windows are automatically
   defined
@@ -69,6 +71,7 @@ Note: several new config file parameters have been added: please run
 
 ### Config file
 
+- New config parameter: `force_noise_zero_padding`
 - New config parameter: `win_length_min`
 - Improved documentation for the `win_length` parameter
 - New option `r_power_n_segmented` for the `geom_spread_model` config parameter
