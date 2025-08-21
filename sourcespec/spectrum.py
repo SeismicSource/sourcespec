@@ -9,6 +9,7 @@ SpectrumStream objects from HDF5 or TEXT files.
 
 :copyright:
     2012-2025 Claudio Satriano <satriano@ipgp.fr>
+              Kris Vanneste <kris.vanneste@oma.be>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
@@ -22,6 +23,7 @@ import logging
 import math
 import yaml
 import numpy as np
+from scipy.interpolate import interp1d
 # Reduce logging loevel for h5py.
 # For h5py, this has to be done before importing the module.
 logging.getLogger('h5py').setLevel(logging.WARNING)
@@ -81,6 +83,55 @@ class AttributeDict(dict):
         for key, value in self.items():
             new_dict[key] = copy.copy(value)
         return new_dict
+
+
+def _find_nan_edges(data):
+    """
+    Helper function to find NaN values at the beginning and end of a 1D array.
+
+    :param data: The data to check for NaN values.
+    :return: The indices of the NaN values at the beginning and end
+        of the data.
+        If there are no NaN values, an empty array is returned.
+        If all values are NaN, an array with all indices is returned.
+    """
+    nan_mask = np.isnan(data)
+    # All NaNs
+    if not np.any(~nan_mask):
+        return np.arange(len(data))
+    # NaNs at the beginning
+    start_nan_idxs = np.where(nan_mask[:np.argmax(~nan_mask)])[0]
+    # NaNs at the end
+    end_nan_mask_reversed = nan_mask[::-1]
+    end_nan_idxs = np.where(
+        end_nan_mask_reversed[:np.argmax(~end_nan_mask_reversed)])[0]
+    end_nan_idxs = len(data) - 1 - end_nan_idxs[::-1]
+    # Concatenate the two arrays. The result can be empty if there are
+    # no NaNs at the beginning or end.
+    return np.concatenate((start_nan_idxs, end_nan_idxs))
+
+
+def _interpolate_data_to_new_freq(
+        data, freq, new_freq, fill_value=np.nan, fix_negative=True):
+    """
+    Helper function to interpolate data to a new frequency range.
+
+    :param data: The data to interpolate.
+    :param freq: The original frequency range.
+    :param new_freq: The new frequency range.
+    :param fill_value: The value to use for extrapolation.
+        Default is np.nan.
+        If 'extrapolate', the data is extrapolated to the new frequency range.
+        See scipy.interpolate.interp1d for more details.
+    :param fix_negative: If True, negative values are replaced by the
+        minimum value of the original data.
+    :return: The interpolated data.
+    """
+    f = interp1d(freq, data, fill_value=fill_value, bounds_error=False)
+    new_data = f(new_freq)
+    if fix_negative:
+        new_data[new_data <= 0] = np.min(data)
+    return new_data
 
 
 class Spectrum():
@@ -320,6 +371,182 @@ class Spectrum():
             self.stats.delta_logspaced = 1.
         self._freq_logspaced = value
 
+    def make_freq_logspaced(self, delta_logspaced=None):
+        """
+        Create a logspaced frequency axis from the linear frequency axis.
+
+        If logspaced data already exist, it is reinterpolated to the new
+        logspaced frequencies.
+
+        :param delta_logspaced: The log10([Hz]) sample interval.
+            If None, it is computed from the linear frequency axis.
+        """
+        if self.freq.size == 0:
+            raise ValueError('Frequency axis is empty')
+        if np.any(self.freq <= 0):
+            raise ValueError('Frequency axis must be positive')
+        log_freq = np.log10(self.freq)
+        if delta_logspaced is None:
+            log_df = log_freq[-1] - log_freq[-2]
+        else:
+            log_df = delta_logspaced
+        # Make sure frequency range matches exactly
+        n = np.ceil((log_freq[-1] - log_freq[0]) / log_df)
+        freq_logspaced =\
+            np.logspace(log_freq[0], log_freq[-1], int(n)+1)
+        # Make sure first and last frequencies match exactly between
+        # logspaced and linear frequency axes (since the code above might have
+        # numerical errors)
+        freq_logspaced[0] = self.freq[0]
+        freq_logspaced[-1] = self.freq[-1]
+        # If logspaced frequencies already exist,
+        # reinterpolate the data to the new logspaced frequencies
+        if (
+            self.data_logspaced.size > 0
+            and self.freq_logspaced.size != freq_logspaced.size
+        ):
+            self.interp_data_logspaced_to_new_freq(freq_logspaced)
+        self.freq_logspaced = freq_logspaced
+
+    def make_logspaced_from_linear(self, which='data'):
+        """
+        Convert the linear data to logspaced data.
+
+        :param which: The data to convert.
+            One of 'data', 'data_mag' or 'both'.
+
+        :note: The logspaced frequency axis must exist.
+        """
+        if which == 'data':
+            data = self.data
+            fix_negative = True
+        elif which == 'data_mag':
+            data = self.data_mag
+            fix_negative = False
+        elif which == 'both':
+            self.make_logspaced_from_linear('data')
+            self.make_logspaced_from_linear('data_mag')
+            return
+        else:
+            raise ValueError(
+                f'Invalid value for "which": {which}. '
+                'Must be one of "data", "data_mag" or "both".'
+            )
+        if self.freq.size == 0:
+            raise ValueError('Frequency axis is empty')
+        if data.size == 0:
+            raise ValueError('Data axis is empty')
+        if self.freq_logspaced.size == 0:
+            raise ValueError('Logspaced frequency axis is empty')
+        # Find and remove NaN values at the beginning and end of the data
+        nan_idxs = _find_nan_edges(data)
+        data = np.delete(data, nan_idxs)
+        freq = np.delete(self.freq, nan_idxs)
+        # Reinterpolate data using log10 frequencies
+        data_logspaced = _interpolate_data_to_new_freq(
+            data, freq, self.freq_logspaced,
+            fix_negative=fix_negative
+        )
+        if which == 'data':
+            self.data_logspaced = data_logspaced
+        else:
+            self.data_mag_logspaced = data_logspaced
+
+    def make_linear_from_logspaced(self, which='data_logspaced'):
+        """
+        Convert the logspaced data to linear data.
+
+        :param which: The data to convert.
+            One of 'data_logspaced', 'data_mag_logspaced' or 'both'.
+
+        :note: The linear frequency axis must exist.
+        """
+        if which == 'data_logspaced':
+            data_logspaced = self.data_logspaced
+            fix_negative = True
+        elif which == 'data_mag_logspaced':
+            data_logspaced = self.data_mag_logspaced
+            fix_negative = False
+        elif which == 'both':
+            self.make_linear_from_logspaced('data_logspaced')
+            self.make_linear_from_logspaced('data_mag_logspaced')
+            return
+        else:
+            raise ValueError(
+                f'Invalid value for "which": {which}. '
+                'Must be one of "data_logspaced", "data_mag_logspaced" or '
+                '"both".'
+            )
+        if self.freq_logspaced.size == 0:
+            raise ValueError('Logspaced frequency axis is empty')
+        if self.data_logspaced.size == 0:
+            raise ValueError('Data logspaced axis is empty')
+        if self.freq.size == 0:
+            raise ValueError('Frequency axis is empty')
+        # Reinterpolate data using linear frequencies
+        data = _interpolate_data_to_new_freq(
+            data_logspaced, self.freq_logspaced, self.freq,
+            fix_negative=fix_negative
+        )
+        if which == 'data_logspaced':
+            self.data = data
+        else:
+            self.data_mag = data
+
+    def interp_data_to_new_freq(self, new_freq, fill_value=np.nan):
+        """
+        Interpolate the linear data to a new frequency axis.
+
+        :param new_freq: The new frequency axis.
+        :param fill_value: The value to use for extrapolation.
+            Default is np.nan.
+            If 'extrapolate', the data is extrapolated to the new frequency
+            range. See scipy.interpolate.interp1d for more details.
+        """
+        if self.freq.size == 0:
+            raise ValueError('Frequency axis is empty')
+        if self.data.size == 0:
+            raise ValueError('Data axis is empty')
+        self.data = _interpolate_data_to_new_freq(
+            self.data, self.freq, new_freq,
+            fill_value=fill_value,
+            fix_negative=True
+        )
+        if self.data_mag.size:
+            self.data_mag = _interpolate_data_to_new_freq(
+                self.data_mag, self.freq, new_freq,
+                fill_value=fill_value,
+                fix_negative=False
+            )
+        self.freq = new_freq
+
+    def interp_data_logspaced_to_new_freq(self, new_freq, fill_value=np.nan):
+        """
+        Interpolate the logspaced data to a new frequency axis.
+
+        :param new_freq: The new frequency axis.
+        :param fill_value: The value to use for extrapolation.
+            Default is np.nan.
+            If 'extrapolate', the data is extrapolated to the new frequency
+            range. See scipy.interpolate.interp1d for more details.
+        """
+        if self.freq_logspaced.size == 0:
+            raise ValueError('Logspaced frequency axis is empty')
+        if self.data_logspaced.size == 0:
+            raise ValueError('Data logspaced axis is empty')
+        self.data_logspaced = _interpolate_data_to_new_freq(
+            self.data_logspaced, self.freq_logspaced, new_freq,
+            fill_value=fill_value,
+            fix_negative=True
+        )
+        if self.data_mag_logspaced.size:
+            self.data_mag_logspaced = _interpolate_data_to_new_freq(
+                self.data_mag_logspaced, self.freq_logspaced, new_freq,
+                fill_value=fill_value,
+                fix_negative=False
+            )
+        self.freq_logspaced = new_freq
+
     def copy(self):
         """Return a copy of the spectrum."""
         spec_copy = Spectrum()
@@ -402,6 +629,8 @@ class Spectrum():
             raise TypeError('Only ObsPy Trace objects are supported')
         if len(trace.data) < 10:
             raise ValueError('The trace must have at least 10 samples')
+        if np.all(trace.data == 0):
+            raise ValueError('Trace is all zeros')
         signal = trace.data
         delta = trace.stats.delta
         amp, freq = signal_fft(signal, delta)

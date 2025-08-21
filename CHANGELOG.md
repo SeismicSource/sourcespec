@@ -29,6 +29,8 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 - New config parameter `clipping_min_amplitude_ratio` to set a threshold for
   trace amplitude below which the trace is not checked for clipping
 - Use spectral interpolation to compute and apply station residuals
+- Limit spectrum and residual to common frequency range when applying
+  correction before fitting (see [#69])
 
 ### Post-Inversion
 
@@ -836,3 +838,4 @@ Initial Python port.
 [#49]: https://github.com/SeismicSource/sourcespec/issues/49
 [#67]: https://github.com/SeismicSource/sourcespec/issues/67
 [#68]: https://github.com/SeismicSource/sourcespec/issues/68
+[#69]: https://github.com/SeismicSource/sourcespec/issues/69

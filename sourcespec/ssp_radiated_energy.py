@@ -45,8 +45,10 @@ def _spectral_integral(spec, t_star, fmin=None, fmax=None):
         data[freq < fmin] = 0.
     if fmax is not None:
         data[freq > fmax] = 0.
+    # Compute the integral and return it. Make sure to ignore
+    # NaN values in the data array.
     # Returned value has units of (m^2)^2 * Hz = m^4/s
-    return np.sum(data**2) * deltaf
+    return np.sum(data[~np.isnan(data)]**2) * deltaf
 
 
 def _radiated_energy_coefficient(rho, vel, free_surf_ampl, rp, average_rp):
