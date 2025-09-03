@@ -183,7 +183,9 @@ def _write_stations_table(cursor, db_file, sspec_output, config):
             *par.sigma_a.compact_uncertainty(),
             int(par.sigma_a.outlier),
             par.hypo_dist_in_km,
-            par.azimuth
+            par.azimuth,
+            par.spectral_snratio_mean,
+            par.spectral_snratio_max
         )
         # Create a string like ?,?,?,?
         values = ','.join('?' * len(t))

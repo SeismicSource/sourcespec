@@ -110,7 +110,7 @@ def _cut_spectrum(config, spec):
     return spec.slice(freq1, freq2)
 
 
-def _compute_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
+def _compute_spec_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
     """
     Compute the component 'H' from geometric mean of the stream components.
 
@@ -119,6 +119,7 @@ def _compute_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
     if vertical_channel_codes is None:
         vertical_channel_codes = ['Z']
     spec_h = None
+    nspecs = 0
     for spec in spec_st:
         # this avoids taking a component from co-located station:
         # ('code' is band+instrument code)
@@ -139,12 +140,32 @@ def _compute_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
             spec_h.data = np.power(spec_h.data, 2)
             spec_h.data_logspaced = np.power(spec_h.data_logspaced, 2)
             spec_h.stats.channel = f'{code}H'
+            spectral_snratio_mean = spectral_snratio_max = getattr(
+                spec.stats, 'spectral_snratio', 0)
         else:
             spec_h.data += np.power(spec.data, 2)
             spec_h.data_logspaced += np.power(spec.data_logspaced, 2)
-    if spec_h is not None:
-        spec_h.data = np.sqrt(spec_h.data)
-        spec_h.data_logspaced = np.sqrt(spec_h.data_logspaced)
+            spectral_snratio = getattr(
+                spec.stats, 'spectral_snratio', 0)
+            spectral_snratio_mean += spectral_snratio
+            spectral_snratio_max = max(spectral_snratio_max, spectral_snratio)
+        nspecs += 1
+    # compute mean, avoid possible division by zero
+    spectral_snratio_mean /= max(nspecs, 1)
+    # finalize spec_h data and metadata
+    spec_h.data = np.sqrt(spec_h.data)
+    spec_h.data_logspaced = np.sqrt(spec_h.data_logspaced)
+    if spectral_snratio_mean > 0:
+        spec_h.stats.spectral_snratio_mean = spectral_snratio_mean
+    if spectral_snratio_max > 0:
+        spec_h.stats.spectral_snratio_max = spectral_snratio_max
+    # remove unneeded stats
+    for attr in (
+        'spectral_snratio',
+        'spectral_snratio_fmin',
+        'spectral_snratio_fmax'
+    ):
+        spec_h.stats.pop(attr, None)
     return spec_h
 
 
@@ -612,11 +633,11 @@ def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
         specnoise_st_sel = _select_spectra(specnoise_st, specid)
         # 'code' is band+instrument code
         for code in {x.stats.channel[:-1] for x in spec_st_sel}:
-            spec_h = _compute_h(
+            spec_h = _compute_spec_h(
                 spec_st_sel, code, vertical_channel_codes, wave_type)
             if spec_h is not None:
                 spec_st.append(spec_h)
-            specnoise_h = _compute_h(
+            specnoise_h = _compute_spec_h(
                 specnoise_st_sel, code, vertical_channel_codes, wave_type)
             if specnoise_h is not None:
                 specnoise_st.append(specnoise_h)

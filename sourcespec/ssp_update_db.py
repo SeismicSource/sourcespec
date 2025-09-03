@@ -211,6 +211,18 @@ def _version_1_to_2(cursor):
         sys.exit(1)
 
 
+def _version_2_to_3(cursor):
+    """
+    Upgrade database from version 2 to 3.
+    """
+    new_station_keys = [
+        'spectral_snratio_mean', 'spectral_snratio_max'
+    ]
+    for column in new_station_keys:
+        cursor.execute(f'ALTER TABLE Stations ADD COLUMN {column} REAL;')
+    cursor.execute('PRAGMA user_version = 3;')
+
+
 def _overwrite_ok(db_file):
     """
     Check if db_file exists and ask for confirmation to overwrite it.
@@ -240,10 +252,14 @@ def update_db_file(db_file):
     print(f'Updating {db_file}...')
     conn, cursor = _open_sqlite_db(db_file)
     db_version = _get_db_version(cursor, db_file)
-    if db_version == 1:
+    if db_version in (1, 2):
         # create a backup copy
         shutil.copy2(db_file, f'{db_file}.bak')
-        _version_1_to_2(cursor)
+        if db_version == 1:
+            _version_1_to_2(cursor)
+            _version_2_to_3(cursor)
+        if db_version == 2:
+            _version_2_to_3(cursor)
         print(
             f'{db_file} updated from version {db_version} '
             f'to version {DB_VERSION}.')

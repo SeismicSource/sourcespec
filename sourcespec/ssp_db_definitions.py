@@ -11,7 +11,7 @@ Table definitions for SourceSpec database.
     (http://www.cecill.info/licences.en.html)
 """
 # Current DB version
-DB_VERSION = 2
+DB_VERSION = 3
 
 # Table definitions
 STATIONS_TABLE = {
@@ -56,6 +56,8 @@ STATIONS_TABLE = {
     'sigma_a_is_outlier': 'INT',
     'dist': 'REAL',
     'azimuth': 'REAL',
+    'spectral_snratio_mean': 'REAL',
+    'spectral_snratio_max': 'REAL'
 }
 STATIONS_PRIMARY_KEYS = ['stid', 'evid', 'runid']
 

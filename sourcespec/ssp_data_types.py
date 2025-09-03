@@ -210,7 +210,8 @@ class StationParameters(OrderedAttribDict):
 
     def __init__(self, station_id, instrument_type=None,
                  latitude=None, longitude=None,
-                 hypo_dist_in_km=None, epi_dist_in_km=None, azimuth=None):
+                 hypo_dist_in_km=None, epi_dist_in_km=None, azimuth=None,
+                 spectral_snratio_mean=None, spectral_snratio_max=None):
         self.station_id = station_id
         self.instrument_type = instrument_type
         self.latitude = latitude
@@ -218,6 +219,9 @@ class StationParameters(OrderedAttribDict):
         self.hypo_dist_in_km = hypo_dist_in_km
         self.epi_dist_in_km = epi_dist_in_km
         self.azimuth = azimuth
+        self.spectral_snratio_mean = spectral_snratio_mean
+        self.spectral_snratio_max = spectral_snratio_max
+        # The following parameters are expected to be of type SpectralParameter
         self.Mw = None
         self.fc = None
         self.t_star = None

@@ -345,7 +345,10 @@ def _spec_inversion(config, spec, spec_weight):
         latitude=stla, longitude=stlo,
         hypo_dist_in_km=spec.stats.hypo_dist,
         epi_dist_in_km=spec.stats.epi_dist,
-        azimuth=az)
+        azimuth=az,
+        spectral_snratio_mean=spec.stats.spectral_snratio_mean,
+        spectral_snratio_max=spec.stats.spectral_snratio_max
+    )
     station_pars.Mw = SpectralParameter(
         param_id='Mw', value=Mw,
         lower_uncertainty=Mw_err[0], upper_uncertainty=Mw_err[1],

@@ -9,6 +9,10 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 Note: several new config file parameters have been added: please run
 `source_spec -U CONFIG_FILE_NAME` to update your old config file.
 
+Warning: the SQLite database used by this version is not compatible with
+previous versions. You will need to upgrade your old database manually or using
+`source_spec -u DATABASE_FILE_NAME`.
+
 ### Input/output
 
 - HTML report improvements:
@@ -16,7 +20,9 @@ Note: several new config file parameters have been added: please run
   - Display configuration, log and output files in a modal window with syntax
     highlighting (only when the HTML report is served by a web server)
 - More informative warning messages when signal windows are truncated or
-  noise windows are zero-padded.
+  noise windows are zero-padded
+- Save spectral S/N ratio information in the YAML output file and in the
+  database
 
 ### Processing
 
