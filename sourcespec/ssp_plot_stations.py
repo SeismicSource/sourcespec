@@ -860,7 +860,10 @@ def plot_stations(config, sspec_output):
     if not config.plot_show and not config.plot_save:
         return
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
-    stationpar = sspec_output.station_parameters
+    stationpar = {
+        st_id: spar for st_id, spar in sspec_output.station_parameters.items()
+        if not spar.ignored
+    }
     st_ids = sorted(stationpar.keys())
     lonlat_dist = np.array([
         (stationpar[k]['longitude'], stationpar[k]['latitude'],

@@ -43,6 +43,8 @@ def spectral_residuals(config, spec_st, sspec_output):
         for spec in spec_st_sel:
             if spec.stats.channel[-1] != 'H':
                 continue
+            if spec.stats.ignore:
+                continue
             xdata = spec.freq
             synth_mean_mag = spectral_model(xdata, **sourcepar_summary)
             res = spec.copy()

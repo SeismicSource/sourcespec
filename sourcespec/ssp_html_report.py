@@ -867,6 +867,8 @@ def _add_station_table_to_html(config, sspec_output, templates, replacements):
     stationpar = sspec_output.station_parameters
     for statId in sorted(stationpar.keys()):
         par = stationpar[statId]
+        if par.ignored:
+            continue
         instrument_type = par.instrument_type
         Mw_text, Mw_err_text = _station_value_and_err_text(par, 'Mw', '{:.3f}')
         fc_text, fc_err_text = _station_value_and_err_text(par, 'fc', '{:.3f}')

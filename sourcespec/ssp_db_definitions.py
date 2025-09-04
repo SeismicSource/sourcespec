@@ -57,7 +57,9 @@ STATIONS_TABLE = {
     'dist': 'REAL',
     'azimuth': 'REAL',
     'spectral_snratio_mean': 'REAL',
-    'spectral_snratio_max': 'REAL'
+    'spectral_snratio_max': 'REAL',
+    'ignored': 'INT',
+    'ignored_reason': 'TEXT'
 }
 STATIONS_PRIMARY_KEYS = ['stid', 'evid', 'runid']
 

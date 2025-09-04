@@ -178,18 +178,24 @@ def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_logspaced, statId):
     return idx0, idx1
 
 
-def _spec_inversion(config, spec, spec_weight):
-    """Invert one spectrum, return a StationParameters() object."""
-    # azimuth computation
+def _compute_station_azimuth(spec):
     coords = spec.stats.coords
     stla = coords.latitude
     stlo = coords.longitude
     hypo = spec.stats.event.hypocenter
-    magnitude = spec.stats.event.magnitude
     evla = hypo.latitude.value_in_deg
     evlo = hypo.longitude.value_in_deg
     geod = gps2dist_azimuth(evla, evlo, stla, stlo)
     az = geod[1]
+    return stla, stlo, az
+
+
+def _spec_inversion(config, spec, spec_weight, station_pars):
+    """Invert one spectrum, return a StationParameters() object."""
+    stla = station_pars.latitude
+    stlo = station_pars.longitude
+    az = station_pars.azimuth
+    magnitude = spec.stats.event.magnitude
 
     freq_logspaced = spec.freq_logspaced
     ydata = spec.data_mag_logspaced
@@ -340,15 +346,6 @@ def _spec_inversion(config, spec, spec_weight):
             f'[{pi_fc_min:.3f}, {pi_fc_max:.3f}]: ignoring inversion results'
         )
 
-    station_pars = StationParameters(
-        station_id=spec.id, instrument_type=spec.stats.instrtype,
-        latitude=stla, longitude=stlo,
-        hypo_dist_in_km=spec.stats.hypo_dist,
-        epi_dist_in_km=spec.stats.epi_dist,
-        azimuth=az,
-        spectral_snratio_mean=spec.stats.spectral_snratio_mean,
-        spectral_snratio_max=spec.stats.spectral_snratio_max
-    )
     station_pars.Mw = SpectralParameter(
         param_id='Mw', value=Mw,
         lower_uncertainty=Mw_err[0], upper_uncertainty=Mw_err[1],
@@ -550,16 +547,31 @@ def spectral_inversion(config, spec_st, weight_st):
     for spec in sorted(spectra, key=lambda sp: sp.id):
         if spec.stats.channel[-1] != 'H':
             continue
+        stla, stlo, az = _compute_station_azimuth(spec)
+        station_pars = StationParameters(
+            station_id=spec.id, instrument_type=spec.stats.instrtype,
+            latitude=stla, longitude=stlo,
+            hypo_dist_in_km=spec.stats.hypo_dist,
+            epi_dist_in_km=spec.stats.epi_dist,
+            azimuth=az,
+            spectral_snratio_mean=spec.stats.spectral_snratio_mean,
+            spectral_snratio_max=spec.stats.spectral_snratio_max,
+            ignored=spec.stats.ignore,
+            ignored_reason=getattr(spec.stats, 'ignore_reason', None)
+        )
+        sspec_output.station_parameters[station_pars.station_id] = station_pars
         if spec.stats.ignore:
             continue
         spec_weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
         try:
-            station_pars = _spec_inversion(config, spec, spec_weight)
+            _spec_inversion(config, spec, spec_weight, station_pars)
         except (RuntimeError, ValueError) as msg:
             logger.warning(msg)
+            station_pars.ignored = spec.stats.ignore
+            station_pars.ignored_reason = getattr(
+                spec.stats, 'ignore_reason', None)
             continue
         spec_st += _synth_spec(config, spec, station_pars)
-        sspec_output.station_parameters[station_pars.station_id] = station_pars
 
     logger.info('Inverting spectra: done')
     logger.info('---------------------------------------------------')

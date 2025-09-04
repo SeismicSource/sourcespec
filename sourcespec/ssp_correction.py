@@ -44,7 +44,10 @@ def station_correction(spec_st, config):
         logger.error(msg)
         ssp_exit(1)
 
-    H_specs = [spec for spec in spec_st if spec.stats.channel[-1] == 'H']
+    H_specs = [
+        spec for spec in spec_st
+        if spec.stats.channel[-1] == 'H' and not spec.stats.ignore
+    ]
     for spec in H_specs:
         try:
             corr = residual.select(id=spec.id)[0]

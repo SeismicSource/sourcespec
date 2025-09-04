@@ -120,6 +120,9 @@ def _compute_spec_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
         vertical_channel_codes = ['Z']
     spec_h = None
     nspecs = 0
+    spectral_snratio_mean = spectral_snratio_max = 0
+    ignore_list = []
+    ignore_reason_list = []
     for spec in spec_st:
         # this avoids taking a component from co-located station:
         # ('code' is band+instrument code)
@@ -137,35 +140,48 @@ def _compute_spec_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
             continue
         if spec_h is None:
             spec_h = spec.copy()
-            spec_h.data = np.power(spec_h.data, 2)
-            spec_h.data_logspaced = np.power(spec_h.data_logspaced, 2)
             spec_h.stats.channel = f'{code}H'
-            spectral_snratio_mean = spectral_snratio_max = getattr(
-                spec.stats, 'spectral_snratio', 0)
-        else:
+            # remove unneeded stats
+            for attr in (
+                'spectral_snratio',
+                'ignore',
+                'ignore_reason'
+            ):
+                spec_h.stats.pop(attr, None)
+            spec_h.data = np.zeros_like(spec.data)
+            spec_h.data_logspaced = np.zeros_like(spec.data_logspaced)
+        ignore_list.append(spec.stats.ignore)
+        ignore_reason_list.append(getattr(spec.stats, 'ignore_reason', None))
+        if not spec.stats.ignore:
             spec_h.data += np.power(spec.data, 2)
             spec_h.data_logspaced += np.power(spec.data_logspaced, 2)
-            spectral_snratio = getattr(
-                spec.stats, 'spectral_snratio', 0)
-            spectral_snratio_mean += spectral_snratio
-            spectral_snratio_max = max(spectral_snratio_max, spectral_snratio)
+            spec_h.stats.spectral_snratio_fmin = min(
+                getattr(spec.stats, 'spectral_snratio_fmin', np.nan),
+                getattr(spec_h.stats, 'spectral_snratio_fmin', np.nan)
+            )
+            spec_h.stats.spectral_snratio_fmax = max(
+                getattr(spec.stats, 'spectral_snratio_fmax', np.nan),
+                getattr(spec_h.stats, 'spectral_snratio_fmax', np.nan)
+            )
+        spectral_snratio = getattr(
+            spec.stats, 'spectral_snratio', 0)
+        spectral_snratio_mean += spectral_snratio
+        spectral_snratio_max = max(spectral_snratio_max, spectral_snratio)
         nspecs += 1
     # compute mean, avoid possible division by zero
     spectral_snratio_mean /= max(nspecs, 1)
     # finalize spec_h data and metadata
     spec_h.data = np.sqrt(spec_h.data)
     spec_h.data_logspaced = np.sqrt(spec_h.data_logspaced)
-    if spectral_snratio_mean > 0:
-        spec_h.stats.spectral_snratio_mean = spectral_snratio_mean
-    if spectral_snratio_max > 0:
-        spec_h.stats.spectral_snratio_max = spectral_snratio_max
-    # remove unneeded stats
-    for attr in (
-        'spectral_snratio',
-        'spectral_snratio_fmin',
-        'spectral_snratio_fmax'
-    ):
-        spec_h.stats.pop(attr, None)
+    spec_h.stats.spectral_snratio_mean = spectral_snratio_mean
+    spec_h.stats.spectral_snratio_max = spectral_snratio_max
+    spec_h.stats.ignore = all(ignore_list)
+    if spec_h.stats.ignore:
+        spec_h.data = np.ones_like(spec_h.data) * np.nan
+        spec_h.data_logspaced = np.ones_like(spec_h.data_logspaced) * np.nan
+        ignore_reason_list = {
+            ir for ir in ignore_reason_list if ir is not None}
+        spec_h.stats.ignore_reason = ', '.join(ignore_reason_list)
     return spec_h
 
 
@@ -588,7 +604,7 @@ def _build_weight_spectral_stream(config, spec_st, specnoise_st):
     """Build a stream of weights from a stream of spectra and a stream of
     noise spectra."""
     weight_st = SpectrumStream()
-    spec_ids = {sp.id[:-1] for sp in spec_st if not sp.stats.ignore}
+    spec_ids = {sp.id[:-1] for sp in spec_st}
     for specid in spec_ids:
         try:
             spec_h = _select_spectra(spec_st, f'{specid}H')[0]
@@ -613,9 +629,7 @@ def _select_spectra(spec_st, specid):
     channel = channel + '?' * (3 - len(channel))
     spec_st_sel = spec_st.select(
         network=network, station=station, location=location, channel=channel)
-    spec_st_sel = SpectrumStream(
-        sp for sp in spec_st_sel if not sp.stats.ignore)
-    return spec_st_sel
+    return SpectrumStream(spec_st_sel)
 
 
 def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
@@ -627,7 +641,7 @@ def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
     """
     if vertical_channel_codes is None:
         vertical_channel_codes = ['Z']
-    spec_ids = {sp.id[:-1] for sp in spec_st if not sp.stats.ignore}
+    spec_ids = {sp.id[:-1] for sp in spec_st}
     for specid in spec_ids:
         spec_st_sel = _select_spectra(spec_st, specid)
         specnoise_st_sel = _select_spectra(specnoise_st, specid)

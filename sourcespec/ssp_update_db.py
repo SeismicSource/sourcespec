@@ -215,11 +215,14 @@ def _version_2_to_3(cursor):
     """
     Upgrade database from version 2 to 3.
     """
-    new_station_keys = [
-        'spectral_snratio_mean', 'spectral_snratio_max'
-    ]
-    for column in new_station_keys:
-        cursor.execute(f'ALTER TABLE Stations ADD COLUMN {column} REAL;')
+    new_station_keys = {
+        'spectral_snratio_mean': 'REAL',
+        'spectral_snratio_max': 'REAL',
+        'ignored': 'INTEGER',
+        'ignored_reason': 'TEXT'
+    }
+    for column, col_type in new_station_keys.items():
+        cursor.execute(f'ALTER TABLE Stations ADD COLUMN {column} {col_type};')
     cursor.execute('PRAGMA user_version = 3;')
 
 

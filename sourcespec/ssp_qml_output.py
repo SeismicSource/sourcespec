@@ -156,6 +156,8 @@ def write_qml(config, sspec_output):
     # Station magnitudes
     for statId in sorted(stationpar.keys()):
         par = stationpar[statId]
+        if par.ignored:
+            continue
         st_mag = StationMagnitude()
         _id = config.smi_station_magnitude_template.replace(
             '$SMI_MAGNITUDE_TEMPLATE', config.smi_magnitude_template)

@@ -28,8 +28,11 @@ def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
     # Make use of numpy's nanmin and nanmax functions to ignore NaNs in the
     # array. Note that amp_min and amp_max can still be NaN if all the array
     # values are NaN.
-    amp_min = np.nanmin(amp)
-    amp_max = np.nanmax(amp)
+    if np.all(np.isnan(amp)):
+        amp_min = amp_max = np.nan
+    else:
+        amp_min = np.nanmin(amp)
+        amp_max = np.nanmax(amp)
     if amp_minmax is None:
         amp_minmax = [amp_min, amp_max]
     else:

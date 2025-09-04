@@ -144,12 +144,12 @@ def _write_parfile(config, sspec_output):
                     outl = False
                 elif key == 'ra':
                     _pkey = 'radius'
-                    val = par[_pkey].value
-                    outl = par[_pkey].outlier
+                    val = getattr(par[_pkey], 'value', None)
+                    outl = getattr(par[_pkey], 'outlier', True)
                 else:
                     _pkey = key
-                    val = par[_pkey].value
-                    outl = par[_pkey].outlier
+                    val = getattr(par[_pkey], 'value', None)
+                    outl = getattr(par[_pkey], 'outlier', True)
                 space = ' *' if outl else '  '
                 parfile.write(f'{space}{key} ')
                 if val is not None and ~np.isnan(val):
@@ -164,10 +164,10 @@ def _write_parfile(config, sspec_output):
                     outl = False
                     err = None
                 else:
-                    outl = par[_pkey].outlier
-                    err = par[_pkey].lower_uncertainty
+                    outl = getattr(par[_pkey], 'outlier', True)
+                    err = getattr(par[_pkey], 'lower_uncertainty', None)
                     if err is None:
-                        err = par[_pkey].uncertainty
+                        err = getattr(par[_pkey], 'uncertainty', None)
                 space = ' *' if outl else '  '
                 parfile.write(f'{space}{key} ')
                 if err is not None:
@@ -182,10 +182,10 @@ def _write_parfile(config, sspec_output):
                     outl = False
                     err = None
                 else:
-                    outl = par[_pkey].outlier
-                    err = par[_pkey].upper_uncertainty
+                    outl = getattr(par[_pkey], 'outlier', True)
+                    err = getattr(par[_pkey], 'upper_uncertainty', None)
                     if err is None:
-                        err = par[_pkey].uncertainty
+                        err = getattr(par[_pkey], 'uncertainty', None)
                 space = ' *' if outl else '  '
                 parfile.write(f'{space}{key} ')
                 if err is not None:

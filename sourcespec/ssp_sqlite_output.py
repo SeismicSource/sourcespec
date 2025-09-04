@@ -155,37 +155,48 @@ def _write_stations_table(cursor, db_file, sspec_output, config):
         # Insert new line
         t = (
             statId, evid, runid,
-            par.Mo.value,
-            *par.Mo.compact_uncertainty(),
-            int(par.Mo.outlier),
-            par.Mw.value,
-            *par.Mw.compact_uncertainty(),
-            int(par.Mw.outlier),
-            par.fc.value,
-            *par.fc.compact_uncertainty(),
-            int(par.fc.outlier),
-            par.t_star.value,
-            *par.t_star.compact_uncertainty(),
-            int(par.t_star.outlier),
-            par.Qo.value,
-            *par.Qo.compact_uncertainty(),
-            int(par.Qo.outlier),
-            par.ssd.value,
-            *par.ssd.compact_uncertainty(),
-            int(par.ssd.outlier),
-            par.radius.value,
-            *par.radius.compact_uncertainty(),
-            int(par.radius.outlier),
-            par.Er.value,
-            *par.Er.compact_uncertainty(),
-            int(par.Er.outlier),
-            par.sigma_a.value,
-            *par.sigma_a.compact_uncertainty(),
-            int(par.sigma_a.outlier),
+            getattr(par.Mo, 'value', None),
+            *(par.Mo.compact_uncertainty() if par.Mo else (None, None)),
+            int(getattr(par.Mo, 'outlier', True)),
+            getattr(par.Mw, 'value', None),
+            *(par.Mw.compact_uncertainty() if par.Mw else (None, None)),
+            int(getattr(par.Mw, 'outlier', True)),
+            getattr(par.fc, 'value', None),
+            *(par.fc.compact_uncertainty() if par.fc else (None, None)),
+            int(getattr(par.fc, 'outlier', True)),
+            getattr(par.t_star, 'value', None),
+            *(
+                par.t_star.compact_uncertainty()
+                if par.t_star else (None, None)
+            ),
+            int(getattr(par.t_star, 'outlier', True)),
+            getattr(par.Qo, 'value', None),
+            *(par.Qo.compact_uncertainty() if par.Qo else (None, None)),
+            int(getattr(par.Qo, 'outlier', True)),
+            getattr(par.ssd, 'value', None),
+            *(par.ssd.compact_uncertainty() if par.ssd else (None, None)),
+            int(getattr(par.ssd, 'outlier', True)),
+            getattr(par.radius, 'value', None),
+            *(
+                par.radius.compact_uncertainty()
+                if par.radius else (None, None)
+            ),
+            int(getattr(par.radius, 'outlier', True)),
+            getattr(par.Er, 'value', None),
+            *(par.Er.compact_uncertainty() if par.Er else (None, None)),
+            int(getattr(par.Er, 'outlier', True)),
+            getattr(par.sigma_a, 'value', None),
+            *(
+                par.sigma_a.compact_uncertainty()
+                if par.sigma_a else (None, None)
+            ),
+            int(getattr(par.sigma_a, 'outlier', True)),
             par.hypo_dist_in_km,
             par.azimuth,
             par.spectral_snratio_mean,
-            par.spectral_snratio_max
+            par.spectral_snratio_max,
+            par.ignored,
+            getattr(par, 'ignored_reason', None)
         )
         # Create a string like ?,?,?,?
         values = ','.join('?' * len(t))

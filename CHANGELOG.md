@@ -23,6 +23,8 @@ previous versions. You will need to upgrade your old database manually or using
   noise windows are zero-padded
 - Save spectral S/N ratio information in the YAML output file and in the
   database
+- Save information on ignored spectra in the YAML output file and in the
+  database
 
 ### Processing
 

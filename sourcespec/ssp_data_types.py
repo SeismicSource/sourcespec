@@ -211,7 +211,8 @@ class StationParameters(OrderedAttribDict):
     def __init__(self, station_id, instrument_type=None,
                  latitude=None, longitude=None,
                  hypo_dist_in_km=None, epi_dist_in_km=None, azimuth=None,
-                 spectral_snratio_mean=None, spectral_snratio_max=None):
+                 spectral_snratio_mean=None, spectral_snratio_max=None,
+                 ignored=False, ignored_reason=None):
         self.station_id = station_id
         self.instrument_type = instrument_type
         self.latitude = latitude
@@ -221,6 +222,8 @@ class StationParameters(OrderedAttribDict):
         self.azimuth = azimuth
         self.spectral_snratio_mean = spectral_snratio_mean
         self.spectral_snratio_max = spectral_snratio_max
+        self.ignored = ignored
+        self.ignored_reason = ignored_reason
         # The following parameters are expected to be of type SpectralParameter
         self.Mw = None
         self.fc = None
@@ -355,7 +358,7 @@ class SourceSpecOutput(OrderedAttribDict):
         return np.array(
             [
                 stat_par[key].outlier
-                if key in stat_par
+                if key in stat_par and stat_par[key] is not None
                 # if we cannot find the given key, we assume outlier=True
                 else True
                 for stat_par in self.station_parameters.values()
@@ -398,7 +401,8 @@ class SourceSpecOutput(OrderedAttribDict):
         station_ids = np.array(list(self.station_parameters.keys()))
         for stat_id, outl in zip(station_ids, outliers):
             stat_par = self.station_parameters[stat_id]
-            stat_par[key].outlier = outl
+            if key in stat_par and stat_par[key] is not None:
+                stat_par[key].outlier = outl
 
     def mean_values(self):
         """Return a dictionary of mean values."""

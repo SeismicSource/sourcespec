@@ -184,6 +184,8 @@ def radiated_energy_and_apparent_stress(
     spec_ids = [spec.id for spec in spec_st if spec.id[-1] == 'H']
     for spec_id in spec_ids:
         spec = spec_st.select(id=spec_id)[0]
+        if spec.stats.ignore:
+            continue
         specnoise = specnoise_st.select(id=spec_id)[0]
 
         try:
