@@ -558,13 +558,16 @@ def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
             f'{spec.id}: Error building weight from noise: {str(e)}'
         )
         ssp_exit(1)
-    # replace NaN values with a small value
-    weight.data[np.isnan(weight.data)] = 1e-9
     # save signal-to-noise ratio before log10, smoothing, and normalization
     weight.snratio = weight.data.copy()
     # The inversion is done in magnitude units,
     # so let's take log10 of weight
     weight.data = np.log10(weight.data)
+    # a small value used to replace negative and NaN values
+    _small_value = 1e-9
+    weight.data[weight.data < 0] = _small_value
+    # replace NaN values with a small value
+    weight.data[np.isnan(weight.data)] = _small_value
     # Weight spectrum is smoothed once more
     _smooth_spectrum(weight, smooth_width_decades)
     weight.data /= np.nanmax(weight.data)
@@ -574,11 +577,10 @@ def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
         weight.data,
         min(0.25, weight.stats.delta / 4),
         left_taper=True)
-    # Replace NaN values with a small value
-    weight.data[np.isnan(weight.data)] = 1e-9
-    # Set to a small value weight below 0.2 Hz,
-    # so that it does not affect the fit
-    weight.data[weight.data <= 0.2] = 1e-9
+    # Replace NaN values with a small value (in case the taper introduces NaNs)
+    weight.data[np.isnan(weight.data)] = _small_value
+    # Replace weights <= 0.2 with a small value
+    weight.data[weight.data <= 0.2] = _small_value
     return weight
 
 
