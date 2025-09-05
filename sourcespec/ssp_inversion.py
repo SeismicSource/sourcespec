@@ -287,6 +287,7 @@ def _spec_inversion(config, spec, spec_weight, station_pars):
 
     # Check if misfit is acceptable
     logger.info(f'{statId}: misfit: {misfit:.3f}')
+    station_pars.misfit = misfit
     misfit_max = config.pi_misfit_max or np.inf
     if misfit > misfit_max:
         spec.stats.ignore = True

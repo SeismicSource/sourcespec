@@ -25,6 +25,8 @@ previous versions. You will need to upgrade your old database manually or using
   database
 - Save information on ignored spectra in the YAML output file and in the
   database
+- Save inversion misfit for each station in the YAML output file
+  and in the database
 
 ### Processing
 

@@ -212,7 +212,7 @@ class StationParameters(OrderedAttribDict):
                  latitude=None, longitude=None,
                  hypo_dist_in_km=None, epi_dist_in_km=None, azimuth=None,
                  spectral_snratio_mean=None, spectral_snratio_max=None,
-                 ignored=False, ignored_reason=None):
+                 ignored=False, ignored_reason=None, misfit=None):
         self.station_id = station_id
         self.instrument_type = instrument_type
         self.latitude = latitude
@@ -224,6 +224,7 @@ class StationParameters(OrderedAttribDict):
         self.spectral_snratio_max = spectral_snratio_max
         self.ignored = ignored
         self.ignored_reason = ignored_reason
+        self.misfit = misfit
         # The following parameters are expected to be of type SpectralParameter
         self.Mw = None
         self.fc = None

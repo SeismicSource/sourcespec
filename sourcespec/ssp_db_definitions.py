@@ -59,7 +59,8 @@ STATIONS_TABLE = {
     'spectral_snratio_mean': 'REAL',
     'spectral_snratio_max': 'REAL',
     'ignored': 'INT',
-    'ignored_reason': 'TEXT'
+    'ignored_reason': 'TEXT',
+    'misfit': 'REAL'
 }
 STATIONS_PRIMARY_KEYS = ['stid', 'evid', 'runid']
 

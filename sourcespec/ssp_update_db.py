@@ -219,7 +219,8 @@ def _version_2_to_3(cursor):
         'spectral_snratio_mean': 'REAL',
         'spectral_snratio_max': 'REAL',
         'ignored': 'INTEGER',
-        'ignored_reason': 'TEXT'
+        'ignored_reason': 'TEXT',
+        'misfit': 'REAL'
     }
     for column, col_type in new_station_keys.items():
         cursor.execute(f'ALTER TABLE Stations ADD COLUMN {column} {col_type};')

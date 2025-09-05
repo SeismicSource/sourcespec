@@ -196,7 +196,8 @@ def _write_stations_table(cursor, db_file, sspec_output, config):
             par.spectral_snratio_mean,
             par.spectral_snratio_max,
             par.ignored,
-            getattr(par, 'ignored_reason', None)
+            getattr(par, 'ignored_reason', None),
+            getattr(par, 'misfit', None)
         )
         # Create a string like ?,?,?,?
         values = ','.join('?' * len(t))
