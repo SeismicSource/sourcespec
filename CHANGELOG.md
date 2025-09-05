@@ -27,6 +27,10 @@ previous versions. You will need to upgrade your old database manually or using
   database
 - Save inversion misfit for each station in the YAML output file
   and in the database
+- The field `dist` in the `Stations` table of the SQLite database has been
+  renamed to `hypo_dist`
+- New fields in the `Stations` table of the SQLite database: `epi_dist`,
+  `lon`, `lat`, `instr_type`
 
 ### Processing
 

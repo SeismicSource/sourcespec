@@ -216,6 +216,10 @@ def _version_2_to_3(cursor):
     Upgrade database from version 2 to 3.
     """
     new_station_keys = {
+        'epi_dist': 'REAL',
+        'lon': 'REAL',
+        'lat': 'REAL',
+        'instr_type': 'TEXT',
         'spectral_snratio_mean': 'REAL',
         'spectral_snratio_max': 'REAL',
         'ignored': 'INTEGER',
@@ -224,6 +228,36 @@ def _version_2_to_3(cursor):
     }
     for column, col_type in new_station_keys.items():
         cursor.execute(f'ALTER TABLE Stations ADD COLUMN {column} {col_type};')
+    renamed_station_keys = {
+        'dist': 'hypo_dist'
+    }
+    for old_name, new_name in renamed_station_keys.items():
+        cursor.execute(
+            f'ALTER TABLE Stations RENAME COLUMN {old_name} TO {new_name};')
+    # reorder columns (SQLite does not support this directly)
+    columns = ',\n'.join(
+        f'{key} {value}' for key, value in STATIONS_TABLE.items()
+    )
+    primary_keys = ', '.join(STATIONS_PRIMARY_KEYS)
+    sql_create_new_stations_table = f"""
+    CREATE TABLE IF NOT EXISTS StationsNew (
+        {columns},
+        PRIMARY KEY ({primary_keys})
+    );
+    """
+    station_keys = ', '.join(list(STATIONS_TABLE))
+    sql_insert_new_station_keys = (
+        f'INSERT INTO StationsNew ({station_keys}) '
+        f'SELECT {station_keys} FROM Stations;'
+    )
+    sql_drop_old_stations_table = 'DROP TABLE Stations;'
+    sql_rename_new_stations_table =\
+        'ALTER TABLE StationsNew RENAME TO Stations;'
+    cursor.execute(sql_create_new_stations_table)
+    cursor.execute(sql_insert_new_station_keys)
+    cursor.execute(sql_drop_old_stations_table)
+    cursor.execute(sql_rename_new_stations_table)
+    # set new version
     cursor.execute('PRAGMA user_version = 3;')
 
 

@@ -131,6 +131,105 @@ def _create_stations_table(cursor, db_file):
         _log_db_write_error(db_err, db_file)
 
 
+def _insert_station_row(cursor, db_file, statId, par, evid, runid):
+    """
+    Insert a row in the Stations table.
+
+    :param cursor: SQLite cursor
+    :type cursor: sqlite3.Cursor
+    :param db_file: SQLite database file
+    :type db_file: str
+    :param statId: Station ID
+    :type statId: str
+    :param par: Station parameters
+    :type par: ssp_data_types.StationParameters
+    :param evid: Event ID
+    :type evid: str
+    :param runid: Run ID
+    :type runid: str
+    """
+    station_row = dict(STATIONS_TABLE)
+    station_row.update({
+        'stid': statId,
+        'evid': evid,
+        'runid': runid,
+        'Mo': getattr(par.Mo, 'value', None),
+        'Mo_err_minus': (par.Mo.compact_uncertainty()[0] if par.Mo else None),
+        'Mo_err_plus': (par.Mo.compact_uncertainty()[1] if par.Mo else None),
+        'Mo_is_outlier': int(getattr(par.Mo, 'outlier', True)),
+        'Mw': getattr(par.Mw, 'value', None),
+        'Mw_err_minus': (par.Mw.compact_uncertainty()[0] if par.Mw else None),
+        'Mw_err_plus': (par.Mw.compact_uncertainty()[1] if par.Mw else None),
+        'Mw_is_outlier': int(getattr(par.Mw, 'outlier', True)),
+        'fc': getattr(par.fc, 'value', None),
+        'fc_err_minus': (par.fc.compact_uncertainty()[0] if par.fc else None),
+        'fc_err_plus': (par.fc.compact_uncertainty()[1] if par.fc else None),
+        'fc_is_outlier': int(getattr(par.fc, 'outlier', True)),
+        't_star': getattr(par.t_star, 'value', None),
+        't_star_err_minus': (
+            par.t_star.compact_uncertainty()[0] if par.t_star else None
+        ),
+        't_star_err_plus': (
+            par.t_star.compact_uncertainty()[1] if par.t_star else None
+        ),
+        't_star_is_outlier': int(getattr(par.t_star, 'outlier', True)),
+        'Qo': getattr(par.Qo, 'value', None),
+        'Qo_err_minus': (par.Qo.compact_uncertainty()[0] if par.Qo else None),
+        'Qo_err_plus': (par.Qo.compact_uncertainty()[1] if par.Qo else None),
+        'Qo_is_outlier': int(getattr(par.Qo, 'outlier', True)),
+        'ssd': getattr(par.ssd, 'value', None),
+        'ssd_err_minus': (
+            par.ssd.compact_uncertainty()[0] if par.ssd else None
+        ),
+        'ssd_err_plus': (
+            par.ssd.compact_uncertainty()[1] if par.ssd else None
+        ),
+        'ssd_is_outlier': int(getattr(par.ssd, 'outlier', True)),
+        'ra': getattr(par.radius, 'value', None),
+        'ra_err_minus': (
+            par.radius.compact_uncertainty()[0] if par.radius else None
+        ),
+        'ra_err_plus': (
+            par.radius.compact_uncertainty()[1] if par.radius else None
+        ),
+        'ra_is_outlier': int(getattr(par.radius, 'outlier', True)),
+        'Er': getattr(par.Er, 'value', None),
+        'Er_err_minus': (par.Er.compact_uncertainty()[0] if par.Er else None),
+        'Er_err_plus': (par.Er.compact_uncertainty()[1] if par.Er else None),
+        'Er_is_outlier': int(getattr(par.Er, 'outlier', True)),
+        'sigma_a': getattr(par.sigma_a, 'value', None),
+        'sigma_a_err_minus': (
+            par.sigma_a.compact_uncertainty()[0] if par.sigma_a else None
+        ),
+        'sigma_a_err_plus': (
+            par.sigma_a.compact_uncertainty()[1] if par.sigma_a else None
+        ),
+        'sigma_a_is_outlier': int(getattr(par.sigma_a, 'outlier', True)),
+        'lon': par.longitude,
+        'lat': par.latitude,
+        'instr_type': par.instrument_type,
+        'hypo_dist': par.hypo_dist_in_km,
+        'epi_dist': par.epi_dist_in_km,
+        'azimuth': par.azimuth,
+        'spectral_snratio_mean': par.spectral_snratio_mean,
+        'spectral_snratio_max': par.spectral_snratio_max,
+        'ignored': par.ignored,
+        'ignored_reason': getattr(par, 'ignored_reason', None),
+        'misfit': getattr(par, 'misfit', None)
+    })
+    columns = list(station_row.keys())
+    row = tuple(station_row[col] for col in columns)
+    sql_insert_into_stations = (
+        f'INSERT OR REPLACE INTO Stations '
+        f'({",".join(columns)}) VALUES({",".join("?" for _ in columns)});'
+    )
+    try:
+        cursor.execute(sql_insert_into_stations, row)
+    except Exception as msg:
+        _log_db_write_error(msg, db_file)
+        ssp_exit(1)
+
+
 def _write_stations_table(cursor, db_file, sspec_output, config):
     """
     Write station source parameters to database.
@@ -152,62 +251,7 @@ def _write_stations_table(cursor, db_file, sspec_output, config):
     for statId in sorted(stationpar.keys()):
         nobs += 1
         par = stationpar[statId]
-        # Insert new line
-        t = (
-            statId, evid, runid,
-            getattr(par.Mo, 'value', None),
-            *(par.Mo.compact_uncertainty() if par.Mo else (None, None)),
-            int(getattr(par.Mo, 'outlier', True)),
-            getattr(par.Mw, 'value', None),
-            *(par.Mw.compact_uncertainty() if par.Mw else (None, None)),
-            int(getattr(par.Mw, 'outlier', True)),
-            getattr(par.fc, 'value', None),
-            *(par.fc.compact_uncertainty() if par.fc else (None, None)),
-            int(getattr(par.fc, 'outlier', True)),
-            getattr(par.t_star, 'value', None),
-            *(
-                par.t_star.compact_uncertainty()
-                if par.t_star else (None, None)
-            ),
-            int(getattr(par.t_star, 'outlier', True)),
-            getattr(par.Qo, 'value', None),
-            *(par.Qo.compact_uncertainty() if par.Qo else (None, None)),
-            int(getattr(par.Qo, 'outlier', True)),
-            getattr(par.ssd, 'value', None),
-            *(par.ssd.compact_uncertainty() if par.ssd else (None, None)),
-            int(getattr(par.ssd, 'outlier', True)),
-            getattr(par.radius, 'value', None),
-            *(
-                par.radius.compact_uncertainty()
-                if par.radius else (None, None)
-            ),
-            int(getattr(par.radius, 'outlier', True)),
-            getattr(par.Er, 'value', None),
-            *(par.Er.compact_uncertainty() if par.Er else (None, None)),
-            int(getattr(par.Er, 'outlier', True)),
-            getattr(par.sigma_a, 'value', None),
-            *(
-                par.sigma_a.compact_uncertainty()
-                if par.sigma_a else (None, None)
-            ),
-            int(getattr(par.sigma_a, 'outlier', True)),
-            par.hypo_dist_in_km,
-            par.azimuth,
-            par.spectral_snratio_mean,
-            par.spectral_snratio_max,
-            par.ignored,
-            getattr(par, 'ignored_reason', None),
-            getattr(par, 'misfit', None)
-        )
-        # Create a string like ?,?,?,?
-        values = ','.join('?' * len(t))
-        sql_insert_into_stations =\
-            f'INSERT OR REPLACE INTO Stations VALUES({values});'
-        try:
-            cursor.execute(sql_insert_into_stations, t)
-        except Exception as msg:
-            _log_db_write_error(msg, db_file)
-            ssp_exit(1)
+        _insert_station_row(cursor, db_file, statId, par, evid, runid)
     return nobs
 
 
@@ -271,140 +315,176 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
     ev_rho = event.hypocenter.rho
     kp = config.kp
     ks = config.ks
-    t = (
+    event_row = dict(EVENTS_TABLE)
+    # Update event_row dictionary with event and run information
+    event_row.update({
         # Event info
-        evid,
-        runid,
-        str(ev_origin_time),
-        float(ev_lon),
-        float(ev_lat),
-        float(ev_depth),
-        float(ev_vp),
-        float(ev_vs),
-        float(ev_rho),
-        kp,
-        ks,
+        'evid': evid,
+        'runid': runid,
+        'orig_time': str(ev_origin_time),
+        'lon': float(ev_lon),
+        'lat': float(ev_lat),
+        'depth': float(ev_depth),
+        'vp': float(ev_vp),
+        'vs': float(ev_vs),
+        'rho': float(ev_rho),
+        'kp': kp,
+        'ks': ks,
         # Statistical info
-        wave_type,
-        nobs,
-        config.n_sigma,
-        config.lower_percentage,
-        config.mid_percentage,
-        config.upper_percentage,
+        'wave_type': wave_type,
+        'nobs': nobs,
+        'nsigma': config.n_sigma,
+        'mid_pct': config.mid_percentage,
+        'lower_pct': config.lower_percentage,
+        'upper_pct': config.upper_percentage,
         # Seismic moment
-        means['Mo'],
-        *mean_errors['Mo'],
-        mean_nobs['Mo'],
-        wmeans['Mo'],
-        *wmean_errors['Mo'],
-        wmean_nobs['Mo'],
-        percentiles['Mo'],
-        *percentile_errors['Mo'],
-        percentile_nobs['Mo'],
+        'Mo_mean': means['Mo'],
+        'Mo_mean_err_minus': mean_errors['Mo'][0],
+        'Mo_mean_err_plus': mean_errors['Mo'][1],
+        'Mo_mean_nobs': mean_nobs['Mo'],
+        'Mo_wmean': wmeans['Mo'],
+        'Mo_wmean_err_minus': wmean_errors['Mo'][0],
+        'Mo_wmean_err_plus': wmean_errors['Mo'][1],
+        'Mo_wmean_nobs': wmean_nobs['Mo'],
+        'Mo_pctl': percentiles['Mo'],
+        'Mo_pctl_err_minus': percentile_errors['Mo'][0],
+        'Mo_pctl_err_plus': percentile_errors['Mo'][1],
+        'Mo_pctl_nobs': percentile_nobs['Mo'],
         # Moment magnitude
-        means['Mw'],
-        *mean_errors['Mw'],
-        mean_nobs['Mw'],
-        wmeans['Mw'],
-        *wmean_errors['Mw'],
-        wmean_nobs['Mw'],
-        percentiles['Mw'],
-        *percentile_errors['Mw'],
-        percentile_nobs['Mw'],
+        'Mw_mean': means['Mw'],
+        'Mw_mean_err_minus': mean_errors['Mw'][0],
+        'Mw_mean_err_plus': mean_errors['Mw'][1],
+        'Mw_mean_nobs': mean_nobs['Mw'],
+        'Mw_wmean': wmeans['Mw'],
+        'Mw_wmean_err_minus': wmean_errors['Mw'][0],
+        'Mw_wmean_err_plus': wmean_errors['Mw'][1],
+        'Mw_wmean_nobs': wmean_nobs['Mw'],
+        'Mw_pctl': percentiles['Mw'],
+        'Mw_pctl_err_minus': percentile_errors['Mw'][0],
+        'Mw_pctl_err_plus': percentile_errors['Mw'][1],
+        'Mw_pctl_nobs': percentile_nobs['Mw'],
         # Corner frequency
-        means['fc'],
-        *mean_errors['fc'],
-        mean_nobs['fc'],
-        wmeans['fc'],
-        *wmean_errors['fc'],
-        wmean_nobs['fc'],
-        percentiles['fc'],
-        *percentile_errors['fc'],
-        percentile_nobs['fc'],
+        'fc_mean': means['fc'],
+        'fc_mean_err_minus': mean_errors['fc'][0],
+        'fc_mean_err_plus': mean_errors['fc'][1],
+        'fc_mean_nobs': mean_nobs['fc'],
+        'fc_wmean': wmeans['fc'],
+        'fc_wmean_err_minus': wmean_errors['fc'][0],
+        'fc_wmean_err_plus': wmean_errors['fc'][1],
+        'fc_wmean_nobs': wmean_nobs['fc'],
+        'fc_pctl': percentiles['fc'],
+        'fc_pctl_err_minus': percentile_errors['fc'][0],
+        'fc_pctl_err_plus': percentile_errors['fc'][1],
+        'fc_pctl_nobs': percentile_nobs['fc'],
         # t-star
-        means['t_star'],
-        *mean_errors['t_star'],
-        mean_nobs['t_star'],
-        wmeans['t_star'],
-        *wmean_errors['t_star'],
-        wmean_nobs['t_star'],
-        percentiles['t_star'],
-        *percentile_errors['t_star'],
-        percentile_nobs['t_star'],
+        't_star_mean': means['t_star'],
+        't_star_mean_err_minus': mean_errors['t_star'][0],
+        't_star_mean_err_plus': mean_errors['t_star'][1],
+        't_star_mean_nobs': mean_nobs['t_star'],
+        't_star_wmean': wmeans['t_star'],
+        't_star_wmean_err_minus': wmean_errors['t_star'][0],
+        't_star_wmean_err_plus': wmean_errors['t_star'][1],
+        't_star_wmean_nobs': wmean_nobs['t_star'],
+        't_star_pctl': percentiles['t_star'],
+        't_star_pctl_err_minus': percentile_errors['t_star'][0],
+        't_star_pctl_err_plus': percentile_errors['t_star'][1],
+        't_star_pctl_nobs': percentile_nobs['t_star'],
         # Qo
-        means['Qo'],
-        *mean_errors['Qo'],
-        mean_nobs['Qo'],
-        wmeans['Qo'],
-        *wmean_errors['Qo'],
-        wmean_nobs['Qo'],
-        percentiles['Qo'],
-        *percentile_errors['Qo'],
-        percentile_nobs['Qo'],
+        'Qo_mean': means['Qo'],
+        'Qo_mean_err_minus': mean_errors['Qo'][0],
+        'Qo_mean_err_plus': mean_errors['Qo'][1],
+        'Qo_mean_nobs': mean_nobs['Qo'],
+        'Qo_wmean': wmeans['Qo'],
+        'Qo_wmean_err_minus': wmean_errors['Qo'][0],
+        'Qo_wmean_err_plus': wmean_errors['Qo'][1],
+        'Qo_wmean_nobs': wmean_nobs['Qo'],
+        'Qo_pctl': percentiles['Qo'],
+        'Qo_pctl_err_minus': percentile_errors['Qo'][0],
+        'Qo_pctl_err_plus': percentile_errors['Qo'][1],
+        'Qo_pctl_nobs': percentile_nobs['Qo'],
         # Source radius
-        means['radius'],
-        *mean_errors['radius'],
-        mean_nobs['radius'],
-        wmeans['radius'],
-        *wmean_errors['radius'],
-        wmean_nobs['radius'],
-        percentiles['radius'],
-        *percentile_errors['radius'],
-        percentile_nobs['radius'],
+        'ra_mean': means['radius'],
+        'ra_mean_err_minus': mean_errors['radius'][0],
+        'ra_mean_err_plus': mean_errors['radius'][1],
+        'ra_mean_nobs': mean_nobs['radius'],
+        'ra_wmean': wmeans['radius'],
+        'ra_wmean_err_minus': wmean_errors['radius'][0],
+        'ra_wmean_err_plus': wmean_errors['radius'][1],
+        'ra_wmean_nobs': wmean_nobs['radius'],
+        'ra_pctl': percentiles['radius'],
+        'ra_pctl_err_minus': percentile_errors['radius'][0],
+        'ra_pctl_err_plus': percentile_errors['radius'][1],
+        'ra_pctl_nobs': percentile_nobs['radius'],
         # Static stress drop
-        means['ssd'],
-        *mean_errors['ssd'],
-        mean_nobs['ssd'],
-        wmeans['ssd'],
-        *wmean_errors['ssd'],
-        wmean_nobs['ssd'],
-        percentiles['ssd'],
-        *percentile_errors['ssd'],
-        percentile_nobs['ssd'],
+        'ssd_mean': means['ssd'],
+        'ssd_mean_err_minus': mean_errors['ssd'][0],
+        'ssd_mean_err_plus': mean_errors['ssd'][1],
+        'ssd_mean_nobs': mean_nobs['ssd'],
+        'ssd_wmean': wmeans['ssd'],
+        'ssd_wmean_err_minus': wmean_errors['ssd'][0],
+        'ssd_wmean_err_plus': wmean_errors['ssd'][1],
+        'ssd_wmean_nobs': wmean_nobs['ssd'],
+        'ssd_pctl': percentiles['ssd'],
+        'ssd_pctl_err_minus': percentile_errors['ssd'][0],
+        'ssd_pctl_err_plus': percentile_errors['ssd'][1],
+        'ssd_pctl_nobs': percentile_nobs['ssd'],
         # Radiated energy
-        means['Er'],
-        *mean_errors['Er'],
-        mean_nobs['Er'],
-        wmeans['Er'],
-        *wmean_errors['Er'],
-        wmean_nobs['Er'],
-        percentiles['Er'],
-        *percentile_errors['Er'],
-        percentile_nobs['Er'],
+        'Er_mean': means['Er'],
+        'Er_mean_err_minus': mean_errors['Er'][0],
+        'Er_mean_err_plus': mean_errors['Er'][1],
+        'Er_mean_nobs': mean_nobs['Er'],
+        'Er_wmean': wmeans['Er'],
+        'Er_wmean_err_minus': wmean_errors['Er'][0],
+        'Er_wmean_err_plus': wmean_errors['Er'][1],
+        'Er_wmean_nobs': wmean_nobs['Er'],
+        'Er_pctl': percentiles['Er'],
+        'Er_pctl_err_minus': percentile_errors['Er'][0],
+        'Er_pctl_err_plus': percentile_errors['Er'][1],
+        'Er_pctl_nobs': percentile_nobs['Er'],
         # Apparent stress
-        means['sigma_a'],
-        *mean_errors['sigma_a'],
-        mean_nobs['sigma_a'],
-        wmeans['sigma_a'],
-        *wmean_errors['sigma_a'],
-        wmean_nobs['sigma_a'],
-        percentiles['sigma_a'],
-        *percentile_errors['sigma_a'],
-        percentile_nobs['sigma_a'],
+        'sigma_a_mean': means['sigma_a'],
+        'sigma_a_mean_err_minus': mean_errors['sigma_a'][0],
+        'sigma_a_mean_err_plus': mean_errors['sigma_a'][1],
+        'sigma_a_mean_nobs': mean_nobs['sigma_a'],
+        'sigma_a_wmean': wmeans['sigma_a'],
+        'sigma_a_wmean_err_minus': wmean_errors['sigma_a'][0],
+        'sigma_a_wmean_err_plus': wmean_errors['sigma_a'][1],
+        'sigma_a_wmean_nobs': wmean_nobs['sigma_a'],
+        'sigma_a_pctl': percentiles['sigma_a'],
+        'sigma_a_pctl_err_minus': percentile_errors['sigma_a'][0],
+        'sigma_a_pctl_err_plus': percentile_errors['sigma_a'][1],
+        'sigma_a_pctl_nobs': percentile_nobs['sigma_a'],
         # Local magnitude
-        means.get('Ml', None),
-        *mean_errors.get('Ml', (None, None)),
-        mean_nobs.get('Ml', None),
-        wmeans.get('Ml', None),
-        *wmean_errors.get('Ml', (None, None)),
-        wmean_nobs.get('Ml', None),
-        percentiles.get('Ml', None),
-        *percentile_errors.get('Ml', (None, None)),
-        percentile_nobs.get('Ml', None),
+        'Ml_mean': means.get('Ml', None),
+        'Ml_mean_err_minus': mean_errors.get('Ml', (None, None))[0],
+        'Ml_mean_err_plus': mean_errors.get('Ml', (None, None))[1],
+        'Ml_mean_nobs': mean_nobs.get('Ml', None),
+        'Ml_wmean': wmeans.get('Ml', None),
+        'Ml_wmean_err_minus': wmean_errors.get('Ml', (None, None))[0],
+        'Ml_wmean_err_plus': wmean_errors.get('Ml', (None, None))[1],
+        'Ml_wmean_nobs': wmean_nobs.get('Ml', None),
+        'Ml_pctl': percentiles.get('Ml', None),
+        'Ml_pctl_err_minus': percentile_errors.get('Ml', (None, None))[0],
+        'Ml_pctl_err_plus': percentile_errors.get('Ml', (None, None))[1],
+        'Ml_pctl_nobs': percentile_nobs.get('Ml', None),
         # Run info
-        run_completed,
-        ssp_version,
-        config.author_name,
-        config.author_email,
-        config.agency_full_name,
-        config.agency_short_name,
-        config.agency_url
+        'run_completed': run_completed,
+        'sourcespec_version': ssp_version,
+        'author_name': config.author_name,
+        'author_email': config.author_email,
+        'agency_full_name': config.agency_full_name,
+        'agency_short_name': config.agency_short_name,
+        'agency_url': config.agency_url
+    })
+    # Explicitly specify column names to avoid order issues
+    columns = list(event_row.keys())
+    row = tuple(event_row[col] for col in columns)
+    sql_insert_into_events = (
+        f'INSERT OR REPLACE INTO Events '
+        f'({",".join(columns)}) VALUES({",".join("?" for _ in columns)});'
     )
-    # Create a string like ?,?,?,?
-    values = ','.join('?' * len(t))
-    sql_insert_into_events = f'INSERT OR REPLACE INTO Events VALUES({values});'
     try:
-        cursor.execute(sql_insert_into_events, t)
+        cursor.execute(sql_insert_into_events, row)
     except Exception as msg:
         _log_db_write_error(msg, db_file)
         ssp_exit(1)
