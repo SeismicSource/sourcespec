@@ -602,6 +602,24 @@ def _add_inversion_info_to_html(sspec_output, replacements):
     })
 
 
+def _add_inversion_quality_to_html(sspec_output, replacements):
+    """Add inversion quality info to HTML report."""
+    quality_info = sspec_output.quality_info
+    replacements.update({
+        '{N_SPECTRA_INVERTED}': f'{quality_info.n_spectra_inverted}',
+        '{AZIMUTHAL_GAP_PRIMARY}':
+            f'{quality_info.azimuthal_gap_primary:.1f}°',
+        '{AZIMUTHAL_GAP_SECONDARY}':
+            f'{quality_info.azimuthal_gap_secondary:.1f}°',
+        '{RMSN_MEAN}': f'{quality_info.rmsn_mean:.3f}',
+        '{QUALITY_OF_FIT_MEAN}': f'{quality_info.quality_of_fit_mean:.1f}%',
+        '{SPECTRAL_DISPERSION_RMSN}':
+            f'{quality_info.spectral_dispersion_rmsn:.3f}',
+        '{SPECTRAL_DISPERSION_SCORE}':
+            f'{quality_info.spectral_dispersion_score:.1f}%',
+    })
+
+
 def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
     """Add summary spectral parameters to HTML report."""
     ref_stat = sspec_output.summary_spectral_parameters.reference_statistics
@@ -1043,6 +1061,7 @@ def html_report(config, sspec_output):
     _add_traces_plots_to_html(config, templates, replacements)
     _add_spectra_plots_to_html(config, templates, replacements)
     _add_inversion_info_to_html(sspec_output, replacements)
+    _add_inversion_quality_to_html(sspec_output, replacements)
     _add_summary_spectral_params_to_html(config, sspec_output, replacements)
     _add_box_plots_to_html(config, replacements)
     _add_stacked_spectra_to_html(config, replacements)

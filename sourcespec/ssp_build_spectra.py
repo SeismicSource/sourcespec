@@ -498,6 +498,10 @@ def _build_spectrum(config, trace):
 
 def _build_uniform_weight(spec):
     weight = spec.copy()
+    # Clear data_mag and data_mag_logspaced,
+    # since magnitude values are not relevant for weights
+    weight.data_mag = []
+    weight.data_mag_logspaced = []
     weight.snratio = None
     weight.data = np.ones_like(weight.data)
     weight.data_logspaced = np.ones_like(weight.data_logspaced)
@@ -506,6 +510,10 @@ def _build_uniform_weight(spec):
 
 def _build_weight_from_frequency(config, spec):
     weight = spec.copy()
+    # Clear data_mag and data_mag_logspaced,
+    # since magnitude values are not relevant for weights
+    weight.data_mag = []
+    weight.data_mag_logspaced = []
     freq = weight.freq
     weight.data = np.ones_like(weight.data)
     weight.data[freq <= config.f_weight] = config.weight
@@ -526,6 +534,10 @@ def _build_weight_from_inv_frequency(spec, power=0.25):
     # Note: weight.data is used for plotting,
     #       weight.data_logspaced for actual weighting
     weight = spec.copy()
+    # Clear data_mag and data_mag_logspaced,
+    # since magnitude values are not relevant for weights
+    weight.data_mag = []
+    weight.data_mag_logspaced = []
     freq = weight.freq
     weight.data *= 0
     # Limit non-zero weights to fmin/fmax from spectral_snratio if available
@@ -551,6 +563,10 @@ def _build_weight_from_inv_frequency(spec, power=0.25):
 
 def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
     weight = spec.copy()
+    # Clear data_mag and data_mag_logspaced,
+    # since magnitude values are not relevant for weights
+    weight.data_mag = []
+    weight.data_mag_logspaced = []
     try:
         weight.data /= specnoise.data
     except ValueError as e:

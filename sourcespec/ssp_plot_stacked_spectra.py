@@ -17,30 +17,12 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as PathEffects
 from matplotlib.collections import LineCollection
-from sourcespec.ssp_util import moment_to_mag, mag_to_moment
-from sourcespec.ssp_spectral_model import spectral_model
+from sourcespec.ssp_util import moment_to_mag
 from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # Reduce logging level for Matplotlib to avoid DEBUG messages
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
-
-
-def _spectral_model_moment(freq, Mw, fc, t_star):
-    return mag_to_moment(spectral_model(freq, Mw=Mw, fc=fc, t_star=t_star))
-
-
-def _summary_synth_spec(sspec_output, fmin, fmax):
-    npts = 100
-    freq = np.logspace(np.log10(fmin), np.log10(fmax), npts)
-    summary_values = sspec_output.reference_values()
-    Mw = summary_values['Mw']
-    fc = summary_values['fc']
-    t_star = summary_values['t_star']
-    synth_model = _spectral_model_moment(freq, Mw, fc, t_star)
-    synth_model_no_att = _spectral_model_moment(freq, Mw, fc, 0)
-    synth_model_no_fc = _spectral_model_moment(freq, Mw, 1e999, t_star)
-    return freq, synth_model, synth_model_no_att, synth_model_no_fc
 
 
 def _make_fig(config):
@@ -276,13 +258,13 @@ def plot_stacked_spectra(config, spec_st, weight_st, sspec_output):
         10**(np.log10(specmin)-padding),
         10**(np.log10(specmax)+padding)
     )
-    freq, synth_model, synth_model_no_att, synth_model_no_fc =\
-        _summary_synth_spec(sspec_output, fmin, fmax)
+    spec_sum = spec_st.select(station='SUMMARY', channel='SSS')[0]
     color = 'black'
     alpha = 0.9
     linewidth = 2
     synth_handle, = ax.plot(
-        freq, synth_model, color=color, lw=linewidth,
+        spec_sum.freq_logspaced, spec_sum.data_logspaced,
+        color=color, lw=linewidth,
         alpha=alpha, zorder=40)
     # draw an invisible line to add to the legend
     spec_handle, = ax.plot(
@@ -296,8 +278,10 @@ def plot_stacked_spectra(config, spec_st, weight_st, sspec_output):
     if config.plot_spectra_no_attenuation:
         color = 'gray'
         linewidth = 2
+        spec_sum_no_att = spec_st.select(station='SUMMARY', channel='SSs')[0]
         synth_no_att_handle, = ax.plot(
-            freq, synth_model_no_att, color=color, lw=linewidth,
+            spec_sum_no_att.freq_logspaced, spec_sum_no_att.data_logspaced,
+            color=color, lw=linewidth,
             alpha=alpha, zorder=39)
         legend_handles.append(synth_no_att_handle)
         legend_labels.append('Summary parameters,\nno attenuation')
@@ -305,8 +289,10 @@ def plot_stacked_spectra(config, spec_st, weight_st, sspec_output):
         color = 'gray'
         linewidth = 2
         linestyle = 'dashed'
+        spec_sum_no_fc = spec_st.select(station='SUMMARY', channel='SSt')[0]
         synth_no_fc_handle, = ax.plot(
-            freq, synth_model_no_fc, color=color, lw=linewidth, ls=linestyle,
+            spec_sum_no_fc.freq_logspaced, spec_sum_no_fc.data_logspaced,
+            color=color, lw=linewidth, ls=linestyle,
             alpha=alpha, zorder=39)
         legend_handles.append(synth_no_fc_handle)
         legend_labels.append('Summary parameters,\nno fc')

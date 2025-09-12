@@ -63,9 +63,10 @@ STATIONS_TABLE = OrderedDict([
     ('azimuth', 'REAL'),
     ('spectral_snratio_mean', 'REAL'),
     ('spectral_snratio_max', 'REAL'),
+    ('rmsn', 'REAL'),
+    ('quality_of_fit', 'REAL'),
     ('ignored', 'INT'),
-    ('ignored_reason', 'TEXT'),
-    ('misfit', 'REAL')
+    ('ignored_reason', 'TEXT')
 ])
 STATIONS_PRIMARY_KEYS = ['stid', 'evid', 'runid']
 
@@ -83,6 +84,13 @@ EVENTS_TABLE = OrderedDict([
     ('ks', 'REAL'),
     ('wave_type', 'TEXT'),
     ('nobs', 'INTEGER'),
+    ('nobs_inverted', 'INTEGER'),
+    ('azimuthal_gap_primary', 'REAL'),
+    ('azimuthal_gap_secondary', 'REAL'),
+    ('rmsn_mean', 'REAL'),
+    ('quality_of_fit_mean', 'REAL'),
+    ('spectral_dispersion_rmsn', 'REAL'),
+    ('spectral_dispersion_score', 'REAL'),
     ('nsigma', 'REAL'),
     ('mid_pct', 'REAL'),
     ('lower_pct', 'REAL'),

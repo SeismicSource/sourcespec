@@ -22,6 +22,27 @@ v_model = model.model.s_mod.v_mod
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
+# STATISTICS ------------------------------------------------------------------
+def weighted_std(values, weights):
+    """
+    Return the weighted standard deviation.
+
+    :param values: array of values
+    :param weights: array of weights
+    :return: weighted standard deviation
+    """
+    nan_values = np.isnan(values)
+    nan_weights = np.isnan(weights)
+    values = values[~(nan_values | nan_weights)]
+    weights = weights[~(nan_values | nan_weights)]
+    if len(values) == 0:
+        return 0
+    average = np.average(values, weights=weights)
+    variance = np.average((values - average)**2, weights=weights)
+    return np.sqrt(variance)
+# -----------------------------------------------------------------------------
+
+
 # MISC ------------------------------------------------------------------------
 def spec_minmax(amp, freq, amp_minmax=None, freq_minmax=None):
     """Get minimum and maximum values of spectral amplitude and frequency."""
@@ -417,4 +438,48 @@ def station_to_event_position(trace):
     trace.stats.epi_dist = epi_dist
     trace.stats.hypo_dist = hypo_dist
     trace.stats.gcarc = gcarc
+
+
+def _compute_azimuthal_gaps(azimuth_array):
+    """
+    Compute azimuthal gaps from an array of azimuths.
+
+    :param azimuth_array: Array of azimuths (degrees).
+    :type azimuth_array: list of float or numpy array
+    :return: azimuthal gap (degrees).
+    :rtype: float
+    """
+    if len(azimuth_array) == 0:
+        return np.nan
+    if len(azimuth_array) == 1:
+        return 360.
+    azimuth_array = np.sort(np.array(azimuth_array) % 360)
+    azimuth_array = np.append(azimuth_array, azimuth_array[0] + 360)
+    gaps = np.diff(azimuth_array)
+    return np.max(gaps)
+
+
+def primary_and_secondary_azimuthal_gap(azimuth_array):
+    """
+    Compute primary and secondary azimuthal gap from an array of azimuths.
+
+    :param azimuth_array: Array of azimuths (degrees).
+    :type azimuth_array: list of float or numpy array
+    :return: Primary and secondary gap (degrees).
+    :rtype: tuple of two floats
+    """
+    if len(azimuth_array) == 0:
+        return np.nan, np.nan
+    if len(azimuth_array) == 1:
+        return 360., 360.
+    azimuth_array = np.array(azimuth_array)
+    primary_gap = _compute_azimuthal_gaps(azimuth_array)
+    # Secondary gap: recompute gaps after removing each azimuth once,
+    # then take the maximum of those values.
+    secondary_gaps = []
+    for i in range(len(azimuth_array)):
+        az_copy = np.delete(azimuth_array, i)
+        secondary_gaps.append(_compute_azimuthal_gaps(az_copy))
+    secondary_gap = np.max(secondary_gaps)
+    return primary_gap, secondary_gap
 # -----------------------------------------------------------------------------

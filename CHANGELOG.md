@@ -6,8 +6,9 @@ Copyright (c) 2011-2025 Claudio Satriano <satriano@ipgp.fr>
 
 ## unreleased
 
-Note: several new config file parameters have been added: please run
-`source_spec -U CONFIG_FILE_NAME` to update your old config file.
+Note: several new config file parameters have been added and others have been
+replaced: please run `source_spec -U CONFIG_FILE_NAME` to update your old
+config file.
 
 Warning: the SQLite database used by this version is not compatible with
 previous versions. You will need to upgrade your old database manually or using
@@ -15,22 +16,32 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Input/output
 
+- Global inversion quality parameters in YAML, SQLite and HTML output:
+  - Number of spectra inverted
+  - Azimuthal gap (primary and secondary)
+  - Mean normalized RMS (RMSN)
+  - Mean quality of fit (in percent)
+  - Spectral dispersion (RMSN)
+  - Spectral dispersion score (in percent)
+- Station quality parameters in YAML and SQLite output:
+  - Mean spectral S/N ratio
+  - Max spectral S/N ratio
+  - Normalized RMS (RMSN)
+  - Quality of fit (in percent)
+- The field `dist` in the `Stations` table of the SQLite database has been
+  renamed to `hypo_dist`
+- New fields in the `Stations` table of the SQLite database: `epi_dist`,
+  `lon`, `lat`, `instr_type`, `spectral_snratio_mean`, `spectral_snratio_max`,
+  `rmsn`, `quality_of_fit`, `ignored`, `ignored_reason`
+- New fields in the `Events` table of the SQLite database: `nobs_inverted`,
+  `azimuthal_gap_primary`, `azimuthal_gap_secondary`, `rmsn_mean`,
+  `quality_of_fit_mean`, `spectral_dispersion_rmsn`, `spectral_dispersion_score`
 - HTML report improvements:
   - Link to supplementary files and plots in the HTML report
   - Display configuration, log and output files in a modal window with syntax
     highlighting (only when the HTML report is served by a web server)
 - More informative warning messages when signal windows are truncated or
   noise windows are zero-padded
-- Save spectral S/N ratio information in the YAML output file and in the
-  database
-- Save information on ignored spectra in the YAML output file and in the
-  database
-- Save inversion misfit for each station in the YAML output file
-  and in the database
-- The field `dist` in the `Stations` table of the SQLite database has been
-  renamed to `hypo_dist`
-- New fields in the `Stations` table of the SQLite database: `epi_dist`,
-  `lon`, `lat`, `instr_type`
 
 ### Processing
 
@@ -100,6 +111,8 @@ previous versions. You will need to upgrade your old database manually or using
 - New option `rp_lower_bound` to avoid overcorrection for stations close to a
   nodal plane when radiation coefficient is computed from focal mechanism
 - New config parameter `pi_fc_weight_min`
+- Config parameter `pi_misfit_max` renamed to `pi_quality_of_fit_min`:
+  it now defines the minimum acceptable quality of fit in percent (0-100).
 
 ### Bugfixes
 

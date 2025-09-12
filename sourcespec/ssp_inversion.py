@@ -24,8 +24,9 @@ from sourcespec.spectrum import SpectrumStream
 from sourcespec.ssp_spectral_model import (
     spectral_model, objective_func, callback)
 from sourcespec.ssp_util import (
+    weighted_std,
     mag_to_moment, source_radius, static_stress_drop, quality_factor,
-    select_trace, smooth)
+    select_trace, smooth, primary_and_secondary_azimuthal_gap)
 from sourcespec.ssp_data_types import (
     InitialValues, Bounds, SpectralParameter, StationParameters,
     SourceSpecOutput)
@@ -43,6 +44,19 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
       - Truncated Newton algorithm (TNC) with bounds.
       - Basin-hopping (BH)
       - Grid search (GS)
+      - Importance sampling (IS)
+
+    :param config: configuration object
+    :param spec: Spectrum object
+    :param weight: weights for each data point
+    :param yerr: standard deviation for each data point
+    :param initial_values: InitialValues object
+    :param bounds: Bounds object
+    :return: (params_opt, params_err, rmsn, quality_of_fit) tuple
+        - params_opt: optimal parameters
+        - params_err: parameters uncertainties
+        - rmsn: normalized RMS misfit, 0 to infinity, 0 is perfect fit
+        - quality_of_fit: quality of fit in percentage, 100 is perfect fit
     """
     freq_logspaced = spec.freq_logspaced
     ydata = spec.data_mag_logspaced
@@ -124,8 +138,16 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         # tstar-Mw
         plot_par_idx = (2, 0)
         grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
-    misfit = minimize_func(params_opt)
-    return params_opt, params_err, misfit
+    else:
+        raise ValueError(
+            f'Unknown inversion algorithm: {config.inv_algorithm}')
+    # normalized RMS misfit, 0 to infinity, 0 is perfect fit
+    rms = minimize_func(params_opt)
+    wstd = weighted_std(ydata, weight)
+    rmsn = rms / wstd if wstd > 0 else rms
+    # compute quality of fit, in percentage, 100 is perfect fit
+    quality_of_fit = np.exp(-1 * rmsn) * 100
+    return params_opt, params_err, rmsn, quality_of_fit
 
 
 def _freq_ranges_for_Mw0_and_tstar0(config, weight, freq_logspaced, statId):
@@ -192,9 +214,6 @@ def _compute_station_azimuth(spec):
 
 def _spec_inversion(config, spec, spec_weight, station_pars):
     """Invert one spectrum, return a StationParameters() object."""
-    stla = station_pars.latitude
-    stlo = station_pars.longitude
-    az = station_pars.azimuth
     magnitude = spec.stats.event.magnitude
 
     freq_logspaced = spec.freq_logspaced
@@ -271,7 +290,7 @@ def _spec_inversion(config, spec, spec_weight, station_pars):
         weight = weight[~isnan]
         yerr = yerr[~isnan]
     try:
-        params_opt, params_err, misfit = _curve_fit(
+        params_opt, params_err, rmsn, quality_of_fit = _curve_fit(
             config, spec, weight, yerr, initial_values, bounds)
     except (RuntimeError, ValueError) as m:
         spec.stats.ignore = True
@@ -285,16 +304,19 @@ def _spec_inversion(config, spec, spec_weight, station_pars):
     inverted_par_str = f'Mw: {Mw:.4f}; fc: {fc:.4f}; t_star: {t_star:.4f}'
     logger.info(f'{statId}: optimal values: {inverted_par_str}')
 
-    # Check if misfit is acceptable
-    logger.info(f'{statId}: misfit: {misfit:.3f}')
-    station_pars.misfit = misfit
-    misfit_max = config.pi_misfit_max or np.inf
-    if misfit > misfit_max:
+    # Check if quality of fit is acceptable
+    logger.info(f'{statId}: Normalized RMS misfit: {rmsn:.3f}')
+    station_pars.rmsn = rmsn
+    logger.info(f'{statId}: Quality of fit: {quality_of_fit:.3f}%')
+    station_pars.quality_of_fit = quality_of_fit
+    quality_of_fit_min = config.pi_quality_of_fit_min or 0.
+    if quality_of_fit < quality_of_fit_min:
         spec.stats.ignore = True
-        spec.stats.ignore_reason = 'misfit too high'
+        spec.stats.ignore_reason = 'quality of fit too low'
         raise ValueError(
-            f'{statId}: misfit larger than pi_misfit_max: '
-            f'{misfit:.3f} > {misfit_max:.3f}: ignoring inversion results'
+            f'{statId}: quality of fit less than pi_quality_of_fit_min: '
+            f'{quality_of_fit:.3f} < {quality_of_fit_min:.3f}: '
+            'ignoring inversion results'
         )
 
     # Check if fc is well-constrained
@@ -573,6 +595,46 @@ def spectral_inversion(config, spec_st, weight_st):
                 spec.stats, 'ignore_reason', None)
             continue
         spec_st += _synth_spec(config, spec, station_pars)
+
+    # Add quality information to the output object
+    logger.info('Inversion quality information:')
+    inverted_spectra = [
+        sp for sp in sspec_output.station_parameters.values() if not sp.ignored
+    ]
+    sspec_output.quality_info.n_spectra_inverted = len(inverted_spectra)
+    logger.info(
+        f'Number of spectra successfully inverted: '
+        f'{sspec_output.quality_info.n_spectra_inverted}'
+    )
+    azimuths = [sp.azimuth for sp in inverted_spectra]
+    primary_gap, secondary_gap = primary_and_secondary_azimuthal_gap(azimuths)
+    sspec_output.quality_info.azimuthal_gap_primary = primary_gap
+    sspec_output.quality_info.azimuthal_gap_secondary = secondary_gap
+    logger.info(
+        f'Primary azimuthal gap: {primary_gap:.1f}°\n'
+        f'Secondary azimuthal gap: {secondary_gap:.1f}°'
+    )
+    rmsn_vals = [
+        sp.rmsn for sp in inverted_spectra if sp.rmsn is not None
+    ]
+    sspec_output.quality_info.rmsn_mean = (
+        np.nanmean(rmsn_vals) if rmsn_vals else None
+    )
+    logger.info(
+        f'Mean normalized RMS misfit: '
+        f'{sspec_output.quality_info.rmsn_mean:.3f}'
+    )
+    quality_of_fit_vals = [
+        sp.quality_of_fit for sp in inverted_spectra
+        if sp.quality_of_fit is not None
+    ]
+    sspec_output.quality_info.quality_of_fit_mean = (
+        np.nanmean(quality_of_fit_vals) if quality_of_fit_vals else None
+    )
+    logger.info(
+        f'Mean quality of fit: '
+        f'{sspec_output.quality_info.quality_of_fit_mean:.3f}%'
+    )
 
     logger.info('Inverting spectra: done')
     logger.info('---------------------------------------------------')

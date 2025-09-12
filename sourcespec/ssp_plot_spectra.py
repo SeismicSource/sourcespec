@@ -20,11 +20,11 @@ import logging
 import warnings
 import contextlib
 from collections import defaultdict
-from obspy import Stream
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.patheffects as PathEffects
+from sourcespec.spectrum import SpectrumStream
 from sourcespec.ssp_util import spec_minmax, moment_to_mag, mag_to_moment
 from sourcespec.savefig import savefig
 from sourcespec._version import get_versions
@@ -69,7 +69,7 @@ class PlotParams():
         _spec_st = (
             spec_st
             if config.plot_spectra_ignored
-            else Stream(sp for sp in spec_st if not sp.stats.ignore)
+            else SpectrumStream(sp for sp in spec_st if not sp.stats.ignore)
         )
         specids = {'.'.join(sp.id.split('.')[:-1]) for sp in _spec_st}
         for specid in specids:
@@ -721,6 +721,11 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
         return
 
     matplotlib.rcParams['pdf.fonttype'] = 42  # to edit text in Illustrator
+
+    # remove summary spectra from spec_st
+    spec_st = SpectrumStream(
+        sp for sp in spec_st if sp.stats.station != 'SUMMARY'
+    )
 
     if ncols is None:
         nspec = len({s.id[:-1] for s in spec_st})

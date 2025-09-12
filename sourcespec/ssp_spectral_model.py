@@ -44,10 +44,23 @@ def spectral_model(freq, Mw, fc, t_star, alpha=1.):
 
 
 def objective_func(xdata, ydata, weight):
-    """Objective function generator for bounded inversion."""
+    """
+    Objective function generator for bounded inversion.
+
+    :param xdata: x data (frequencies)
+    :param ydata: y data (log spectral amplitudes)
+    :param weight: weights for each data point
+    :return: objective function
+    """
     errsum = np.sum(weight)
 
     def _objective_func(params):
+        """
+        Objective function for bounded inversion.
+
+        :param params: model parameters (Mw, fc, t_star, [alpha])
+        :return: RMS misfit
+        """
         # params components should be np.float
         if len(params) == 4:
             model = spectral_model(xdata, params[0], params[1],

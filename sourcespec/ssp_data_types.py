@@ -212,7 +212,8 @@ class StationParameters(OrderedAttribDict):
                  latitude=None, longitude=None,
                  hypo_dist_in_km=None, epi_dist_in_km=None, azimuth=None,
                  spectral_snratio_mean=None, spectral_snratio_max=None,
-                 ignored=False, ignored_reason=None, misfit=None):
+                 rmsn=None, quality_of_fit=None,
+                 ignored=False, ignored_reason=None):
         self.station_id = station_id
         self.instrument_type = instrument_type
         self.latitude = latitude
@@ -222,9 +223,10 @@ class StationParameters(OrderedAttribDict):
         self.azimuth = azimuth
         self.spectral_snratio_mean = spectral_snratio_mean
         self.spectral_snratio_max = spectral_snratio_max
+        self.rmsn = rmsn
+        self.quality_of_fit = quality_of_fit
         self.ignored = ignored
         self.ignored_reason = ignored_reason
-        self.misfit = misfit
         # The following parameters are expected to be of type SpectralParameter
         self.Mw = None
         self.fc = None
@@ -311,6 +313,7 @@ class SourceSpecOutput(OrderedAttribDict):
         self.run_info = OrderedAttribDict()
         self.event_info = OrderedAttribDict()
         self.inversion_info = OrderedAttribDict()
+        self.quality_info = OrderedAttribDict()
         self.summary_spectral_parameters = OrderedAttribDict()
         self.station_parameters = OrderedAttribDict()
         # comments for each section
@@ -320,6 +323,7 @@ class SourceSpecOutput(OrderedAttribDict):
             'run_info': 'Information on the SourceSpec run',
             'event_info': 'Information on the event',
             'inversion_info': 'Information on the inversion procedure',
+            'quality_info': 'Quality information derived from the inversion',
             'summary_spectral_parameters':
                 'Summary spectral parameters, computed using different '
                 'statistics',

@@ -66,9 +66,16 @@
           </li>{STACKED_SPECTRA_COMMENT_END}
           <li>
             <a href="#inversion_info">
-              <i class="fas fa-info-circle"></i>
+              <i class="fas fa-list"></i>
               &nbsp;&nbsp;
               Inversion Information
+            </a>
+          </li>
+          <li>
+            <a href="#inversion_quality">
+              <i class="fas fa-list"></i>
+              &nbsp;&nbsp;
+              Inversion Quality Summary
             </a>
           </li>{TRACES_PLOTS_COMMENT_BEGIN}
           <li>
@@ -298,6 +305,57 @@
               <th scope="row">Qo min, max:</th>
               <td>
                 {INVERSION_Q0_MIN_MAX}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div> <!-- page -->
+
+      <div class="page">
+        <div class="line" id="inversion_quality"></div>
+        <h2>Inversion Quality Summary</h2>
+        <table class="table">
+          <tbody>
+            <tr>
+              <th scope="row">Number of spectra inverted:</th>
+              <td>
+                {N_SPECTRA_INVERTED}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Primary azimuthal gap:</th>
+              <td>
+                {AZIMUTHAL_GAP_PRIMARY}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Secondary azimuthal gap:</th>
+              <td>
+                {AZIMUTHAL_GAP_SECONDARY}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Mean normalized RMS:</th>
+              <td>
+                {RMSN_MEAN}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Mean quality of fit:</th>
+              <td>
+                {QUALITY_OF_FIT_MEAN}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Spectral dispersion (normalized RMS):</th>
+              <td>
+                {SPECTRAL_DISPERSION_RMSN}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Spectral dispersion (score):</th>
+              <td>
+                {SPECTRAL_DISPERSION_SCORE}
               </td>
             </tr>
           </tbody>

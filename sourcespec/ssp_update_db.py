@@ -222,9 +222,10 @@ def _version_2_to_3(cursor):
         'instr_type': 'TEXT',
         'spectral_snratio_mean': 'REAL',
         'spectral_snratio_max': 'REAL',
+        'rmsn': 'REAL',
+        'quality_of_fit': 'REAL',
         'ignored': 'INTEGER',
-        'ignored_reason': 'TEXT',
-        'misfit': 'REAL'
+        'ignored_reason': 'TEXT'
     }
     for column, col_type in new_station_keys.items():
         cursor.execute(f'ALTER TABLE Stations ADD COLUMN {column} {col_type};')
@@ -257,6 +258,40 @@ def _version_2_to_3(cursor):
     cursor.execute(sql_insert_new_station_keys)
     cursor.execute(sql_drop_old_stations_table)
     cursor.execute(sql_rename_new_stations_table)
+    # New event keys
+    new_event_keys = {
+        'nobs_inverted': 'INTEGER',
+        'azimuthal_gap_primary': 'REAL',
+        'azimuthal_gap_secondary': 'REAL',
+        'rmsn_mean': 'REAL',
+        'quality_of_fit_mean': 'REAL',
+        'spectral_dispersion_rmsn': 'REAL',
+        'spectral_dispersion_score': 'REAL'
+    }
+    for column, col_type in new_event_keys.items():
+        cursor.execute(f'ALTER TABLE Events ADD COLUMN {column} {col_type};')
+    # reorder columns (SQLite does not support this directly)
+    columns = ',\n'.join(
+        f'{key} {value}' for key, value in EVENTS_TABLE.items()
+    )
+    primary_keys = ', '.join(EVENTS_PRIMARY_KEYS)
+    sql_create_new_events_table = f"""
+    CREATE TABLE IF NOT EXISTS EventsNew (
+        {columns},
+        PRIMARY KEY ({primary_keys})
+    );
+    """
+    event_keys = ', '.join(list(EVENTS_TABLE))
+    sql_insert_new_event_keys = (
+        f'INSERT INTO EventsNew ({event_keys}) '
+        f'SELECT {event_keys} FROM Events;'
+    )
+    sql_drop_old_events_table = 'DROP TABLE Events;'
+    sql_rename_new_events_table = 'ALTER TABLE EventsNew RENAME TO Events;'
+    cursor.execute(sql_create_new_events_table)
+    cursor.execute(sql_insert_new_event_keys)
+    cursor.execute(sql_drop_old_events_table)
+    cursor.execute(sql_rename_new_events_table)
     # set new version
     cursor.execute('PRAGMA user_version = 3;')
 

@@ -213,9 +213,10 @@ def _insert_station_row(cursor, db_file, statId, par, evid, runid):
         'azimuth': par.azimuth,
         'spectral_snratio_mean': par.spectral_snratio_mean,
         'spectral_snratio_max': par.spectral_snratio_max,
+        'rmsn': getattr(par, 'rmsn', None),
+        'quality_of_fit': getattr(par, 'quality_of_fit', None),
         'ignored': par.ignored,
         'ignored_reason': getattr(par, 'ignored_reason', None),
-        'misfit': getattr(par, 'misfit', None)
     })
     columns = list(station_row.keys())
     row = tuple(station_row[col] for col in columns)
@@ -295,6 +296,15 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
     evid = event.event_id
     runid = config.options.run_id
     wave_type = config.wave_type
+    nobs_inverted = sspec_output.quality_info.n_spectra_inverted
+    azimuthal_gap_primary = sspec_output.quality_info.azimuthal_gap_primary
+    azimuthal_gap_secondary = sspec_output.quality_info.azimuthal_gap_secondary
+    rmsn_mean = sspec_output.quality_info.rmsn_mean
+    quality_of_fit_mean = sspec_output.quality_info.quality_of_fit_mean
+    spectral_dispersion_rmsn = \
+        sspec_output.quality_info.spectral_dispersion_rmsn
+    spectral_dispersion_score = \
+        sspec_output.quality_info.spectral_dispersion_score
     means = sspec_output.mean_values()
     mean_errors = sspec_output.mean_uncertainties()
     mean_nobs = sspec_output.mean_nobs()
@@ -330,9 +340,18 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
         'rho': float(ev_rho),
         'kp': kp,
         'ks': ks,
-        # Statistical info
+        # Inversion info
         'wave_type': wave_type,
+        # Quality info
         'nobs': nobs,
+        'nobs_inverted': nobs_inverted,
+        'azimuthal_gap_primary': azimuthal_gap_primary,
+        'azimuthal_gap_secondary': azimuthal_gap_secondary,
+        'rmsn_mean': rmsn_mean,
+        'quality_of_fit_mean': quality_of_fit_mean,
+        'spectral_dispersion_rmsn': spectral_dispersion_rmsn,
+        'spectral_dispersion_score': spectral_dispersion_score,
+        # Statistical info
         'nsigma': config.n_sigma,
         'mid_pct': config.mid_percentage,
         'lower_pct': config.lower_percentage,

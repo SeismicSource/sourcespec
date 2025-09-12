@@ -16,6 +16,9 @@ from scipy.integrate import quad
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_data_types import (
     SummarySpectralParameter, SummaryStatistics)
+from sourcespec.ssp_util import mag_to_moment
+from sourcespec.ssp_spectral_model import spectral_model
+from sourcespec.spectrum import Spectrum
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -162,7 +165,107 @@ def _param_summary_statistics(
     return summary
 
 
-def compute_summary_statistics(config, sspec_output):
+def _make_summary_spec(station, channel, freq_logspaced, Mw, fc, t_star):
+    """Create a synthetic spectrum for summary statistics."""
+    sp = Spectrum()
+    sp.stats.station = station
+    sp.stats.channel = channel
+    sp.freq_logspaced = freq_logspaced
+    data_mag_logspaced = spectral_model(freq_logspaced, Mw, fc, t_star)
+    # data_logspaced must be provided before data_mag_logspaced
+    sp.data_logspaced = mag_to_moment(data_mag_logspaced)
+    sp.data_mag_logspaced = data_mag_logspaced
+    return sp
+
+
+def _add_summary_spectra(sspec_output, spec_st):
+    """Add to the spectra stream synthetic spectra for summary statistics."""
+    fmins = [np.nanmin(spec.freq) for spec in spec_st]
+    fmaxs = [np.nanmax(spec.freq) for spec in spec_st]
+    fmin = np.nanmin(fmins)
+    fmax = np.nanmax(fmaxs)
+    npts = 100
+    freq_logspaced = np.logspace(np.log10(fmin), np.log10(fmax), npts)
+    summary_values = sspec_output.reference_values()
+    Mw = summary_values['Mw']
+    fc = summary_values['fc']
+    t_star = summary_values['t_star']
+    spec_st.append(
+        _make_summary_spec('SUMMARY', 'SSS', freq_logspaced, Mw, fc, t_star)
+    )
+    spec_st.append(
+        _make_summary_spec('SUMMARY', 'SSs', freq_logspaced, Mw, fc, 0)
+    )
+    spec_st.append(
+        _make_summary_spec('SUMMARY', 'SSt', freq_logspaced, Mw, 1e999, t_star)
+    )
+
+
+def _compute_dispersion_around_summary_spec(spec_st, weight_st):
+    """
+    Calculate the normalized weighted root mean square (RMS) dispersion
+    of all spectra with respect to the summary synthetic spectrum.
+
+    For each spectrum, interpolate its data to the frequency grid of the
+    summary spectrum, compute the weighted squared differences, and sum across
+    all spectra.
+    The normalization is performed by dividing the weighted RMS by the
+    weighted standard deviation of all data points used in the calculation.
+    The computation is made in magnitude units (but the result is unitless).
+
+    Returns the normalized weighted RMS dispersion value.
+    """
+    summary_spec = spec_st.select(station='SUMMARY', channel='SSS')[0]
+    freq_logspaced = summary_spec.freq_logspaced
+    data = np.array([])
+    weights = np.array([])
+    diffs = np.array([])
+    for spec in spec_st:
+        if spec.stats.channel[-1] != 'H':
+            continue
+        if spec.stats.ignore:
+            continue
+        # find the same spec in weight_st
+        try:
+            weight_spec = weight_st.select(id=spec.id)[0]
+        except IndexError:
+            # this should not happen, but if it does, use a weight of 1
+            weight_spec = spec.copy()
+            weight_spec.data_logspaced = np.ones_like(spec.data_mag_logspaced)
+        # interpolate the spectrum at the frequencies of the summary spectrum
+        spec_interp = spec.copy()
+        spec_interp.interp_data_logspaced_to_new_freq(freq_logspaced)
+        weight_spec_interp = weight_spec.copy()
+        weight_spec_interp.interp_data_logspaced_to_new_freq(freq_logspaced)
+        # accumulate data and weights for weighted RMS calculation
+        data = np.concatenate((data, spec_interp.data_mag_logspaced))
+        weights = np.concatenate(
+            (weights, weight_spec_interp.data_logspaced))
+        diffs = np.concatenate((
+            diffs,
+            spec_interp.data_mag_logspaced - summary_spec.data_mag_logspaced
+        ))
+    wrms2 = np.nansum(weights * diffs**2)
+    wsum = np.nansum(weights)
+    # compute the weighted RMS
+    wsum = 1 if wsum == 0 else wsum
+    wrms = np.sqrt(wrms2 / wsum)
+    logger.debug(
+        'Weighted RMS of spectral dispersion (in magnitude units): '
+        f'{wrms:.3f}')
+    # normalize by the 80% inter-percentile range of all data points
+    perc_10 = np.nanpercentile(data, 10)
+    perc_90 = np.nanpercentile(data, 90)
+    data_std = (perc_90 - perc_10)
+    logger.debug(
+        '80% inter-percentile range of all spectra (in magnitude units): '
+        f'{data_std:.3f}'
+    )
+    # return the normalized weighted RMS
+    return wrms / data_std if data_std > 0 else wrms
+
+
+def compute_summary_statistics(config, sspec_output, spec_st, weight_st):
     """Compute summary statistics from station spectral parameters."""
     logger.info('Computing summary statistics...')
     if len(sspec_output.station_parameters) == 0:
@@ -269,5 +372,22 @@ def compute_summary_statistics(config, sspec_output):
     sourcepar_percentiles = {
         par: float(percentiles[par]) for par in params_name}
     logger.info(f'params_percentiles: {sourcepar_percentiles}')
+
+    # Add synthetic spectra for summary statistics
+    _add_summary_spectra(sspec_output, spec_st)
+    # Compute dispersion around the summary synthetic spectrum
+    logger.info(
+        'Computing dispersion around the summary synthetic spectrum...')
+    rmsn = _compute_dispersion_around_summary_spec(spec_st, weight_st)
+    sspec_output.quality_info.spectral_dispersion_rmsn = rmsn
+    logger.info(
+        f'Normalized RMS of the dispersion around the summary synthetic '
+        f'spectrum: {rmsn:.3f}')
+    # Compute spectral dispersion score, in percentage, 100 is no dispersion
+    spec_dispersion_score = np.exp(-rmsn) * 100
+    logger.info(
+        f'Spectral dispersion score: {spec_dispersion_score:.3f}%')
+    sspec_output.quality_info.spectral_dispersion_score = spec_dispersion_score
+
     logger.info('Computing summary statistics: done')
     logger.info('---------------------------------------------------')

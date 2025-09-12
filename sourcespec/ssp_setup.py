@@ -354,13 +354,24 @@ def _update_config_file(config_file, configspec):
         'rps_from_focal_mechanism': 'rp_from_focal_mechanism',
         'paz': 'station_metadata',
         'pi_bsd_min_max': 'pi_ssd_min_max',
-        'max_epi_dist': 'epi_dist_ranges'
+        'max_epi_dist': 'epi_dist_ranges',
+        'pi_misfit_max': 'pi_quality_of_fit_min',
     }
     for old_opt, new_opt in migrate_options.items():
         if old_opt in config_obj and config_obj[old_opt] != 'None':
             # max_epi_dist needs to be converted to a list
             if old_opt == 'max_epi_dist':
                 config_new[new_opt] = [0, config_obj[old_opt]]
+            elif old_opt == 'pi_misfit_max':
+                # pi_misfit_max meaning is reversed in pi_quality_of_fit_min
+                config_new[new_opt] = None
+                if config_obj[old_opt] not in [None, 'None']:
+                    print(
+                        'WARNING: "pi_misfit_max" has been replaced by '
+                        '"pi_quality_of_fit_min" and the value has been '
+                        'reset to None.\nPlease set it manually in the '
+                        'updated config file according to your needs.'
+                    )
             else:
                 config_new[new_opt] = config_obj[old_opt]
     shutil.copyfile(config_file, config_file_old)
@@ -474,6 +485,13 @@ def _check_deprecated_config_options(config_obj):
         deprecation_msgs.append(
             '> "max_freq_Er" config parameter has been removed and replaced '
             'by "Er_freq_min_max".\n'
+        )
+    if 'pi_misfit_max' in config_obj:
+        deprecation_msgs.append(
+            '> "pi_misfit_max" config parameter has been renamed to '
+            '"pi_quality_of_fit_min" and its meaning has been reversed.\n'
+            '   pi_quality_of_fit_min is the minimum acceptable quality of fit '
+            'in percent (0-100).\n'
         )
     if deprecation_msgs:
         sys.stderr.write(
