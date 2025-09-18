@@ -206,8 +206,8 @@ def compute_mc(magnitudes, magn_bin, vector_compl, pval):
     This code is translated from the original MATLAB code provided by
     Matteo Taroni.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     magnitudes : np.ndarray
         Vector of magnitudes.
     magn_bin : float
@@ -217,8 +217,8 @@ def compute_mc(magnitudes, magn_bin, vector_compl, pval):
     pval : float
         P-value threshold for the complete part of the catalog (e.g., 0.1).
 
-    Returns:
-    --------
+    Returns
+    -------
     mc : float
         The magnitude of completeness of the catalog.
     """
@@ -248,8 +248,8 @@ def fit_gutenberg_richter(bin_centers, cum_nevs, mc):
     """
     Fit the Gutenberg-Richter law to the data points.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     bin_centers : np.ndarray
         Bin centers.
     cum_nevs : np.ndarray
@@ -257,8 +257,8 @@ def fit_gutenberg_richter(bin_centers, cum_nevs, mc):
     mc : float
         Magnitude of completeness.
 
-    Returns:
-    --------
+    Returns
+    -------
     a, b : float
         G-R law parameters.
     """
