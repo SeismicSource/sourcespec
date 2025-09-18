@@ -43,22 +43,42 @@ The SourceSpec package is made of several command line tools:
   parameter file.
 
 
-Contents:
+.. toctree::
+   :maxdepth: 2
+   :caption: Start
+
+   Home <self>
+   getting_started
+   theoretical_background
 
 .. toctree::
    :maxdepth: 2
+   :caption: Core features
 
-   getting_started
-   theoretical_background
    signal_processing
    clipping_detection
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Data formats
+
    configuration_file
    file_formats
    source_spec_event_file
    spectral_file_formats
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Setup & usage
+
    installation
    sample_runs
    getting_help
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contributing & citing
+
    contributing
    citing
    api
