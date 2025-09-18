@@ -4,8 +4,12 @@
 Getting Started
 ###############
 
+This section should get you up and running with SourceSpec in a few
+minutes. If you need more details, please refer to
+:ref:`theoretical_background:Theoretical Background`.
+
 For the impatient
-~~~~~~~~~~~~~~~~~
+=================
 
 .. note::
 
@@ -44,7 +48,7 @@ If you have seismic recordings in `SAC`_ format (e.g., in a directory named
 
 
 Command line arguments
-~~~~~~~~~~~~~~~~~~~~~~
+======================
 
 After successfully installed SourceSpec (see :ref:`installation:Installation`),
 you can get help on the command line arguments used by each code by typing from
@@ -72,7 +76,7 @@ file. See :ref:`file_formats:File Formats` for more
 information on the supported file formats.
 
 Configuration file
-~~~~~~~~~~~~~~~~~~
+==================
 
 ``source_spec`` and ``source_model`` require a configuration file. The
 default file name is ``source_spec.conf``, other file names can be
