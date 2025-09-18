@@ -14,6 +14,7 @@ import logging
 import contextlib
 import warnings
 from copy import deepcopy
+from packaging.version import Version
 import numpy as np
 import cartopy.crs as ccrs
 import cartopy.io.shapereader as shpreader
@@ -56,7 +57,13 @@ with contextlib.suppress(Exception):
         'ignore', category=RuntimeWarning, module='shapely')
 # Make pyproj calculations faster by using the global context for
 # pyproj < 3.7
-if pyproj.__version__ < '3.7':
+try:
+    _pyproj_version = Version(pyproj.__version__)
+except TypeError:
+    # This error occurs when generating the documentation
+    # and the module is mocked
+    _pyproj_version = Version('0.0.0')
+if _pyproj_version < Version('3.7'):
     pyproj.set_use_global_context(active=True)
 TILER = {
     'hillshade': EsriHillshade,
