@@ -62,7 +62,7 @@ your terminal:
 
 ``source_spec`` and ``source_model`` require you to provide the path to
 seismic traces via the ``--trace_path`` command line argument (see
-:ref:`file_formats:File formats`).
+:ref:`input_file_formats:Input File Formats`).
 
 Information on the seismic event can be stored in the trace header
 (`SAC <https://ds.iris.edu/ds/support/faq/17/sac-file-format/>`__
@@ -72,7 +72,7 @@ alternatively (``--hypocenter``), through
 a :ref:`source_spec_event_file:SourceSpec Event File`,
 a `HYPO71 <https://pubs.er.usgs.gov/publication/ofr72224>`__ file, or
 a `HYPOINVERSE-2000 <https://pubs.er.usgs.gov/publication/ofr02171>`__
-file. See :ref:`file_formats:File Formats` for more
+file. See :ref:`input_file_formats:Input File Formats` for more
 information on the supported file formats.
 
 Configuration file

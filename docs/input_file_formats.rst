@@ -1,8 +1,8 @@
-.. _file_formats:
+.. _input_file_formats:
 
-############
-File Formats
-############
+##################
+Input File Formats
+##################
 
 Trace formats
 ~~~~~~~~~~~~~
@@ -80,52 +80,6 @@ configuration file through the parameter ``station_metadata``.
 Alternatively, instrument sensitivity can be provided in the SAC header
 or as a constant in the configuration file. In both cases, use the
 configuration parameter ``sensitivity``.
-
-Output files
-~~~~~~~~~~~~
-
-The SourceSpec main code, ``source_spec`` will produce the following
-output files (``EVID`` is replaced by the actual event ID):
-
--  ``EVID.ssp.yaml``: `YAML`_ file containing the estimated spectral parameters
-   (summary values and per station values)
--  ``EVID.ssp.out`` (*deprecated*): text file containing the estimated spectral
-   parameters (summary values and per station values)
--  ``EVID.ssp.log``: log file in text format (including the command line
-   arguments, for `reproducibility`_)
--  ``EVID.ssp.conf``: the input config file (for `reproducibility`_)
--  ``EVID.residuals.hdf5``: station residuals in
-   :ref:`spectral_file_formats:HDF5 File Format`
--  ``EVID.spectra.hdf5``: (optional) spectra in
-   :ref:`spectral_file_formats:HDF5 File Format`
--  ``EVID.ssp.h``: hypocenter file in `HYPO71`_ format with the estimated
-   moment magnitude (only if an input HYPO71 file is provided)
--  ``EVID.xml``: updated `QuakeML`_ file with the results of the SourceSpec
-   inversion (only if an input QuakeML file is provided)
-
-The following plots will be created, in png, pdf or svg format:
-
--  ``EVID.traces.png[.pdf,.svg]``: trace plots
--  ``EVID.ssp.png[.pdf,.svg]``: spectral plots
--  ``EVID.sspweight.png[.pdf,.svg]``: spectral weight plots
--  ``EVID.boxplot.png[.pdf,.svg]``: `box plots`_ for the earthquake source
-   parameters retrieved at each station
--  Misfit plots, when using “grid search” or “importance sampling” for
-   the spectral inversion
-
-As an option, station maps can be created (requires `Cartopy`_):
-
--  ``EVID.map_mag.png[.pdf,.svg]``: station map with symbols colored by
-   estimated moment magnitude
--  ``EVID.map_fc.png[.pdf,.svg]``: station map with symbols colored by
-   estimated corner frequency
-
-As an option, the retrieved source parameters (per station and average)
-can be appended to a `SQLite`_ database, whose path is defined in the
-configuration file.
-
-Finally, always as an option, ``source_spec`` can generate a report in
-HTML format.
 
 .. File format links:
 .. _miniSEED: http://ds.iris.edu/ds/nodes/dmc/data/formats/miniseed/

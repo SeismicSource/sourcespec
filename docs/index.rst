@@ -60,11 +60,12 @@ The SourceSpec package is made of several command line tools:
 
 .. toctree::
    :maxdepth: 2
-   :caption: Data formats
+   :caption: File formats
 
    configuration_file
-   file_formats
+   input_file_formats
    source_spec_event_file
+   output_file_formats
    spectral_file_formats
 
 .. toctree::
