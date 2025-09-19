@@ -31,6 +31,7 @@ from sourcespec.spectrum import Spectrum, SpectrumStream
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
     smooth, cosine_taper, moment_to_mag, MediumProperties)
+# NOTE: 'smooth' is a time-domain window convolution; it assumes finite values.
 from sourcespec.ssp_geom_spreading import (
     geom_spread_r_power_n, geom_spread_r_power_n_segmented,
     geom_spread_boatwright, geom_spread_teleseismic)
@@ -472,6 +473,81 @@ def _displacement_to_moment(stats, config):
     return 4 * math.pi * v3 * rho / (fsa * stats.radiation_pattern)
 
 
+def _pre_smoothing_snr_mask(config, spec, specnoise):
+    """
+    Suppress low-frequency bins dominated by noise *before* log-frequency smoothing.
+    This prevents the smoothing kernel from bleeding high noise amplitudes
+    into the usable band.
+    Policy:
+      - Compute per-bin SNR on linear spectra (moment units) after
+        geometrical spreading & conversion (same stage as in _build_spectrum,
+        just before smoothing).
+      - If 'spectral_snr_mask_threshold' <= 0 or missing -> no-op.
+      - mode 'left_of_first' (default): find the first frequency f_cross where
+        SNR >= threshold and clamp all lower-frequency amplitudes to at most the
+        amplitude at f_cross. Optionally apply a gentle ramp (half-cosine) over
+        'spectral_snr_mask_ramp_decades' to avoid a hard step.
+      - mode 'binary': clamp every bin with SNR < threshold to at most the
+        minimum unmasked amplitude (conservative).
+    Notes:
+      - We *do not* insert NaNs: the smoother needs finite values (ssp_util.smooth).
+      - This runs before _smooth_spectrum(), i.e., before 'make_freq_logspaced()'.
+    """
+    th = getattr(config, 'spectral_snr_mask_threshold', None)
+    if not th or th <= 0:
+        return
+    mode = getattr(config, 'spectral_snr_mask_mode', 'left_of_first')
+    ramp_dec = float(getattr(config, 'spectral_snr_mask_ramp_decades', 0.0) or 0.0)
+
+    # spec and specnoise share the same linear frequency grid at this stage
+    freq = spec.freq
+    s = spec.data
+    n = specnoise.data
+    if s.size == 0 or n.size == 0 or freq.size == 0:
+        return
+    eps = np.finfo(float).eps
+    sn = s / np.maximum(n, eps)
+
+    if mode == 'left_of_first':
+        # Index of first crossing where SNR >= th; if none, do nothing.
+        idx = np.argmax(sn >= th)
+        if sn[idx] < th:
+            # never crosses threshold
+            spec_id = spec.get_id()
+            logger.info(f'{spec_id}: pre-smoothing SNR mask enabled '
+                        f'(threshold={th:g}), but no crossing found: skipped')
+            return
+        A0 = s[idx]
+        f0 = freq[idx]
+        # Clamp everything left of f0 to at most A0
+        left = np.where(freq < f0)[0]
+        if left.size:
+            s[left] = np.minimum(s[left], A0)
+        # Optional soft ramp (half-cosine) across a band of width 'ramp_dec' decades
+        if ramp_dec > 0.0:
+            f1 = f0 / (10.0 ** ramp_dec)
+            band = np.where((freq >= f1) & (freq < f0))[0]
+            if band.size:
+                # w goes 0->1 across [f1, f0]; blend clamped (A0) with original
+                x = (freq[band] - f1) / max(f0 - f1, eps)
+                w = 0.5 * (1.0 - np.cos(np.pi * x))
+                s[band] = np.minimum(s[band], A0 * w + s[band] * (1.0 - w))
+        spec.data = s
+        spec_id = spec.get_id()
+        logger.info(f'{spec_id}: pre-smoothing SNR mask applied '
+                    f'(threshold={th:g}, mode={mode}, f_cross={f0:.4f} Hz, '
+                    f'ramp_decades={ramp_dec:.3f})')
+    else:
+        # 'binary' fallback: clamp any low-SNR bin.
+        mask = sn < th
+        if np.any(mask):
+            # Use the minimum amplitude among unmasked bins as a conservative cap.
+            unmasked = np.where(~mask)[0]
+            A0 = np.min(s[unmasked]) if unmasked.size else np.min(s)
+            s[mask] = np.minimum(s[mask], A0)
+            spec.data = s
+
+
 def _smooth_spectrum(spec, smooth_width_decades=0.2):
     """
     Smooth spectrum in a log10-freq space.
@@ -497,7 +573,7 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
     spec.make_freq_logspaced(log_df)
 
 
-def _build_spectrum(config, trace):
+def _build_spectrum(config, trace, do_smooth=True):
     try:
         spec = Spectrum(obspy_trace=trace)
     except ValueError as e:
@@ -545,13 +621,14 @@ def _build_spectrum(config, trace):
             f'skipping spectrum\n{str(e)}'
         ) from e
     # smooth spectrum. This also creates log-spaced frequencies and data
-    try:
-        _smooth_spectrum(spec, config.spectral_smooth_width_decades)
-    except ValueError as e:
-        raise RuntimeError(
-            f'{spec.id}: Error smoothing spectrum: '
-            f'skipping spectrum\n{str(e)}'
-        ) from e
+    if do_smooth:
+        try:
+            _smooth_spectrum(spec, config.spectral_smooth_width_decades)
+        except ValueError as e:
+            raise RuntimeError(
+                f'{spec.id}: Error smoothing spectrum: '
+                f'skipping spectrum\n{str(e)}'
+            ) from e
     return spec
 
 
@@ -869,8 +946,22 @@ def _build_signal_and_noise_spectral_streams(
     for trace_signal in sorted(signal_st, key=lambda tr: tr.id):
         trace_noise = noise_st.select(id=trace_signal.id)[0]
         try:
-            spec = _build_spectrum(config, trace_signal)
-            specnoise = _build_spectrum(config, trace_noise)
+            # Optional low-frequency SNR mask *prior to smoothing*:
+            th = getattr(config, 'spectral_snr_mask_threshold', None)
+            use_mask = th is not None and th > 0
+            if use_mask:
+                # Build spectra up to (but not including) smoothing
+                spec = _build_spectrum(config, trace_signal, do_smooth=False)
+                specnoise = _build_spectrum(config, trace_noise, do_smooth=False)
+                # Apply the mask before smoothing to avoid bleed into log-smoothing
+                _pre_smoothing_snr_mask(config, spec, specnoise)
+                # Now smooth (this creates log-spaced arrays used downstream)
+                _smooth_spectrum(spec, config.spectral_smooth_width_decades)
+                _smooth_spectrum(specnoise, config.spectral_smooth_width_decades)
+            else:
+                # Default behavior (no mask)
+                spec = _build_spectrum(config, trace_signal)
+                specnoise = _build_spectrum(config, trace_noise)
             _check_spectral_sn_ratio(config, spec, specnoise)
         except RuntimeError as msg:
             # RuntimeError is for skipped spectra
