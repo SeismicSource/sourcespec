@@ -183,6 +183,11 @@ favicons = [
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# Custom CSS files
+html_css_files = ['custom.css']
+html_js_files = ['custom.js']
+
+
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
 # html_last_updated_fmt = '%b %d, %Y'

@@ -1,0 +1,5 @@
+a.external::after {
+    content: "↗";  /* You could also use ↗, ⧉, or a Unicode arrow */
+    margin-left: 0.25em;
+    font-size: 0.9em;
+}
