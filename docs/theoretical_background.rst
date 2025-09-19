@@ -258,24 +258,8 @@ The parameters determined from the spectral inversion are :math:`M_w`,
 :math:`f^{p|s}_c` and :math:`t^*`.
 
 The inversion is performed in moment magnitude :math:`M_w` units (logarithmic
-amplitude). Different inversion algorithms can be used:
-
--  TNC: `truncated Newton
-   algorithm <https://en.wikipedia.org/wiki/Truncated_Newton_method>`__
-   (with bounds)
--  LM: `Levenberg-Marquardt
-   algorithm <https://en.wikipedia.org/wiki/Levenberg–Marquardt_algorithm>`__
-   (warning: `Trust Region Reflective
-   algorithm <https://en.wikipedia.org/wiki/Trust_region>`__ will be
-   used instead if bounds are provided)
--  BH: `basin-hopping
-   algorithm <https://en.wikipedia.org/wiki/Basin-hopping>`__
--  GS: `grid
-   search <https://en.wikipedia.org/wiki/Hyperparameter_optimization#Grid_search>`__
--  IS: `importance
-   sampling <http://alomax.free.fr/nlloc/octtree/OctTree.html>`__ of
-   misfit grid, using `k-d
-   tree <https://en.wikipedia.org/wiki/K-d_tree>`__
+amplitude). More details on the inversion method can be found in
+:ref:`spectral_inversion:Spectral Inversion, Quality and Uncertainty`.
 
 
 Other computed parameters

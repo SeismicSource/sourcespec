@@ -58,6 +58,7 @@ The SourceSpec package is made of several command line tools:
 
    signal_processing
    clipping_detection
+   spectral_inversion
 
 .. toctree::
    :maxdepth: 2
