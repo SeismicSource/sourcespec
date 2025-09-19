@@ -138,11 +138,11 @@ pygments_style = 'sphinx'
 html_theme = 'sphinx_rtd_theme'
 
 html_context = {
-    "display_github": True,
-    "github_user": "seismicsource",
-    "github_repo": "sourcespec",
-    "github_version": "main",
-    "conf_py_path": "/docs/",
+    'display_github': True,
+    'github_user': 'seismicsource',
+    'github_repo': 'sourcespec',
+    'github_version': 'main',
+    'conf_py_path': '/docs/',
 }
 
 # Theme options are theme-specific and customize the look and feel of a theme
