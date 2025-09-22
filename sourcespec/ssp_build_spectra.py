@@ -515,16 +515,71 @@ def _pre_smoothing_snr_mask(config, spec, specnoise):
         'applied': False
     }
 
+    freq_range_cfg = getattr(config, 'spectral_snr_mask_freq_range', None)
+    freq_range = None
+    range_idx = None
+    if freq_range_cfg:
+        try:
+            if isinstance(freq_range_cfg, (list, tuple)):
+                values = list(freq_range_cfg)
+            else:
+                cleaned = str(freq_range_cfg).replace('[', '').replace(']', '')
+                values = [
+                    float(val.strip()) for val in cleaned.split(',') if val.strip()
+                ]
+            if not values:
+                raise ValueError
+            if len(values) == 1:
+                f_range_min = float(values[0])
+                f_range_max = 1.0
+            else:
+                f_range_min = float(values[0])
+                f_range_max = float(values[1])
+        except (TypeError, ValueError):
+            logger.warning(
+                'Invalid spectral SNR mask frequency range %r: ignoring',
+                freq_range_cfg)
+        else:
+            if f_range_max < f_range_min:
+                f_range_min, f_range_max = f_range_max, f_range_min
+            f_range_min = max(f_range_min, freq[0])
+            f_range_max = min(max(f_range_min, f_range_max), 1.0)
+            if f_range_min < f_range_max:
+                # reduce to available frequency support
+                idx = np.where((freq >= f_range_min) & (freq <= f_range_max))[0]
+                if idx.size:
+                    range_idx = idx
+                    # store effective range for logging/plots
+                    freq_range = (float(freq[idx[0]]), float(freq[idx[-1]]))
+                    mask_info.update({
+                        'freq_range_min': freq_range[0],
+                        'freq_range_max': freq_range[1]
+                    })
+                else:
+                    logger.info(
+                        '%s: spectral SNR mask frequency range [%g, %g] Hz '
+                        'does not intersect spectrum: ignoring',
+                        spec.get_id(), f_range_min, f_range_max)
+            else:
+                logger.warning(
+                    'Invalid spectral SNR mask frequency range %r: ignoring',
+                    freq_range_cfg)
+
     if mode == 'left_of_first':
-        # Index of first crossing where SNR >= th; if none, do nothing.
-        idx = np.argmax(sn >= th)
-        if sn[idx] < th:
-            # never crosses threshold
-            spec.stats.snr_mask_info = mask_info
-            spec_id = spec.get_id()
-            logger.info(f'{spec_id}: pre-smoothing SNR mask enabled '
-                        f'(threshold={th:g}), but no crossing found: skipped')
-            return
+        range_forced = range_idx is not None and np.any(sn[range_idx] < th)
+        if range_forced:
+            idx = range_idx[-1]
+        else:
+            # Index of first crossing where SNR >= th; if none, do nothing.
+            idx = np.argmax(sn >= th)
+            if sn[idx] < th:
+                # never crosses threshold
+                spec.stats.snr_mask_info = mask_info
+                spec_id = spec.get_id()
+                logger.info(
+                    f'{spec_id}: pre-smoothing SNR mask enabled '
+                    f'(threshold={th:g}), but no crossing found: skipped')
+                return
         A0 = s[idx]
         f0 = freq[idx]
         # Clamp everything left of f0 to at most A0
@@ -534,6 +589,8 @@ def _pre_smoothing_snr_mask(config, spec, specnoise):
         # Optional soft ramp (half-cosine) across a band of width 'ramp_dec' decades
         if ramp_dec > 0.0:
             f1 = f0 / (10.0 ** ramp_dec)
+            if freq_range is not None:
+                f1 = max(f1, freq_range[0])
             band = np.where((freq >= f1) & (freq < f0))[0]
             if band.size:
                 # w goes 0->1 across [f1, f0]; blend clamped (A0) with original
@@ -545,6 +602,8 @@ def _pre_smoothing_snr_mask(config, spec, specnoise):
             'applied': True,
             'f_cross': float(f0),
         })
+        if range_forced:
+            mask_info['range_forced'] = True
         if ramp_dec > 0.0:
             mask_info['f_ramp_start'] = float(f1)
         spec.stats.snr_mask_info = mask_info
@@ -552,6 +611,10 @@ def _pre_smoothing_snr_mask(config, spec, specnoise):
         logger.info(f'{spec_id}: pre-smoothing SNR mask applied '
                     f'(threshold={th:g}, mode={mode}, f_cross={f0:.4f} Hz, '
                     f'ramp_decades={ramp_dec:.3f})')
+        if range_forced and freq_range is not None:
+            logger.info(
+                '%s: pre-smoothing SNR mask forced by RSS range %.4f-%.4f Hz',
+                spec_id, freq_range[0], freq_range[1])
     else:
         # 'binary' fallback: clamp any low-SNR bin.
         mask = sn < th
