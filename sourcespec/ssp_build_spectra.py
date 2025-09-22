@@ -948,6 +948,16 @@ def _build_signal_and_noise_spectral_streams(
         try:
             # Optional low-frequency SNR mask *prior to smoothing*:
             th = getattr(config, 'spectral_snr_mask_threshold', None)
+            if isinstance(th, str):
+                try:
+                    th = float(th)
+                except ValueError:
+                    logger.warning(
+                        'Invalid spectral SNR mask threshold %r: disabling mask',
+                        th)
+                    th = None
+                else:
+                    setattr(config, 'spectral_snr_mask_threshold', th)
             use_mask = th is not None and th > 0
             if use_mask:
                 # Build spectra up to (but not including) smoothing
