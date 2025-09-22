@@ -654,6 +654,30 @@ def _plot_snr_mask_indicator(spec, ax):
             f_ramp_start, f_cross, color='#CC9933', alpha=0.12, zorder=2)
 
 
+def _plot_event_moment_line(spec, ax, ax2):
+    """Plot the catalog/event seismic moment as a reference line."""
+    if getattr(ax, '_event_moment_drawn', False):
+        return
+    event = getattr(spec.stats, 'event', None)
+    if not event:
+        return
+    scalar_moment = getattr(getattr(event, 'scalar_moment', None), 'value', None)
+    if scalar_moment is None or scalar_moment <= 0:
+        return
+    color = '#555555'
+    ax.axhline(
+        scalar_moment, color=color, linestyle='--', linewidth=1.5, zorder=4)
+    ax._event_moment_drawn = True  # pylint: disable=protected-access
+    if ax2 and not getattr(ax2, '_event_moment_drawn', False):
+        try:
+            Mw = float(moment_to_mag(scalar_moment))
+        except (TypeError, ValueError):
+            return
+        ax2.axhline(
+            Mw, color=color, linestyle='--', linewidth=1.0, zorder=4)
+        ax2._event_moment_drawn = True  # pylint: disable=protected-access
+
+
 def _plot_spec(config, plot_params, spec, spec_noise):
     """Plot one spectrum (and its associated noise)."""
     plotn = plot_params.plotn
@@ -689,6 +713,7 @@ def _plot_spec(config, plot_params, spec, spec_noise):
         if orientation == 'S':
             _plot_fc_and_mw(spec, ax, ax2)
         _plot_snr_mask_indicator(spec, ax)
+        _plot_event_moment_line(spec, ax, ax2)
     elif plot_type == 'weight':
         ax.semilogx(
             spec.freq, spec.data, color=color, alpha=alpha, zorder=20)
