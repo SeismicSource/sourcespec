@@ -472,6 +472,46 @@ def _snratio_text(spec, ax, color, path_effects):
     SNRATIO_TEXT_YPOS -= 0.05
 
 
+def _snr_mask_text(spec, ax, path_effects):
+    global SNRATIO_TEXT_YPOS  # pylint: disable=global-statement
+    mask_info = getattr(spec.stats, 'snr_mask_info', None)
+    if not mask_info:
+        return
+    threshold = mask_info.get('threshold')
+    if threshold is None:
+        return
+    mode = mask_info.get('mode', 'left_of_first')
+    applied = mask_info.get('applied', False)
+    text = f'Mask ≥{threshold:g}'
+    if mode == 'left_of_first':
+        if applied and mask_info.get('f_cross'):
+            f_cross = mask_info['f_cross']
+            text += f' @ {f_cross:.3g} Hz'
+            ramp_dec = mask_info.get('ramp_decades', 0.0)
+            f_ramp_start = mask_info.get('f_ramp_start')
+            if ramp_dec and f_ramp_start:
+                text += f' (ramp ≥{f_ramp_start:.3g} Hz)'
+        else:
+            text += ' (no crossing)'
+    else:
+        text += ' (binary)'
+        if applied:
+            f_min = mask_info.get('freq_min')
+            f_max = mask_info.get('freq_max')
+            if f_min is not None and f_max is not None:
+                if math.isclose(f_min, f_max):
+                    text += f' ≤{f_max:.3g} Hz'
+                else:
+                    text += f' {f_min:.3g}-{f_max:.3g} Hz'
+        else:
+            text += ', none masked'
+    ax.text(
+        0.95, SNRATIO_TEXT_YPOS, text, ha='right', va='top',
+        fontsize=8, color='dimgray', path_effects=path_effects,
+        transform=ax.transAxes, zorder=20)
+    SNRATIO_TEXT_YPOS -= 0.05
+
+
 def _station_text(spec, ax, color, path_effects, stack_plots):
     station_text = f'{spec.id[:-1]} {spec.stats.instrtype}'
     if not stack_plots:
@@ -595,6 +635,25 @@ def _plot_fc_and_mw(spec, ax, ax2):
     ax.axvline(fc, color='#999999', linewidth=2., zorder=1)
 
 
+def _plot_snr_mask_indicator(spec, ax):
+    mask_info = getattr(spec.stats, 'snr_mask_info', None)
+    if not mask_info:
+        return
+    if mask_info.get('mode', 'left_of_first') != 'left_of_first':
+        return
+    if not mask_info.get('applied'):
+        return
+    f_cross = mask_info.get('f_cross')
+    if not f_cross:
+        return
+    ax.axvline(
+        f_cross, color='#CC9933', linewidth=1.5, linestyle='--', zorder=5)
+    f_ramp_start = mask_info.get('f_ramp_start')
+    if f_ramp_start and f_ramp_start < f_cross:
+        ax.axvspan(
+            f_ramp_start, f_cross, color='#CC9933', alpha=0.12, zorder=2)
+
+
 def _plot_spec(config, plot_params, spec, spec_noise):
     """Plot one spectrum (and its associated noise)."""
     plotn = plot_params.plotn
@@ -623,9 +682,13 @@ def _plot_spec(config, plot_params, spec, spec_noise):
         # Write spectral S/N for regular Z,N,E components
         if orientation not in special_orientations:
             _snratio_text(spec, ax, color, path_effects)
+            _snr_mask_text(spec, ax, path_effects)
+        else:
+            _snr_mask_text(spec, ax, path_effects)
         # Plot fc and Mw if a synthetic spectrum S is available
         if orientation == 'S':
             _plot_fc_and_mw(spec, ax, ax2)
+        _plot_snr_mask_indicator(spec, ax)
     elif plot_type == 'weight':
         ax.semilogx(
             spec.freq, spec.data, color=color, alpha=alpha, zorder=20)

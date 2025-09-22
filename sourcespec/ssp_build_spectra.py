@@ -508,11 +508,19 @@ def _pre_smoothing_snr_mask(config, spec, specnoise):
     eps = np.finfo(float).eps
     sn = s / np.maximum(n, eps)
 
+    mask_info = {
+        'threshold': float(th),
+        'mode': mode,
+        'ramp_decades': float(ramp_dec),
+        'applied': False
+    }
+
     if mode == 'left_of_first':
         # Index of first crossing where SNR >= th; if none, do nothing.
         idx = np.argmax(sn >= th)
         if sn[idx] < th:
             # never crosses threshold
+            spec.stats.snr_mask_info = mask_info
             spec_id = spec.get_id()
             logger.info(f'{spec_id}: pre-smoothing SNR mask enabled '
                         f'(threshold={th:g}), but no crossing found: skipped')
@@ -533,6 +541,13 @@ def _pre_smoothing_snr_mask(config, spec, specnoise):
                 w = 0.5 * (1.0 - np.cos(np.pi * x))
                 s[band] = np.minimum(s[band], A0 * w + s[band] * (1.0 - w))
         spec.data = s
+        mask_info.update({
+            'applied': True,
+            'f_cross': float(f0),
+        })
+        if ramp_dec > 0.0:
+            mask_info['f_ramp_start'] = float(f1)
+        spec.stats.snr_mask_info = mask_info
         spec_id = spec.get_id()
         logger.info(f'{spec_id}: pre-smoothing SNR mask applied '
                     f'(threshold={th:g}, mode={mode}, f_cross={f0:.4f} Hz, '
@@ -546,6 +561,13 @@ def _pre_smoothing_snr_mask(config, spec, specnoise):
             A0 = np.min(s[unmasked]) if unmasked.size else np.min(s)
             s[mask] = np.minimum(s[mask], A0)
             spec.data = s
+            mask_info.update({
+                'applied': True,
+                'freq_min': float(np.min(freq[mask])),
+                'freq_max': float(np.max(freq[mask])),
+                'masked_bins': int(np.count_nonzero(mask)),
+            })
+        spec.stats.snr_mask_info = mask_info
 
 
 def _smooth_spectrum(spec, smooth_width_decades=0.2):
