@@ -112,6 +112,12 @@ class _Config(dict):
         Import the global config object instead.
     """
     def __init__(self):
+        """Initialize the config object with default values."""
+        super().__init__()
+        self._set_defaults()
+
+    def _set_defaults(self):
+        """Set the default values for the config object."""
         # Additional config values that must exist for the code to run without
         # errors. They must be defined using the dict syntax.
         self['running_from_command_line'] = False
@@ -135,6 +141,11 @@ class _Config(dict):
         configspec = parse_configspec()
         config_obj = get_default_config_obj(configspec)
         self.update(config_obj.dict())
+
+    def reset(self):
+        """Reset the config object to the default values."""
+        super().clear()
+        self._set_defaults()
 
     def __setitem__(self, key, value):
         """Make Config keys accessible as attributes."""

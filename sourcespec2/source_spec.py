@@ -17,15 +17,15 @@ Earthquake source parameters from inversion of P- or S-wave spectra.
 """
 
 
-def ssp_clear_state(clear_config=False, clear_options=True):
+def ssp_clear_state(reset_config=False, clear_options=True):
     """
     Clear state from a previous run.
     Some submodules contain global variables caching information
     about the current run, which need to be cleared before
     launching a new run.
 
-    :param clear_config: whether to clear global config as well
-    :type clear_config: bool
+    :param reset_config: whether to reset global config as well
+    :type reset_config: bool
     :param clear_options: whether to clear options in global config
     :type clear_options: bool
     """
@@ -49,10 +49,8 @@ def ssp_clear_state(clear_config=False, clear_options=True):
     ssp_plot_spectra.BBOX = None
 
     from .setup import config
-    if clear_config:
-        # This clears the entire config, which is not what we want
-        # config.clear()
-        config.__init__()
+    if reset_config:
+        config.reset()
     elif clear_options:
         config.options.clear()
 
@@ -91,7 +89,7 @@ def ssp_run(st, inventory, ssp_event, picks, allow_exit=False):
         ssp_exit.SSP_EXIT_CALLED = True
 
     # Clear state from possible previous run
-    ssp_clear_state(clear_config=False, clear_options=False)
+    ssp_clear_state(reset_config=False, clear_options=False)
 
     # Create output folder if required, save config and setup logging
     from .setup import get_outdir_path, save_config, setup_logging
