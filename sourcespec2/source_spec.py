@@ -17,6 +17,44 @@ Earthquake source parameters from inversion of P- or S-wave spectra.
 """
 
 
+def ssp_clear_state(reset_config=False, clear_options=True):
+    """
+    Clear state from a previous run.
+    Some submodules contain global variables caching information
+    about the current run, which need to be cleared before
+    launching a new run.
+
+    :param reset_config: whether to reset global config as well
+    :type reset_config: bool
+    :param clear_options: whether to clear options in global config
+    :type clear_options: bool
+    """
+    # pylint: disable=import-outside-toplevel
+    from .setup import logging
+    logging.OLDLOGFILE = None
+    # Not sure if we should reset LOGGER?
+    # logging.LOGGER = None
+
+    from . import ssp_wave_arrival
+    ssp_wave_arrival.add_arrival_to_trace.pick_cache = dict()
+    ssp_wave_arrival.add_arrival_to_trace.travel_time_cache = dict()
+    ssp_wave_arrival.add_arrival_to_trace.angle_cache = dict()
+
+    from . import ssp_plot_traces
+    ssp_plot_traces.SAVED_FIGURE_CODES = []
+    ssp_plot_traces.BBOX = None
+
+    from . import ssp_plot_spectra
+    ssp_plot_spectra.SAVED_FIGURE_CODES = []
+    ssp_plot_spectra.BBOX = None
+
+    from .setup import config
+    if reset_config:
+        config.reset()
+    elif clear_options:
+        config.options.clear()
+
+
 def ssp_run(st, inventory, ssp_event, picks, allow_exit=False):
     """
     Run source_spec as function with collected traces, station inventory,
@@ -49,6 +87,9 @@ def ssp_run(st, inventory, ssp_event, picks, allow_exit=False):
     # Avoid hard exit when ssp_exit is called somewhere
     if not allow_exit:
         ssp_exit.SSP_EXIT_CALLED = True
+
+    # Clear state from possible previous run
+    ssp_clear_state(reset_config=False, clear_options=False)
 
     # Create output folder if required, save config and setup logging
     from .setup import get_outdir_path, save_config, setup_logging
