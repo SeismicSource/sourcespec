@@ -29,10 +29,11 @@ def ssp_clear_state(clear_config=False, clear_options=True):
     :param clear_options: whether to clear options in global config
     :type clear_options: bool
     """
+    # pylint: disable=import-outside-toplevel
     from .setup import logging
     logging.OLDLOGFILE = None
     # Not sure if we should reset LOGGER?
-    #logging.LOGGER = None
+    # logging.LOGGER = None
 
     from . import ssp_wave_arrival
     ssp_wave_arrival.add_arrival_to_trace.pick_cache = dict()
@@ -50,7 +51,7 @@ def ssp_clear_state(clear_config=False, clear_options=True):
     from .setup import config
     if clear_config:
         # This clears the entire config, which is not what we want
-        #config.clear()
+        # config.clear()
         config.__init__()
     elif clear_options:
         config.options.clear()
