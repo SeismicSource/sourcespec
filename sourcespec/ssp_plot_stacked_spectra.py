@@ -209,6 +209,9 @@ def plot_stacked_spectra(config, spec_st, weight_st, sspec_output):
         if spec.stats.channel[-1] == 'H'
         and not spec.stats.ignore
     ]
+    if not selected_specs:
+        logger.warning('No valid spectra found for stacked spectra plot')
+        return
     # plotting
     fig, ax = _make_fig(config)
     ax.set_xscale('log')

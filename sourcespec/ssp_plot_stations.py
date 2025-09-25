@@ -871,6 +871,9 @@ def plot_stations(config, sspec_output):
         st_id: spar for st_id, spar in sspec_output.station_parameters.items()
         if not spar.ignored
     }
+    if not stationpar:
+        logger.warning('No valid station found for map plot.')
+        return
     st_ids = sorted(stationpar.keys())
     lonlat_dist = np.array([
         (stationpar[k]['longitude'], stationpar[k]['latitude'],

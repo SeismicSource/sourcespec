@@ -605,18 +605,42 @@ def _add_inversion_info_to_html(sspec_output, replacements):
 def _add_inversion_quality_to_html(sspec_output, replacements):
     """Add inversion quality info to HTML report."""
     quality_info = sspec_output.quality_info
+    n_spectra_inverted = (
+        f'{quality_info.n_spectra_inverted}'
+        if quality_info.n_spectra_inverted is not None else '-'
+    )
+    azimuthal_gap_primary = (
+        f'{quality_info.azimuthal_gap_primary:.1f}°'
+        if quality_info.azimuthal_gap_primary is not None else '-'
+    )
+    azimuthal_gap_secondary = (
+        f'{quality_info.azimuthal_gap_secondary:.1f}°'
+        if quality_info.azimuthal_gap_secondary is not None else '-'
+    )
+    rmsn_mean = (
+        f'{quality_info.rmsn_mean:.3f}'
+        if quality_info.rmsn_mean is not None else '-'
+    )
+    quality_of_fit_mean = (
+        f'{quality_info.quality_of_fit_mean:.1f}%'
+        if quality_info.quality_of_fit_mean is not None else '-'
+    )
+    spectral_dispersion_rmsn = (
+        f'{quality_info.spectral_dispersion_rmsn:.3f}'
+        if quality_info.spectral_dispersion_rmsn is not None else '-'
+    )
+    spectral_dispersion_score = (
+        f'{quality_info.spectral_dispersion_score:.1f}%'
+        if quality_info.spectral_dispersion_score is not None else '-'
+    )
     replacements.update({
-        '{N_SPECTRA_INVERTED}': f'{quality_info.n_spectra_inverted}',
-        '{AZIMUTHAL_GAP_PRIMARY}':
-            f'{quality_info.azimuthal_gap_primary:.1f}°',
-        '{AZIMUTHAL_GAP_SECONDARY}':
-            f'{quality_info.azimuthal_gap_secondary:.1f}°',
-        '{RMSN_MEAN}': f'{quality_info.rmsn_mean:.3f}',
-        '{QUALITY_OF_FIT_MEAN}': f'{quality_info.quality_of_fit_mean:.1f}%',
-        '{SPECTRAL_DISPERSION_RMSN}':
-            f'{quality_info.spectral_dispersion_rmsn:.3f}',
-        '{SPECTRAL_DISPERSION_SCORE}':
-            f'{quality_info.spectral_dispersion_score:.1f}%',
+        '{N_SPECTRA_INVERTED}': n_spectra_inverted,
+        '{AZIMUTHAL_GAP_PRIMARY}': azimuthal_gap_primary,
+        '{AZIMUTHAL_GAP_SECONDARY}': azimuthal_gap_secondary,
+        '{RMSN_MEAN}': rmsn_mean,
+        '{QUALITY_OF_FIT_MEAN}': quality_of_fit_mean,
+        '{SPECTRAL_DISPERSION_RMSN}': spectral_dispersion_rmsn,
+        '{SPECTRAL_DISPERSION_SCORE}': spectral_dispersion_score,
     })
 
 

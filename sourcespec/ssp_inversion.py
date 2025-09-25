@@ -512,6 +512,39 @@ def _synth_spec(config, spec, station_pars):
     return spec_st
 
 
+def _compute_inversion_quality_info(inverted_spectra, sspec_output):
+    """Compute quality information from inverted spectra."""
+    azimuths = [sp.azimuth for sp in inverted_spectra]
+    primary_gap, secondary_gap = primary_and_secondary_azimuthal_gap(azimuths)
+    sspec_output.quality_info.azimuthal_gap_primary = primary_gap
+    sspec_output.quality_info.azimuthal_gap_secondary = secondary_gap
+    logger.info(
+        f'Primary azimuthal gap: {primary_gap:.1f}°\n'
+        f'Secondary azimuthal gap: {secondary_gap:.1f}°'
+    )
+    rmsn_vals = [
+        sp.rmsn for sp in inverted_spectra if sp.rmsn is not None
+    ]
+    sspec_output.quality_info.rmsn_mean = (
+        np.nanmean(rmsn_vals) if rmsn_vals else None
+    )
+    logger.info(
+        f'Mean normalized RMS misfit: '
+        f'{sspec_output.quality_info.rmsn_mean:.3f}'
+    )
+    quality_of_fit_vals = [
+        sp.quality_of_fit for sp in inverted_spectra
+        if sp.quality_of_fit is not None
+    ]
+    sspec_output.quality_info.quality_of_fit_mean = (
+        np.nanmean(quality_of_fit_vals) if quality_of_fit_vals else None
+    )
+    logger.info(
+        f'Mean quality of fit: '
+        f'{sspec_output.quality_info.quality_of_fit_mean:.3f}%'
+    )
+
+
 def spectral_inversion(config, spec_st, weight_st):
     """Inversion of displacement spectra."""
     logger.info('Inverting spectra...')
@@ -606,36 +639,14 @@ def spectral_inversion(config, spec_st, weight_st):
         f'Number of spectra successfully inverted: '
         f'{sspec_output.quality_info.n_spectra_inverted}'
     )
-    azimuths = [sp.azimuth for sp in inverted_spectra]
-    primary_gap, secondary_gap = primary_and_secondary_azimuthal_gap(azimuths)
-    sspec_output.quality_info.azimuthal_gap_primary = primary_gap
-    sspec_output.quality_info.azimuthal_gap_secondary = secondary_gap
-    logger.info(
-        f'Primary azimuthal gap: {primary_gap:.1f}°\n'
-        f'Secondary azimuthal gap: {secondary_gap:.1f}°'
-    )
-    rmsn_vals = [
-        sp.rmsn for sp in inverted_spectra if sp.rmsn is not None
-    ]
-    sspec_output.quality_info.rmsn_mean = (
-        np.nanmean(rmsn_vals) if rmsn_vals else None
-    )
-    logger.info(
-        f'Mean normalized RMS misfit: '
-        f'{sspec_output.quality_info.rmsn_mean:.3f}'
-    )
-    quality_of_fit_vals = [
-        sp.quality_of_fit for sp in inverted_spectra
-        if sp.quality_of_fit is not None
-    ]
-    sspec_output.quality_info.quality_of_fit_mean = (
-        np.nanmean(quality_of_fit_vals) if quality_of_fit_vals else None
-    )
-    logger.info(
-        f'Mean quality of fit: '
-        f'{sspec_output.quality_info.quality_of_fit_mean:.3f}%'
-    )
-
+    if not inverted_spectra:
+        # fill quality info with None values
+        sspec_output.quality_info.azimuthal_gap_primary = None
+        sspec_output.quality_info.azimuthal_gap_secondary = None
+        sspec_output.quality_info.rmsn_mean = None
+        sspec_output.quality_info.quality_of_fit_mean = None
+    else:
+        _compute_inversion_quality_info(inverted_spectra, sspec_output)
     logger.info('Inverting spectra: done')
     logger.info('---------------------------------------------------')
     return sspec_output
