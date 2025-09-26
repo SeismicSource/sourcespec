@@ -181,9 +181,10 @@ summary parameters:
 
 - **Number of spectra inverted**: The number of spectra that passed quality
   checks and contributed to the inversion.
-- **Azimuthal gap (primary and secondary)**: The largest and second-largest
-  gaps in station azimuthal coverage, indicating how well the recording
-  stations surround the source.
+- **Primary azimuthal gap**: the largest gap in station azimuthal coverage;
+  measures the overall quality of the distribution.
+- **Secondary azimuthal gap**: the largest gap that would remain if any one
+  station were removed; measures the robustness of the coverage.
 - **Mean RMSN**: The average normalized root mean square error (RMSN) across
   all inverted spectra (see the RMSN definition above).
 - **Mean fit quality**: The average spectral fit quality (:math:`Q_{fit}`)
