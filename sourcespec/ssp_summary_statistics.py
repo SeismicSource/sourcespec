@@ -245,6 +245,9 @@ def _compute_dispersion_around_summary_spec(spec_st, weight_st):
             diffs,
             spec_interp.data_mag_logspaced - summary_spec.data_mag_logspaced
         ))
+    # if data is still empty, return NaN
+    if len(data) == 0:
+        return np.nan
     wrms2 = np.nansum(weights * diffs**2)
     wsum = np.nansum(weights)
     # compute the weighted RMS
@@ -384,9 +387,14 @@ def compute_summary_statistics(config, sspec_output, spec_st, weight_st):
         f'Normalized RMS of the dispersion around the summary synthetic '
         f'spectrum: {rmsn:.3f}')
     # Compute spectral dispersion score, in percentage, 100 is no dispersion
-    spec_dispersion_score = np.exp(-rmsn) * 100
+    if np.isnan(rmsn):
+        spec_dispersion_score = np.nan
+        spec_dispersion_score_str = 'nan'
+    else:
+        spec_dispersion_score = np.exp(-rmsn) * 100
+        spec_dispersion_score_str = f'{spec_dispersion_score:.1f}%'
     logger.info(
-        f'Spectral dispersion score: {spec_dispersion_score:.3f}%')
+        f'Spectral dispersion score: {spec_dispersion_score_str}')
     sspec_output.quality_info.spectral_dispersion_score = spec_dispersion_score
 
     logger.info('Computing summary statistics: done')
