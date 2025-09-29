@@ -60,29 +60,32 @@ Available weighting schemes:
 Spectrum quality
 ================
 
-The quality of each spectrum is evaluated using the spectral
-signal-to-noise ratio (SSNR):
+The quality of each spectrum, for each component :math:`x` (e.g., Z, N, E),
+is evaluated from the average spectral signal-to-noise ratio (:math:`SSNR_x`):
 
 .. math::
 
-   SSNR(f) = \frac{S(f)}{N(f)}
+   SSNR_x = \frac{1}{f_{max} - f_{min}} \int_{f_{min}}^{f_{max}}\frac{S_x(f)}{N_x(f)} \, df
 
-where :math:`S(f)` is the signal amplitude spectrum and :math:`N(f)` is the
-noise amplitude spectrum.
+where :math:`S_x(f)` and :math:`N_x(f)` are the signal and noise amplitude
+spectra for component :math:`x`, respectively, and :math:`f_{min}` and
+:math:`f_{max}` define the frequency range over which the SSNR is computed
+(either the full frequency band or a user-defined range,
+see ``spectral_sn_freq_range`` in
+:ref:`configuration_file:Configuration File`).
 
-From the SSNR, two quality parameters are derived:
+A minimum threshold for :math:`SSNR_x` can be set with
+``spectral_sn_min`` (see :ref:`configuration_file:Configuration File`).
+Component spectra below this threshold are excluded from the inversion.
 
-1. **SSNR_mean**: Mean SSNR within the full frequency band (or within the
-   user-defined ``spectral_sn_freq_range``).
-2. **SSNR_max**: Maximum SSNR within the same frequency band.
+From :math:`SSNR_x`, two quality parameters are derived:
+
+1. **SSNR mean**: Mean of :math:`SSNR_x` across the station components.
+2. **SSNR max**: Maximum of :math:`SSNR_x` across the station components.
 
 These values are reported in the output YAML file and in the SQLite database
-(if enabled).  
+(if enabled).
 See :ref:`output_file_formats:Output File Formats` for details.
-
-A minimum threshold for **SSNR_mean** can be set with
-``spectral_sn_min`` (see :ref:`configuration_file:Configuration File`).
-Spectra below this threshold are excluded from the inversion.
 
 
 Quality of spectral fit

@@ -24,8 +24,8 @@ previous versions. You will need to upgrade your old database manually or using
   - Spectral dispersion (RMSN)
   - Spectral dispersion score (in percent)
 - Station quality parameters in YAML and SQLite output:
-  - Mean spectral S/N ratio
-  - Max spectral S/N ratio
+  - Mean spectral S/N ratio, across the station components
+  - Max spectral S/N ratio, across the station components
   - Normalized RMS (RMSN)
   - Quality of fit (in percent)
 - The field `dist` in the `Stations` table of the SQLite database has been
