@@ -96,6 +96,45 @@ class _Options(dict):
 
     __setattr__ = __setitem__
 
+    def _set_defaults(self, progname='source_spec'):
+        """
+        Populate Options object with all possible keys, set to None, False
+        or default values
+
+        :param progname: name of program, 'source_spec' or 'source_model'
+        :type progname: str
+        """
+        self.__setitem__('sampleconf', False)
+        self.__setitem__('updateconf', None)
+        self.__setitem__('updatedb', False)
+        self.__setitem__('samplesspevent', False)
+        self.__setitem__('config_file', None)
+        self.__setitem__('trace_path', None)
+        self.__setitem__('qml_file', None)
+        self.__setitem__('asdf_path', None)
+        self.__setitem__('asdf_tag', None)
+        self.__setitem__('hypo_file', None)
+        self.__setitem__('pick_file', None)
+        self.__setitem__('station_metadata', None)
+        self.__setitem__('evname', None)
+        self.__setitem__('evid', None)
+        if progname == 'source_spec':
+            self.__setitem__('outdir', None)
+            self.__setitem__('run_id', None)
+            self.__setitem__('run_id_subdir', None)
+            self.__setitem__('station', None)
+            self.__setitem__('no_response', False)
+        elif progname == 'source_model':
+            self.__setitem__('fmin', 0.01)
+            self.__setitem__('fmax', 50.)
+            self.__setitem__('fc', 10.)
+            self.__setitem__('mag', 2.)
+            self.__setitem__('moment', None)
+            self.__setitem__('tstar', 0.)
+            self.__setitem__('alpha', 1.)
+            self.__setitem__('combine', False)
+            self.__setitem__('plot', False)
+
 
 class _Config(dict):
     """
