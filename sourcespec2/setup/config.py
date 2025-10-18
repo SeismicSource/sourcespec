@@ -104,12 +104,14 @@ class _Options(dict):
         :param progname: name of program, 'source_spec' or 'source_model'
         :type progname: str
         """
-        from ..ssp_parse_arguments import _get_description, _init_parser
+        from ..ssp_parse_arguments import (_get_description, _init_parser,
+                                           _update_parser)
 
         description, epilog, nargs = _get_description(progname)
         parser = _init_parser(description, epilog, nargs)
+        _update_parser(parser, progname)
         for action in parser._actions:
-            if action.dest != 'help':
+            if action.dest not in ('help', 'version'):
                 self.__setitem__(action.dest, action.default)
 
 
