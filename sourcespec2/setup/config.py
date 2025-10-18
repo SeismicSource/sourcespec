@@ -114,6 +114,26 @@ class _Options(dict):
             if action.dest not in ('help', 'version'):
                 self.__setitem__(action.dest, action.default)
 
+    def get_help(self, option):
+        """
+        Give information about given option
+
+        :param option: name of option
+        :type option: str
+        """
+        from ..ssp_parse_arguments import (_get_description, _init_parser,
+                                           _update_parser)
+
+        for progname in ('source_spec', 'source_model'):
+            description, epilog, nargs = _get_description(progname)
+            parser = _init_parser(description, epilog, nargs)
+            _update_parser(parser, progname)
+            for action in parser._actions:
+                if action.dest == option:
+                    return action.help
+        else:
+            print(f'Unknown option "{option}"')
+
 
 class _Config(dict):
     """
