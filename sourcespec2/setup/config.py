@@ -204,6 +204,24 @@ class _Config(dict):
         self['options'].clear()
         super().clear()
 
+    def get_help(self, option):
+        """
+        Give information about given configuration option
+        (i.e., associated comment in template configuration file)
+
+        :param option: name of option
+        :type option: str
+        """
+        configspec = parse_configspec()
+        config_obj = get_default_config_obj(configspec)
+        comment = config_obj.comments.get(option)
+        if len(comment) == 0 or comment == ['']:
+            comment = config_obj.inline_comments.get(option) or []
+        for l, line in enumerate(comment):
+            comment[l] = line.replace('# ', '')
+
+        return comment
+
     def update(self, other):
         """
         Update the configuration with the values from another dictionary.
