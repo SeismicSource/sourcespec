@@ -104,37 +104,13 @@ class _Options(dict):
         :param progname: name of program, 'source_spec' or 'source_model'
         :type progname: str
         """
-        self.__setitem__('sampleconf', False)
-        self.__setitem__('updateconf', None)
-        self.__setitem__('updatedb', False)
-        self.__setitem__('samplesspevent', False)
-        self.__setitem__('config_file', 'source_spec.conf')
-        self.__setitem__('trace_path', [])
-        self.__setitem__('qml_file', None)
-        self.__setitem__('asdf_path', [])
-        self.__setitem__('asdf_tag', None)
-        self.__setitem__('hypo_file', None)
-        self.__setitem__('pick_file', None)
-        self.__setitem__('station_metadata', None)
-        self.__setitem__('evname', None)
-        self.__setitem__('evid', None)
-        self.__setitem__('station', None)
-        if progname == 'source_spec':
-            self.__setitem__('outdir', None)
-            self.__setitem__('run_id', None)
-            self.__setitem__('run_id_subdir', None)
-            self.__setitem__('station', None)
-            self.__setitem__('no_response', False)
-        elif progname == 'source_model':
-            self.__setitem__('fmin', 0.01)
-            self.__setitem__('fmax', 50.)
-            self.__setitem__('fc', 10.)
-            self.__setitem__('mag', 2.)
-            self.__setitem__('moment', None)
-            self.__setitem__('tstar', 0.)
-            self.__setitem__('alpha', 1.)
-            self.__setitem__('combine', False)
-            self.__setitem__('plot', False)
+        from ..ssp_parse_arguments import _get_description, _init_parser
+
+        description, epilog, nargs = _get_description(progname)
+        parser = _init_parser(description, epilog, nargs)
+        for action in parser._actions:
+            if action.dest != 'help':
+                self.__setitem__(action.dest, action.default)
 
 
 class _Config(dict):
