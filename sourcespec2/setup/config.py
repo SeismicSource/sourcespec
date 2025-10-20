@@ -125,7 +125,7 @@ class _Options(dict):
         """
         actions = self._get_parser_actions(progname)
         for action in actions:
-            self.__setitem__(action.dest, action.default)
+            self[action.dest] = action.default
 
     def get_help(self, option=None):
         """
