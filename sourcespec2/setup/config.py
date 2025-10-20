@@ -119,22 +119,30 @@ class _Options(dict):
             if action.dest not in ('help', 'version'):
                 self.__setitem__(action.dest, action.default)
 
-    def get_help(self, option):
+    def get_help(self, option=None):
         """
         Print information about given option
 
-        :param option: name of option
+        :param option: name of option or None to list all valid options
         :type option: str
         """
-        for progname in ('source_spec', 'source_model'):
-            description, epilog, nargs = _get_description(progname)
-            parser = _init_parser(description, epilog, nargs)
-            _update_parser(parser, progname)
-            for action in parser._actions:
-                if action.dest == option:
-                    print(action.help, end='')
-                    return
-        print(f'Unknown option "{option}"')
+        progname = 'source_spec'
+        description, epilog, nargs = _get_description(progname)
+        parser = _init_parser(description, epilog, nargs)
+        _update_parser(parser, progname)
+        # get a list of valid options
+        valid_options = [
+            action.dest for action in parser._actions
+            if action.dest not in ('help', 'version')
+        ]
+        for action in parser._actions:
+            if action.dest == option:
+                print(action.help, end='')
+                return
+        if option is not None:
+            print(f'Unknown option "{option}"')
+        valid_options_str = '\n'.join(valid_options)
+        print(f'Valid options:\n{valid_options_str}', end='')
 
 
 class _Config(dict):
