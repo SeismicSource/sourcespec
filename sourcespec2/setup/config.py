@@ -69,6 +69,11 @@ class _Options(dict):
     """
     Options class for sourcespec, with builtin checks for API users.
     """
+    def __init__(self):
+        """Initialize the Options object with default values."""
+        super().__init__()
+        self._set_defaults()
+
     def __setitem__(self, key, value):
         """
         Make Config keys accessible as attributes.
