@@ -133,8 +133,7 @@ class _Options(dict):
             for action in parser._actions:
                 if action.dest == option:
                     return action.help
-        else:
-            print(f'Unknown option "{option}"')
+        print(f'Unknown option "{option}"')
 
 
 class _Config(dict):
