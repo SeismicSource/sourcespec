@@ -206,16 +206,27 @@ class _Config(dict):
         self['options'].clear()
         super().clear()
 
-    def get_help(self, parameter):
+    def get_help(self, parameter=None):
         """
         Print information about given configuration parameter
         (i.e., associated comment in template configuration file)
 
         :param parameter: name of parameter
+            or None to list all valid parameters
         :type parameter: str
         """
         configspec = parse_configspec()
         config_obj = get_default_config_obj(configspec)
+        if parameter not in config_obj:
+            if parameter is not None:
+                print(f'Unknown parameter "{parameter}"')
+            valid_params = '\n'.join(config_obj.comments.keys())
+            print(
+                'Please specify one of the following parameters:\n'
+                f'{valid_params}',
+                end=''
+            )
+            return
         comment = config_obj.comments.get(parameter)
         if len(comment) == 0 or comment == ['']:
             comment = config_obj.inline_comments.get(parameter) or []
@@ -226,7 +237,7 @@ class _Config(dict):
             line.replace('# ', '') for line in comment
             if '----' not in line and line.strip()
         )
-        print(comment, end='')
+        print(comment)
 
     def update(self, other):
         """
