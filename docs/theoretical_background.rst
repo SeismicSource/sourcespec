@@ -259,7 +259,7 @@ The parameters determined from the spectral inversion are :math:`M_w`,
 
 The inversion is performed in moment magnitude :math:`M_w` units (logarithmic
 amplitude). More details on the inversion method can be found in
-:ref:`spectral_inversion:Spectral Inversion, Quality and Uncertainty`.
+:ref:`spectral_inversion_quality_and_uncertainty`.
 
 
 Other computed parameters
