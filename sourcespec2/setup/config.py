@@ -121,7 +121,7 @@ class _Options(dict):
 
     def get_help(self, option):
         """
-        Give information about given option
+        Print information about given option
 
         :param option: name of option
         :type option: str
@@ -132,7 +132,8 @@ class _Options(dict):
             _update_parser(parser, progname)
             for action in parser._actions:
                 if action.dest == option:
-                    return action.help
+                    print(action.help, end='')
+                    return
         print(f'Unknown option "{option}"')
 
 
@@ -205,23 +206,27 @@ class _Config(dict):
         self['options'].clear()
         super().clear()
 
-    def get_help(self, option):
+    def get_help(self, parameter):
         """
-        Give information about given configuration option
+        Print information about given configuration parameter
         (i.e., associated comment in template configuration file)
 
-        :param option: name of option
-        :type option: str
+        :param parameter: name of parameter
+        :type parameter: str
         """
         configspec = parse_configspec()
         config_obj = get_default_config_obj(configspec)
-        comment = config_obj.comments.get(option)
+        comment = config_obj.comments.get(parameter)
         if len(comment) == 0 or comment == ['']:
-            comment = config_obj.inline_comments.get(option) or []
-        for l, line in enumerate(comment):
-            comment[l] = line.replace('# ', '')
-
-        return comment
+            comment = config_obj.inline_comments.get(parameter) or []
+        # Clean up comment lines by removing leading '# ', empty lines,
+        # and lines containing '----'. Join the remaining lines into a
+        # single string.
+        comment = '\n'.join(
+            line.replace('# ', '') for line in comment
+            if '----' not in line and line.strip()
+        )
+        print(comment, end='')
 
     def update(self, other):
         """
