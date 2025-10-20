@@ -19,6 +19,9 @@ from .mandatory_deprecated import (
 )
 from .configobj import ConfigObj
 from .configobj.validate import Validator
+from ..ssp_parse_arguments import (
+    _get_description, _init_parser, _update_parser
+)
 
 
 # ---- Helper functions ----
@@ -109,9 +112,6 @@ class _Options(dict):
         :param progname: name of program, 'source_spec' or 'source_model'
         :type progname: str
         """
-        from ..ssp_parse_arguments import (_get_description, _init_parser,
-                                           _update_parser)
-
         description, epilog, nargs = _get_description(progname)
         parser = _init_parser(description, epilog, nargs)
         _update_parser(parser, progname)
@@ -126,9 +126,6 @@ class _Options(dict):
         :param option: name of option
         :type option: str
         """
-        from ..ssp_parse_arguments import (_get_description, _init_parser,
-                                           _update_parser)
-
         for progname in ('source_spec', 'source_model'):
             description, epilog, nargs = _get_description(progname)
             parser = _init_parser(description, epilog, nargs)
