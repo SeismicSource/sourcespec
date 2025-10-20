@@ -104,6 +104,17 @@ class _Options(dict):
 
     __setattr__ = __setitem__
 
+    def _get_parser_actions(self, progname):
+        """Get the argparse actions for the given program name."""
+        description, epilog, nargs = _get_description(progname)
+        parser = _init_parser(description, epilog, nargs)
+        _update_parser(parser, progname)
+        return [
+            action
+            for action in getattr(parser, '_actions', [])
+            if action.dest not in ('help', 'version')
+        ]
+
     def _set_defaults(self, progname='source_spec'):
         """
         Populate Options object with all possible keys, set to None, False
@@ -112,12 +123,9 @@ class _Options(dict):
         :param progname: name of program, 'source_spec' or 'source_model'
         :type progname: str
         """
-        description, epilog, nargs = _get_description(progname)
-        parser = _init_parser(description, epilog, nargs)
-        _update_parser(parser, progname)
-        for action in parser._actions:
-            if action.dest not in ('help', 'version'):
-                self.__setitem__(action.dest, action.default)
+        actions = self._get_parser_actions(progname)
+        for action in actions:
+            self.__setitem__(action.dest, action.default)
 
     def get_help(self, option=None):
         """
@@ -126,16 +134,10 @@ class _Options(dict):
         :param option: name of option or None to list all valid options
         :type option: str
         """
-        progname = 'source_spec'
-        description, epilog, nargs = _get_description(progname)
-        parser = _init_parser(description, epilog, nargs)
-        _update_parser(parser, progname)
+        actions = self._get_parser_actions(progname='source_spec')
         # get a list of valid options
-        valid_options = [
-            action.dest for action in parser._actions
-            if action.dest not in ('help', 'version')
-        ]
-        for action in parser._actions:
+        valid_options = [action.dest for action in actions]
+        for action in actions:
             if action.dest == option:
                 print(action.help, end='')
                 return
