@@ -19,6 +19,9 @@ from .mandatory_deprecated import (
 )
 from .configobj import ConfigObj
 from .configobj.validate import Validator
+from ..ssp_parse_arguments import (
+    _get_description, _init_parser, _update_parser
+)
 
 
 # ---- Helper functions ----
@@ -69,6 +72,12 @@ class _Options(dict):
     """
     Options class for sourcespec, with builtin checks for API users.
     """
+    def __init__(self):
+        """Initialize the Options object with default values."""
+        super().__init__()
+        self.progname = 'source_spec'
+        self.set_defaults(self.progname)
+
     def __setitem__(self, key, value):
         """
         Make Config keys accessible as attributes.
@@ -95,6 +104,53 @@ class _Options(dict):
             raise AttributeError(err) from err
 
     __setattr__ = __setitem__
+
+    def _get_parser_actions(self):
+        """Get the argparse actions for the given program name."""
+        description, epilog, nargs = _get_description(self.progname)
+        parser = _init_parser(description, epilog, nargs)
+        _update_parser(parser, self.progname)
+        return [
+            action
+            for action in getattr(parser, '_actions', [])
+            if action.dest not in ('help', 'version')
+        ]
+
+    def set_defaults(self, progname='source_spec'):
+        """
+        Populate Options object with all possible keys, set to None, False
+        or default values
+
+        :param progname: name of program, 'source_spec' or 'source_model'
+        :type progname: str
+        """
+        if progname not in ('source_spec', 'source_model'):
+            raise ValueError(
+                'progname must be "source_spec" or "source_model"'
+            )
+        self.progname = progname
+        actions = self._get_parser_actions()
+        for action in actions:
+            self[action.dest] = action.default
+
+    def get_help(self, option=None):
+        """
+        Print information about given option
+
+        :param option: name of option or None to list all valid options
+        :type option: str
+        """
+        actions = self._get_parser_actions()
+        # get a list of valid options
+        valid_options = [action.dest for action in actions]
+        for action in actions:
+            if action.dest == option:
+                print(action.help, end='')
+                return
+        if option is not None:
+            print(f'Unknown option "{option}"')
+        valid_options_str = '\n'.join(valid_options)
+        print(f'Valid options:\n{valid_options_str}', end='')
 
 
 class _Config(dict):
@@ -165,6 +221,39 @@ class _Config(dict):
         """Clear the configuration and the options."""
         self['options'].clear()
         super().clear()
+
+    def get_help(self, parameter=None):
+        """
+        Print information about given configuration parameter
+        (i.e., associated comment in template configuration file)
+
+        :param parameter: name of parameter
+            or None to list all valid parameters
+        :type parameter: str
+        """
+        configspec = parse_configspec()
+        config_obj = get_default_config_obj(configspec)
+        if parameter not in config_obj:
+            if parameter is not None:
+                print(f'Unknown parameter "{parameter}"')
+            valid_params = '\n'.join(config_obj.comments.keys())
+            print(
+                'Please specify one of the following parameters:\n'
+                f'{valid_params}',
+                end=''
+            )
+            return
+        comment = config_obj.comments.get(parameter)
+        if len(comment) == 0 or comment == ['']:
+            comment = config_obj.inline_comments.get(parameter) or []
+        # Clean up comment lines by removing leading '# ', empty lines,
+        # and lines containing '----'. Join the remaining lines into a
+        # single string.
+        comment = '\n'.join(
+            line.replace('# ', '') for line in comment
+            if '----' not in line and line.strip()
+        )
+        print(comment)
 
     def update(self, other):
         """
