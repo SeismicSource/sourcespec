@@ -70,23 +70,26 @@ def spectral_model(freq, Mw, fc, t_star, alpha=1.):
     )
 
 
-def objective_func(xdata, ydata, weight):
+def objective_func(freq, ampl, weight, t_star=None):
     """
     Objective function generator for bounded inversion.
 
     Parameters
     ----------
-    xdata : array-like
-        x data (frequencies)
-    ydata : array-like
-        y data (log spectral amplitudes)
+    freq : array-like
+        Frequencies (in Hz)
+    ampl : array-like
+        Log spectral amplitudes
     weight : array-like
-        weights for each data point
+        Weights for each data point
+    t_star : float or callable, optional
+        Set a fixed t_star value or function of frequencies;
+        if None, t_star is a parameter to invert for
 
     Returns
     -------
     callable
-        objective function
+        Objective function
     """
     errsum = np.sum(weight)
 
@@ -97,20 +100,39 @@ def objective_func(xdata, ydata, weight):
         Parameters
         ----------
         params : array-like
-            Model parameters (Mw, fc, t_star, [alpha])
+            Model parameters. The layout depends on whether t_star is fixed:
+
+            - If t_star is fixed (passed to outer function):
+              [Mw, fc] or [Mw, fc, alpha]
+            - If t_star is free (None in outer function):
+              [Mw, fc, t_star] or [Mw, fc, t_star, alpha]
 
         Returns
         -------
         float
-            RMS misfit
+            Root mean square (RMS) misfit between observed and modeled
+            spectral amplitudes.
         """
-        # params components should be np.float
-        if len(params) == 4:
-            model = spectral_model(xdata, params[0], params[1],
-                                   params[2], params[3])
+        Mw, fc = params[0], params[1]
+        # Determine parameter layout based on whether t_star is fixed
+        if t_star is None:
+            # params: [Mw, fc, t_star, (optional) alpha]
+            t_star_param = params[2]
+            alpha = params[3] if len(params) == 4 else None
         else:
-            model = spectral_model(xdata, params[0], params[1], params[2])
-        res = np.array(ydata) - np.array(model)
+            # params: [Mw, fc, (optional) alpha]
+            t_star_param = t_star
+            alpha = params[2] if len(params) == 3 else None
+        kwargs = {
+            'freq': freq,
+            'Mw': Mw,
+            'fc': fc,
+            't_star': t_star_param
+        }
+        if alpha is not None:
+            kwargs['alpha'] = alpha
+        model = spectral_model(**kwargs)
+        res = np.array(ampl) - np.array(model)
         res2 = np.power(res, 2)
         wres = np.array(weight) * np.array(res2)
         return np.sqrt(np.sum(wres) / errsum)
