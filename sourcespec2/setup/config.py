@@ -75,7 +75,8 @@ class _Options(dict):
     def __init__(self):
         """Initialize the Options object with default values."""
         super().__init__()
-        self._set_defaults()
+        self.progname = 'source_spec'
+        self.set_defaults(self.progname)
 
     def __setitem__(self, key, value):
         """
@@ -104,18 +105,18 @@ class _Options(dict):
 
     __setattr__ = __setitem__
 
-    def _get_parser_actions(self, progname):
+    def _get_parser_actions(self):
         """Get the argparse actions for the given program name."""
-        description, epilog, nargs = _get_description(progname)
+        description, epilog, nargs = _get_description(self.progname)
         parser = _init_parser(description, epilog, nargs)
-        _update_parser(parser, progname)
+        _update_parser(parser, self.progname)
         return [
             action
             for action in getattr(parser, '_actions', [])
             if action.dest not in ('help', 'version')
         ]
 
-    def _set_defaults(self, progname='source_spec'):
+    def set_defaults(self, progname='source_spec'):
         """
         Populate Options object with all possible keys, set to None, False
         or default values
@@ -123,7 +124,12 @@ class _Options(dict):
         :param progname: name of program, 'source_spec' or 'source_model'
         :type progname: str
         """
-        actions = self._get_parser_actions(progname)
+        if progname not in ('source_spec', 'source_model'):
+            raise ValueError(
+                'progname must be "source_spec" or "source_model"'
+            )
+        self.progname = progname
+        actions = self._get_parser_actions()
         for action in actions:
             self[action.dest] = action.default
 
@@ -134,7 +140,7 @@ class _Options(dict):
         :param option: name of option or None to list all valid options
         :type option: str
         """
-        actions = self._get_parser_actions(progname='source_spec')
+        actions = self._get_parser_actions()
         # get a list of valid options
         valid_options = [action.dest for action in actions]
         for action in actions:
