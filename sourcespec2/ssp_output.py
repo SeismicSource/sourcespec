@@ -437,14 +437,13 @@ def _make_symlinks():
         os.symlink(filename, linkname)
 
 
-def write_output(sspec_output):
+def _update_run_info(sspec_output):
     """
-    Write results into different formats.
+    Add run info to output object
 
     :param sspec_output: Output of the spectral inversion.
     :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
     """
-    # Add run info to output object
     run_info = sspec_output.run_info
     run_info.SourceSpec_version = get_versions()['version']
     config.end_of_run = datetime.now()
@@ -458,6 +457,15 @@ def write_output(sspec_output):
     run_info.agency_full_name = config.agency_full_name
     run_info.agency_short_name = config.agency_short_name
     run_info.agency_url = config.agency_url
+
+
+def write_output(sspec_output):
+    """
+    Write results into different formats.
+
+    :param sspec_output: Output of the spectral inversion.
+    :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
+    """
     # Symlink input files into output directory
     _make_symlinks()
     # Write to parfile (deprecated)
