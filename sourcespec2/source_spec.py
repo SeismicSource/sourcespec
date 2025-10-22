@@ -133,6 +133,10 @@ def ssp_run(st, inventory, ssp_event, picks, allow_exit=False):
     from .ssp_summary_statistics import compute_summary_statistics
     compute_summary_statistics(sspec_output, spec_st, weight_st)
 
+    # Add run_info to output object
+    from .ssp_output import _update_run_info
+    _update_run_info(sspec_output)
+
     return (proc_st, spec_st, specnoise_st, weight_st, sspec_output)
 
 
