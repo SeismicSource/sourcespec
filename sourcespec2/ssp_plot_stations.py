@@ -986,16 +986,16 @@ def _savefig(fig, vname):
     :param vname: name of the value.
     :type vname: str
     """
-    evid = config.event.event_id
-    figfile_base = os.path.join(config.options.outdir, evid)
-    figfile_base += f'.map_{vname}.'
-    fmt = config.plot_save_format
-    if fmt == 'pdf_multipage':
-        fmt = 'pdf'
-    figfile = figfile_base + fmt
     if config.plot_show:
         plt.show()
     if config.plot_save:
+        evid = config.event.event_id
+        figfile_base = os.path.join(config.options.outdir, evid)
+        figfile_base += f'.map_{vname}.'
+        fmt = config.plot_save_format
+        if fmt == 'pdf_multipage':
+            fmt = 'pdf'
+        figfile = figfile_base + fmt
         savefig(fig, figfile, fmt, quantize_colors=False, bbox_inches='tight')
         if vname == 'mag':
             logger.info(f'Station-magnitude map saved to: {figfile}')
