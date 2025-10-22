@@ -16,6 +16,8 @@ Spectral inversion routines for sourcespec.
     (http://www.cecill.info/licences.en.html)
 """
 import logging
+import contextlib
+import math
 import numpy as np
 from scipy.optimize import curve_fit, minimize, basinhopping
 from scipy.signal import argrelmax
@@ -23,6 +25,7 @@ from obspy.geodetics import gps2dist_azimuth
 from sourcespec.spectrum import SpectrumStream
 from sourcespec.ssp_spectral_model import (
     spectral_model, objective_func, callback)
+from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
     weighted_std,
     mag_to_moment, source_radius, static_stress_drop, quality_factor,
@@ -34,7 +37,70 @@ from sourcespec.ssp_grid_sampling import GridSampling
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
+def _parse_Q_model(config):
+    """
+    Parse Q_model value from config.
+
+    Parameters
+    ----------
+    config : object
+        Configuration object.
+
+    Returns
+    -------
+    None, float, or callable
+        Parsed Q_model value.
+
+    Raises
+    ------
+    ValueError
+        If Q_model cannot be parsed or evaluated.
+    """
+    Q_model = config.Q_model
+    if Q_model is None:
+        return None
+
+    # Try to convert to float
+    with contextlib.suppress(ValueError, TypeError):
+        return float(Q_model)
+
+    # Try to parse as a function of frequency
+    # Create safe evaluation environment with math functions
+    safe_dict = {
+        k: v for k, v in math.__dict__.items()
+        if not k.startswith('__') and callable(v)
+    }
+    safe_dict.update({
+        'abs': abs, 'min': min, 'max': max, 'pow': pow
+    })
+
+    def Q_model_func(f):
+        """Evaluate Qo as a function of frequency f."""
+        local_dict = safe_dict.copy()
+        local_dict['f'] = f
+        # pylint: disable=eval-used
+        return eval(Q_model, {'__builtins__': {}}, local_dict)
+
+    # Validate the function with test frequencies
+    test_freqs = [0.1, 1.0, 10.0]
+    for test_freq in test_freqs:
+        try:
+            result = Q_model_func(test_freq)
+            if not isinstance(result, (int, float)) or not np.isfinite(result):
+                raise ValueError(
+                    f'Q_model function must return finite numeric values, '
+                    f'got {result} at f={test_freq}'
+                )
+        except (NameError, SyntaxError, TypeError, ZeroDivisionError) as e:
+            raise ValueError(
+                f'Error validating Q_model function "{Q_model}": {e}'
+            ) from e
+
+    return Q_model_func
+
+
+def _curve_fit(
+        config, spec, weight, yerr, initial_values, bounds, Q_model=None):
     """
     Curve fitting.
 
@@ -46,21 +112,54 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
       - Grid search (GS)
       - Importance sampling (IS)
 
-    :param config: configuration object
-    :param spec: Spectrum object
-    :param weight: weights for each data point
-    :param yerr: standard deviation for each data point
-    :param initial_values: InitialValues object
-    :param bounds: Bounds object
-    :return: (params_opt, params_err, rmsn, quality_of_fit) tuple
-        - params_opt: optimal parameters
-        - params_err: parameters uncertainties
-        - rmsn: normalized RMS misfit, 0 to infinity, 0 is perfect fit
-        - quality_of_fit: quality of fit in percentage, 100 is perfect fit
+    Parameters
+    ----------
+    config : Config
+        Configuration object containing inversion parameters.
+    spec : Spectrum
+        Spectrum object containing spectral data.
+    weight : array_like
+        Weights for each data point.
+    yerr : array_like
+        Standard deviation for each data point.
+    initial_values : InitialValues
+        Initial values for the inversion parameters.
+    bounds : Bounds
+        Bounds object containing parameter constraints.
+    Q_model : float or callable, optional
+        Quality factor model. If provided, t_star will be computed from Q_model
+        and travel time instead of being inverted.
+
+    Returns
+    -------
+    params_opt : array_like
+        Optimal parameters (Mw, fc, t_star).
+    params_err : tuple of tuples
+        Parameter uncertainties as ((lower, upper), ...) for each parameter.
+    rmsn : float
+        Normalized RMS misfit, 0 to infinity, where 0 is a perfect fit.
+    quality_of_fit : float
+        Quality of fit in percentage, where 100 is a perfect fit.
     """
     freq_logspaced = spec.freq_logspaced
     ydata = spec.data_mag_logspaced
-    minimize_func = objective_func(freq_logspaced, ydata, weight)
+
+    # Define t_star function if Q_model is provided
+    if Q_model is not None:
+        # compute t_star from Q_model and travel time
+        travel_time = spec.stats.travel_times[config.wave_type[0]]
+
+        def t_star(freq):
+            _Q_model = Q_model(freq) if callable(Q_model) else Q_model
+            return travel_time / _Q_model
+
+        def _spectral_model(freq, Mw, fc):
+            return spectral_model(freq, Mw, fc, t_star)
+    else:
+        t_star = None
+        _spectral_model = spectral_model
+
+    minimize_func = objective_func(freq_logspaced, ydata, weight, t_star)
     if config.inv_algorithm == 'TNC':
         res = minimize(
             minimize_func,
@@ -72,13 +171,13 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         # to get the covariance
         # pylint: disable=unbalanced-tuple-unpacking
         _, params_cov = curve_fit(
-            spectral_model, freq_logspaced, ydata,
+            _spectral_model, freq_logspaced, ydata,
             p0=params_opt, sigma=yerr,
             bounds=(params_opt - (1e-10), params_opt + (1e-10))
         )
         err = np.sqrt(params_cov.diagonal())
         # symmetric error
-        params_err = ((e, e) for e in err)
+        params_err = tuple((e, e) for e in err)
     elif config.inv_algorithm == 'LM':
         bnds = bounds.get_bounds_curve_fit()
         if bnds is not None:
@@ -89,13 +188,13 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
             )
         # pylint: disable=unbalanced-tuple-unpacking
         params_opt, params_cov = curve_fit(
-            spectral_model, freq_logspaced, ydata,
+            _spectral_model, freq_logspaced, ydata,
             p0=initial_values.get_params0(), sigma=yerr,
             bounds=bnds
         )
         err = np.sqrt(params_cov.diagonal())
         # symmetric error
-        params_err = ((e, e) for e in err)
+        params_err = tuple((e, e) for e in err)
     elif config.inv_algorithm == 'BH':
         res = basinhopping(
             minimize_func, x0=initial_values.get_params0(), niter=100,
@@ -106,13 +205,13 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
         # to get the covariance
         # pylint: disable=unbalanced-tuple-unpacking
         _, params_cov = curve_fit(
-            spectral_model, freq_logspaced, ydata,
+            _spectral_model, freq_logspaced, ydata,
             p0=params_opt, sigma=yerr,
             bounds=(params_opt - (1e-10), params_opt + (1e-10))
         )
         err = np.sqrt(params_cov.diagonal())
         # symmetric error
-        params_err = ((e, e) for e in err)
+        params_err = tuple((e, e) for e in err)
     elif config.inv_algorithm in ['GS', 'IS']:
         nsteps = (20, 150, 150)  # we do fewer steps in magnitude
         sampling_mode = ('lin', 'log', 'lin')
@@ -147,6 +246,9 @@ def _curve_fit(config, spec, weight, yerr, initial_values, bounds):
     rmsn = rms / wstd if wstd > 0 else rms
     # compute quality of fit, in percentage, 100 is perfect fit
     quality_of_fit = np.exp(-1 * rmsn) * 100
+    if Q_model is not None:
+        params_opt = (params_opt[0], params_opt[1], np.nan)
+        params_err = (params_err[0], params_err[1], (np.nan, np.nan))
     return params_opt, params_err, rmsn, quality_of_fit
 
 
@@ -212,8 +314,50 @@ def _compute_station_azimuth(spec):
     return stla, stlo, az
 
 
-def _spec_inversion(config, spec, spec_weight, station_pars):
-    """Invert one spectrum, return a StationParameters() object."""
+def _spec_inversion(config, spec, spec_weight, station_pars, Q_model=None):
+    """
+    Invert one spectrum and store results in station_pars.
+
+    This function performs spectral inversion to estimate source parameters
+    (moment magnitude, corner frequency, and t_star) by fitting a spectral
+    model to observed spectral data.
+
+    Parameters
+    ----------
+    config : Config
+        Configuration object containing inversion parameters and settings.
+    spec : Spectrum
+        Spectrum object containing the spectral data to invert.
+    spec_weight : Spectrum
+        Spectrum object containing weighting information for the inversion.
+    station_pars : StationParameters
+        Station parameters object where inversion results will be stored.
+        Modified in-place with computed parameters
+        (Mw, fc, t_star, Mo, radius, ssd, Qo) and their uncertainties.
+    Q_model : float or callable, optional
+        Quality factor model to use for the inversion. If provided, t_star
+        will be computed from Q_model and travel time instead of being
+        inverted.
+
+    Returns
+    -------
+    None
+        Results are stored directly in the station_pars object.
+
+    Raises
+    ------
+    RuntimeError
+        If the frequency range determination fails or if curve fitting fails.
+    ValueError
+        If quality of fit is below threshold, fc is poorly constrained,
+        fc is at bounds, t_star or fc are outside post-inversion bounds,
+        or static stress drop is outside allowed range.
+
+    Notes
+    -----
+    If any validation check fails, spec.stats.ignore is set to True and an
+    appropriate exception is raised.
+    """
     magnitude = spec.stats.event.magnitude
 
     freq_logspaced = spec.freq_logspaced
@@ -256,6 +400,11 @@ def _spec_inversion(config, spec, spec_weight, station_pars):
         # we calculate the initial value for Mw as an average
         Mw_0 = np.nanmean(ydata[idx0: idx1])
         t_star_0 = config.t_star_0
+
+    # Ignore intial value and bounds for t_star if Q_model is provided
+    if Q_model is not None:
+        t_star_0, t_star_min, t_star_max = None, None, None
+
     # Mw_0_min and Mw_0_max are used to set the bounds for Mw
     # (see below)
     Mw_0_min = np.nanmin(ydata[idx0: idx1])
@@ -277,6 +426,9 @@ def _spec_inversion(config, spec, spec_weight, station_pars):
         bounds.t_star_min = t_star_min
     if t_star_max is not None:
         bounds.t_star_max = t_star_max
+    # Ignore t_star bounds if Q_model is provided
+    if Q_model is not None:
+        bounds.t_star_min = bounds.t_star_max = None
     # Initial values need to be printed here because Bounds can modify them
     logger.info(f'{statId}: initial values: {initial_values}')
     logger.info(f'{statId}: bounds: {bounds}')
@@ -289,9 +441,10 @@ def _spec_inversion(config, spec, spec_weight, station_pars):
         spec.data_mag_logspaced = spec.data_mag_logspaced[~isnan]
         weight = weight[~isnan]
         yerr = yerr[~isnan]
+    # Call curve fitting function
     try:
         params_opt, params_err, rmsn, quality_of_fit = _curve_fit(
-            config, spec, weight, yerr, initial_values, bounds)
+            config, spec, weight, yerr, initial_values, bounds, Q_model)
     except (RuntimeError, ValueError) as m:
         spec.stats.ignore = True
         spec.stats.ignore_reason = 'fit failed'
@@ -348,18 +501,20 @@ def _spec_inversion(config, spec, spec_weight, station_pars):
             f'{fc:.3f} ~= {bounds.fc_max:.3f}: ignoring inversion results'
         )
 
-    # Check post-inversion bounds for t_star and fc
-    pi_t_star_min, pi_t_star_max =\
-        config.pi_t_star_min_max or (-np.inf, np.inf)
-    # pylint: disable=superfluous-parens
-    if not (pi_t_star_min <= t_star <= pi_t_star_max):
-        spec.stats.ignore = True
-        spec.stats.ignore_reason = 't_star out of bounds'
-        raise ValueError(
-            f'{statId}: t_star: {t_star:.3f} not in allowed range '
-            f'[{pi_t_star_min:.3f}, {pi_t_star_max:.3f}]: '
-            'ignoring inversion results'
-        )
+    # Check post-inversion bounds for t_star
+    if Q_model is None:
+        pi_t_star_min, pi_t_star_max =\
+            config.pi_t_star_min_max or (-np.inf, np.inf)
+        # pylint: disable=superfluous-parens
+        if not (pi_t_star_min <= t_star <= pi_t_star_max):
+            spec.stats.ignore = True
+            spec.stats.ignore_reason = 't_star out of bounds'
+            raise ValueError(
+                f'{statId}: t_star: {t_star:.3f} not in allowed range '
+                f'[{pi_t_star_min:.3f}, {pi_t_star_max:.3f}]: '
+                'ignoring inversion results'
+            )
+    # Check post-inversion bounds for fc
     pi_fc_min, pi_fc_max = config.pi_fc_min_max or (-np.inf, np.inf)
     if not (pi_fc_min <= fc <= pi_fc_max):
         spec.stats.ignore = True
@@ -452,8 +607,6 @@ def _spec_inversion(config, spec, spec_weight, station_pars):
     station_pars.Qo.lower_uncertainty = station_pars.Qo.value - Qo_min
     station_pars.Qo.upper_uncertainty = Qo_max - station_pars.Qo.value
     station_pars.Qo.confidence_level = 68.2
-
-    return station_pars
 
 
 def _synth_spec(config, spec, station_pars):
@@ -550,6 +703,14 @@ def _compute_inversion_quality_info(inverted_spectra, sspec_output):
 def spectral_inversion(config, spec_st, weight_st):
     """Inversion of displacement spectra."""
     logger.info('Inverting spectra...')
+
+    # See if quality factor Q should be fixed to a value or function
+    try:
+        Q_model = _parse_Q_model(config)
+    except ValueError as e:
+        logger.error(f'Error parsing Q_model: {e}')
+        ssp_exit(1)
+
     weighting_messages = {
         'noise': 'Using noise weighting for inversion.',
         'frequency': 'Using frequency weighting for inversion.',
@@ -622,7 +783,7 @@ def spectral_inversion(config, spec_st, weight_st):
             continue
         spec_weight = select_trace(weight_st, spec.id, spec.stats.instrtype)
         try:
-            _spec_inversion(config, spec, spec_weight, station_pars)
+            _spec_inversion(config, spec, spec_weight, station_pars, Q_model)
         except (RuntimeError, ValueError) as msg:
             logger.warning(msg)
             station_pars.ignored = spec.stats.ignore
