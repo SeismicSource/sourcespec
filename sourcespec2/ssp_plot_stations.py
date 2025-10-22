@@ -57,7 +57,7 @@ with contextlib.suppress(Exception):
         'ignore', category=RuntimeWarning, module='shapely')
 # Make pyproj calculations faster by using the global context for
 # pyproj < 3.7
-if pyproj.__version__ < '3.7':
+if '3.0' <= pyproj.__version__ < '3.7':
     pyproj.set_use_global_context(active=True)
 TILER = {
     'hillshade': EsriHillshade,
@@ -976,16 +976,16 @@ def _savefig(fig, vname):
     :param vname: name of the value.
     :type vname: str
     """
-    evid = config.event.event_id
-    figfile_base = os.path.join(config.options.outdir, evid)
-    figfile_base += f'.map_{vname}.'
-    fmt = config.plot_save_format
-    if fmt == 'pdf_multipage':
-        fmt = 'pdf'
-    figfile = figfile_base + fmt
     if config.plot_show:
         plt.show()
     if config.plot_save:
+        evid = config.event.event_id
+        figfile_base = os.path.join(config.options.outdir, evid)
+        figfile_base += f'.map_{vname}.'
+        fmt = config.plot_save_format
+        if fmt == 'pdf_multipage':
+            fmt = 'pdf'
+        figfile = figfile_base + fmt
         savefig(fig, figfile, fmt, quantize_colors=False, bbox_inches='tight')
         if vname == 'mag':
             logger.info(f'Station-magnitude map saved to: {figfile}')
@@ -1089,7 +1089,18 @@ def plot_stations(sspec_output):
     summary_mag_err = summary_uncertainties['Mw']
     basemap_data = _make_basemap(maxdist)
     # make a copy of the basemap data for the second plot, before modifying it
-    basemap_data2 = deepcopy(basemap_data)
+    try:
+        basemap_data2 = deepcopy(basemap_data)
+    except NotImplementedError:
+        # Workaround for older matplotlib versions
+        import io, pickle
+        basemap_data2 = {}
+        for key, ax in basemap_data.items():
+            buf = io.BytesIO()
+            pickle.dump(ax, buf)
+            buf.seek(0)
+            ax2 = pickle.load(buf)
+            basemap_data2[key] = ax2
     _make_station_map(
         basemap_data, lonlat_dist, st_ids,
         mag, mag_outliers, summary_mag, summary_mag_err, 'mag')
