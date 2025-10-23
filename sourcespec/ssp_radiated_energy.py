@@ -39,7 +39,8 @@ def _spectral_integral(spec, t_star, fmin=None, fmax=None):
     # The result is in units of m^2.
     data *= (2 * np.pi * freq)
     # Correct data for attenuation:
-    data *= np.exp(np.pi * t_star * freq)
+    _t_star = t_star(freq) if callable(t_star) else t_star
+    data *= np.exp(np.pi * _t_star * freq)
     # Compute the energy integral, between fmin and fmax
     if fmin is not None:
         data[freq < fmin] = 0.
@@ -192,7 +193,10 @@ def radiated_energy_and_apparent_stress(
             station_pars = sspec_output.station_parameters[spec_id]
         except KeyError:
             continue
-        t_star = station_pars.t_star.value
+        if spec.stats.t_star_model is not None:
+            t_star = spec.stats.t_star_model
+        else:
+            t_star = station_pars.t_star.value
         fc = station_pars.fc.value
         # Make sure that the param_Er and param_sigma_a objects are always
         # defined, even when Er and/or sigma_a are not computed
