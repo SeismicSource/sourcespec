@@ -543,8 +543,15 @@ def _build_weight_from_inv_frequency(spec, power=0.25):
     # Limit non-zero weights to fmin/fmax from spectral_snratio if available
     snr_fmin = getattr(spec.stats, 'spectral_snratio_fmin', None)
     snr_fmax = getattr(spec.stats, 'spectral_snratio_fmax', None)
-    i0 = np.where(freq >= snr_fmin)[0][0] if snr_fmin else 0
-    i1 = np.where(freq <= snr_fmax)[0][-1] if snr_fmax else len(freq) - 1
+    # Check if snr_fmin and snr_fmax are valid (not NaN)
+    if snr_fmin is not None and not np.isnan(snr_fmin):
+        i0 = np.where(freq >= snr_fmin)[0][0]
+    else:
+        i0 = 0
+    if snr_fmax is not None and not np.isnan(snr_fmax):
+        i1 = np.where(freq <= snr_fmax)[0][-1]
+    else:
+        i1 = len(freq) - 1
     # Build weights as if frequencies always start from 0.25 Hz
     # to obtain similar curves regardless of fmin
     # and to avoid too much weight for very low frequencies
@@ -706,8 +713,8 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
         spec.stats.spectral_snratio_fmin = snr_valid_freqs[0]
         spec.stats.spectral_snratio_fmax = snr_valid_freqs[-1]
     except IndexError:
-        spec.stats.spectral_snratio_fmin = None
-        spec.stats.spectral_snratio_fmax = None
+        spec.stats.spectral_snratio_fmin = np.nan
+        spec.stats.spectral_snratio_fmax = np.nan
     logger.info(f'{spec_id}: average spectral S/N: {spectral_snratio:.2f}')
     ssnmin = config.spectral_sn_min or -np.inf
     if spectral_snratio < ssnmin:
