@@ -38,13 +38,20 @@ def _avg_and_std(values, errors=None, logarithmic=False):
     if np.all(np.isnan(values)):
         return average, np.array((std, std))
     weights = _weights(values, errors, logarithmic)
+    notnan = ~np.isnan(values)
+    notinf = ~np.isinf(values)
+    keepvals = np.logical_and(notnan, notinf)
+    if logarithmic:
+        positive = values > 0
+        keepvals = np.logical_and(keepvals, positive)
+    if weights is not None:
+        notnan = np.logical_and(keepvals, ~np.isnan(weights))
+        weights = weights[keepvals]
+    values = values[keepvals]
+    if not values.size:
+        return np.nan, np.array((np.nan, np.nan))
     if logarithmic:
         values = np.log10(values)
-    notnan = ~np.isnan(values)
-    if weights is not None:
-        notnan = np.logical_and(notnan, ~np.isnan(weights))
-        weights = weights[notnan]
-    values = values[notnan]
     average = np.average(values, weights=weights)
     variance = np.average((values - average)**2, weights=weights)
     std = np.sqrt(variance)
