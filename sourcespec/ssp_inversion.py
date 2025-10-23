@@ -159,6 +159,9 @@ def _curve_fit(
         t_star = None
         _spectral_model = spectral_model
 
+    # Add t_star_model to spec stats for later use
+    spec.stats.t_star_model = t_star
+
     minimize_func = objective_func(freq_logspaced, ydata, weight, t_star)
     if config.inv_algorithm == 'TNC':
         res = minimize(
@@ -766,6 +769,8 @@ def spectral_inversion(config, spec_st, weight_st):
     for spec in sorted(spectra, key=lambda sp: sp.id):
         if spec.stats.channel[-1] != 'H':
             continue
+        # add Q_model to spec stats for later use
+        spec.stats.Q_model = config.Q_model
         stla, stlo, az = _compute_station_azimuth(spec)
         station_pars = StationParameters(
             station_id=spec.id, instrument_type=spec.stats.instrtype,
