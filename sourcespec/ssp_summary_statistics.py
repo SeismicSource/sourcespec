@@ -197,6 +197,12 @@ def _add_summary_spectra(sspec_output, spec_st):
     Mw = summary_values['Mw']
     fc = summary_values['fc']
     t_star = summary_values['t_star']
+    # check if any spec in spec_st has t_star_model defined
+    for spec in spec_st:
+        t_star_model = spec.stats.get('t_star_model', None)
+        if t_star_model is not None:
+            t_star = t_star_model
+            break
     spec_st.append(
         _make_summary_spec('SUMMARY', 'SSS', freq_logspaced, Mw, fc, t_star)
     )
