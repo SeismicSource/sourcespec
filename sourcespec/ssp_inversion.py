@@ -623,6 +623,9 @@ def _synth_spec(config, spec, station_pars):
         for x in station_pars.get_spectral_parameters().values()
     }
     params_opt = [par[key] for key in ('Mw', 'fc', 't_star')]
+    if spec.stats.t_star_model is not None:
+        # replace t_star with the one computed from Q_model
+        params_opt[2] = spec.stats.t_star_model
     chan_no_orientation = spec.stats.channel[:-1]
     spec_st = SpectrumStream()
 
