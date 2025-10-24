@@ -545,12 +545,15 @@ def _params_text(spec, ax, color, path_effects, stack_plots):
         else f'[-{fc_err_left:.2f},+{fc_err_right:.2f}]Hz'
     )
     fc_text = f'fc: {fc:.2f}{fc_err_text}'
-    t_star_err_text = (
-        f'±{t_star_err_left:.2f}s'
-        if round(t_star_err_left, 2) == round(t_star_err_right, 2)
-        else f'[-{t_star_err_left:.2f},+{t_star_err_right:.2f}]s'
-    )
-    t_star_text = f't*: {t_star:.2f}{t_star_err_text}'
+    if math.isnan(t_star):
+        t_star_text = 't*: not inverted'
+    else:
+        t_star_err_text = (
+            f'±{t_star_err_left:.2f}s'
+            if round(t_star_err_left, 2) == round(t_star_err_right, 2)
+            else f'[-{t_star_err_left:.2f},+{t_star_err_right:.2f}]s'
+        )
+        t_star_text = f't*: {t_star:.2f}{t_star_err_text}'
     Er_text = f'Er: {Er:.1e}N·m' if Er else ''
     if len(fc_text + t_star_text) > 38:
         sep = '\n'
