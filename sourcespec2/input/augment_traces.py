@@ -19,6 +19,7 @@ import logging
 import contextlib
 from obspy.core.util import AttribDict
 from .instrument_type import get_instrument_type
+from ..setup import config
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -66,41 +67,68 @@ def _check_instrtype(trace):
     :param trace: ObsPy Trace object
     :type trace: :class:`obspy.core.trace.Trace`
     """
-    inv = trace.stats.inventory
-    if not inv:
-        raise RuntimeError(
-            f'{trace.id}: cannot get instrtype from inventory: '
-            'inventory is empty: skipping trace')
+    # If traces are already corrected, instrument response may not be present
+    # In this case, we just write the correct units to the trace headers
     instrtype = trace.stats.instrtype
-    new_instrtype = None
-    try:
-        units = inv.get_response(trace.id, trace.stats.starttime).\
-            instrument_sensitivity.input_units
-    except Exception as e:
-        # inventory attached to trace has only one channel
-        chan = inv[0][0][0]
-        start_date = chan.start_date
-        end_date = chan.end_date
-        raise RuntimeError(
-            f'{trace.id}: cannot get units from inventory.\n'
-            f'> {e.__class__.__name__}: {e}\n'
-            f'> Channel start/end date: {start_date} {end_date}\n'
-            f'> Trace start time: {trace.stats.starttime}\n'
-            '> Skipping trace'
-        ) from e
-    trace.stats.units = units
-    if units.lower() == 'm' and trace.stats.instrtype != 'disp':
-        new_instrtype = 'disp'
-    if units.lower() == 'm/s' and instrtype not in ['shortp', 'broadb']:
-        new_instrtype = 'broadb'
-    if units.lower() == 'm/s**2' and instrtype != 'acc':
-        new_instrtype = 'acc'
-    if new_instrtype is not None:
-        logger.warning(
-            f'{trace.id}: instrument response units are "{units}" but '
-            f'instrument type is "{instrtype}". Changing instrument type '
-            f'to "{new_instrtype}"')
-        trace.stats.instrtype = new_instrtype
+    if config.correct_instrumental_response is False:
+        # Override instrtype from config.trace_units, which may be
+        # different from native instrtype inferred from channel code
+        if config.trace_units:
+            config.trace_units = config.trace_units.lower()
+        if config.trace_units == 'vel':
+            if instrtype not in ('shortp', 'broadb'):
+                instrtype = 'broadb'
+        elif config.trace_units in ('acc', 'disp'):
+            instrtype = config.trace_units
+        trace.stats.instrtype = instrtype
+        if instrtype == 'disp':
+            trace.stats.units = 'm'
+        elif instrtype in ('shortp', 'broadb'):
+            trace.stats.units = 'm/s'
+        elif instrtype == 'acc':
+            trace.stats.units = 'm/s**2'
+        else:
+            raise RuntimeError(
+                f'{trace.id}: cannot get units for instrument type ' \
+                    '{instrtype}.\n'
+                f'> Trace start time: {trace.stats.starttime}\n'
+                '> Skipping trace'
+            )
+    else:
+        inv = trace.stats.inventory
+        if not inv:
+            raise RuntimeError(
+                f'{trace.id}: cannot get instrtype from inventory: '
+                'inventory is empty: skipping trace')
+        new_instrtype = None
+        try:
+            units = inv.get_response(trace.id, trace.stats.starttime).\
+                instrument_sensitivity.input_units
+        except Exception as e:
+            # inventory attached to trace has only one channel
+            chan = inv[0][0][0]
+            start_date = chan.start_date
+            end_date = chan.end_date
+            raise RuntimeError(
+                f'{trace.id}: cannot get units from inventory.\n'
+                f'> {e.__class__.__name__}: {e}\n'
+                f'> Channel start/end date: {start_date} {end_date}\n'
+                f'> Trace start time: {trace.stats.starttime}\n'
+                '> Skipping trace'
+            ) from e
+        trace.stats.units = units
+        if units.lower() == 'm' and trace.stats.instrtype != 'disp':
+            new_instrtype = 'disp'
+        if units.lower() == 'm/s' and instrtype not in ['shortp', 'broadb']:
+            new_instrtype = 'broadb'
+        if units.lower() == 'm/s**2' and instrtype != 'acc':
+            new_instrtype = 'acc'
+        if new_instrtype is not None:
+            logger.warning(
+                f'{trace.id}: instrument response units are "{units}" but '
+                f'instrument type is "{instrtype}". Changing instrument type '
+                f'to "{new_instrtype}"')
+            trace.stats.instrtype = new_instrtype
 
 
 def _add_coords(trace):
