@@ -19,6 +19,11 @@ from sourcespec.ssp_pick import SSPPick
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
+def is_SAC_trace(trace):
+    """Check if a trace is in SAC format."""
+    return hasattr(trace.stats, 'sac')
+
+
 def compute_sensitivity_from_SAC(trace, config):
     """Compute sensitivity from SAC header fields."""
     # Securize the string before calling eval()

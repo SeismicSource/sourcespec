@@ -34,9 +34,12 @@ from sourcespec.ssp_read_station_metadata import (
 from sourcespec.ssp_read_event_metadata import (
     parse_qml, parse_hypo_file, parse_hypo71_picks)
 from sourcespec.ssp_read_sac_header import (
+    is_SAC_trace,
     compute_sensitivity_from_SAC,
-    get_instrument_from_SAC, get_station_coordinates_from_SAC,
-    get_event_from_SAC, get_picks_from_SAC)
+    get_instrument_from_SAC,
+    get_station_coordinates_from_SAC,
+    get_event_from_SAC,
+    get_picks_from_SAC)
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -73,7 +76,7 @@ def _add_instrtype(trace):
             instrtype = 'broadb'
     if instr_code in INSTR_CODES_ACC:
         instrtype = 'acc'
-    if instrtype is None:
+    if instrtype is None and is_SAC_trace(trace):
         # Let's see if there is an instrument name in SAC header (ISNet format)
         # In this case, we define band and instrument codes a posteriori
         instrtype, band_code, instr_code = get_instrument_from_SAC(trace)
@@ -110,7 +113,13 @@ def _add_inventory(trace, inventory, config):
         try:
             # try to convert sensitivity to float
             paz.sensitivity = float(config.sensitivity)
-        except ValueError:
+        except ValueError as e:
+            if not is_SAC_trace(trace):
+                raise RuntimeError(
+                    f'{trace.id}: cannot compute sensitivity from SAC header: '
+                    f'sensitivity "{config.sensitivity}". '
+                    'The trace is not in SAC format : skipping trace'
+                ) from e
             # if it fails, try to evaluate it as a string containing
             # a combination of SAC header fields
             paz.sensitivity = compute_sensitivity_from_SAC(trace, config)
@@ -190,7 +199,7 @@ def _add_coords(trace):
                 coords.longitude == 0 and coords.latitude == 0 and
                 coords.local_depth == 123456 and coords.elevation == 123456)
             else coords)
-    if coords is None:
+    if coords is None and is_SAC_trace(trace):
         # If we still don't have trace coordinates,
         # we try to get them from SAC header
         coords = get_station_coordinates_from_SAC(trace)
