@@ -519,7 +519,9 @@ def _compute_inversion_quality_info(inverted_spectra, sspec_output):
     sspec_output.quality_info.azimuthal_gap_primary = primary_gap
     sspec_output.quality_info.azimuthal_gap_secondary = secondary_gap
     logger.info(
-        f'Primary azimuthal gap: {primary_gap:.1f}°\n'
+        f'Primary azimuthal gap: {primary_gap:.1f}°'
+    )
+    logger.info(
         f'Secondary azimuthal gap: {secondary_gap:.1f}°'
     )
     rmsn_vals = [
