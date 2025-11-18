@@ -225,6 +225,9 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
         if ntraces > 1:
             rectangle_patch_origin = 1. / 3
             rectangle_patch_height = 1. / 3
+    # shift trace data for the horizontal components to avoid overlap
+    # avoid division by zero
+    tmax = 1 if tmax == 0 else tmax
     if orientation in config.horizontal_channel_codes_1:
         color = 'green'
         if ntraces > 1:
