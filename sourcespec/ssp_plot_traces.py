@@ -345,6 +345,14 @@ def _set_ylim(axes):
 
 
 def _trim_traces(config, st):
+    """
+    Trim traces and compute time offsets for plotting.
+
+    Trimming starts at noise window start (N1) and ends at signal window end
+    (S2) plus 2x window length. Pads with masked values if window exceeds trace
+    bounds.
+    Sets time_offset attribute relative to earliest trace start for alignment.
+    """
     for trace in st:
         try:
             t1 = trace.stats.arrivals['N1'][1]
@@ -355,7 +363,10 @@ def _trim_traces(config, st):
         except KeyError:
             t1 = trace.stats.starttime
             t2 = trace.stats.endtime
-        trace.trim(starttime=t1, endtime=t2)
+        # Trim trace to the specified time window. If the requested window
+        # extends beyond the trace boundaries, pad with masked values to
+        # maintain proper time alignment without plotting spurious data.
+        trace.trim(starttime=t1, endtime=t2, pad=True, fill_value=None)
     # compute time offset for correctly aligning traces when plotting
     min_starttime = min(tr.stats.starttime for tr in st)
     for trace in st:
