@@ -4,11 +4,45 @@
 Signal Processing
 #################
 
-The following documentation explains, in chronological order, all the steps
-performed to construct the amplitude spectra used for the inversion.
+
+This page summarizes the main signal and spectral processing steps used to
+construct amplitude spectra for inversion in SourceSpec.
+
+The diagrams provide an overview of the processing pipelines.
+For more details, see the detailed steps below each diagram.
+
 
 Trace Processing
 ~~~~~~~~~~~~~~~~
+
+.. graphviz::
+
+   digraph signal_processing {
+      graph [rankdir=TB, fontsize=14, fontname="Helvetica",
+             abelloc=t, nodesep=0.45, ranksep=0.6, bgcolor="#ffffff"]
+      node [shape=box, style="rounded,filled", fontname="Helvetica",
+            fontsize=11, fillcolor="#f0f8ff", color="#2b6ea3", penwidth=1]
+      edge [color="#666666", arrowsize=0.8]
+
+      raw  [label="Raw Trace\nInput", shape=parallelogram,
+            fillcolor="#fff4e6", color="#d97706", fontsize=11]
+      proc [label="Processed\nTrace\nOutput", shape=parallelogram,
+            fillcolor="#fff4e6", color="#d97706", fontsize=11]
+
+      raw -> "1. Check gaps/overlaps";
+      "1. Check gaps/overlaps" -> "2. Remove mean";
+      "2. Remove mean" -> "3. Merge gaps/overlaps";
+      "3. Merge gaps/overlaps" -> "4. RMS check";
+      "4. RMS check" -> "5. Clipping detection";
+      "5. Clipping detection" -> "6. Remove instrument response";
+      "6. Remove instrument response" -> "7. Filter trace";
+      "7. Filter trace" -> "8. S/N ratio check";
+      "8. S/N ratio check" -> proc;
+   }
+
+.. The next line creates a vertical space in the rendered output.
+
+|
 
 1. Traces are checked for gaps and overlaps. Traces with cumulative gap or
    overlap duration larger than ``gap_max``  or ``overlap_max``, respectively,
@@ -39,6 +73,43 @@ implementation details.
 
 Spectral Processing
 ~~~~~~~~~~~~~~~~~~~
+
+.. graphviz::
+
+   digraph spectral_processing {
+      graph [rankdir=TB, fontsize=14, fontname="Helvetica",
+             labelloc=t, nodesep=0.45, ranksep=0.6, bgcolor="#ffffff"]
+      node [shape=box, style="rounded,filled", fontname="Helvetica",
+            fontsize=11, fillcolor="#f7fff0", color="#3b7a3b", penwidth=1]
+      edge [color="#666666", arrowsize=0.8]
+
+      in  [label="Input:\nProcessed Traces", shape=parallelogram,
+           fillcolor="#fff8e1", color="#b07a00", fontsize=11]
+      out [label="Output:\nSpectra + Weight", shape=parallelogram,
+           fillcolor="#fff8e1", color="#b07a00", fontsize=11]
+
+      in -> "1. Signal window check";
+      "1. Signal window check" -> "2. Integrate to displacement (optional)";
+      "2. Integrate to displacement (optional)" -> "3. Cut & taper windows";
+      "3. Cut & taper windows" -> "4. Noise window check";
+      "4. Noise window check" -> "5. Compute amplitude spectra";
+      "5. Compute amplitude spectra" -> "6. Integrate in frequency domain (optional)";
+      "6. Integrate in frequency domain (optional)" -> "7. Window spectra";
+      "7. Window spectra" -> "8. Geometrical spreading correction";
+      "8. Geometrical spreading correction" -> "9. Convert to moment units";
+      "9. Convert to moment units" -> "10. Resample log10 frequency";
+      "10. Resample log10 frequency" -> "11. Smooth spectra";
+      "11. Smooth spectra" -> "12. Spectral S/N check";
+      "12. Spectral S/N check" -> "13. Build H component";
+      "13. Build H component" -> "14. Convert to magnitude units";
+      "14. Convert to magnitude units" -> "15. Apply station corrections";
+      "15. Apply station corrections" -> "16. Build weight spectrum";
+      "16. Build weight spectrum" -> out;
+   }
+
+.. The next line creates a vertical space in the rendered output.
+
+|
 
 1. A check is made to see if the signal window contains enough data. Traces
    with no data or more than 25% of zero values are skipped. This is typically

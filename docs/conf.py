@@ -36,6 +36,7 @@ extensions = [
     'sphinx_rtd_theme',
     'sphinxcontrib.bibtex',
     'sphinx_mdinclude',
+    'sphinx.ext.graphviz',
 ]
 autodoc_mock_imports = [
     'matplotlib',
