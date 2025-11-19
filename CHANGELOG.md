@@ -42,6 +42,8 @@ previous versions. You will need to upgrade your old database manually or using
     highlighting (only when the HTML report is served by a web server)
 - More informative warning messages when signal windows are truncated or
   noise windows are zero-padded
+- Improved writing of HDF5 spectrum files: the file is opened only once
+  to write all the spectra
 
 ### Processing
 
