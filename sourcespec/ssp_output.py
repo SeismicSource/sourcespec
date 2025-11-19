@@ -450,9 +450,11 @@ def save_spectra(config, spec_st):
     )
     spec_st.sort()
     logger.info('Saving spectra to HDF5 file...')
+    _software = 'SourceSpec'
+    _software_version = get_versions()['version']
     for spec in spec_st:
-        spec.stats.software = 'SourceSpec'
-        spec.stats.software_version = get_versions()['version']
+        spec.stats.software = _software
+        spec.stats.software_version = _software_version
         spec.stats.runid = config.options.run_id
-    spec_st.write(outfile)
+    spec_st.write(outfile, format='HDF5')
     logger.info(f'Spectra saved to: {outfile}')
