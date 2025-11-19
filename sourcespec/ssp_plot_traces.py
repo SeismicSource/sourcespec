@@ -197,8 +197,11 @@ def _plot_min_max(ax, x_vals, y_vals, linewidth, color, alpha, zorder):
 
 def _freq_string(freq):
     """Return a string representing the rounded frequency."""
-    # int or float notation for frequencies between 0.01 and 100
-    if 1e-2 <= freq <= 1e2:
+    # float .2f notation for frequencies between 0.01 and 0.1
+    if 1e-2 <= freq < 1e-1:
+        return f'{freq:.2f}'
+    # int or float .1f notation for frequencies between 0.1 and 100
+    if 1e-1 <= freq <= 1e2:
         int_freq = int(round(freq))
         return (
             f'{int_freq}' if np.abs(int_freq - freq) < 1e-1
