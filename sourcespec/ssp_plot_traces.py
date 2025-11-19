@@ -255,13 +255,24 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
         _plot_min_max(
             ax, times, trace.data, linewidth=1, color=color,
             alpha=alpha, zorder=20)
-    ax.text(0.05, trace.data.mean(), trace.stats.channel,
+    # Calculate y position for text labels
+    # trace.data can be a masked array, so handle it appropriately
+    if np.ma.isMaskedArray(trace.data):
+        data_mean = trace.data.mean()
+        # Masked array mean() returns a masked scalar if all values are masked
+        data_mean = 0.0 if np.ma.is_masked(data_mean) else float(data_mean)
+    else:
+        data_mean = float(np.nanmean(trace.data))
+    if not np.isfinite(data_mean):
+        # Use 0 as fallback if all data is NaN or empty
+        data_mean = 0.0
+    ax.text(0.05, data_mean, trace.stats.channel,
             fontsize=8, color=color, transform=trans3, zorder=22,
             path_effects=path_effects)
     with contextlib.suppress(AttributeError):
         sn_ratio = trace.stats.sn_ratio
         _text = f'S/N: {sn_ratio:.1f}'
-        ax.text(0.95, trace.data.mean(), _text, ha='right',
+        ax.text(0.95, data_mean, _text, ha='right',
                 fontsize=8, color=color, transform=trans3, zorder=22,
                 path_effects=path_effects)
     starttime = trace.stats.starttime - trace.stats.time_offset
@@ -303,7 +314,7 @@ def _plot_trace(config, trace, ntraces, tmax, ax, trans, trans3, path_effects):
         _text = trace.stats.ignore_reason
         color = 'black'
         ax.text(
-            0.5, trace.data.mean(), _text, ha='center',
+            0.5, data_mean, _text, ha='center',
             fontsize=8, color=color, transform=trans3, zorder=22,
             path_effects=path_effects)
     _add_station_info_text(trace, ax, path_effects)
