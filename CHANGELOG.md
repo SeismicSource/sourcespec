@@ -113,6 +113,9 @@ previous versions. You will need to upgrade your old database manually or using
 - New config parameter `pi_fc_weight_min`
 - Config parameter `pi_misfit_max` renamed to `pi_quality_of_fit_min`:
   it now defines the minimum acceptable quality of fit in percent (0-100).
+- Config parameter `noise_pre_time` now defaults to `None`, which means
+  that it will be autoset to the length of the signal window plus the value
+  of `signal_pre_time`
 
 ### Bugfixes
 
@@ -141,6 +144,7 @@ previous versions. You will need to upgrade your old database manually or using
 - Fix bug preventing reading travel times from NonLinLoc grid files
 - Improved handling of glob patterns in trace ID filtering
   (`use_traceids` and `ignore_traceids` config parameters)
+- Fix for config parameter `noise_pre_time` not being able to be set to `None`
 
 ## v1.8 - 2024-04-07
 

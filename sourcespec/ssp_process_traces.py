@@ -366,6 +366,9 @@ def _define_signal_and_noise_windows(config, trace):
         logger.info(f'{trace.id}: window length {win_length:.3f} seconds')
     if config.noise_pre_time is None:
         noise_pre_time = win_length + config.signal_pre_time
+        logger.info(
+            f'{trace.id}: noise_pre_time autoset to '
+            f'{noise_pre_time:.3f} seconds')
     else:
         noise_pre_time = config.noise_pre_time
     t1 = max(

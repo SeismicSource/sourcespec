@@ -517,7 +517,6 @@ def _check_mandatory_config_params(config_obj):
     mandatory_params = [
         'p_arrival_tolerance',
         's_arrival_tolerance',
-        'noise_pre_time',
         'signal_pre_time',
         'win_length',
         'taper_halfwidth',
