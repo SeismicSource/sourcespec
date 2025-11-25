@@ -38,6 +38,8 @@ def spectral_residuals(config, spec_st, sspec_output):
     params_name = ('Mw', 'fc', 't_star')
     sourcepar_summary = {p: summary_values[p] for p in params_name}
     residuals = SpectrumStream()
+    _software = 'SourceSpec'
+    _software_version = get_versions()['version']
     for station in {x.stats.station for x in spec_st}:
         spec_st_sel = spec_st.select(station=station)
         for spec in spec_st_sel:
@@ -58,8 +60,8 @@ def spectral_residuals(config, spec_st, sspec_output):
             _res_mag = spec.data_mag - synth_mean_mag
             res.data = mag_to_moment(_res_mag)
             res.data_mag = _res_mag
-            res.stats.software = 'SourceSpec'
-            res.stats.software_version = get_versions()['version']
+            res.stats.software = _software
+            res.stats.software_version = _software_version
             res.stats.runid = config.options.run_id
             residuals.append(res)
     # Save residuals to HDF5 file
