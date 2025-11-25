@@ -78,14 +78,18 @@ def box_plots(config, sspec_output):
         _newvalues = values[np.abs(values - vmean) / vmean < 10]
         if len(_newvalues) > 0:
             values = _newvalues
+        # recompute mean after removing outliers
+        vmean = np.mean(values)
         min_values = np.min(values)
         max_values = np.max(values)
         # use logscale if values span a large interval, avoid zero values
+        logscale = False
         if max_values / min_values > 50:
             if min_values == 0:
                 min_values = 1e-10
             values = values[values != 0]
             ax.set_xscale('log')
+            logscale = True
         whiskers = config.nIQR
         if whiskers is None:
             whiskers = (0, 100)
@@ -98,8 +102,14 @@ def box_plots(config, sspec_output):
         # if values are very close to each other, add some margin
         margin = 0.001 * vmean
         if max_values - min_values < margin:
-            min_values -= margin
             max_values += margin
+            # avoid zero or negative min_values in logscale
+            if logscale:
+                _min_values = min_values - margin
+                while _min_values <= 0:
+                    margin /= 2
+                    _min_values = min_values - margin
+            min_values -= margin
             ax.set_xlim(min_values, max_values)
         for box in bplot['boxes']:
             box.set_facecolor(plot_param.color)
