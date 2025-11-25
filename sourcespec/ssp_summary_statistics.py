@@ -38,13 +38,20 @@ def _avg_and_std(values, errors=None, logarithmic=False):
     if np.all(np.isnan(values)):
         return average, np.array((std, std))
     weights = _weights(values, errors, logarithmic)
+    notnan = ~np.isnan(values)
+    notinf = ~np.isinf(values)
+    keepvals = np.logical_and(notnan, notinf)
+    if logarithmic:
+        positive = values > 0
+        keepvals = np.logical_and(keepvals, positive)
+    if weights is not None:
+        notnan = np.logical_and(keepvals, ~np.isnan(weights))
+        weights = weights[keepvals]
+    values = values[keepvals]
+    if not values.size:
+        return np.nan, np.array((np.nan, np.nan))
     if logarithmic:
         values = np.log10(values)
-    notnan = ~np.isnan(values)
-    if weights is not None:
-        notnan = np.logical_and(notnan, ~np.isnan(weights))
-        weights = weights[notnan]
-    values = values[notnan]
     average = np.average(values, weights=weights)
     variance = np.average((values - average)**2, weights=weights)
     std = np.sqrt(variance)
@@ -190,6 +197,12 @@ def _add_summary_spectra(sspec_output, spec_st):
     Mw = summary_values['Mw']
     fc = summary_values['fc']
     t_star = summary_values['t_star']
+    # check if any spec in spec_st has t_star_model defined
+    for spec in spec_st:
+        t_star_model = spec.stats.get('t_star_model', None)
+        if t_star_model is not None:
+            t_star = t_star_model
+            break
     spec_st.append(
         _make_summary_spec('SUMMARY', 'SSS', freq_logspaced, Mw, fc, t_star)
     )

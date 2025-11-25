@@ -95,10 +95,13 @@ def _summary_params_text(sspec_output, ax):
     fc_text = (
         f'fc: {fc_value:.2f} [- {fc_err_left:.2f}, + {fc_err_right:.2f}] Hz')
     t_star_value = summary_values['t_star']
-    t_star_err_left, t_star_err_right = summary_uncertainties['t_star']
-    t_star_text = (
-        f't*: {t_star_value:.2f} '
-        f'[- {t_star_err_left:.2f}, + {t_star_err_right:.2f}] s')
+    if np.isnan(t_star_value):
+        t_star_text = 't*: not inverted'
+    else:
+        t_star_err_left, t_star_err_right = summary_uncertainties['t_star']
+        t_star_text = (
+            f't*: {t_star_value:.2f} '
+            f'[- {t_star_err_left:.2f}, + {t_star_err_right:.2f}] s')
     Er_value = summary_values['Er']
     Er_err_left, Er_err_right = summary_uncertainties['Er']
     Er_text = (
