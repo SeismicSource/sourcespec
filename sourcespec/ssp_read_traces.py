@@ -362,7 +362,14 @@ def _read_trace_files(config, inventory, ssp_event, picks):
                 f'{filename}: Unable to read file as a trace: skipping')
             continue
         for trace in tmpst.traces:
-            orientation = trace.stats.channel[-1]
+            try:
+                orientation = trace.stats.channel[-1]
+            except IndexError:
+                logger.warning(
+                    f'{trace.id}: trace has no channel information: '
+                    f'skipping trace'
+                )
+                continue
             if orientation not in orientation_codes:
                 logger.warning(
                     f'{trace.id}: Unknown channel orientation: '
