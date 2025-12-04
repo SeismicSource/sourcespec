@@ -456,5 +456,12 @@ def save_spectra(config, spec_st):
         spec.stats.software = _software
         spec.stats.software_version = _software_version
         spec.stats.runid = config.options.run_id
+        # remove t_star_model from stats before saving,
+        # as it might be a function, which is unsupported by HDF5
+        with contextlib.suppress(KeyError):
+            del spec.stats['t_star_model']
+        # remove Q_model, as it might be None
+        with contextlib.suppress(KeyError):
+            del spec.stats['Q_model']
     spec_st.write(outfile, format='HDF5')
     logger.info(f'Spectra saved to: {outfile}')
