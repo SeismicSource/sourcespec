@@ -148,6 +148,7 @@ previous versions. You will need to upgrade your old database manually or using
   (`use_traceids` and `ignore_traceids` config parameters)
 - Fix for config parameter `noise_pre_time` not being able to be set to `None`
 - Fix a bug causing severe slowdown when saving many plots to disk
+- Fix for geophone instrument codes (`P`) not being recognized
 
 ## v1.8 - 2024-04-07
 

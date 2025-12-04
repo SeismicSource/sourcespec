@@ -53,7 +53,7 @@ SSP_EXIT_CALLED = False
 TRACEID_MAP = None
 # SEED standard instrument codes:
 # https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
-INSTR_CODES_VEL = ['H', 'L']
+INSTR_CODES_VEL = ['H', 'L', 'P']
 INSTR_CODES_ACC = ['N', ]
 OBSPY_VERSION = None
 OBSPY_VERSION_STR = None
