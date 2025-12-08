@@ -216,10 +216,17 @@ def _curve_fit(
         # symmetric error
         params_err = tuple((e, e) for e in err)
     elif config.inv_algorithm in ['GS', 'IS']:
-        nsteps = (20, 150, 150)  # we do fewer steps in magnitude
+        # Default configuration for 3 parameters
+        nsteps = (20, 150, 150)  # fewer steps in magnitude
         sampling_mode = ('lin', 'log', 'lin')
         params_name = ('Mw', 'fc', 't_star')
         params_unit = ('', 'Hz', 's')
+        # Adjust if Q_model is provided (do not invert for t_star)
+        if Q_model is not None:
+            nsteps = nsteps[:2]
+            sampling_mode = sampling_mode[:2]
+            params_name = params_name[:2]
+            params_unit = params_unit[:2]
         grid_sampling = GridSampling(
             minimize_func, bounds.bounds, nsteps,
             sampling_mode, params_name, params_unit)
@@ -231,15 +238,16 @@ def _curve_fit(
         params_err = grid_sampling.params_err
         spec_label = f'{spec.id} {spec.stats.instrtype}'
         grid_sampling.plot_conditional_misfit(config, spec_label)
-        # fc-t_star
-        plot_par_idx = (1, 2)
-        grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
         # fc-Mw
         plot_par_idx = (1, 0)
         grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
-        # tstar-Mw
-        plot_par_idx = (2, 0)
-        grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
+        if Q_model is None:
+            # fc-t_star
+            plot_par_idx = (1, 2)
+            grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
+            # tstar-Mw
+            plot_par_idx = (2, 0)
+            grid_sampling.plot_misfit_2d(config, plot_par_idx, spec_label)
     else:
         raise ValueError(
             f'Unknown inversion algorithm: {config.inv_algorithm}')
