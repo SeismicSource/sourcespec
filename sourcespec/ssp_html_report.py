@@ -310,13 +310,31 @@ def _misfit_page(config):
     misfit_plot_files = config.figures['misfit_fc-Mw']
     two_d_misfit_table_rows_fc_mw = _misfit_table_rows(misfit_plot_files)
 
+    # Plots with t-star might be missing if Q model is fixed
+
     # 2d conditional misfit plots: fc-tstar
     misfit_plot_files = config.figures['misfit_fc-t_star']
-    two_d_misfit_table_rows_fc_tstar = _misfit_table_rows(misfit_plot_files)
+    if misfit_plot_files:
+        two_d_misfit_table_rows_fc_tstar =\
+            _misfit_table_rows(misfit_plot_files)
+        two_d_misfit_fc_tstar_comment_begin = ''
+        two_d_misfit_fc_tstar_comment_end = ''
+    else:
+        two_d_misfit_table_rows_fc_tstar = ''
+        two_d_misfit_fc_tstar_comment_begin = '<!--'
+        two_d_misfit_fc_tstar_comment_end = '-->'
 
     # 2d conditional misfit plots: tstar-Mw
     misfit_plot_files = config.figures['misfit_t_star-Mw']
-    two_d_misfit_table_rows_tstar_mw = _misfit_table_rows(misfit_plot_files)
+    if misfit_plot_files:
+        two_d_misfit_table_rows_tstar_mw =\
+            _misfit_table_rows(misfit_plot_files)
+        two_d_misfit_tstar_mw_comment_begin = ''
+        two_d_misfit_tstar_mw_comment_end = ''
+    else:
+        two_d_misfit_table_rows_tstar_mw = ''
+        two_d_misfit_tstar_mw_comment_begin = '<!--'
+        two_d_misfit_tstar_mw_comment_end = '-->'
 
     # Main HTML page
     replacements = {
@@ -328,7 +346,15 @@ def _misfit_page(config):
         '{1D_MISFIT_TABLE_ROWS}': one_d_misfit_table_rows,
         '{2D_MISFIT_TABLE_ROWS_FC_MW}': two_d_misfit_table_rows_fc_mw,
         '{2D_MISFIT_TABLE_ROWS_FC_TSTAR}': two_d_misfit_table_rows_fc_tstar,
-        '{2D_MISFIT_TABLE_ROWS_TSTAR_MW}': two_d_misfit_table_rows_tstar_mw
+        '{2D_MISFIT_FC_TSTAR_COMMENT_BEGIN}':
+            two_d_misfit_fc_tstar_comment_begin,
+        '{2D_MISFIT_FC_TSTAR_COMMENT_END}':
+            two_d_misfit_fc_tstar_comment_end,
+        '{2D_MISFIT_TABLE_ROWS_TSTAR_MW}': two_d_misfit_table_rows_tstar_mw,
+        '{2D_MISFIT_TSTAR_MW_COMMENT_BEGIN}':
+            two_d_misfit_tstar_mw_comment_begin,
+        '{2D_MISFIT_TSTAR_MW_COMMENT_END}':
+            two_d_misfit_tstar_mw_comment_end
     }
     with open(misfit_html, encoding='utf-8') as fp:
         misfit = fp.read()
