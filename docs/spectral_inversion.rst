@@ -13,6 +13,13 @@ The spectral model in SourceSpec is defined by three main parameters:
 :math:`f^{p|s}_c` (corner frequency for P or S waves), and
 :math:`t^*` (attenuation).
 
+.. note::
+
+  If a prior attenuation model is provided (see the ``Q_model`` parameter in
+  :ref:`configuration_file:Configuration File`), then :math:`t^*` is not
+  inverted and instead derived from the attenuation model
+  (see :ref:`theoretical_background:Theoretical Background`).
+
 See the :ref:`theoretical_background:Theoretical Background` section for
 details on the spectral model.
 
@@ -153,13 +160,15 @@ For each inverted spectrum, SourceSpec computes the following parameters
 
 - **Moment magnitude** (:math:`M_w`): obtained directly from inversion.
 - **Corner frequency** (:math:`f_c`): obtained directly from inversion.
-- **Attenuation parameter** (:math:`t^*`): obtained directly from inversion.
+- **Attenuation parameter** (:math:`t^*`): obtained directly from inversion
+  (or derived from prior attenuation model, see note above).
 - **Radiated energy** (:math:`E_r`): measured directly from the spectrum.
 - **Seismic moment** (:math:`M_0`): derived from :math:`M_w`.
 - **Source radius** (:math:`a`): derived from :math:`M_0` and :math:`f_c`.
 - **Static stress drop** (:math:`\Delta\sigma`): derived from :math:`M_0` and :math:`a`.
 - **Apparent stress** (:math:`\sigma_a`): derived from :math:`E_r` and :math:`M_0`.
-- **Quality factor** (:math:`Q`): derived from :math:`t^*`.
+- **Quality factor** (:math:`Q`): derived from :math:`t^*`
+  (or fixed from prior attenuation model, see note above).
 
 For each spectrum, both the parameter estimates and their uncertainties (from
 the chosen inversion algorithm) are stored in the output YAML file and in the

@@ -257,6 +257,20 @@ Inverted parameters
 The parameters determined from the spectral inversion are :math:`M_w`,
 :math:`f^{p|s}_c` and :math:`t^*`.
 
+As an option, an attenuation model (fixed value or frequency-dependent quality
+factor) can be specified through the ``Q_model`` parameter in
+:ref:`configuration_file:Configuration File`.
+In this case, :math:`t^*` is not inverted for, but computed from the
+attenuation model, as:
+
+.. math::
+
+   t^*(r, f) = \frac{tt^{p|s}(r)}{Q^{p|s}(f)}
+
+where :math:`tt^{p|s}(r)` is the P- or S-wave travel time from source to
+station and :math:`Q^{p|s}(f)` is the (frequency-dependent) P- or S-wave
+quality factor.
+
 The inversion is performed in moment magnitude :math:`M_w` units (logarithmic
 amplitude). More details on the inversion method can be found in
 :ref:`spectral_inversion_quality_and_uncertainty`.
@@ -536,6 +550,12 @@ S-wave quality factor :math:`Q_0^{p|s}` using the following expression:
 
 where :math:`tt^{p|s}(r)` is the P- or S-wave travel time from source to
 station and :math:`r` is the hypocentral distance.
+
+.. note::
+
+  If a prior attenuation model is provided (see the ``Q_model``
+  parameter in :ref:`configuration_file:Configuration File`), then
+  :math:`t^*` is not inverted and :math:`Q_0^{p|s}` is not computed.
 
 
 Station Residuals
