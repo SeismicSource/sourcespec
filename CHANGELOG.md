@@ -63,6 +63,9 @@ previous versions. You will need to upgrade your old database manually or using
 - Use spectral interpolation to compute and apply station residuals
 - Limit spectrum and residual to common frequency range when applying
   correction before fitting (see [#69])
+- Possibility of defining a prior attenuation model, either as a constant Q
+  value or as a frequency-dependent Q model from a text file (see [#76]). In
+  this case, t* is not inverted but derived from the attenuation model.
 
 ### Post-Inversion
 
@@ -118,6 +121,8 @@ previous versions. You will need to upgrade your old database manually or using
 - Config parameter `noise_pre_time` now defaults to `None`, which means
   that it will be autoset to the length of the signal window plus the value
   of `signal_pre_time`
+- New config parameter `Q_model` to define a prior attenuation model
+  (constant or frequency-dependent, see [#76])
 
 ### Bugfixes
 
@@ -886,3 +891,4 @@ Initial Python port.
 [#67]: https://github.com/SeismicSource/sourcespec/issues/67
 [#68]: https://github.com/SeismicSource/sourcespec/issues/68
 [#69]: https://github.com/SeismicSource/sourcespec/issues/69
+[#76]: https://github.com/SeismicSource/sourcespec/issues/76
