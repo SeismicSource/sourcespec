@@ -119,7 +119,23 @@ class GridSampling():
 
     @property
     def values(self):
-        """Return a meshgrid of parameter values."""
+        """Return a meshgrid of parameter values.
+
+        This property lazily builds and caches ``self._values`` as the
+        tuple of N-D coordinate arrays produced by
+        ``np.meshgrid(..., indexing='ij')``. The 1-D vectors used to
+        create the mesh are derived from ``self.truebounds`` and
+        ``self.nsteps``; when ``sampling_mode`` is ``'log'`` those 1-D
+        vectors are created with ``np.logspace``.
+
+        Returns
+        -------
+        tuple of numpy.ndarray
+            Tuple of N arrays (one per parameter). Each array has shape
+            ``(n_0, n_1, ..., n_{N-1})`` and gives the coordinate value
+            for that parameter at every grid point (the same structure
+            returned by ``np.meshgrid(*values_1d, indexing='ij')``).
+        """
         if self._values is not None:
             return self._values
         values = []
@@ -144,22 +160,56 @@ class GridSampling():
 
     @property
     def values_1d(self):
-        """Extract a 1D array of parameter values along one dimension."""
-        # same thing for values: we extract a 1d array of values along dim
+        """
+        Return 1-D grid value arrays for each parameter axis.
+
+        Returns
+        -------
+        tuple of numpy.ndarray
+            One 1-D array per parameter axis, in the same order used to
+            build ``self.values`` (the order passed to
+            ``np.meshgrid(..., indexing='ij')``). Each array has shape
+            ``(n_i,)`` and contains the sampled parameter values along
+            that axis. Parameters sampled with ``'log'`` mode produce
+            values via ``np.logspace`` and are returned in linear
+            scale.
+
+        Note
+        ----
+        Calling ``np.meshgrid(*self.values_1d, indexing='ij')``
+        reconstructs ``self.values`` (if the 1-D arrays are unchanged).
+        """
+        # Number of grid dimensions
         ndim = len(self.values)
         values_1d = []
         for dim in range(ndim):
+            # Move the coordinate axis `dim` to the last position so the
+            # vector we want lies on the final axis.
             v = np.moveaxis(self.values[dim], dim, -1)
-            values_1d.append(v[0, 0])
+            # Build an index that selects the first element on all
+            # leading axes and keeps the full last axis. `slice(None)` is
+            # equivalent to `:` and means "take the whole axis".
+            idx = (0,) * (v.ndim - 1) + (slice(None),)
+            values_1d.append(v[idx])
         return tuple(values_1d)
 
     @property
     def conditional_misfit(self):
         """
-        Compute conditional misfit along each dimension.
+        Compute 1-D conditional misfit profiles for each parameter.
 
-        Conditional misfit is computed by fixing the other parameters to
-        their optimal value.
+        For each parameter axis, return the misfit values obtained by
+        fixing all other parameters to their optimal values (from
+        ``self.min_idx``) and extracting the 1-D profile along that
+        axis. Results are cached in ``self._conditional_misfit`` so the
+        computation runs only once per sampled misfit.
+
+        Returns
+        -------
+        tuple of numpy.ndarray or None
+            A tuple with one 1-D array per parameter axis containing the
+            conditional misfit profile along that axis. Returns ``None``
+            when ``self.misfit`` is not set.
         """
         if self.misfit is None:
             return None
@@ -236,7 +286,12 @@ class GridSampling():
                 newargs.append(a)
             return np.exp(-self.misfit_func(newargs))
         extent = sum(self.truebounds, ())
-        maxdiv = (20, 2000, 200)
+        if len(extent) == 4:
+            # if extent has 4 values, we are in 2D
+            maxdiv = (20, 2000)
+        else:
+            # else, we are in 3D
+            maxdiv = (20, 2000, 200)
         kdt = KDTree(extent, 2, mf, maxdiv=maxdiv)
         while kdt.ncells <= np.prod(maxdiv):
             oldn = kdt.ncells
@@ -311,21 +366,41 @@ class GridSampling():
         # Check config, if we need to plot at all
         if not config.plot_show and not config.plot_save:
             return
-        # Find the index to extract
+        # Find the index to extract (coordinates for dimensions not being
+        # plotted). For a full N-D misfit this will be used to index and
+        # extract the 2-D slice. When `self.misfit` is already 2-D we
+        # skip the moveaxis step and just use the array directly (possibly
+        # transposed to keep the same orientation used by the original
+        # code).
         idx = tuple(
             v for n, v in enumerate(self.min_idx) if n not in plot_par_idx)
-        if plot_par_idx[0] < plot_par_idx[1]:
-            # Move axes to keep at the end
-            end_idx = (-2, -1)
-            mm = np.moveaxis(self.misfit, plot_par_idx, end_idx)
-            # extract a 2D misfit map
-            mm = mm[idx].T
+        if self.misfit.ndim == 2:
+            # Misfit is already 2-D. Respect the original orientation
+            # convention: when plot_par_idx[0] < plot_par_idx[1] the
+            # original code transposes the slice (`.T`). Mirror that
+            # behaviour here.
+            if plot_par_idx[0] < plot_par_idx[1]:
+                mm = self.misfit.T
+            else:
+                mm = self.misfit.copy()
+            # If there are remaining indices (idx) they should be empty
+            # for a 2-D misfit, but applying mm[idx] is harmless when
+            # idx == (). Keep behaviour consistent.
+            if idx:
+                mm = mm[idx]
         else:
-            # Move axes to keep at the end
-            end_idx = (-1, -2)
-            mm = np.moveaxis(self.misfit, plot_par_idx, end_idx)
-            # extract a 2D misfit map
-            mm = mm[idx]
+            if plot_par_idx[0] < plot_par_idx[1]:
+                # Move axes to keep at the end
+                end_idx = (-2, -1)
+                mm = np.moveaxis(self.misfit, plot_par_idx, end_idx)
+                # extract a 2D misfit map
+                mm = mm[idx].T
+            else:
+                # Move axes to keep at the end
+                end_idx = (-1, -2)
+                mm = np.moveaxis(self.misfit, plot_par_idx, end_idx)
+                # extract a 2D misfit map
+                mm = mm[idx]
         # set extent for imshow
         bds = np.take(np.array(self.truebounds), plot_par_idx, axis=0)
         extent = bds.flatten()
@@ -424,23 +499,33 @@ class GridSampling():
 
     def _plot_kdtree_structure(self, ax, plot_par_idx, params_opt_all):
         coords = np.array([cell.coords for cell in self.kdt.cells])
-        # find the complement to plot_par_idx
+        # find the complement to plot_par_idx (indices of parameters
+        # that will be discarded when extracting the 2D slice)
         allidx = np.arange(len(self.nsteps))
         ii = allidx[~np.isin(allidx, plot_par_idx)]
-        # find coordinates that will be discarded
-        cc = np.take(coords, ii, axis=1)
-        # find optimal parameters that will be discarded
-        pp = np.take(params_opt_all, ii)
-        # find discarded coordinates that are closer to
-        # discarded optimal parameters, i.e. the coordinates that
-        # lay on the 2D plot plane
-        dist = np.abs(cc - pp)
-        # init condition to False
-        cond = np.zeros_like(dist[:, 0]).astype(bool)
-        for d in dist.T:
-            _cond = np.isclose(d, d.min())
-            cond = np.logical_or(cond, _cond)
-        coords_2d = coords[cond]
+        # If `ii` is empty it means the misfit lives in 2D already or
+        # there are no discarded dimensions: in that case all coordinates
+        # belong to the 2D plot plane and we keep them all. Otherwise we
+        # compute which KDTree cell coordinates lie on the 2D plane by
+        # comparing discarded-coordinate distances to the optimum.
+        if ii.size == 0:
+            # every coordinate is on the 2D plane
+            coords_2d = coords.copy()
+        else:
+            # find coordinates that will be discarded
+            cc = np.take(coords, ii, axis=1)
+            # find optimal parameters that will be discarded
+            pp = np.take(params_opt_all, ii)
+            # find discarded coordinates that are closer to
+            # discarded optimal parameters, i.e. the coordinates that
+            # lay on the 2D plot plane
+            dist = np.abs(cc - pp)
+            # init condition to False
+            cond = np.zeros_like(dist[:, 0]).astype(bool)
+            for d in dist.T:
+                _cond = np.isclose(d, d.min())
+                cond = np.logical_or(cond, _cond)
+            coords_2d = coords[cond]
         # -- End of code to find coordinates that lay on the 2D plot plane
         # now take coordinates that will be plotted
         # we plot all coords in gray

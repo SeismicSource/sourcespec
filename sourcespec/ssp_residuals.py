@@ -13,6 +13,7 @@ Spectral residual routine for sourcespec.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+import contextlib
 import logging
 from sourcespec._version import get_versions
 from sourcespec.spectrum import SpectrumStream
@@ -63,6 +64,13 @@ def spectral_residuals(config, spec_st, sspec_output):
             res.stats.software = _software
             res.stats.software_version = _software_version
             res.stats.runid = config.options.run_id
+            # remove t_star_model from stats before saving,
+            # as it might be a function, which is unsupported by HDF5
+            with contextlib.suppress(KeyError):
+                del res.stats['t_star_model']
+            # remove Q_model, as it might be None
+            with contextlib.suppress(KeyError):
+                del spec.stats['Q_model']
             residuals.append(res)
     # Save residuals to HDF5 file
     evid = config.event.event_id

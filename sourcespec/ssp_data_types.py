@@ -25,14 +25,18 @@ class InitialValues():
 
     def __str__(self):
         """String representation."""
+        t_star_0 = (
+            'None' if self.t_star_0 is None else round(self.t_star_0, 4))
         return (
             f'Mw_0: {round(self.Mw_0, 4)}; '
             f'fc_0: {round(self.fc_0, 4)}; '
-            f't_star_0: {round(self.t_star_0, 4)}'
+            f't_star_0: {t_star_0}'
         )
 
     def get_params0(self):
         """Get initial values as a tuple."""
+        if self.t_star_0 is None:
+            return (self.Mw_0, self.fc_0)
         return (self.Mw_0, self.fc_0, self.t_star_0)
 
 
@@ -60,8 +64,11 @@ class Bounds():
             *[round(x, 4) if x is not None else x for x in self.bounds[0]])
         s += 'fc: {}, {}; '.format(
             *[round(x, 4) if x is not None else x for x in self.bounds[1]])
-        s += 't_star: {}, {}'.format(
-            *[round(x, 4) if x is not None else x for x in self.bounds[2]])
+        try:
+            s += 't_star: {}, {}'.format(
+                *[round(x, 4) if x is not None else x for x in self.bounds[2]])
+        except IndexError:
+            s += 't_star: None, None'
         return s
 
     def _set_fc_min_max(self, config):
@@ -117,10 +124,8 @@ class Bounds():
     def __call__(self, **kwargs):
         """Interface for basin-hopping."""
         params = kwargs['x_new']
-        params_min = np.array(
-            (self.Mw_min, self.fc_min, self.t_star_min)).astype(float)
-        params_max = np.array(
-            (self.Mw_max, self.fc_max, self.t_star_max)).astype(float)
+        params_min = np.array([b[0] for b in self.bounds]).astype(float)
+        params_max = np.array([b[1] for b in self.bounds]).astype(float)
         params_min[np.isnan(params_min)] = 1e-99
         params_max[np.isnan(params_min)] = 1e+99
         tmin = bool(np.all(params >= params_min))
@@ -130,9 +135,13 @@ class Bounds():
     @property
     def bounds(self):
         """Get bounds for minimize() as sequence of (min, max) pairs."""
-        self._bounds = ((self.Mw_min, self.Mw_max),
-                        (self.fc_min, self.fc_max),
-                        (self.t_star_min, self.t_star_max))
+        if self.t_star_min is None and self.t_star_max is None:
+            self._bounds = ((self.Mw_min, self.Mw_max),
+                            (self.fc_min, self.fc_max))
+        else:
+            self._bounds = ((self.Mw_min, self.Mw_max),
+                            (self.fc_min, self.fc_max),
+                            (self.t_star_min, self.t_star_max))
         return self._bounds
 
     @bounds.setter
