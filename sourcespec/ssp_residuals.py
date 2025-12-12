@@ -70,7 +70,7 @@ def spectral_residuals(config, spec_st, sspec_output):
                 del res.stats['t_star_model']
             # remove Q_model, as it might be None
             with contextlib.suppress(KeyError):
-                del spec.stats['Q_model']
+                del res.stats['Q_model']
             residuals.append(res)
     # Save residuals to HDF5 file
     evid = config.event.event_id
