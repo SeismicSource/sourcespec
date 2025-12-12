@@ -248,12 +248,9 @@ def _write_stations_table(cursor, db_file, sspec_output, config):
     evid = event.event_id
     runid = config.options.run_id
     stationpar = sspec_output.station_parameters
-    nobs = 0
     for statId in sorted(stationpar.keys()):
-        nobs += 1
         par = stationpar[statId]
         _insert_station_row(cursor, db_file, statId, par, evid, runid)
-    return nobs
 
 
 def _create_events_table(cursor, db_file):
@@ -277,7 +274,7 @@ def _create_events_table(cursor, db_file):
         _log_db_write_error(db_err, db_file)
 
 
-def _write_events_table(cursor, db_file, sspec_output, config, nobs):
+def _write_events_table(cursor, db_file, sspec_output, config):
     """
     Write Events table.
 
@@ -289,14 +286,14 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
     :type sspec_output: ssp_data_types.SourceSpecOutput
     :param config: SSP configuration object
     :type config: config.Config
-    :param nobs: Number of observations
-    :type nobs: int
     """
     event = config.event
     evid = event.event_id
     runid = config.options.run_id
     wave_type = config.wave_type
-    nobs_inverted = sspec_output.quality_info.n_spectra_inverted
+    n_input_stations = sspec_output.quality_info.n_input_stations
+    n_input_spectra = sspec_output.quality_info.n_input_spectra
+    n_spectra_inverted = sspec_output.quality_info.n_spectra_inverted
     azimuthal_gap_primary = sspec_output.quality_info.azimuthal_gap_primary
     azimuthal_gap_secondary = sspec_output.quality_info.azimuthal_gap_secondary
     rmsn_mean = sspec_output.quality_info.rmsn_mean
@@ -343,8 +340,9 @@ def _write_events_table(cursor, db_file, sspec_output, config, nobs):
         # Inversion info
         'wave_type': wave_type,
         # Quality info
-        'nobs': nobs,
-        'nobs_inverted': nobs_inverted,
+        'n_input_stations': n_input_stations,
+        'n_input_spectra': n_input_spectra,
+        'n_spectra_inverted': n_spectra_inverted,
         'azimuthal_gap_primary': azimuthal_gap_primary,
         'azimuthal_gap_secondary': azimuthal_gap_secondary,
         'rmsn_mean': rmsn_mean,
@@ -532,13 +530,13 @@ def write_sqlite(config, sspec_output):
     # Create Stations table
     _create_stations_table(cursor, db_file)
     # Write station source parameters to database
-    nobs = _write_stations_table(cursor, db_file, sspec_output, config)
+    _write_stations_table(cursor, db_file, sspec_output, config)
     # Commit changes
     conn.commit()
     # Create Events table
     _create_events_table(cursor, db_file)
     # Write event source parameters to database
-    _write_events_table(cursor, db_file, sspec_output, config, nobs)
+    _write_events_table(cursor, db_file, sspec_output, config)
     # Commit changes and close database
     conn.commit()
     conn.close()

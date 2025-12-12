@@ -258,9 +258,17 @@ def _version_2_to_3(cursor):
     cursor.execute(sql_insert_new_station_keys)
     cursor.execute(sql_drop_old_stations_table)
     cursor.execute(sql_rename_new_stations_table)
+    # Renamed event keys
+    renamed_event_keys = {
+        'nobs': 'n_input_spectra'
+    }
+    for old_name, new_name in renamed_event_keys.items():
+        cursor.execute(
+            f'ALTER TABLE Events RENAME COLUMN {old_name} TO {new_name};')
     # New event keys
     new_event_keys = {
-        'nobs_inverted': 'INTEGER',
+        'n_input_stations': 'INTEGER',
+        'n_spectra_inverted': 'INTEGER',
         'azimuthal_gap_primary': 'REAL',
         'azimuthal_gap_secondary': 'REAL',
         'rmsn_mean': 'REAL',

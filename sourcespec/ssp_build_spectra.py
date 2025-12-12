@@ -746,6 +746,11 @@ def _build_signal_and_noise_streams(config, st):
     """Build signal and noise streams."""
     # remove traces with ignore flag
     traces = Stream([tr for tr in st if not tr.stats.ignore])
+    # Compute and store in config the number of input stations
+    # (i.e., trace id without component code). This value will be stored
+    # later in the sspec_output object.
+    n_input_stations = len({tr.id[:-1] for tr in traces})
+    config.n_input_stations = n_input_stations
     signal_st = Stream()
     noise_st = Stream()
     for trace in sorted(traces, key=lambda tr: tr.id):

@@ -807,9 +807,22 @@ def spectral_inversion(config, spec_st, weight_st):
                 spec.stats, 'ignore_reason', None)
             continue
         spec_st += _synth_spec(config, spec, station_pars)
+    logger.info('Inverting spectra: done')
+    logger.info('---------------------------------------------------')
 
     # Add quality information to the output object
-    logger.info('Inversion quality information:')
+    logger.info('Inversion quality information')
+    sspec_output.quality_info.n_input_stations = config.n_input_stations
+    logger.info(
+        f'Number of input stations: '
+        f'{sspec_output.quality_info.n_input_stations}'
+    )
+    sspec_output.quality_info.n_input_spectra = len(
+        [sp for sp in spectra if sp.stats.channel[-1] == 'H']
+    )
+    logger.info(
+        f'Number of input spectra: {sspec_output.quality_info.n_input_spectra}'
+    )
     inverted_spectra = [
         sp for sp in sspec_output.station_parameters.values() if not sp.ignored
     ]
@@ -826,6 +839,5 @@ def spectral_inversion(config, spec_st, weight_st):
         sspec_output.quality_info.quality_of_fit_mean = None
     else:
         _compute_inversion_quality_info(inverted_spectra, sspec_output)
-    logger.info('Inverting spectra: done')
     logger.info('---------------------------------------------------')
     return sspec_output

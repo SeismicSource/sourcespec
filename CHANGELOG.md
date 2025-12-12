@@ -17,6 +17,8 @@ previous versions. You will need to upgrade your old database manually or using
 ### Input/output
 
 - Global inversion quality parameters in YAML, SQLite and HTML output:
+  - Number of input stations
+  - Number of input spectra
   - Number of spectra inverted
   - Azimuthal gap (primary and secondary)
   - Mean normalized RMS (RMSN)
@@ -33,10 +35,13 @@ previous versions. You will need to upgrade your old database manually or using
 - New fields in the `Stations` table of the SQLite database: `epi_dist`,
   `lon`, `lat`, `instr_type`, `spectral_snratio_mean`, `spectral_snratio_max`,
   `rmsn`, `quality_of_fit`, `ignored`, `ignored_reason`
-- New fields in the `Events` table of the SQLite database: `nobs_inverted`,
-  `azimuthal_gap_primary`, `azimuthal_gap_secondary`, `rmsn_mean`,
-  `quality_of_fit_mean`, `spectral_dispersion_rmsn`, `spectral_dispersion_score`
+- New fields in the `Events` table of the SQLite database:
+  `n_input_stations`, `n_input_spectra` (renamed from `nobs`),
+  `n_spectra_inverted`, `azimuthal_gap_primary`, `azimuthal_gap_secondary`,
+  `rmsn_mean`, `quality_of_fit_mean`, `spectral_dispersion_rmsn`,
+  `spectral_dispersion_score`
 - HTML report improvements:
+  - Inversion Quality Summary
   - Link to supplementary files and plots in the HTML report
   - Display configuration, log and output files in a modal window with syntax
     highlighting (only when the HTML report is served by a web server)

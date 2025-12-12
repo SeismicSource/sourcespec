@@ -631,6 +631,14 @@ def _add_inversion_info_to_html(sspec_output, replacements):
 def _add_inversion_quality_to_html(sspec_output, replacements):
     """Add inversion quality info to HTML report."""
     quality_info = sspec_output.quality_info
+    n_input_stations = (
+        f'{quality_info.n_input_stations}'
+        if quality_info.n_input_stations is not None else '-'
+    )
+    n_input_spectra = (
+        f'{quality_info.n_input_spectra}'
+        if quality_info.n_input_spectra is not None else '-'
+    )
     n_spectra_inverted = (
         f'{quality_info.n_spectra_inverted}'
         if quality_info.n_spectra_inverted is not None else '-'
@@ -660,6 +668,8 @@ def _add_inversion_quality_to_html(sspec_output, replacements):
         if quality_info.spectral_dispersion_score is not None else '-'
     )
     replacements.update({
+        '{N_INPUT_STATIONS}': n_input_stations,
+        '{N_INPUT_SPECTRA}': n_input_spectra,
         '{N_SPECTRA_INVERTED}': n_spectra_inverted,
         '{AZIMUTHAL_GAP_PRIMARY}': azimuthal_gap_primary,
         '{AZIMUTHAL_GAP_SECONDARY}': azimuthal_gap_secondary,
