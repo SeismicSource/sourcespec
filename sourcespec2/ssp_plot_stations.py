@@ -986,8 +986,6 @@ def _savefig(fig, vname):
     :param vname: name of the value.
     :type vname: str
     """
-    if config.plot_show:
-        plt.show()
     if config.plot_save:
         evid = config.event.event_id
         figfile_base = os.path.join(config.options.outdir, evid)
@@ -1148,3 +1146,5 @@ def plot_stations(sspec_output):
     _make_station_map(
         basemap_data_fc, lonlat_dist, st_ids,
         fc, fc_outliers, summary_fc, summary_fc_err, 'fc')
+    if config.plot_show:
+        plt.show()
