@@ -16,6 +16,7 @@ import logging
 import warnings
 from math import asin, degrees
 from obspy.taup import TauPyModel
+from .ssp_velocity_model import CrustalVelocityModel
 model = TauPyModel(model='iasp91')
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
@@ -85,6 +86,33 @@ def _wave_arrival_vel(trace, vel):
     return travel_time, takeoff_angle
 
 
+def _wave_arrival_layer_model(trace, phase, config):
+    """
+    Travel time and takeoff angle based on 1D velocity model
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    :param phase: Phase for which to get arrival
+    :type phase: str
+    :param config: Configuration object
+    :type config: object
+
+    :return: Travel time and takeoff angle
+    :rtype: tuple of float
+    """
+    try:
+        vmodel = CrustalVelocityModel(
+            config.layer_top_depths, config.vp_source, config.vs_source)
+        hypo_z = trace.stats.event.hypocenter.depth.value_in_km
+        Repi = trace.stats.epi_dist
+        sta_z = -trace.stats.coords.elevation
+        result = vmodel.calc_tt_and_angles(hypo_z, sta_z, Repi, wave=phase[:1])
+        travel_time, takeoff_angle, _, _ = result
+    except Exception as e:
+        raise RuntimeError from e
+    return travel_time, takeoff_angle
+
+
 def _wave_arrival_taup(trace, phase):
     """Travel time and takeoff angle using taup."""
     phase_list = [phase.lower(), phase]
@@ -123,6 +151,11 @@ def _wave_arrival(trace, phase, config):
         travel_time, takeoff_angle =\
             _wave_arrival_nll(trace, phase, NLL_time_dir, focmec)
         method = 'NonLinLoc grid'
+        return travel_time, takeoff_angle, method
+    with contextlib.suppress(RuntimeError):
+        travel_time, takeoff_angle =\
+            _wave_arrival_layer_model(trace, phase, config)
+        method = f'1D velocity model ({phase.upper()})'
         return travel_time, takeoff_angle, method
     with contextlib.suppress(RuntimeError):
         travel_time, takeoff_angle =\
