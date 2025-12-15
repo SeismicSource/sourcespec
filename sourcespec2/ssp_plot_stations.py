@@ -1093,7 +1093,9 @@ def plot_stations(sspec_output):
         basemap_data2 = deepcopy(basemap_data)
     except NotImplementedError:
         # Workaround for older matplotlib versions
-        import io, pickle
+        # pylint: disable=import-outside-toplevel
+        import io
+        import pickle
         basemap_data2 = {}
         for key, ax in basemap_data.items():
             buf = io.BytesIO()
