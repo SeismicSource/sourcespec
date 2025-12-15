@@ -128,6 +128,13 @@ def _init_parser(description, epilog, nargs):
         metavar='FILE'
     )
     parser.add_argument(
+        '-d', '--depth', dest='depth',
+        action='store', type=float, default=None,
+        help='fix event depth to DEPTH (km), overriding any depth in\n'
+             'hypocenter file',
+        metavar='DEPTH'
+    )
+    parser.add_argument(
         '-p', '--pickfile', dest='pick_file',
         action='store', default=None,
         help='get picks from FILE. Supported formats: HYPO71',

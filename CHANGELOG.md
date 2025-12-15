@@ -49,6 +49,8 @@ previous versions. You will need to upgrade your old database manually or using
   noise windows are zero-padded
 - Improved writing of HDF5 spectrum files: the file is opened only once
   to write all the spectra
+- New command line option `--depth` to override any event depth provided
+  in the input files
 
 ### Processing
 

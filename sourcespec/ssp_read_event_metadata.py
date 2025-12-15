@@ -487,6 +487,19 @@ def parse_hypo_file(hypo_file, event_id=None):
     ssp_exit(1)
 
 
+def override_event_depth(ssp_event, depth_in_km):
+    """
+    Override event depth if specified in command line arguments.
+
+    :param ssp_event: SSPEvent object
+    :param depth_in_km: depth value in kilometers
+    """
+    if depth_in_km is not None:
+        ssp_event.hypocenter.depth.value = depth_in_km
+        ssp_event.hypocenter.depth.units = 'km'
+        logger.info(f'Overriding event depth to {depth_in_km} km')
+
+
 def _is_hypo71_picks(pick_file):
     with open(pick_file, encoding='ascii') as fp:
         for line in fp:

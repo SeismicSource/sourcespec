@@ -40,6 +40,10 @@ in the following formats:
 Event information can also be stored in the `SAC file header`_ (header
 fields: ``EVLA``, ``EVLO``, ``EVDP``, ``O``, ``KEVNM``).
 
+.. Note::
+   Any depth value provided in the event file or in the SAC header can be
+   overridden using the command line option ``--depth``.
+
 Phase pick formats
 ~~~~~~~~~~~~~~~~~~
 

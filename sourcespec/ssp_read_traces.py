@@ -32,7 +32,7 @@ from sourcespec.ssp_util import MediumProperties
 from sourcespec.ssp_read_station_metadata import (
     read_station_metadata, PAZ)
 from sourcespec.ssp_read_event_metadata import (
-    parse_qml, parse_hypo_file, parse_hypo71_picks)
+    parse_qml, parse_hypo_file, override_event_depth, parse_hypo71_picks)
 from sourcespec.ssp_read_sac_header import (
     is_SAC_trace,
     compute_sensitivity_from_SAC,
@@ -218,12 +218,14 @@ def _add_coords(trace):
 _add_coords.skipped = []  # noqa
 
 
-def _add_event(trace, ssp_event=None):
+def _add_event(trace, ssp_event=None, depth_override=None):
     """Add ssp_event object to trace."""
     if ssp_event is None:
         # Try to get hypocenter information from the SAC header
         try:
             ssp_event = get_event_from_SAC(trace)
+            logger.info(f'{trace.id}: event info read from SAC header')
+            override_event_depth(ssp_event, depth_override)
         except Exception:
             return
     trace.stats.event = ssp_event
@@ -331,7 +333,8 @@ def _build_filelist(path, filelist, tmpdir):
             filelist.append(path)
 
 
-def _read_trace_files(config, inventory, ssp_event, picks):
+def _read_trace_files(
+        config, inventory, ssp_event, picks, depth_override=None):
     """
     Read trace files from a given path. Complete trace metadata and
     return a stream object.
@@ -387,7 +390,7 @@ def _read_trace_files(config, inventory, ssp_event, picks):
                 _add_inventory(trace, inventory, config)
                 _check_instrtype(trace)
                 _add_coords(trace)
-                _add_event(trace, ssp_event)
+                _add_event(trace, ssp_event, depth_override)
                 _add_picks(trace, picks)
             except Exception as err:
                 for line in str(err).splitlines():
@@ -413,6 +416,7 @@ def read_traces(config):
 
     picks = []
     ssp_event = None
+    depth_override = config.options.depth
     # parse hypocenter file
     if config.options.hypo_file is not None:
         ssp_event, picks, file_format = parse_hypo_file(
@@ -425,11 +429,12 @@ def read_traces(config):
     if config.options.qml_file is not None:
         ssp_event, picks = parse_qml(config)
     if ssp_event is not None:
+        override_event_depth(ssp_event, depth_override)
         _log_event_info(ssp_event)
 
     # finally, read trace files
     logger.info('Reading traces...')
-    st = _read_trace_files(config, inventory, ssp_event, picks)
+    st = _read_trace_files(config, inventory, ssp_event, picks, depth_override)
     logger.info('Reading traces: done')
     logger.info('---------------------------------------------------')
     if len(st) == 0:
