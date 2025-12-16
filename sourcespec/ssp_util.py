@@ -107,20 +107,37 @@ class MediumProperties():
         Get medium property at the source from config parameter.
 
         :param mproperty: Property to be retrieved
-            (``'vp'``, ``'vs'`` or ``'rho'``).
+            (``'vp'``, ``'vs'``, ``'rho'``, ``'vp_tt'``, ``'vs_tt'``).
         :type mproperty: str
         :return: Property value.
         :rtype: float
         """
-        if mproperty not in ['vp', 'vs', 'rho']:
+        if mproperty in ('vp', 'vs', 'rho'):
+            values = self.config[f'{mproperty}_source']
+        elif mproperty in ('vp_tt', 'vs_tt'):
+            values = self.config[f'{mproperty}']
+        else:
             raise ValueError(f'Invalid property: {mproperty}')
-        values = self.config[f'{mproperty}_source']
         if values is None:
+            # try to use travel-time model if vp or vs is requested
+            if mproperty in ('vp', 'vs'):
+                _mproperty = f'{mproperty}_tt'
+                return self.get_from_config_param_source(_mproperty)
             return None
-        if self.config.layer_top_depths is None:
+        if mproperty in ('vp_tt', 'vs_tt'):
+            _mproperty = mproperty[:-3]
+            logger.info(
+                f'Taking {_mproperty} at the source from travel-time model '
+                f'({mproperty})')
+        depths = (
+            self.config.layer_top_depths_tt
+            if mproperty in ('vp_tt', 'vs_tt')
+            else self.config.layer_top_depths
+        )
+        if depths is None:
             return values[0]
         values = np.array(values)
-        depths = np.array(self.config.layer_top_depths)
+        depths = np.array(depths)
         try:
             # find the last value that is smaller than the source depth
             value = values[depths <= self.depth_in_km][-1]
@@ -138,12 +155,13 @@ class MediumProperties():
         :return: Property value.
         :rtype: float
         """
-        if mproperty not in ['vp', 'vs', 'rho']:
+        if mproperty not in ('vp', 'vs', 'rho'):
             raise ValueError(f'Invalid property: {mproperty}')
         value = self.config[f'{mproperty}_stations']
         if value is None:
-            value = self.get_from_config_param_source(
-                mproperty)
+            logger.info(
+                f'Taking {mproperty} at the stations from source value')
+            value = self.get_from_config_param_source(mproperty)
         return value
 
     def get_vel_from_NLL(self, wave):
@@ -226,11 +244,9 @@ class MediumProperties():
         if mproperty not in ['vp', 'vs', 'rho']:
             raise ValueError(f'Invalid property: {mproperty}')
         if where == 'source':
-            value = self.get_from_config_param_source(
-                mproperty)
+            value = self.get_from_config_param_source(mproperty)
         elif where == 'stations':
-            value = self.get_from_config_param_station(
-                mproperty)
+            value = self.get_from_config_param_station(mproperty)
         else:
             raise ValueError(f'Invalid location: {where}')
         if (
@@ -246,7 +262,8 @@ class MediumProperties():
         if value is None:
             value = self.get_from_taup(mproperty)
             logger.info(
-                f'Using {mproperty} from global model (iasp91)')
+                f'Taking {mproperty} at the {where} '
+                'from global model (iasp91)')
         return float(value)
 
     def to_string(self, mproperty, value):
