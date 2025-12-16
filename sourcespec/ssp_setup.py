@@ -788,11 +788,30 @@ def configure(options, progname, config_overrides=None):
 
     # Parse force_list options into lists of float
     try:
-        for param in [
-                'vp_source', 'vs_source', 'rho_source', 'layer_top_depths']:
+        for param in (
+            'layer_top_depths_tt',
+            'vp_tt',
+            'vs_tt',
+            'layer_top_depths',
+            'vp_source',
+            'vs_source',
+            'rho_source',
+        ):
             config[param] = _float_list(config[param])
     except ValueError as msg:
         sys.exit(f'Error parsing parameter "{param}": {msg}')
+    # Check that the tt velocity models have the same length
+    n_vp_tt = _none_lenght(config.vp_tt)
+    n_vs_tt = _none_lenght(config.vs_tt)
+    n_layer_top_depths_tt = _none_lenght(config.layer_top_depths_tt)
+    try:
+        assert n_vp_tt == n_vs_tt == n_layer_top_depths_tt
+    except AssertionError:
+        sys.exit(
+            'Error: "vp_tt", "vs_tt", and "layer_top_depths_tt" '
+            'must have the same length.'
+        )
+    # Check that the velocity and density models have the same length
     n_vp_source = _none_lenght(config.vp_source)
     n_vs_source = _none_lenght(config.vs_source)
     n_rho_source = _none_lenght(config.rho_source)

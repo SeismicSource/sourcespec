@@ -86,7 +86,7 @@ def _wave_arrival_vel(trace, vel):
     return travel_time, takeoff_angle
 
 
-def _wave_arrival_layer_model(trace, phase, config):
+def _wave_arrival_layer_model(trace, phase, vel):
     """
     Travel time and takeoff angle based on 1D velocity model
 
@@ -94,15 +94,14 @@ def _wave_arrival_layer_model(trace, phase, config):
     :type trace: :class:`obspy.core.trace.Trace`
     :param phase: Phase for which to get arrival
     :type phase: str
-    :param config: Configuration object
-    :type config: object
+    :param vel: Velocity model
+    :type vel: dict with keys 'depths', 'P', 'S'
 
     :return: Travel time and takeoff angle
     :rtype: tuple of float
     """
     try:
-        vmodel = CrustalVelocityModel(
-            config.layer_top_depths, config.vp_source, config.vs_source)
+        vmodel = CrustalVelocityModel(vel['depths'], vel['P'], vel['S'])
         hypo_z = trace.stats.event.hypocenter.depth.value_in_km
         Repi = trace.stats.epi_dist
         sta_z = -trace.stats.coords.elevation
@@ -146,7 +145,11 @@ def _wave_arrival(trace, phase, config):
     """Get travel time and takeoff angle."""
     NLL_time_dir = config.NLL_time_dir
     focmec = config.rp_from_focal_mechanism
-    vel = {'P': config.vp_tt, 'S': config.vs_tt}
+    vel = {
+        'depths': config.layer_top_depths_tt,
+        'P': config.vp_tt,
+        'S': config.vs_tt
+    }
     with contextlib.suppress(RuntimeError):
         travel_time, takeoff_angle =\
             _wave_arrival_nll(trace, phase, NLL_time_dir, focmec)
@@ -154,7 +157,7 @@ def _wave_arrival(trace, phase, config):
         return travel_time, takeoff_angle, method
     with contextlib.suppress(RuntimeError):
         travel_time, takeoff_angle =\
-            _wave_arrival_layer_model(trace, phase, config)
+            _wave_arrival_layer_model(trace, phase, vel)
         method = f'1D {phase.upper()} velocity model'
         return travel_time, takeoff_angle, method
     with contextlib.suppress(RuntimeError):
