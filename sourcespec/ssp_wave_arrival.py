@@ -155,7 +155,7 @@ def _wave_arrival(trace, phase, config):
     with contextlib.suppress(RuntimeError):
         travel_time, takeoff_angle =\
             _wave_arrival_layer_model(trace, phase, config)
-        method = f'1D velocity model ({phase.upper()})'
+        method = f'1D {phase.upper()} velocity model'
         return travel_time, takeoff_angle, method
     with contextlib.suppress(RuntimeError):
         travel_time, takeoff_angle =\
@@ -235,6 +235,9 @@ def add_arrival_to_trace(trace, phase, config):
         return
     # If no cache is available, compute travel_time and takeoff_angle
     travel_time, takeoff_angle, method = _wave_arrival(trace, phase, config)
+    logger.info(
+        f'{trace.id}: {phase} travel time: {travel_time:.2f} s, '
+        f'computed from {method}')
     theo_pick_time = _get_theo_pick_time(trace, travel_time)
     pick_time = _find_picks(trace, phase, theo_pick_time, tolerance)
     if pick_time is not None:
