@@ -102,6 +102,70 @@ class MediumProperties():
         self.depth_in_km = depth_in_km
         self.config = config
 
+    def _get_config_values_for_property(self, mproperty):
+        """
+        Get configuration values for a given property.
+
+        :param mproperty: Property to be retrieved
+            (``'vp'``, ``'vs'``, ``'rho'``, ``'vp_tt'``, ``'vs_tt'``).
+        :type mproperty: str
+        :return: Configuration values.
+        :rtype: list or None
+        :raises ValueError: If mproperty is invalid.
+        """
+        if mproperty in ('vp', 'vs', 'rho'):
+            return self.config[f'{mproperty}_source']
+        elif mproperty in ('vp_tt', 'vs_tt'):
+            return self.config[f'{mproperty}']
+        else:
+            raise ValueError(f'Invalid property: {mproperty}')
+
+    def _get_layer_depths_for_property(self, mproperty):
+        """
+        Get layer depths for a given property.
+
+        :param mproperty: Property to be retrieved
+            (``'vp_tt'``, ``'vs_tt'``, or regular properties).
+        :type mproperty: str
+        :return: Layer depths.
+        :rtype: list or None
+        """
+        if mproperty in ('vp_tt', 'vs_tt'):
+            return self.config.layer_top_depths_tt
+        return self.config.layer_top_depths
+
+    def _select_value_at_depth(self, values, depths):
+        """
+        Select value at source depth from layered model.
+
+        :param values: Array of property values.
+        :type values: list or array
+        :param depths: Array of layer depths.
+        :type depths: list or array
+        :return: Value at source depth.
+        :rtype: float
+        """
+        values = np.array(values)
+        depths = np.array(depths)
+        try:
+            # find the last value that is smaller than the source depth
+            value = values[depths <= self.depth_in_km][-1]
+        except IndexError:
+            value = values[0]
+        return value
+
+    def _log_travel_time_model_usage(self, mproperty):
+        """
+        Log when travel-time model is being used.
+
+        :param mproperty: Travel-time property (``'vp_tt'`` or ``'vs_tt'``).
+        :type mproperty: str
+        """
+        _mproperty = mproperty[:-3]  # Remove '_tt' suffix
+        logger.info(
+            f'Taking {_mproperty} at the source from travel-time model '
+            f'({mproperty})')
+
     def get_from_config_param_source(self, mproperty):
         """
         Get medium property at the source from config parameter.
@@ -112,38 +176,23 @@ class MediumProperties():
         :return: Property value.
         :rtype: float
         """
-        if mproperty in ('vp', 'vs', 'rho'):
-            values = self.config[f'{mproperty}_source']
-        elif mproperty in ('vp_tt', 'vs_tt'):
-            values = self.config[f'{mproperty}']
-        else:
-            raise ValueError(f'Invalid property: {mproperty}')
+        values = self._get_config_values_for_property(mproperty)
         if values is None:
             # try to use travel-time model if vp or vs is requested
             if mproperty in ('vp', 'vs'):
                 _mproperty = f'{mproperty}_tt'
                 return self.get_from_config_param_source(_mproperty)
             return None
+        # Log usage of travel-time model
         if mproperty in ('vp_tt', 'vs_tt'):
-            _mproperty = mproperty[:-3]
-            logger.info(
-                f'Taking {_mproperty} at the source from travel-time model '
-                f'({mproperty})')
-        depths = (
-            self.config.layer_top_depths_tt
-            if mproperty in ('vp_tt', 'vs_tt')
-            else self.config.layer_top_depths
-        )
+            self._log_travel_time_model_usage(mproperty)
+        # Get depths for layered model
+        depths = self._get_layer_depths_for_property(mproperty)
+        # If no layering, return first value
         if depths is None:
             return values[0]
-        values = np.array(values)
-        depths = np.array(depths)
-        try:
-            # find the last value that is smaller than the source depth
-            value = values[depths <= self.depth_in_km][-1]
-        except IndexError:
-            value = values[0]
-        return value
+        # Select value based on depth
+        return self._select_value_at_depth(values, depths)
 
     def get_from_config_param_station(self, mproperty):
         """
