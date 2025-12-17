@@ -96,11 +96,24 @@ class MediumProperties():
     :type config: :class:`~sourcespec.config.Config`
     """
 
+    _logged_messages = set()  # Class variable shared across all instances
+
     def __init__(self, lon, lat, depth_in_km, config):
         self.lon = lon
         self.lat = lat
         self.depth_in_km = depth_in_km
         self.config = config
+
+    def _log_once(self, message):
+        """
+        Log a message only once, even if called multiple times.
+
+        :param message: message to log.
+        :type message: str
+        """
+        if message not in self._logged_messages:
+            logger.info(message)
+            self._logged_messages.add(message)
 
     def _get_config_values_for_property(self, mproperty):
         """
@@ -162,9 +175,10 @@ class MediumProperties():
         :type mproperty: str
         """
         _mproperty = mproperty[:-3]  # Remove '_tt' suffix
-        logger.info(
+        self._log_once(
             f'Taking {_mproperty} at the source from travel-time model '
-            f'({mproperty})')
+            f'({mproperty})'
+        )
 
     def get_from_config_param_source(self, mproperty):
         """
@@ -208,8 +222,9 @@ class MediumProperties():
             raise ValueError(f'Invalid property: {mproperty}')
         value = self.config[f'{mproperty}_stations']
         if value is None:
-            logger.info(
-                f'Taking {mproperty} at the stations from source value')
+            self._log_once(
+                f'Taking {mproperty} at the stations from source value'
+            )
             value = self.get_from_config_param_source(mproperty)
         return value
 
@@ -251,7 +266,7 @@ class MediumProperties():
             vel = (1. / (value**0.5)) / 1e3
         else:
             raise ValueError(f'Unsupported grid type: {grd.type}')
-        logger.info(f'Using {wave} velocity from NLL model')
+        self._log_once(f'Using {wave} velocity from NLL model')
         return vel
 
     def get_from_taup(self, mproperty):
@@ -310,7 +325,7 @@ class MediumProperties():
                 logger.warning(f'Using {wave} velocity from config')
         if value is None:
             value = self.get_from_taup(mproperty)
-            logger.info(
+            self._log_once(
                 f'Taking {mproperty} at the {where} '
                 'from global model (iasp91)')
         return float(value)
