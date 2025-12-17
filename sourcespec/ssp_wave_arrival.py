@@ -146,9 +146,13 @@ def _wave_arrival(trace, phase, config):
     NLL_time_dir = config.NLL_time_dir
     focmec = config.rp_from_focal_mechanism
     vel = {
-        'depths': config.layer_top_depths_tt,
-        'P': config.vp_tt,
-        'S': config.vs_tt
+        'depths': (
+            config.layer_top_depths
+            if config.layer_top_depths is not None
+            else [0,] 
+        ),
+        'P': config.vp,
+        'S': config.vs
     }
     with contextlib.suppress(RuntimeError):
         travel_time, takeoff_angle =\

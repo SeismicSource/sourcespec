@@ -356,11 +356,24 @@ def _update_config_file(config_file, configspec):
         'pi_bsd_min_max': 'pi_ssd_min_max',
         'max_epi_dist': 'epi_dist_ranges',
         'pi_misfit_max': 'pi_quality_of_fit_min',
+        'vp_tt': 'vp',
+        'vs_tt': 'vs',
     }
     for old_opt, new_opt in migrate_options.items():
         if old_opt in config_obj and config_obj[old_opt] != 'None':
+            # special cases
+            if old_opt == 'vp_tt':
+                print(
+                    'WARNING: "vp_tt" has been replaced by "vp". '
+                    'Please check carefully the updated config file.'
+                )
+            elif old_opt == 'vs_tt':
+                print(
+                    'WARNING: "vs_tt" has been replaced by "vs". '
+                    'Please check carefully the updated config file.'
+                )
             # max_epi_dist needs to be converted to a list
-            if old_opt == 'max_epi_dist':
+            elif old_opt == 'max_epi_dist':
                 config_new[new_opt] = [0, config_obj[old_opt]]
             elif old_opt == 'pi_misfit_max':
                 # pi_misfit_max meaning is reversed in pi_quality_of_fit_min
@@ -444,15 +457,15 @@ def _check_deprecated_config_options(config_obj):
             '> "PLOT_SAVE_FORMAT" config parameter has been renamed to '
             '"plot_save_format".\n'
         )
-    if 'vp' in config_obj:
+    if 'vp' in config_obj and 'vp_source' not in config_obj:
         deprecation_msgs.append(
             '> "vp" config parameter has been renamed to "vp_source".\n'
         )
-    if 'vs' in config_obj:
+    if 'vs' in config_obj and 'vs_source' not in config_obj:
         deprecation_msgs.append(
             '> "vs" config parameter has been renamed to "vs_source".\n'
         )
-    if 'rho' in config_obj:
+    if 'rho' in config_obj and 'rho_source' not in config_obj:
         deprecation_msgs.append(
             '> "rho" config parameter has been renamed to "rho_source".\n'
         )
@@ -789,39 +802,44 @@ def configure(options, progname, config_overrides=None):
     # Parse force_list options into lists of float
     try:
         for param in (
-            'layer_top_depths_tt',
-            'vp_tt',
-            'vs_tt',
+            'vp',
+            'vs',
+            'rho',
             'layer_top_depths',
             'vp_source',
             'vs_source',
             'rho_source',
+            'layer_top_depths_source',
         ):
             config[param] = _float_list(config[param])
     except ValueError as msg:
         sys.exit(f'Error parsing parameter "{param}": {msg}')
     # Check that the tt velocity models have the same length
-    n_vp_tt = _none_lenght(config.vp_tt)
-    n_vs_tt = _none_lenght(config.vs_tt)
-    n_layer_top_depths_tt = _none_lenght(config.layer_top_depths_tt)
+    n_vp = _none_lenght(config.vp)
+    n_vs = _none_lenght(config.vs)
+    n_rho = _none_lenght(config.rho)
+    n_layer_top_depths = _none_lenght(config.layer_top_depths)
     try:
-        assert n_vp_tt == n_vs_tt == n_layer_top_depths_tt
+        assert n_vp == n_vs == n_rho == n_layer_top_depths
     except AssertionError:
         sys.exit(
-            'Error: "vp_tt", "vs_tt", and "layer_top_depths_tt" '
+            'Error: "vp", "vs", "rho", and "layer_top_depths" '
             'must have the same length.'
         )
     # Check that the velocity and density models have the same length
     n_vp_source = _none_lenght(config.vp_source)
     n_vs_source = _none_lenght(config.vs_source)
     n_rho_source = _none_lenght(config.rho_source)
-    n_layer_top_depths = _none_lenght(config.layer_top_depths)
+    n_layer_top_depths_source = _none_lenght(config.layer_top_depths_source)
     try:
-        assert n_vp_source == n_vs_source == n_rho_source == n_layer_top_depths
+        assert (
+            n_vp_source == n_vs_source == n_rho_source ==
+            n_layer_top_depths_source
+        )
     except AssertionError:
         sys.exit(
             'Error: "vp_source", "vs_source", "rho_source", and '
-            '"layer_top_depths" must have the same length.'
+            '"layer_top_depths_source" must have the same length.'
         )
 
     # Check the Er_freq_range parameter

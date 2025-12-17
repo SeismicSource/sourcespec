@@ -115,38 +115,6 @@ class MediumProperties():
             logger.info(message)
             self._logged_messages.add(message)
 
-    def _get_config_values_for_property(self, mproperty):
-        """
-        Get configuration values for a given property.
-
-        :param mproperty: Property to be retrieved
-            (``'vp'``, ``'vs'``, ``'rho'``, ``'vp_tt'``, ``'vs_tt'``).
-        :type mproperty: str
-        :return: Configuration values.
-        :rtype: list or None
-        :raises ValueError: If mproperty is invalid.
-        """
-        if mproperty in ('vp', 'vs', 'rho'):
-            return self.config[f'{mproperty}_source']
-        elif mproperty in ('vp_tt', 'vs_tt'):
-            return self.config[f'{mproperty}']
-        else:
-            raise ValueError(f'Invalid property: {mproperty}')
-
-    def _get_layer_depths_for_property(self, mproperty):
-        """
-        Get layer depths for a given property.
-
-        :param mproperty: Property to be retrieved
-            (``'vp_tt'``, ``'vs_tt'``, or regular properties).
-        :type mproperty: str
-        :return: Layer depths.
-        :rtype: list or None
-        """
-        if mproperty in ('vp_tt', 'vs_tt'):
-            return self.config.layer_top_depths_tt
-        return self.config.layer_top_depths
-
     def _select_value_at_depth(self, values, depths):
         """
         Select value at source depth from layered model.
@@ -167,46 +135,68 @@ class MediumProperties():
             value = values[0]
         return value
 
-    def _log_travel_time_model_usage(self, mproperty):
+    def _get_layered_property_value(self, values, depths):
         """
-        Log when travel-time model is being used.
+        Return a property value considering layering and source depth.
 
-        :param mproperty: Travel-time property (``'vp_tt'`` or ``'vs_tt'``).
-        :type mproperty: str
+        :param values: List of property values (may contain a single element).
+        :type values: list or numpy array
+        :param depths: Corresponding layer top depths or None.
+        :type depths: list, numpy array or None
+        :return: Value at the current depth, or None if no values provided.
+        :rtype: float or None
         """
-        _mproperty = mproperty[:-3]  # Remove '_tt' suffix
-        self._log_once(
-            f'Taking {_mproperty} at the source from travel-time model '
-            f'({mproperty})'
-        )
+        if values is None:
+            return None
+        values = np.array(values)
+        if values.size == 0:
+            return None
+        if depths is None:
+            return values[0]
+        return self._select_value_at_depth(values, depths)
+
+    def _get_general_property_value(self, mproperty, where):
+        """
+        Retrieve general earth-model property and log once if used.
+
+        :param mproperty: Property name (vp, vs, rho).
+        :type mproperty: str
+        :param where: Text label for logging (source/stations).
+        :type where: str
+        :return: Property value or None.
+        :rtype: float or None
+        """
+        general_values = getattr(self.config, mproperty)
+        general_depths = getattr(self.config, 'layer_top_depths', None)
+        value = self._get_layered_property_value(
+            general_values, general_depths)
+        if value is not None:
+            self._log_once(
+                f'Taking {mproperty} at the {where} '
+                'from general earth model parameters')
+        return value
 
     def get_from_config_param_source(self, mproperty):
         """
         Get medium property at the source from config parameter.
 
         :param mproperty: Property to be retrieved
-            (``'vp'``, ``'vs'``, ``'rho'``, ``'vp_tt'``, ``'vs_tt'``).
+            (``'vp'``, ``'vs'`` or ``'rho'``).
         :type mproperty: str
         :return: Property value.
         :rtype: float
         """
-        values = self._get_config_values_for_property(mproperty)
-        if values is None:
-            # try to use travel-time model if vp or vs is requested
-            if mproperty in ('vp', 'vs'):
-                _mproperty = f'{mproperty}_tt'
-                return self.get_from_config_param_source(_mproperty)
-            return None
-        # Log usage of travel-time model
-        if mproperty in ('vp_tt', 'vs_tt'):
-            self._log_travel_time_model_usage(mproperty)
-        # Get depths for layered model
-        depths = self._get_layer_depths_for_property(mproperty)
-        # If no layering, return first value
-        if depths is None:
-            return values[0]
-        # Select value based on depth
-        return self._select_value_at_depth(values, depths)
+        if mproperty not in ('vp', 'vs', 'rho'):
+            raise ValueError(f'Invalid property: {mproperty}')
+        # 1) Try source-specific parameters (with optional source-specific
+        #    layering depths).
+        source_values = self.config[f'{mproperty}_source']
+        source_depths = getattr(self.config, 'layer_top_depths_source', None)
+        value = self._get_layered_property_value(source_values, source_depths)
+        if value is not None:
+            return value
+        # 2) Fallback to general parameters (with general layering depths).
+        return self._get_general_property_value(mproperty, 'source')
 
     def get_from_config_param_station(self, mproperty):
         """
@@ -220,13 +210,12 @@ class MediumProperties():
         """
         if mproperty not in ('vp', 'vs', 'rho'):
             raise ValueError(f'Invalid property: {mproperty}')
+        # 1) Try station-specific scalar parameter (no layering at stations).
         value = self.config[f'{mproperty}_stations']
-        if value is None:
-            self._log_once(
-                f'Taking {mproperty} at the stations from source value'
-            )
-            value = self.get_from_config_param_source(mproperty)
-        return value
+        if value is not None:
+            return value
+        # 2) Fallback to general parameters (layered, depth-dependent).
+        return self._get_general_property_value(mproperty, 'stations')
 
     def get_vel_from_NLL(self, wave):
         """
