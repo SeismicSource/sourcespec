@@ -428,6 +428,8 @@ def _spec_inversion(config, spec, spec_weight, station_pars, Q_model=None):
         Mw_0_min = Mw_0_max = Mw_0
 
     initial_values = InitialValues(Mw_0, fc_0, t_star_0)
+    if Q_model is not None:
+        initial_values.invert_t_star = False
     bounds = Bounds(config, spec, initial_values)
     Mw_0_variability =\
         config.Mw_0_variability if config.Mw_0_variability > 0 else 1e-6

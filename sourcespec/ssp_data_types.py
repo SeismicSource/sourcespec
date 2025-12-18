@@ -18,24 +18,30 @@ logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 class InitialValues():
     """Initial values for spectral inversion."""
 
-    def __init__(self, Mw_0=None, fc_0=None, t_star_0=None):
+    def __init__(
+            self, Mw_0=None, fc_0=None, t_star_0=None, invert_t_star=True):
         self.Mw_0 = Mw_0
         self.fc_0 = fc_0
         self.t_star_0 = t_star_0
+        self.invert_t_star = invert_t_star
 
     def __str__(self):
         """String representation."""
-        t_star_0 = (
-            'None' if self.t_star_0 is None else round(self.t_star_0, 4))
-        return (
+        s = (
             f'Mw_0: {round(self.Mw_0, 4)}; '
             f'fc_0: {round(self.fc_0, 4)}; '
-            f't_star_0: {t_star_0}'
         )
+        if self.invert_t_star:
+            t_star_0 = (
+                'None' if self.t_star_0 is None
+                else round(self.t_star_0, 4)
+            )
+            s += f't_star_0: {t_star_0}; '
+        return s
 
     def get_params0(self):
         """Get initial values as a tuple."""
-        if self.t_star_0 is None:
+        if not self.invert_t_star:
             return (self.Mw_0, self.fc_0)
         return (self.Mw_0, self.fc_0, self.t_star_0)
 
@@ -48,6 +54,7 @@ class Bounds():
         self.spec = spec
         self.hd = spec.stats.hypo_dist
         self.ini_values = initial_values
+        self.invert_t_star = initial_values.invert_t_star
         self.Mw_min = self.Mw_max = None
         self._set_fc_min_max(config)
         if config.Qo_min_max is None:
@@ -109,7 +116,7 @@ class Bounds():
     def _fix_initial_values_t_star(self):
         if self.ini_values.t_star_0 is None:
             return
-        if None in self.bounds[2]:
+        if self.t_star_min is None or self.t_star_max is None:
             return
         if self.t_star_min < self.ini_values.t_star_0 < self.t_star_max:
             return
@@ -135,7 +142,7 @@ class Bounds():
     @property
     def bounds(self):
         """Get bounds for minimize() as sequence of (min, max) pairs."""
-        if self.t_star_min is None and self.t_star_max is None:
+        if not self.invert_t_star:
             self._bounds = ((self.Mw_min, self.Mw_max),
                             (self.fc_min, self.fc_max))
         else:
