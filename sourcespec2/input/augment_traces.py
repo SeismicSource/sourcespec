@@ -19,6 +19,7 @@ import logging
 import contextlib
 from obspy.core.util import AttribDict
 from .instrument_type import get_instrument_type
+from ..setup import config
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
@@ -59,9 +60,45 @@ def _add_inventory(trace, inventory):
     trace.stats.inventory = inv
 
 
-def _check_instrtype(trace):
+def _check_instrtype_no_correction(trace):
     """
-    Check if instrument type is consistent with units in inventory.
+    Set units based on configured trace_units when no correction is applied.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    """
+    # sanity check
+    if config.correct_instrumental_response is True:
+        raise RuntimeError(
+            f'{trace.id}: cannot check instrtype without correction: '
+            'correction is enabled')
+    instrtype = trace.stats.instrtype
+    if config.trace_units:
+        config.trace_units = config.trace_units.lower()
+    if config.trace_units == 'vel':
+        if instrtype not in ('shortp', 'broadb'):
+            instrtype = 'broadb'
+    elif config.trace_units in ('acc', 'disp'):
+        instrtype = config.trace_units
+    trace.stats.instrtype = instrtype
+    if instrtype == 'disp':
+        trace.stats.units = 'm'
+    elif instrtype in ('shortp', 'broadb'):
+        trace.stats.units = 'm/s'
+    elif instrtype == 'acc':
+        trace.stats.units = 'm/s**2'
+    else:
+        raise RuntimeError(
+            f'{trace.id}: cannot get units for instrument type '
+            f'{instrtype}.\n'
+            f'> Trace start time: {trace.stats.starttime}\n'
+            '> Skipping trace'
+        )
+
+
+def _check_instrtype_with_correction(trace):
+    """
+    Verify and update instrtype based on inventory response units.
 
     :param trace: ObsPy Trace object
     :type trace: :class:`obspy.core.trace.Trace`
@@ -89,11 +126,11 @@ def _check_instrtype(trace):
             '> Skipping trace'
         ) from e
     trace.stats.units = units
-    if units.lower() == 'm' and trace.stats.instrtype != 'disp':
+    if units.lower() == 'm' and instrtype != 'disp':
         new_instrtype = 'disp'
-    if units.lower() == 'm/s' and instrtype not in ['shortp', 'broadb']:
+    elif units.lower() == 'm/s' and instrtype not in ['shortp', 'broadb']:
         new_instrtype = 'broadb'
-    if units.lower() == 'm/s**2' and instrtype != 'acc':
+    elif units.lower() == 'm/s**2' and instrtype != 'acc':
         new_instrtype = 'acc'
     if new_instrtype is not None:
         logger.warning(
@@ -101,6 +138,19 @@ def _check_instrtype(trace):
             f'instrument type is "{instrtype}". Changing instrument type '
             f'to "{new_instrtype}"')
         trace.stats.instrtype = new_instrtype
+
+
+def _check_instrtype(trace):
+    """
+    Check if instrument type is consistent with units in inventory.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    """
+    if config.correct_instrumental_response is False:
+        _check_instrtype_no_correction(trace)
+    else:
+        _check_instrtype_with_correction(trace)
 
 
 def _add_coords(trace):
