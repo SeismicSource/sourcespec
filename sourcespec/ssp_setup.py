@@ -346,9 +346,6 @@ def _update_config_file(config_file, configspec):
         'PLOT_SHOW': 'plot_show',
         'PLOT_SAVE': 'plot_save',
         'PLOT_SAVE_FORMAT': 'plot_save_format',
-        'vp': 'vp_source',
-        'vs': 'vs_source',
-        'rho': 'rho_source',
         'pre_p_time': 'noise_pre_time',
         'pre_s_time': 'signal_pre_time',
         'rps_from_focal_mechanism': 'rp_from_focal_mechanism',
@@ -356,24 +353,11 @@ def _update_config_file(config_file, configspec):
         'pi_bsd_min_max': 'pi_ssd_min_max',
         'max_epi_dist': 'epi_dist_ranges',
         'pi_misfit_max': 'pi_quality_of_fit_min',
-        'vp_tt': 'vp',
-        'vs_tt': 'vs',
     }
     for old_opt, new_opt in migrate_options.items():
         if old_opt in config_obj and config_obj[old_opt] != 'None':
-            # special cases
-            if old_opt == 'vp_tt':
-                print(
-                    'WARNING: "vp_tt" has been replaced by "vp". '
-                    'Please check carefully the updated config file.'
-                )
-            elif old_opt == 'vs_tt':
-                print(
-                    'WARNING: "vs_tt" has been replaced by "vs". '
-                    'Please check carefully the updated config file.'
-                )
             # max_epi_dist needs to be converted to a list
-            elif old_opt == 'max_epi_dist':
+            if old_opt == 'max_epi_dist':
                 config_new[new_opt] = [0, config_obj[old_opt]]
             elif old_opt == 'pi_misfit_max':
                 # pi_misfit_max meaning is reversed in pi_quality_of_fit_min
@@ -387,6 +371,37 @@ def _update_config_file(config_file, configspec):
                     )
             else:
                 config_new[new_opt] = config_obj[old_opt]
+    # These options need to be migrated only if the _source version
+    # is not already present (versions < v1.6)
+    if 'vp' in config_obj and 'vp_source' not in config_obj:
+        config_new['vp_source'] = config_obj['vp']
+    if 'vs' in config_obj and 'vs_source' not in config_obj:
+        config_new['vs_source'] = config_obj['vs']
+    if 'rho' in config_obj and 'rho_source' not in config_obj:
+        config_new['rho_source'] = config_obj['rho']
+    # Specific pass for earth model options (v1.9)
+    if 'vp_tt' in config_obj:
+        migrate_options = {
+            'vp_tt': 'vp',
+            'vs_tt': 'vs',
+            'layer_top_depths': 'layer_top_depths_source',
+        }
+        for old_opt, new_opt in migrate_options.items():
+            if old_opt in config_obj:
+                if old_opt == 'vp_tt':
+                    print(
+                        'WARNING: "vp_tt" has been replaced by "vp". '
+                        'Please check carefully the updated config file.'
+                    )
+                elif old_opt == 'vs_tt':
+                    print(
+                        'WARNING: "vs_tt" has been replaced by "vs". '
+                        'Please check carefully the updated config file.'
+                    )
+                config_new[new_opt] = config_obj[old_opt]
+                if old_opt == 'layer_top_depths':
+                    config_new['layer_top_depths'] = 'None'
+        config_new['rho'] = 'None'
     shutil.copyfile(config_file, config_file_old)
     with open(config_file, 'wb') as fp:
         config_new.write(fp)
@@ -503,8 +518,8 @@ def _check_deprecated_config_options(config_obj):
         deprecation_msgs.append(
             '> "pi_misfit_max" config parameter has been renamed to '
             '"pi_quality_of_fit_min" and its meaning has been reversed.\n'
-            '   pi_quality_of_fit_min is the minimum acceptable quality of fit '
-            'in percent (0-100).\n'
+            '   pi_quality_of_fit_min is the minimum acceptable quality of '
+            'fit in percent (0-100).\n'
         )
     if deprecation_msgs:
         sys.stderr.write(
