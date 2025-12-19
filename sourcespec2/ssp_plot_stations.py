@@ -57,7 +57,7 @@ with contextlib.suppress(Exception):
         'ignore', category=RuntimeWarning, module='shapely')
 # Make pyproj calculations faster by using the global context for
 # pyproj < 3.7
-if pyproj.__version__ < '3.7':
+if '3.0' <= pyproj.__version__ < '3.7':
     pyproj.set_use_global_context(active=True)
 TILER = {
     'hillshade': EsriHillshade,
@@ -976,16 +976,14 @@ def _savefig(fig, vname):
     :param vname: name of the value.
     :type vname: str
     """
-    evid = config.event.event_id
-    figfile_base = os.path.join(config.options.outdir, evid)
-    figfile_base += f'.map_{vname}.'
-    fmt = config.plot_save_format
-    if fmt == 'pdf_multipage':
-        fmt = 'pdf'
-    figfile = figfile_base + fmt
-    if config.plot_show:
-        plt.show()
     if config.plot_save:
+        evid = config.event.event_id
+        figfile_base = os.path.join(config.options.outdir, evid)
+        figfile_base += f'.map_{vname}.'
+        fmt = config.plot_save_format
+        if fmt == 'pdf_multipage':
+            fmt = 'pdf'
+        figfile = figfile_base + fmt
         savefig(fig, figfile, fmt, quantize_colors=False, bbox_inches='tight')
         if vname == 'mag':
             logger.info(f'Station-magnitude map saved to: {figfile}')
@@ -1028,6 +1026,33 @@ def _make_station_map(
     _add_footer(ax0, ax.attribution_text)
     _adjust_text_labels(station_texts, circle_texts, ax)
     _savefig(ax0.get_figure(), vname)
+
+
+def _duplicate_basemap_data(basemap):
+    """
+    Return a deepcopy of basemap data
+
+    :param basemap: dictionary with the basemap data.
+    :type basemap: dict
+
+    :return: deepcopy of the basemap data.
+    :rtype: dict
+    """
+    try:
+        return deepcopy(basemap)
+    except NotImplementedError:
+        # Workaround for older matplotlib versions
+        # pylint: disable=import-outside-toplevel
+        import io
+        import pickle
+        basemap_copy = {}
+        for key, ax in basemap.items():
+            buf = io.BytesIO()
+            pickle.dump(ax, buf)
+            buf.seek(0)
+            ax2 = pickle.load(buf)
+            basemap_copy[key] = ax2
+        return basemap_copy
 
 
 def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
@@ -1087,16 +1112,17 @@ def plot_stations(sspec_output):
     mag_outliers = np.array([stationpar[k]['Mw'].outlier for k in st_ids])
     summary_mag = summary_values['Mw']
     summary_mag_err = summary_uncertainties['Mw']
-    basemap_data = _make_basemap(maxdist)
-    # make a copy of the basemap data for the second plot, before modifying it
-    basemap_data2 = deepcopy(basemap_data)
+    basemap_data_mw = _make_basemap(maxdist)
+    basemap_data_fc = _duplicate_basemap_data(basemap_data_mw)
     _make_station_map(
-        basemap_data, lonlat_dist, st_ids,
+        basemap_data_mw, lonlat_dist, st_ids,
         mag, mag_outliers, summary_mag, summary_mag_err, 'mag')
     fc = np.array([stationpar[k]['fc'].value for k in st_ids])
     fc_outliers = np.array([stationpar[k]['fc'].outlier for k in st_ids])
     summary_fc = summary_values['fc']
     summary_fc_err = summary_uncertainties['fc']
     _make_station_map(
-        basemap_data2, lonlat_dist, st_ids,
+        basemap_data_fc, lonlat_dist, st_ids,
         fc, fc_outliers, summary_fc, summary_fc_err, 'fc')
+    if config.plot_show:
+        plt.show()
