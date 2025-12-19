@@ -1028,6 +1028,33 @@ def _make_station_map(
     _savefig(ax0.get_figure(), vname)
 
 
+def _duplicate_basemap_data(basemap):
+    """
+    Return a deepcopy of basemap data
+
+    :param basemap: dictionary with the basemap data.
+    :type basemap: dict
+
+    :return: deepcopy of the basemap data.
+    :rtype: dict
+    """
+    try:
+        return deepcopy(basemap)
+    except NotImplementedError:
+        # Workaround for older matplotlib versions
+        # pylint: disable=import-outside-toplevel
+        import io
+        import pickle
+        basemap_copy = {}
+        for key, ax in basemap.items():
+            buf = io.BytesIO()
+            pickle.dump(ax, buf)
+            buf.seek(0)
+            ax2 = pickle.load(buf)
+            basemap_copy[key] = ax2
+        return basemap_copy
+
+
 def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
     """
     Spread overlapping stations horizontally and vertically.
@@ -1085,31 +1112,17 @@ def plot_stations(sspec_output):
     mag_outliers = np.array([stationpar[k]['Mw'].outlier for k in st_ids])
     summary_mag = summary_values['Mw']
     summary_mag_err = summary_uncertainties['Mw']
-    basemap_data = _make_basemap(maxdist)
-    # make a copy of the basemap data for the second plot, before modifying it
-    try:
-        basemap_data2 = deepcopy(basemap_data)
-    except NotImplementedError:
-        # Workaround for older matplotlib versions
-        # pylint: disable=import-outside-toplevel
-        import io
-        import pickle
-        basemap_data2 = {}
-        for key, ax in basemap_data.items():
-            buf = io.BytesIO()
-            pickle.dump(ax, buf)
-            buf.seek(0)
-            ax2 = pickle.load(buf)
-            basemap_data2[key] = ax2
+    basemap_data_mw = _make_basemap(maxdist)
+    basemap_data_fc = _duplicate_basemap_data(basemap_data_mw)
     _make_station_map(
-        basemap_data, lonlat_dist, st_ids,
+        basemap_data_mw, lonlat_dist, st_ids,
         mag, mag_outliers, summary_mag, summary_mag_err, 'mag')
     fc = np.array([stationpar[k]['fc'].value for k in st_ids])
     fc_outliers = np.array([stationpar[k]['fc'].outlier for k in st_ids])
     summary_fc = summary_values['fc']
     summary_fc_err = summary_uncertainties['fc']
     _make_station_map(
-        basemap_data2, lonlat_dist, st_ids,
+        basemap_data_fc, lonlat_dist, st_ids,
         fc, fc_outliers, summary_fc, summary_fc_err, 'fc')
     if config.plot_show:
         plt.show()
