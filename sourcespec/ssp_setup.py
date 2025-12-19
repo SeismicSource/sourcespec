@@ -346,9 +346,6 @@ def _update_config_file(config_file, configspec):
         'PLOT_SHOW': 'plot_show',
         'PLOT_SAVE': 'plot_save',
         'PLOT_SAVE_FORMAT': 'plot_save_format',
-        'vp': 'vp_source',
-        'vs': 'vs_source',
-        'rho': 'rho_source',
         'pre_p_time': 'noise_pre_time',
         'pre_s_time': 'signal_pre_time',
         'rps_from_focal_mechanism': 'rp_from_focal_mechanism',
@@ -374,6 +371,37 @@ def _update_config_file(config_file, configspec):
                     )
             else:
                 config_new[new_opt] = config_obj[old_opt]
+    # These options need to be migrated only if the _source version
+    # is not already present (versions < v1.6)
+    if 'vp' in config_obj and 'vp_source' not in config_obj:
+        config_new['vp_source'] = config_obj['vp']
+    if 'vs' in config_obj and 'vs_source' not in config_obj:
+        config_new['vs_source'] = config_obj['vs']
+    if 'rho' in config_obj and 'rho_source' not in config_obj:
+        config_new['rho_source'] = config_obj['rho']
+    # Specific pass for earth model options (v1.9)
+    if 'vp_tt' in config_obj:
+        migrate_options = {
+            'vp_tt': 'vp',
+            'vs_tt': 'vs',
+            'layer_top_depths': 'layer_top_depths_source',
+        }
+        for old_opt, new_opt in migrate_options.items():
+            if old_opt in config_obj:
+                if old_opt == 'vp_tt':
+                    print(
+                        'WARNING: "vp_tt" has been replaced by "vp". '
+                        'Please check carefully the updated config file.'
+                    )
+                elif old_opt == 'vs_tt':
+                    print(
+                        'WARNING: "vs_tt" has been replaced by "vs". '
+                        'Please check carefully the updated config file.'
+                    )
+                config_new[new_opt] = config_obj[old_opt]
+                if old_opt == 'layer_top_depths':
+                    config_new['layer_top_depths'] = 'None'
+        config_new['rho'] = 'None'
     shutil.copyfile(config_file, config_file_old)
     with open(config_file, 'wb') as fp:
         config_new.write(fp)
@@ -444,15 +472,15 @@ def _check_deprecated_config_options(config_obj):
             '> "PLOT_SAVE_FORMAT" config parameter has been renamed to '
             '"plot_save_format".\n'
         )
-    if 'vp' in config_obj:
+    if 'vp' in config_obj and 'vp_source' not in config_obj:
         deprecation_msgs.append(
             '> "vp" config parameter has been renamed to "vp_source".\n'
         )
-    if 'vs' in config_obj:
+    if 'vs' in config_obj and 'vs_source' not in config_obj:
         deprecation_msgs.append(
             '> "vs" config parameter has been renamed to "vs_source".\n'
         )
-    if 'rho' in config_obj:
+    if 'rho' in config_obj and 'rho_source' not in config_obj:
         deprecation_msgs.append(
             '> "rho" config parameter has been renamed to "rho_source".\n'
         )
@@ -490,8 +518,8 @@ def _check_deprecated_config_options(config_obj):
         deprecation_msgs.append(
             '> "pi_misfit_max" config parameter has been renamed to '
             '"pi_quality_of_fit_min" and its meaning has been reversed.\n'
-            '   pi_quality_of_fit_min is the minimum acceptable quality of fit '
-            'in percent (0-100).\n'
+            '   pi_quality_of_fit_min is the minimum acceptable quality of '
+            'fit in percent (0-100).\n'
         )
     if deprecation_msgs:
         sys.stderr.write(
@@ -788,21 +816,45 @@ def configure(options, progname, config_overrides=None):
 
     # Parse force_list options into lists of float
     try:
-        for param in [
-                'vp_source', 'vs_source', 'rho_source', 'layer_top_depths']:
+        for param in (
+            'vp',
+            'vs',
+            'rho',
+            'layer_top_depths',
+            'vp_source',
+            'vs_source',
+            'rho_source',
+            'layer_top_depths_source',
+        ):
             config[param] = _float_list(config[param])
     except ValueError as msg:
         sys.exit(f'Error parsing parameter "{param}": {msg}')
+    # Check that the tt velocity models have the same length
+    n_vp = _none_lenght(config.vp)
+    n_vs = _none_lenght(config.vs)
+    n_rho = _none_lenght(config.rho)
+    n_layer_top_depths = _none_lenght(config.layer_top_depths)
+    try:
+        assert n_vp == n_vs == n_rho == n_layer_top_depths
+    except AssertionError:
+        sys.exit(
+            'Error: "vp", "vs", "rho", and "layer_top_depths" '
+            'must have the same length.'
+        )
+    # Check that the velocity and density models have the same length
     n_vp_source = _none_lenght(config.vp_source)
     n_vs_source = _none_lenght(config.vs_source)
     n_rho_source = _none_lenght(config.rho_source)
-    n_layer_top_depths = _none_lenght(config.layer_top_depths)
+    n_layer_top_depths_source = _none_lenght(config.layer_top_depths_source)
     try:
-        assert n_vp_source == n_vs_source == n_rho_source == n_layer_top_depths
+        assert (
+            n_vp_source == n_vs_source == n_rho_source ==
+            n_layer_top_depths_source
+        )
     except AssertionError:
         sys.exit(
             'Error: "vp_source", "vs_source", "rho_source", and '
-            '"layer_top_depths" must have the same length.'
+            '"layer_top_depths_source" must have the same length.'
         )
 
     # Check the Er_freq_range parameter

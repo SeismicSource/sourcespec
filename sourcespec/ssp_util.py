@@ -96,11 +96,85 @@ class MediumProperties():
     :type config: :class:`~sourcespec.config.Config`
     """
 
+    _logged_messages = set()  # Class variable shared across all instances
+
     def __init__(self, lon, lat, depth_in_km, config):
         self.lon = lon
         self.lat = lat
         self.depth_in_km = depth_in_km
         self.config = config
+
+    def _log_once(self, message):
+        """
+        Log a message only once, even if called multiple times.
+
+        :param message: message to log.
+        :type message: str
+        """
+        if message not in self._logged_messages:
+            logger.info(message)
+            self._logged_messages.add(message)
+
+    def _select_value_at_depth(self, values, depths):
+        """
+        Select value at source depth from layered model.
+
+        :param values: Array of property values.
+        :type values: list or array
+        :param depths: Array of layer depths.
+        :type depths: list or array
+        :return: Value at source depth.
+        :rtype: float
+        """
+        values = np.array(values)
+        depths = np.array(depths)
+        try:
+            # find the last value that is smaller than the source depth
+            value = values[depths <= self.depth_in_km][-1]
+        except IndexError:
+            value = values[0]
+        return value
+
+    def _get_layered_property_value(self, values, depths):
+        """
+        Return a property value considering layering and source depth.
+
+        :param values: List of property values (may contain a single element).
+        :type values: list or numpy array
+        :param depths: Corresponding layer top depths or None.
+        :type depths: list, numpy array or None
+        :return: Value at the current depth, or None if no values provided.
+        :rtype: float or None
+        """
+        if values is None:
+            return None
+        values = np.array(values)
+        if values.size == 0:
+            return None
+        if depths is None:
+            return values[0]
+        return self._select_value_at_depth(values, depths)
+
+    def _get_general_property_value(self, mproperty, where):
+        """
+        Retrieve general earth-model property and log once if used.
+
+        :param mproperty: Property name (vp, vs, rho).
+        :type mproperty: str
+        :param where: Text label for logging (source/stations).
+        :type where: str
+        :return: Property value or None.
+        :rtype: float or None
+        """
+        general_values = getattr(self.config, mproperty)
+        general_depths = getattr(self.config, 'layer_top_depths', None)
+        value = self._get_layered_property_value(
+            general_values, general_depths)
+        if value is not None:
+            self._log_once(
+                f'Taking {mproperty} at the {where} '
+                'from general earth model parameters')
+        return value
 
     def get_from_config_param_source(self, mproperty):
         """
@@ -112,21 +186,17 @@ class MediumProperties():
         :return: Property value.
         :rtype: float
         """
-        if mproperty not in ['vp', 'vs', 'rho']:
+        if mproperty not in ('vp', 'vs', 'rho'):
             raise ValueError(f'Invalid property: {mproperty}')
-        values = self.config[f'{mproperty}_source']
-        if values is None:
-            return None
-        if self.config.layer_top_depths is None:
-            return values[0]
-        values = np.array(values)
-        depths = np.array(self.config.layer_top_depths)
-        try:
-            # find the last value that is smaller than the source depth
-            value = values[depths <= self.depth_in_km][-1]
-        except IndexError:
-            value = values[0]
-        return value
+        # 1) Try source-specific parameters (with optional source-specific
+        #    layering depths).
+        source_values = self.config[f'{mproperty}_source']
+        source_depths = getattr(self.config, 'layer_top_depths_source', None)
+        value = self._get_layered_property_value(source_values, source_depths)
+        if value is not None:
+            return value
+        # 2) Fallback to general parameters (with general layering depths).
+        return self._get_general_property_value(mproperty, 'source')
 
     def get_from_config_param_station(self, mproperty):
         """
@@ -138,13 +208,14 @@ class MediumProperties():
         :return: Property value.
         :rtype: float
         """
-        if mproperty not in ['vp', 'vs', 'rho']:
+        if mproperty not in ('vp', 'vs', 'rho'):
             raise ValueError(f'Invalid property: {mproperty}')
+        # 1) Try station-specific scalar parameter (no layering at stations).
         value = self.config[f'{mproperty}_stations']
-        if value is None:
-            value = self.get_from_config_param_source(
-                mproperty)
-        return value
+        if value is not None:
+            return value
+        # 2) Fallback to general parameters (layered, depth-dependent).
+        return self._get_general_property_value(mproperty, 'stations')
 
     def get_vel_from_NLL(self, wave):
         """
@@ -184,7 +255,7 @@ class MediumProperties():
             vel = (1. / (value**0.5)) / 1e3
         else:
             raise ValueError(f'Unsupported grid type: {grd.type}')
-        logger.info(f'Using {wave} velocity from NLL model')
+        self._log_once(f'Using {wave} velocity from NLL model')
         return vel
 
     def get_from_taup(self, mproperty):
@@ -226,11 +297,9 @@ class MediumProperties():
         if mproperty not in ['vp', 'vs', 'rho']:
             raise ValueError(f'Invalid property: {mproperty}')
         if where == 'source':
-            value = self.get_from_config_param_source(
-                mproperty)
+            value = self.get_from_config_param_source(mproperty)
         elif where == 'stations':
-            value = self.get_from_config_param_station(
-                mproperty)
+            value = self.get_from_config_param_station(mproperty)
         else:
             raise ValueError(f'Invalid location: {where}')
         if (
@@ -245,8 +314,9 @@ class MediumProperties():
                 logger.warning(f'Using {wave} velocity from config')
         if value is None:
             value = self.get_from_taup(mproperty)
-            logger.info(
-                f'Using {mproperty} from global model (iasp91)')
+            self._log_once(
+                f'Taking {mproperty} at the {where} '
+                'from global model (iasp91)')
         return float(value)
 
     def to_string(self, mproperty, value):

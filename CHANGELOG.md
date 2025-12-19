@@ -73,6 +73,8 @@ previous versions. You will need to upgrade your old database manually or using
 - Possibility of defining a prior attenuation model, either as a constant Q
   value or as a frequency-dependent Q model from a text file (see [#76]). In
   this case, t* is not inverted but derived from the attenuation model.
+- Possibility of computing travel times and takeoff angles from a 1D layered
+  velocity model (see [#79])
 
 ### Post-Inversion
 
@@ -108,6 +110,14 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Config file
 
+- Consolidated seismic wave velocity and rock density parameters under the
+  "EARTH MODEL PARAMETERS" section of the config file
+- `vp_tt` and `vs_tt` renamed to `vp` and `vs`; they can be lists to define a
+  layered model for travel-time and takeoff-angle computations. This is used
+  together with the new `rho` and `layer_top_depths` parameters.
+  These parameters are also used to convert station displacements into seismic
+  moment, unless overridden by `vp_source`/`vp_stations`,
+  `vs_source`/`vs_stations` or `rho_source`/`rho_stations`
 - New config parameter: `force_noise_zero_padding`
 - New config parameter: `win_length_min`
 - Improved documentation for the `win_length` parameter
@@ -899,3 +909,4 @@ Initial Python port.
 [#68]: https://github.com/SeismicSource/sourcespec/issues/68
 [#69]: https://github.com/SeismicSource/sourcespec/issues/69
 [#76]: https://github.com/SeismicSource/sourcespec/issues/76
+[#79]: https://github.com/SeismicSource/sourcespec/issues/79
