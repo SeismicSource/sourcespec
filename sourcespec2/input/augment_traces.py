@@ -60,6 +60,86 @@ def _add_inventory(trace, inventory):
     trace.stats.inventory = inv
 
 
+def _check_instrtype_no_correction(trace):
+    """
+    Set units based on configured trace_units when no correction is applied.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    """
+    # sanity check
+    if config.correct_instrumental_response is True:
+        raise RuntimeError(
+            f'{trace.id}: cannot check instrtype without correction: '
+            'correction is enabled')
+    instrtype = trace.stats.instrtype
+    if config.trace_units:
+        config.trace_units = config.trace_units.lower()
+    if config.trace_units == 'vel':
+        if instrtype not in ('shortp', 'broadb'):
+            instrtype = 'broadb'
+    elif config.trace_units in ('acc', 'disp'):
+        instrtype = config.trace_units
+    trace.stats.instrtype = instrtype
+    if instrtype == 'disp':
+        trace.stats.units = 'm'
+    elif instrtype in ('shortp', 'broadb'):
+        trace.stats.units = 'm/s'
+    elif instrtype == 'acc':
+        trace.stats.units = 'm/s**2'
+    else:
+        raise RuntimeError(
+            f'{trace.id}: cannot get units for instrument type '
+            f'{instrtype}.\n'
+            f'> Trace start time: {trace.stats.starttime}\n'
+            '> Skipping trace'
+        )
+
+
+def _check_instrtype_with_correction(trace):
+    """
+    Verify and update instrtype based on inventory response units.
+
+    :param trace: ObsPy Trace object
+    :type trace: :class:`obspy.core.trace.Trace`
+    """
+    inv = trace.stats.inventory
+    if not inv:
+        raise RuntimeError(
+            f'{trace.id}: cannot get instrtype from inventory: '
+            'inventory is empty: skipping trace')
+    instrtype = trace.stats.instrtype
+    new_instrtype = None
+    try:
+        units = inv.get_response(trace.id, trace.stats.starttime).\
+            instrument_sensitivity.input_units
+    except Exception as e:
+        # inventory attached to trace has only one channel
+        chan = inv[0][0][0]
+        start_date = chan.start_date
+        end_date = chan.end_date
+        raise RuntimeError(
+            f'{trace.id}: cannot get units from inventory.\n'
+            f'> {e.__class__.__name__}: {e}\n'
+            f'> Channel start/end date: {start_date} {end_date}\n'
+            f'> Trace start time: {trace.stats.starttime}\n'
+            '> Skipping trace'
+        ) from e
+    trace.stats.units = units
+    if units.lower() == 'm' and instrtype != 'disp':
+        new_instrtype = 'disp'
+    elif units.lower() == 'm/s' and instrtype not in ['shortp', 'broadb']:
+        new_instrtype = 'broadb'
+    elif units.lower() == 'm/s**2' and instrtype != 'acc':
+        new_instrtype = 'acc'
+    if new_instrtype is not None:
+        logger.warning(
+            f'{trace.id}: instrument response units are "{units}" but '
+            f'instrument type is "{instrtype}". Changing instrument type '
+            f'to "{new_instrtype}"')
+        trace.stats.instrtype = new_instrtype
+
+
 def _check_instrtype(trace):
     """
     Check if instrument type is consistent with units in inventory.
@@ -67,68 +147,10 @@ def _check_instrtype(trace):
     :param trace: ObsPy Trace object
     :type trace: :class:`obspy.core.trace.Trace`
     """
-    # If traces are already corrected, instrument response may not be present
-    # In this case, we just write the correct units to the trace headers
-    instrtype = trace.stats.instrtype
     if config.correct_instrumental_response is False:
-        # Override instrtype from config.trace_units, which may be
-        # different from native instrtype inferred from channel code
-        if config.trace_units:
-            config.trace_units = config.trace_units.lower()
-        if config.trace_units == 'vel':
-            if instrtype not in ('shortp', 'broadb'):
-                instrtype = 'broadb'
-        elif config.trace_units in ('acc', 'disp'):
-            instrtype = config.trace_units
-        trace.stats.instrtype = instrtype
-        if instrtype == 'disp':
-            trace.stats.units = 'm'
-        elif instrtype in ('shortp', 'broadb'):
-            trace.stats.units = 'm/s'
-        elif instrtype == 'acc':
-            trace.stats.units = 'm/s**2'
-        else:
-            raise RuntimeError(
-                f'{trace.id}: cannot get units for instrument type '
-                f'{instrtype}.\n'
-                f'> Trace start time: {trace.stats.starttime}\n'
-                '> Skipping trace'
-            )
+        _check_instrtype_no_correction(trace)
     else:
-        inv = trace.stats.inventory
-        if not inv:
-            raise RuntimeError(
-                f'{trace.id}: cannot get instrtype from inventory: '
-                'inventory is empty: skipping trace')
-        new_instrtype = None
-        try:
-            units = inv.get_response(trace.id, trace.stats.starttime).\
-                instrument_sensitivity.input_units
-        except Exception as e:
-            # inventory attached to trace has only one channel
-            chan = inv[0][0][0]
-            start_date = chan.start_date
-            end_date = chan.end_date
-            raise RuntimeError(
-                f'{trace.id}: cannot get units from inventory.\n'
-                f'> {e.__class__.__name__}: {e}\n'
-                f'> Channel start/end date: {start_date} {end_date}\n'
-                f'> Trace start time: {trace.stats.starttime}\n'
-                '> Skipping trace'
-            ) from e
-        trace.stats.units = units
-        if units.lower() == 'm' and trace.stats.instrtype != 'disp':
-            new_instrtype = 'disp'
-        if units.lower() == 'm/s' and instrtype not in ['shortp', 'broadb']:
-            new_instrtype = 'broadb'
-        if units.lower() == 'm/s**2' and instrtype != 'acc':
-            new_instrtype = 'acc'
-        if new_instrtype is not None:
-            logger.warning(
-                f'{trace.id}: instrument response units are "{units}" but '
-                f'instrument type is "{instrtype}". Changing instrument type '
-                f'to "{new_instrtype}"')
-            trace.stats.instrtype = new_instrtype
+        _check_instrtype_with_correction(trace)
 
 
 def _add_coords(trace):
