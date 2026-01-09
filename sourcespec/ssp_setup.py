@@ -674,7 +674,7 @@ def _float_list(input_list, max_length=None, accepted_values=None):
     :return: A list of floats or None
     :rtype: list
     """
-    if input_list is None:
+    if input_list is None or input_list == ['None', ] or input_list == [None]:
         return None
     if accepted_values is None:
         accepted_values = []
