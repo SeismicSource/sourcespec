@@ -223,23 +223,27 @@ def _glob_to_regex(pattern):
     return pattern
 
 
-def _should_keep_trace(traceid):
+def _should_keep_trace(trace):
     """
     Check if trace should be kept.
 
-    :param traceid: Trace ID.
-    :type traceid: str
+    :param trace: Trace object.
+    :type trace: :class:`obspy.core.trace.Trace`
 
-    :raises: RuntimeError if traceid is to be skipped.
+    :raises: RuntimeError if trace is to be skipped.
     """
+    traceid = trace.id
     network, station, location, channel = traceid.split('.')
     orientation_codes = config.vertical_channel_codes +\
         config.horizontal_channel_codes_1 +\
         config.horizontal_channel_codes_2
     orientation = channel[-1]
     if orientation not in orientation_codes:
+        trace.stats.ignore = True
+        trace.stats.ignore_reason = 'unknown channel orientation'
         raise RuntimeError(
-            f'{traceid}: Unknown channel orientation: "{orientation}"'
+            f'{traceid}: Unknown channel orientation: "{orientation}": '
+            'skipping trace'
         )
     network, station, location, channel = traceid.split('.')
 
@@ -260,18 +264,28 @@ def _should_keep_trace(traceid):
         config.use_traceids is not None and
         not _matches(config.use_traceids, ss)
     ):
-        raise RuntimeError(f'{traceid}: not selected from config file')
+        trace.stats.ignore = True
+        trace.stats.ignore_reason = 'not selected from config'
+        raise RuntimeError(
+            f'{traceid}: not selected from config file: skipping trace'
+        )
 
     if (
         config.ignore_traceids is not None and
         _matches(config.ignore_traceids, ss)
     ):
-        raise RuntimeError(f'{traceid}: ignored from config file')
+        trace.stats.ignore = True
+        trace.stats.ignore_reason = 'ignored from config'
+        raise RuntimeError(
+            f'{traceid}: ignored from config file: skipping trace'
+        )
 
 
-def _select_requested_components(stream):
+def _flag_ignored_traces(stream):
     """
-    Select requested components from stream
+    Flag traces to be ignored based on config settings.
+
+    Traces to be ignored have `trace.stats.ignore = True`.
 
     :param stream: ObsPy Stream object
     :type stream: :class:`obspy.core.stream.Stream`
@@ -279,21 +293,19 @@ def _select_requested_components(stream):
     :return: ObsPy Stream object
     :rtype: :class:`obspy.core.stream.Stream`
     """
-    traces_to_keep = []
     for trace in stream:
         try:
-            _should_keep_trace(trace.id)
+            _should_keep_trace(trace)
         except RuntimeError as e:
             logger.warning(str(e))
-            continue
-        traces_to_keep.append(trace)
-    # in-place update of st
-    stream.traces[:] = traces_to_keep[:]
 
 
 def read_traces():
     """
     Read traces from the files or paths specified in the configuration.
+
+    Traces ignored based on configuration settings are flagged bu setting
+    `trace.stats.ignore = True`.
 
     :return: Traces
     :rtype: :class:`obspy.core.stream.Stream`
@@ -302,7 +314,7 @@ def read_traces():
     stream = _read_asdf_traces() + _read_trace_files()
     _correct_traceids(stream)
     _update_non_standard_trace_ids(stream)
-    _select_requested_components(stream)
+    _flag_ignored_traces(stream)
     ntraces = len(stream)
     logger.info(f'Reading traces: {ntraces} traces loaded')
     logger.info('---------------------------------------------------')
