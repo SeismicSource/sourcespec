@@ -270,7 +270,10 @@ def _augment_trace(trace, inventory, ssp_event, picks):
     _add_coords(trace)
     _add_event(trace, ssp_event)
     _add_picks(trace, picks)
-    trace.stats.ignore = False
+    # Ensure trace has ignore flag set, defaulting to False if not
+    # already present (some traces may be marked for ignoring during
+    # earlier processing steps)
+    trace.stats.ignore = getattr(trace.stats, 'ignore', False)
 
 
 def augment_traces(stream, inventory, ssp_event, picks):

@@ -599,7 +599,10 @@ def process_traces(st):
                 _define_signal_and_noise_windows(_trace)
             _check_signal_window(st_sel)
             trace = _merge_stream(st_sel)
-            trace.stats.ignore = False
+            # Ensure trace has ignore flag set, defaulting to False if not
+            # already present (some traces may be marked for ignoring during
+            # earlier processing steps)
+            trace.stats.ignore = getattr(trace.stats, 'ignore', False)
             trace_process = _process_trace(trace)
             out_st.append(trace_process)
         except (ValueError, RuntimeError) as msg:
