@@ -281,7 +281,7 @@ def _should_keep_trace(trace):
         )
 
 
-def _flag_ignored_traces(stream):
+def _flag_ignored_traces(stream, filter_ignored=False):
     """
     Flag traces to be ignored based on config settings.
 
@@ -289,23 +289,36 @@ def _flag_ignored_traces(stream):
 
     :param stream: ObsPy Stream object
     :type stream: :class:`obspy.core.stream.Stream`
+    :param filter_ignored: If True, remove ignored traces from the stream.
+    :type filter_ignored: bool
 
     :return: ObsPy Stream object
     :rtype: :class:`obspy.core.stream.Stream`
     """
+    if filter_ignored:
+        out_stream = Stream()
     for trace in stream:
         try:
             _should_keep_trace(trace)
         except RuntimeError as e:
             logger.warning(str(e))
+            continue
+        if filter_ignored:
+            out_stream.append(trace)
+    return out_stream if filter_ignored else stream
 
 
-def read_traces():
+def read_traces(filter_ignored=False):
     """
     Read traces from the files or paths specified in the configuration.
 
-    Traces ignored based on configuration settings are flagged bu setting
-    `trace.stats.ignore = True`.
+    Traces ignored based on configuration settings are flagged by setting
+    ``trace.stats.ignore = True``, or removed from the stream if
+    ``filter_ignored`` is ``True``.
+
+    :param filter_ignored: If True, remove ignored traces from the stream.
+        If False, ignored traces are flagged only.
+    :type filter_ignored: bool
 
     :return: Traces
     :rtype: :class:`obspy.core.stream.Stream`
@@ -314,7 +327,7 @@ def read_traces():
     stream = _read_asdf_traces() + _read_trace_files()
     _correct_traceids(stream)
     _update_non_standard_trace_ids(stream)
-    _flag_ignored_traces(stream)
+    _flag_ignored_traces(stream, filter_ignored=filter_ignored)
     ntraces = len(stream)
     logger.info(f'Reading traces: {ntraces} traces loaded')
     logger.info('---------------------------------------------------')
