@@ -4,7 +4,7 @@
 Config class for sourcespec.
 
 :copyright:
-    2013-2025 Claudio Satriano <satriano@ipgp.fr>
+    2013-2026 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)

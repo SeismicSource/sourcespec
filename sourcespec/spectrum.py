@@ -8,7 +8,7 @@ Provides the high-level function read_spectra() to read
 SpectrumStream objects from HDF5 or TEXT files.
 
 :copyright:
-    2012-2025 Claudio Satriano <satriano@ipgp.fr>
+    2012-2026 Claudio Satriano <satriano@ipgp.fr>
               Kris Vanneste <kris.vanneste@oma.be>
 :license:
     CeCILL Free Software License Agreement v2.1

@@ -5,7 +5,7 @@ Read event metadata in QuakeML, SourceSpec Event File, HYPO71 or
 HYPOINVERSE format.
 
 :copyright:
-    2012-2025 Claudio Satriano <satriano@ipgp.fr>
+    2012-2026 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)

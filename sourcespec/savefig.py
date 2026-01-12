@@ -4,7 +4,7 @@
 Save Matplotlib figure. Optimize PNG format using PIL.
 
 :copyright:
-    2022-2025 Claudio Satriano <satriano@ipgp.fr>
+    2022-2026 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)

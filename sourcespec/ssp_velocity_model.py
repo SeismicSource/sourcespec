@@ -6,7 +6,7 @@ TRVDRV subroutine of hypo71 to calculate travel times and takeoff
 and incidence angles for P and S waves using a 1D velocity model.
 
 :copyright:
-    2020-2025 Kris Vanneste <kris.vanneste@oma.be>
+    2020-2026 Kris Vanneste <kris.vanneste@oma.be>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)

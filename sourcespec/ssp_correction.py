@@ -7,7 +7,7 @@ Spectral station correction calculated from ssp_residuals.
     2013-2014 Claudio Satriano <satriano@ipgp.fr>,
               Agnes Chounet <chounet@ipgp.fr>
 
-    2015-2025 Claudio Satriano <satriano@ipgp.fr>
+    2015-2026 Claudio Satriano <satriano@ipgp.fr>
               Kris Vanneste <kris.vanneste@oma.be>
 :license:
     CeCILL Free Software License Agreement v2.1

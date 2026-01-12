@@ -6,7 +6,7 @@ plot_sourcepars.py
 1D or 2D plot of source parameters from a sqlite parameter file.
 
 :copyright:
-    2023-2025 Claudio Satriano <satriano@ipgp.fr>
+    2023-2026 Claudio Satriano <satriano@ipgp.fr>
 :license:
     CeCILL Free Software License Agreement v2.1
     (http://www.cecill.info/licences.en.html)
