@@ -6,6 +6,8 @@ Copyright (c) 2011-2026 Claudio Satriano <satriano@ipgp.fr>
 
 ## unreleased
 
+Important: this release requires at least Python 3.9.
+
 Note: several new config file parameters have been added and others have been
 replaced: please run `source_spec -U CONFIG_FILE_NAME` to update your old
 config file.
@@ -171,6 +173,12 @@ previous versions. You will need to upgrade your old database manually or using
 - Fix for config parameter `noise_pre_time` not being able to be set to `None`
 - Fix a bug causing severe slowdown when saving many plots to disk
 - Fix for geophone instrument codes (`P`) not being recognized
+
+### Requirements
+
+- Python minimum version raised to 3.9
+- ObsPy minimum version raised to 1.5
+- Support added for Python 3.13 and 3.14
 
 ## v1.8 - 2024-04-07
 
