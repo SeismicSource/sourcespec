@@ -97,8 +97,8 @@ class _LibraryVersions():
     accessible from the outside.
     """
     def __init__(self):
-        self.MAX_NUMPY_VERSION = (2, 0, 0)
-        self.MAX_MATPLOTLIB_VERSION = (3, 10, 0)
+        self.MAX_NUMPY_VERSION = (2, 5, 0)
+        self.MAX_MATPLOTLIB_VERSION = (3, 11, 0)
         self.MIN_OBSPY_VERSION = (1, 2, 0)
         self.MIN_CARTOPY_VERSION = (0, 21, 0)
         self.MIN_NLLGRID_VERSION = (1, 4, 2)
