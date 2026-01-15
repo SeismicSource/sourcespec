@@ -23,6 +23,7 @@ import tarfile
 import zipfile
 import tempfile
 import contextlib
+import warnings
 from obspy import read
 from obspy.core import Stream
 from obspy.core.util import AttribDict
@@ -41,6 +42,13 @@ from sourcespec.ssp_read_sac_header import (
     get_event_from_SAC,
     get_picks_from_SAC)
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
+# Silence specific ObsPy SAC sample spacing warning (see obspy#3408)
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*Sample spacing read from SAC file',
+    category=UserWarning,
+    module=r'obspy\.io\.sac\.util'
+)
 
 
 # TRACE MANIPULATION ----------------------------------------------------------
