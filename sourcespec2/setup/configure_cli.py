@@ -32,10 +32,19 @@ from ..ssp_update_db import update_db_file
 if sys.stdout.isatty() and sys.platform != 'win32':
     try:
         from IPython.terminal.embed import InteractiveShellEmbed
-        from traitlets.config import MultipleInstanceError
-        IPSHELL = InteractiveShellEmbed.instance()
-    except (ImportError, MultipleInstanceError):
+    except ImportError:
         IPSHELL = None
+    else:
+        try:
+            from traitlets.config import MultipleInstanceError
+        except ImportError:
+            class MultipleInstanceError(Exception):
+                """Dummy exception class."""
+                pass
+        try:
+            IPSHELL = InteractiveShellEmbed.instance()
+        except MultipleInstanceError:
+            IPSHELL = None
 else:
     IPSHELL = None
 
