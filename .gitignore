@@ -5,6 +5,7 @@
 #Directories
 profiling
 sspec_out
+testrun_artifacts
 
 *.sqlite
 

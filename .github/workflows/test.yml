@@ -1,0 +1,47 @@
+name: sourcespec_testruns
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10"]
+
+    steps:
+    - name: Checkout sourcespec
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # full history to ensure tags are available for version resolution
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install sourcespec
+      run: |
+        python -m pip install --upgrade pip
+        pip install . cartopy nllgrid
+
+    - name: Clone sourcespec_testruns
+      run: |
+        git clone https://github.com/SeismicSource/sourcespec_testruns.git
+
+    - name: Do test runs
+      run: |
+        bash scripts/do_testruns.sh
+
+    - name: Collect test artifacts
+      run: |
+        bash scripts/collect_testrun_artifacts.sh sourcespec_testruns artifacts
+
+    - name: Upload test artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: testruns-${{ matrix.os }}-py${{ matrix.python-version }}
+        path: artifacts
+        if-no-files-found: ignore
