@@ -469,7 +469,7 @@ def _get_ax_projection(maxdiagonal, max_map_diagonal=100, tiler=None):
     return ccrs.Mercator()
 
 
-def _make_geoaxes_planar(config, fig, buonding_box, maxdiagonal):
+def _make_geoaxes_planar(config, fig, bounding_box, maxdiagonal):
     """
     Create a GeoAxes with a planar projection and optionally add map tiles.
 
@@ -496,7 +496,7 @@ def _make_geoaxes_planar(config, fig, buonding_box, maxdiagonal):
         )
         ax_projection = _get_ax_projection(maxdiagonal, tiler=tiler)
     ax = fig.add_subplot(111, projection=ax_projection)
-    ax.set_extent(buonding_box, crs=ccrs.PlateCarree())
+    ax.set_extent(bounding_box, crs=ccrs.PlateCarree())
     ax.global_projection = False
     ax.maxdiagonal = maxdiagonal
     if map_style == 'geotiff':
