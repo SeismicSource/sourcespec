@@ -515,7 +515,10 @@ def _make_geoaxes_planar(config, fig, bounding_box, maxdiagonal):
         ax.attribution_text = 'Map powered by Esri and Natural Earth'
     elif map_style == 'stamen_terrain':
         ax.attribution_text = 'Map powered by Stamen Design and Natural Earth'
-    ax.gridlines(draw_labels=True, color='#777777', linestyle='--')
+    # ax.gridlines() only wants ccrs.PlateCarree()
+    ax.gridlines(
+        crs=ccrs.PlateCarree(),
+        draw_labels=True, color='#777777', linestyle='--')
     return ax
 
 
