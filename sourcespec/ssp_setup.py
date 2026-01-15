@@ -60,6 +60,7 @@ OBSPY_VERSION_STR = None
 NUMPY_VERSION_STR = None
 SCIPY_VERSION_STR = None
 MATPLOTLIB_VERSION_STR = None
+PYPROJ_VERSION_STR = None
 CARTOPY_VERSION_STR = None
 PYTHON_VERSION_STR = None
 
@@ -233,6 +234,7 @@ def _check_library_versions():
     global NUMPY_VERSION_STR
     global SCIPY_VERSION_STR
     global MATPLOTLIB_VERSION_STR
+    global PYPROJ_VERSION_STR
     PYTHON_VERSION_STR = '.'.join(map(str, sys.version_info[:3]))
     import numpy
     NUMPY_VERSION_STR = numpy.__version__
@@ -251,6 +253,8 @@ def _check_library_versions():
             f' You have version: {MATPLOTLIB_VERSION_STR}\n'
         )
         sys.exit(1)
+    import pyproj
+    PYPROJ_VERSION_STR = pyproj.__version__
 
 
 def _read_config(config_file, configspec=None):
@@ -1074,6 +1078,7 @@ def _log_debug_information():
     LOGGER.debug(f'NumPy version: {NUMPY_VERSION_STR}')
     LOGGER.debug(f'SciPy version: {SCIPY_VERSION_STR}')
     LOGGER.debug(f'Matplotlib version: {MATPLOTLIB_VERSION_STR}')
+    LOGGER.debug(f'PyProj version: {PYPROJ_VERSION_STR}')
     if CARTOPY_VERSION_STR is not None:
         LOGGER.debug(f'Cartopy version: {CARTOPY_VERSION_STR}')
     LOGGER.debug('Running arguments:')
