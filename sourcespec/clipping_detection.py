@@ -74,7 +74,8 @@ def _get_histogram(trace):
 
 def _get_distance_weight(density_points, order=2, min_weight=1, max_weight=5):
     """Compute the distance weight for the kernel density."""
-    dist_weight = np.abs(density_points)**order
+    # make sure to use float64 to avoid overflow for high order
+    dist_weight = np.abs(density_points.astype(np.float64))**order
     dist_weight *= (max_weight - min_weight) / dist_weight.max()
     dist_weight += min_weight
     return dist_weight
