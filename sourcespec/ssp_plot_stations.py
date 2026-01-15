@@ -840,6 +840,33 @@ def _make_station_map(
     _savefig(config, ax0.get_figure(), vname)
 
 
+def _duplicate_basemap_data(basemap):
+    """
+    Return a deepcopy of basemap data
+
+    :param basemap: dictionary with the basemap data.
+    :type basemap: dict
+
+    :return: deepcopy of the basemap data.
+    :rtype: dict
+    """
+    try:
+        return deepcopy(basemap)
+    except NotImplementedError:
+        # Workaround for older matplotlib versions
+        # pylint: disable=import-outside-toplevel
+        import io
+        import pickle
+        basemap_copy = {}
+        for key, ax in basemap.items():
+            buf = io.BytesIO()
+            pickle.dump(ax, buf)
+            buf.seek(0)
+            ax2 = pickle.load(buf)
+            basemap_copy[key] = ax2
+        return basemap_copy
+
+
 def _spread_overlapping_stations(lonlat_dist, min_dlonlat=1e-3, spread=0.03):
     dlonlat = np.diff(lonlat_dist[:, :2], axis=0)
     dlonlat = np.sum(dlonlat**2, axis=1)**(0.5)
@@ -892,16 +919,21 @@ def plot_stations(config, sspec_output):
     mag_outliers = np.array([stationpar[k]['Mw'].outlier for k in st_ids])
     summary_mag = summary_values['Mw']
     summary_mag_err = summary_uncertainties['Mw']
-    basemap_data = _make_basemap(config, maxdist)
-    # make a copy of the basemap data for the second plot, before modifying it
-    basemap_data2 = deepcopy(basemap_data)
+    basemap_data_mw = _make_basemap(config, maxdist)
+    try:
+        basemap_data_fc = _duplicate_basemap_data(basemap_data_mw)
+    except TypeError:
+        # deepcopy fails on cartopy 0.25
+        # (see https://github.com/SciTools/cartopy/issues/2571)
+        # fallback to re-creating the basemap
+        basemap_data_fc = _make_basemap(config, maxdist)
     _make_station_map(
-        config, basemap_data, lonlat_dist, st_ids,
+        config, basemap_data_mw, lonlat_dist, st_ids,
         mag, mag_outliers, summary_mag, summary_mag_err, 'mag')
     fc = np.array([stationpar[k]['fc'].value for k in st_ids])
     fc_outliers = np.array([stationpar[k]['fc'].outlier for k in st_ids])
     summary_fc = summary_values['fc']
     summary_fc_err = summary_uncertainties['fc']
     _make_station_map(
-        config, basemap_data2, lonlat_dist, st_ids,
+        config, basemap_data_fc, lonlat_dist, st_ids,
         fc, fc_outliers, summary_fc, summary_fc_err, 'fc')
