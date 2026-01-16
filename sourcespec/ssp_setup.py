@@ -713,6 +713,35 @@ def _float_list(input_list, max_length=None, accepted_values=None):
         raise ValueError('Cannot parse all values in list') from e
 
 
+def _parse_free_surface_amplification(values):
+    """
+    Parse free_surface_amplification config parameter.
+    """
+    if len(values) == 1:
+        # If values list has only one element, it must be a float:
+        try:
+            fsa_dict = {'*': float(values[0])}
+        except ValueError as e:
+            raise ValueError(f'Invalid value: {values[0]}') from e
+    else:
+        # Values must be in the form: STATID1: FLOAT, STATID2: FLOAT, ...
+        try:
+            fsa_dict = {
+                key: float(val) for key, val in
+                (item.split(':') for item in values)
+            }
+        except ValueError as e:
+            raise ValueError(
+                'Invalid format. '
+                'Expected: STATID1: FLOAT, STATID2: FLOAT, ...'
+            ) from e
+    # Check that all values are positive
+    for val in fsa_dict.values():
+        if val <= 0:
+            raise ValueError('All values must be positive.')
+    return fsa_dict
+
+
 def _none_lenght(input_list):
     """
     Return the length of input list, or 1 if input list is None
@@ -890,6 +919,15 @@ def configure(options, progname, config_overrides=None):
             accepted_values=[None, 'noise'])
     except ValueError as msg:
         sys.exit(f'Error parsing parameter "Er_freq_range": {msg}')
+
+    # Parse free_surface_amplification parameter
+    try:
+        config.free_surface_amplification = _parse_free_surface_amplification(
+            config.free_surface_amplification)
+    except ValueError as msg:
+        sys.exit(
+            f'Error parsing parameter "free_surface_amplification": {msg}'
+        )
 
     # A list of warnings to be issued when logger is set up
     config.warnings = []
