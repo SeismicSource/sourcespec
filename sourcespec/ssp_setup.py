@@ -25,6 +25,7 @@ import uuid
 import json
 import contextlib
 import warnings
+from io import BytesIO
 from copy import copy
 from datetime import datetime
 from collections import defaultdict
@@ -286,6 +287,26 @@ def _parse_configspec():
     return _read_config(configspec_file)
 
 
+def _write_config_to_file(config_obj, filepath):
+    """
+    Write config object to file, removing trailing commas from
+    force_list entries.
+
+    :param config_obj: ConfigObj instance to write
+    :param str filepath: Path to the file to write
+    """
+    buffer = BytesIO()
+    config_obj.write(buffer)
+    with open(filepath, 'w', encoding='utf8') as fp:
+        for line in buffer.getvalue().decode('utf8').splitlines(keepends=True):
+            # Remove trailing comma before newline if present,
+            # but only if line is not a comment
+            line = line.rstrip('\n\r')
+            if line.endswith(',') and not line.lstrip().startswith('#'):
+                line = line.rstrip(',')
+            fp.write(line + '\n')
+
+
 def _write_sample_config(configspec, progname):
     c = ConfigObj(configspec=configspec, default_encoding='utf8')
     val = Validator()
@@ -302,8 +323,7 @@ def _write_sample_config(configspec, progname):
         )
         write_file = ans in ['y', 'Y']
     if write_file:
-        with open(configfile, 'wb') as fp:
-            c.write(fp)
+        _write_config_to_file(c, configfile)
         print(f'Sample config file written to: {configfile}')
         note = """
 Note that the default config parameters are suited for a M<5 earthquake
@@ -408,11 +428,11 @@ def _update_config_file(config_file, configspec):
         config_new['rho'] = 'None'
     shutil.copyfile(config_file, config_file_old)
     with open(config_file, 'wb') as fp:
-        config_new.write(fp)
+        _write_config_to_file(config_new, config_file)
         print(f'{config_file}: updated')
 
 
-def _write_config(config_obj, progname, outdir):
+def _save_config_to_outdir(config_obj, progname, outdir):
     if progname != 'source_spec':
         return
     configfile = f'{progname}.conf'
@@ -784,7 +804,7 @@ def configure(options, progname, config_overrides=None):
     # It will be then renamed once an evid is available
     hexstr = uuid.uuid4().hex
     options.outdir = os.path.join(options.outdir, f'no_evid_{hexstr}')
-    _write_config(config_obj, progname, options.outdir)
+    _save_config_to_outdir(config_obj, progname, options.outdir)
 
     # Create a Config object
     config = Config(config_obj.dict().copy())
