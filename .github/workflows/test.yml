@@ -1,6 +1,12 @@
 name: sourcespec_testruns
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+      - v2
+      - v2-rebase-main
+  pull_request:
 
 jobs:
   test:

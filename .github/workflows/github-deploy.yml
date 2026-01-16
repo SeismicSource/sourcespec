@@ -1,6 +1,12 @@
 name: Build wheel and deploy to PyPI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+      - v2
+      - v2-rebase-main
+  pull_request:
 
 jobs:
   dist:
