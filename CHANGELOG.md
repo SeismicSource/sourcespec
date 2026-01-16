@@ -77,6 +77,8 @@ previous versions. You will need to upgrade your old database manually or using
   this case, t* is not inverted but derived from the attenuation model.
 - Possibility of computing travel times and takeoff angles from a 1D layered
   velocity model (see [#79])
+- Possibility of specifying station-specific free-surface amplification factors
+  (see [#81] and [#82])
 
 ### Post-Inversion
 
@@ -142,6 +144,9 @@ previous versions. You will need to upgrade your old database manually or using
   of `signal_pre_time`
 - New config parameter `Q_model` to define a prior attenuation model
   (constant or frequency-dependent, see [#76])
+- Config parameter `free_surface_amplification` now also accepts a list of
+  station code patterns with corresponding amplification factors
+  (see [#81] and [#82])
 
 ### Bugfixes
 
@@ -918,3 +923,5 @@ Initial Python port.
 [#69]: https://github.com/SeismicSource/sourcespec/issues/69
 [#76]: https://github.com/SeismicSource/sourcespec/issues/76
 [#79]: https://github.com/SeismicSource/sourcespec/issues/79
+[#81]: https://github.com/SeismicSource/sourcespec/issues/81
+[#82]: https://github.com/SeismicSource/sourcespec/issues/82

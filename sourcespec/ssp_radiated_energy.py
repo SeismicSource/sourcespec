@@ -219,9 +219,9 @@ def radiated_energy_and_apparent_stress(
         noise_integral = _spectral_integral(specnoise, t_star, fmin, fmax)
         rho = spec.stats.rho_station
         vel = spec.stats.v_station * 1e3
+        fsa = spec.stats.fsa
         coeff = _radiated_energy_coefficient(
-            rho, vel, config.free_surface_amplification,
-            spec.stats.radiation_pattern, average_rp)
+            rho, vel, fsa, spec.stats.radiation_pattern, average_rp)
         # Total radiated energy is the sum of Er_p and Er_s, and Er_s/Er_p=15.6
         # (Boatwright & Choy, 1986, eq. 8 & 15)
         if wave_type == 'P':
