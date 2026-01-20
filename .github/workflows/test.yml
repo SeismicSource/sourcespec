@@ -6,7 +6,15 @@ on:
       - main
       - v2
       - v2-rebase-main
+    paths:
+      - 'sourcespec/**'
+      - 'setup.py'
+      - 'pyproject.toml'
   pull_request:
+    paths:
+      - 'sourcespec/**'
+      - 'setup.py'
+      - 'pyproject.toml'
 
 jobs:
   test:
