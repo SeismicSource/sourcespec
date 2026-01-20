@@ -70,9 +70,9 @@ def _parse_Q_model(config):
         k: v for k, v in math.__dict__.items()
         if not k.startswith('__') and callable(v)
     }
-    safe_dict.update({
+    safe_dict |= {
         'abs': abs, 'min': min, 'max': max, 'pow': pow
-    })
+    }
 
     def Q_model_func(f):
         """Evaluate Qo as a function of frequency f."""

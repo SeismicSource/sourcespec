@@ -149,7 +149,7 @@ def _insert_station_row(cursor, db_file, statId, par, evid, runid):
     :type runid: str
     """
     station_row = dict(STATIONS_TABLE)
-    station_row.update({
+    station_row |= {
         'stid': statId,
         'evid': evid,
         'runid': runid,
@@ -217,7 +217,7 @@ def _insert_station_row(cursor, db_file, statId, par, evid, runid):
         'quality_of_fit': getattr(par, 'quality_of_fit', None),
         'ignored': par.ignored,
         'ignored_reason': getattr(par, 'ignored_reason', None),
-    })
+    }
     columns = list(station_row.keys())
     row = tuple(station_row[col] for col in columns)
     sql_insert_into_stations = (
@@ -324,7 +324,7 @@ def _write_events_table(cursor, db_file, sspec_output, config):
     ks = config.ks
     event_row = dict(EVENTS_TABLE)
     # Update event_row dictionary with event and run information
-    event_row.update({
+    event_row |= {
         # Event info
         'evid': evid,
         'runid': runid,
@@ -492,7 +492,7 @@ def _write_events_table(cursor, db_file, sspec_output, config):
         'agency_full_name': config.agency_full_name,
         'agency_short_name': config.agency_short_name,
         'agency_url': config.agency_url
-    })
+    }
     # Explicitly specify column names to avoid order issues
     columns = list(event_row.keys())
     row = tuple(event_row[col] for col in columns)

@@ -385,7 +385,7 @@ def _add_run_info_to_html(config, replacements):
         agency_comment_end = ''
     author_and_agency = _author_and_agency_html(author, agency)
     page_footer = _page_footer(config)
-    replacements.update({
+    replacements |= {
         '{AGENCY_LOGO}': agency_logo,
         '{LOGO_FILE}': logo_file,
         '{VERSION}': ssp_version,
@@ -399,7 +399,7 @@ def _add_run_info_to_html(config, replacements):
         '{AGENCY_COMMENT_END}': agency_comment_end,
         '{AUTHOR_AND_AGENCY}': author_and_agency,
         '{PAGE_FOOTER}': page_footer,
-    })
+    }
 
 
 def _add_event_info_to_html(config, replacements):
@@ -408,7 +408,7 @@ def _add_event_info_to_html(config, replacements):
     evname = config.event.name
     hypo = config.event.hypocenter
     run_id = config.options.run_id
-    replacements.update({
+    replacements |= {
         '{EVENTID}': evid,
         '{EVENT_NAME}': evname,
         '{RUNID}': run_id,
@@ -416,7 +416,7 @@ def _add_event_info_to_html(config, replacements):
         '{EVENT_LATITUDE}': f'{hypo.latitude.value_in_deg:7.3f}',
         '{EVENT_DEPTH}': f'{hypo.depth.value_in_km:5.1f}',
         '{ORIGIN_TIME}': f'{hypo.origin_time}',
-    })
+    }
     # Link to event page, if defined
     event_url = config.event_url
     if event_url is not None:
@@ -439,31 +439,31 @@ def _add_event_info_to_html(config, replacements):
         event_url = ''
         event_url_comment_begin = '<!--'
         event_url_comment_end = '-->'
-    replacements.update({
+    replacements |= {
         '{EVENT_URL}': event_url,
         '{EVENT_URL_COMMENT_BEGIN}': event_url_comment_begin,
         '{EVENT_URL_COMMENT_END}': event_url_comment_end
-    })
+    }
     # Only show Event Name if it is not empty
     if evname:
         evname_comment_begin = evname_comment_end = ''
     else:
         evname_comment_begin = '<!--'
         evname_comment_end = '-->'
-    replacements.update({
+    replacements |= {
         '{EVENT_NAME_COMMENT_BEGIN}': evname_comment_begin,
         '{EVENT_NAME_COMMENT_END}': evname_comment_end
-    })
+    }
     # Only show Run ID if it is not empty
     if run_id:
         run_id_comment_begin = run_id_comment_end = ''
     else:
         run_id_comment_begin = '<!--'
         run_id_comment_end = '-->'
-    replacements.update({
+    replacements |= {
         '{RUNID_COMMENT_BEGIN}': run_id_comment_begin,
         '{RUNID_COMMENT_END}': run_id_comment_end
-    })
+    }
 
 
 def _add_maps_to_html(config, replacements):
@@ -494,14 +494,14 @@ def _add_maps_to_html(config, replacements):
     else:
         map_fc_comment_begin = '<!--'
         map_fc_comment_end = '-->'
-    replacements.update({
+    replacements |= {
         '{MAP_MAG}': map_mag,
         '{MAP_MAG_COMMENT_BEGIN}': map_mag_comment_begin,
         '{MAP_MAG_COMMENT_END}': map_mag_comment_end,
         '{MAP_FC}': map_fc,
         '{MAP_FC_COMMENT_BEGIN}': map_fc_comment_begin,
         '{MAP_FC_COMMENT_END}': map_fc_comment_end
-    })
+    }
 
 
 def _add_traces_plots_to_html(config, templates, replacements):
@@ -533,11 +533,11 @@ def _add_traces_plots_to_html(config, templates, replacements):
     else:
         traces_plots_comment_begin = '<!--'
         traces_plots_comment_end = '-->'
-    replacements.update({
+    replacements |= {
         '{TRACES_PLOTS}': traces_plots,
         '{TRACES_PLOTS_COMMENT_BEGIN}': traces_plots_comment_begin,
         '{TRACES_PLOTS_COMMENT_END}': traces_plots_comment_end
-    })
+    }
 
 
 def _add_spectra_plots_to_html(config, templates, replacements):
@@ -569,11 +569,11 @@ def _add_spectra_plots_to_html(config, templates, replacements):
     else:
         spectra_plots_comment_begin = '<!--'
         spectra_plots_comment_end = '-->'
-    replacements.update({
+    replacements |= {
         '{SPECTRA_PLOTS}': spectra_plots,
         '{SPECTRA_PLOTS_COMMENT_BEGIN}': spectra_plots_comment_begin,
         '{SPECTRA_PLOTS_COMMENT_END}': spectra_plots_comment_end
-    })
+    }
 
 
 def _add_inversion_info_to_html(sspec_output, replacements):
@@ -615,7 +615,7 @@ def _add_inversion_info_to_html(sspec_output, replacements):
     else:
         inversion_Qo_min_max =\
             str(sspec_output.inversion_info.Qo_min_max)
-    replacements.update({
+    replacements |= {
         '{INVERSION_ALGORITHM}': inversion_algorithm,
         '{INVERSION_WAVE_TYPE}': inversion_wave_type,
         '{INVERSION_WEIGHTING}': inversion_weighting,
@@ -625,7 +625,7 @@ def _add_inversion_info_to_html(sspec_output, replacements):
         '{INVERSION_T_STAR_MIN_MAX}': inversion_t_star_min_max,
         '{INVERSION_FC_MIN_MAX}': inversion_fc_min_max,
         '{INVERSION_Q0_MIN_MAX}': inversion_Qo_min_max,
-    })
+    }
 
 
 def _add_inversion_quality_to_html(sspec_output, replacements):
@@ -667,7 +667,7 @@ def _add_inversion_quality_to_html(sspec_output, replacements):
         f'{quality_info.spectral_dispersion_score:.1f}%'
         if quality_info.spectral_dispersion_score is not None else '-'
     )
-    replacements.update({
+    replacements |= {
         '{N_INPUT_STATIONS}': n_input_stations,
         '{N_INPUT_SPECTRA}': n_input_spectra,
         '{N_SPECTRA_INVERTED}': n_spectra_inverted,
@@ -677,7 +677,7 @@ def _add_inversion_quality_to_html(sspec_output, replacements):
         '{QUALITY_OF_FIT_MEAN}': quality_of_fit_mean,
         '{SPECTRAL_DISPERSION_RMSN}': spectral_dispersion_rmsn,
         '{SPECTRAL_DISPERSION_SCORE}': spectral_dispersion_score,
-    })
+    }
 
 
 def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
@@ -690,11 +690,11 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
         col_wmean_highlighted = 'class="highlighted_column"'
     elif ref_stat == 'percentiles':
         col_perc_highlighted = 'class="highlighted_column"'
-    replacements.update({
+    replacements |= {
         '{COL_MEAN_HIGHLIGHTED}': col_mean_highlighted,
         '{COL_WMEAN_HIGHLIGHTED}': col_wmean_highlighted,
         '{COL_PERC_HIGHLIGHTED}': col_perc_highlighted,
-    })
+    }
 
     summary_values = sspec_output.reference_values()
     summary_uncertainties = sspec_output.reference_uncertainties()
@@ -709,7 +709,7 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
     except TypeError:
         Mw_summary_error = summary_uncertainties['Mw']
         Mw_summary_str = f'{Mw_summary:.2f} ± {Mw_summary_error:.2f}'
-    replacements.update({'{MW_SUMMARY}': Mw_summary_str})
+    replacements |= {'{MW_SUMMARY}': Mw_summary_str}
     fc_summary = summary_values['fc']
     try:
         fc_summary_error_minus, fc_summary_error_plus =\
@@ -721,7 +721,7 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
     except TypeError:
         fc_summary_error = summary_uncertainties['fc']
         fc_summary_str = f'{fc_summary:.3f} ± {fc_summary_error:.3f}'
-    replacements.update({'{FC_SUMMARY}': fc_summary_str})
+    replacements |= {'{FC_SUMMARY}': fc_summary_str}
 
     means = sspec_output.mean_values()
     mean_errors = sspec_output.mean_uncertainties()
@@ -739,10 +739,10 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
     lower_pct = int(lower_pct) if float(lower_pct).is_integer() else lower_pct
     upper_pct = int(upper_pct) if float(upper_pct).is_integer() else upper_pct
     percentages = f'{mid_pct}%, [{lower_pct}%, {upper_pct}%]'
-    replacements.update({
+    replacements |= {
         '{N_SIGMA}': n_sigma,
         '{PERCENTAGES}': percentages
-    })
+    }
 
     Mw_mean = means['Mw']
     Mw_mean_error = mean_errors['Mw']
@@ -750,126 +750,126 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
     Mw_wmean_error = wmean_errors['Mw']
     Mw_perc = percentiles['Mw']
     Mw_perc_error = percentile_errors['Mw']
-    replacements.update({
+    replacements |= {
         '{MW_MEAN_AND_ERR}': _summary_value_and_err_text(
             Mw_mean, Mw_mean_error, '{:.2f}'),
         '{MW_WMEAN_AND_ERR}': _summary_value_and_err_text(
             Mw_wmean, Mw_wmean_error, '{:.2f}'),
         '{MW_PERC_AND_ERR}': _summary_value_and_err_text(
             Mw_perc, Mw_perc_error, '{:.2f}'),
-    })
+    }
     Mo_mean = means['Mo']
     Mo_mean_error = mean_errors['Mo']
     Mo_wmean = wmeans['Mo']
     Mo_wmean_error = wmean_errors['Mo']
     Mo_perc = percentiles['Mo']
     Mo_perc_error = percentile_errors['Mo']
-    replacements.update({
+    replacements |= {
         '{M0_MEAN_AND_ERR}': _summary_value_and_err_text(
             Mo_mean, Mo_mean_error, '{:.3e}'),
         '{M0_WMEAN_AND_ERR}': _summary_value_and_err_text(
             Mo_wmean, Mo_wmean_error, '{:.3e}'),
         '{M0_PERC_AND_ERR}': _summary_value_and_err_text(
             Mo_perc, Mo_perc_error, '{:.3e}'),
-    })
+    }
     fc_mean = means['fc']
     fc_mean_error = mean_errors['fc']
     fc_wmean = wmeans['fc']
     fc_wmean_error = wmean_errors['fc']
     fc_perc = percentiles['fc']
     fc_perc_error = percentile_errors['fc']
-    replacements.update({
+    replacements |= {
         '{FC_MEAN_AND_ERR}': _summary_value_and_err_text(
             fc_mean, fc_mean_error, '{:.3f}'),
         '{FC_WMEAN_AND_ERR}': _summary_value_and_err_text(
             fc_wmean, fc_wmean_error, '{:.3f}'),
         '{FC_PERC_AND_ERR}': _summary_value_and_err_text(
             fc_perc, fc_perc_error, '{:.3f}'),
-    })
+    }
     t_star_mean = means['t_star']
     t_star_mean_error = mean_errors['t_star']
     t_star_wmean = wmeans['t_star']
     t_star_wmean_error = wmean_errors['t_star']
     t_star_perc = percentiles['t_star']
     t_star_perc_error = percentile_errors['t_star']
-    replacements.update({
+    replacements |= {
         '{TSTAR_MEAN_AND_ERR}': _summary_value_and_err_text(
             t_star_mean, t_star_mean_error, '{:.3f}'),
         '{TSTAR_WMEAN_AND_ERR}': _summary_value_and_err_text(
             t_star_wmean, t_star_wmean_error, '{:.3f}'),
         '{TSTAR_PERC_AND_ERR}': _summary_value_and_err_text(
             t_star_perc, t_star_perc_error, '{:.3f}'),
-    })
+    }
     Qo_mean = means['Qo']
     Qo_mean_error = mean_errors['Qo']
     Qo_wmean = wmeans['Qo']
     Qo_wmean_error = wmean_errors['Qo']
     Qo_perc = percentiles['Qo']
     Qo_perc_error = percentile_errors['Qo']
-    replacements.update({
+    replacements |= {
         '{Q0_MEAN_AND_ERR}': _summary_value_and_err_text(
             Qo_mean, Qo_mean_error, '{:.1f}'),
         '{Q0_WMEAN_AND_ERR}': _summary_value_and_err_text(
             Qo_wmean, Qo_wmean_error, '{:.1f}'),
         '{Q0_PERC_AND_ERR}': _summary_value_and_err_text(
             Qo_perc, Qo_perc_error, '{:.1f}'),
-    })
+    }
     ra_mean = means['radius']
     ra_mean_error = mean_errors['radius']
     ra_wmean = wmeans['radius']
     ra_wmean_error = wmean_errors['radius']
     ra_perc = percentiles['radius']
     ra_perc_error = percentile_errors['radius']
-    replacements.update({
+    replacements |= {
         '{RADIUS_MEAN_AND_ERR}': _summary_value_and_err_text(
             ra_mean, ra_mean_error, '{:.3f}'),
         '{RADIUS_WMEAN_AND_ERR}': _summary_value_and_err_text(
             ra_wmean, ra_wmean_error, '{:.3f}'),
         '{RADIUS_PERC_AND_ERR}': _summary_value_and_err_text(
             ra_perc, ra_perc_error, '{:.3f}'),
-    })
+    }
     ssd_mean = means['ssd']
     ssd_mean_error = mean_errors['ssd']
     ssd_wmean = wmeans['ssd']
     ssd_wmean_error = wmean_errors['ssd']
     ssd_perc = percentiles['ssd']
     ssd_perc_error = percentile_errors['ssd']
-    replacements.update({
+    replacements |= {
         '{SSD_MEAN_AND_ERR}': _summary_value_and_err_text(
             ssd_mean, ssd_mean_error, '{:.3e}'),
         '{SSD_WMEAN_AND_ERR}': _summary_value_and_err_text(
             ssd_wmean, ssd_wmean_error, '{:.3e}'),
         '{SSD_PERC_AND_ERR}': _summary_value_and_err_text(
             ssd_perc, ssd_perc_error, '{:.3e}'),
-    })
+    }
     Er_mean = means['Er']
     Er_mean_error = mean_errors['Er']
     Er_wmean = wmeans['Er']
     Er_wmean_error = wmean_errors['Er']
     Er_perc = percentiles['Er']
     Er_perc_error = percentile_errors['Er']
-    replacements.update({
+    replacements |= {
         '{ER_MEAN_AND_ERR}': _summary_value_and_err_text(
             Er_mean, Er_mean_error, '{:.3e}'),
         '{ER_WMEAN_AND_ERR}': _summary_value_and_err_text(
             Er_wmean, Er_wmean_error, '{:.3e}'),
         '{ER_PERC_AND_ERR}': _summary_value_and_err_text(
             Er_perc, Er_perc_error, '{:.3e}'),
-    })
+    }
     sigma_a_mean = means['sigma_a']
     sigma_a_mean_error = mean_errors['sigma_a']
     sigma_a_wmean = wmeans['sigma_a']
     sigma_a_wmean_error = wmean_errors['sigma_a']
     sigma_a_perc = percentiles['sigma_a']
     sigma_a_perc_error = percentile_errors['sigma_a']
-    replacements.update({
+    replacements |= {
         '{SIGMA_A_MEAN_AND_ERR}': _summary_value_and_err_text(
             sigma_a_mean, sigma_a_mean_error, '{:.3e}'),
         '{SIGMA_A_WMEAN_AND_ERR}': _summary_value_and_err_text(
             sigma_a_wmean, sigma_a_wmean_error, '{:.3e}'),
         '{SIGMA_A_PERC_AND_ERR}': _summary_value_and_err_text(
             sigma_a_perc, sigma_a_perc_error, '{:.3e}'),
-    })
+    }
     # Local magnitude, if computed
     if config.compute_local_magnitude:
         Ml_mean = means['Ml']
@@ -885,7 +885,7 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
         Ml_mean_error = Ml_wmean_error = Ml_perc_error = (np.nan, np.nan)
         Ml_comment_begin = '<!--'
         Ml_comment_end = '-->'
-    replacements.update({
+    replacements |= {
         '{ML_MEAN_AND_ERR}': _summary_value_and_err_text(
             Ml_mean, Ml_mean_error, '{:.2f}'),
         '{ML_WMEAN_AND_ERR}': _summary_value_and_err_text(
@@ -894,7 +894,7 @@ def _add_summary_spectral_params_to_html(config, sspec_output, replacements):
             Ml_perc, Ml_perc_error, '{:.2f}'),
         '{ML_COMMENT_BEGIN}': Ml_comment_begin,
         '{ML_COMMENT_END}': Ml_comment_end,
-    })
+    }
 
 
 def _add_box_plots_to_html(config, replacements):
@@ -910,11 +910,11 @@ def _add_box_plots_to_html(config, replacements):
     else:
         box_plots_comment_begin = '<!--'
         box_plots_comment_end = '-->'
-    replacements.update({
+    replacements |= {
         '{BOX_PLOTS}': box_plots,
         '{BOX_PLOTS_COMMENT_BEGIN}': box_plots_comment_begin,
         '{BOX_PLOTS_COMMENT_END}': box_plots_comment_end,
-    })
+    }
 
 
 def _add_stacked_spectra_to_html(config, replacements):
@@ -930,11 +930,11 @@ def _add_stacked_spectra_to_html(config, replacements):
     else:
         stacked_spectra_comment_begin = '<!--'
         stacked_spectra_comment_end = '-->'
-    replacements.update({
+    replacements |= {
         '{STACKED_SPECTRA}': stacked_spectra,
         '{STACKED_SPECTRA_COMMENT_BEGIN}': stacked_spectra_comment_begin,
         '{STACKED_SPECTRA_COMMENT_END}': stacked_spectra_comment_end,
-    })
+    }
 
 
 def _add_station_table_to_html(config, sspec_output, templates, replacements):
@@ -996,15 +996,15 @@ def _add_station_table_to_html(config, sspec_output, templates, replacements):
         else:
             Ml_comment_begin = '<!--'
             Ml_comment_end = '-->'
-        row_replacements.update({
+        row_replacements |= {
             '{ML_COMMENT_BEGIN}': Ml_comment_begin,
             '{ML_COMMENT_END}': Ml_comment_end
-        })
+        }
         station_table_rows += _multireplace(
             station_table_row, row_replacements)
-    replacements.update({
+    replacements |= {
         '{STATION_TABLE_ROWS}': station_table_rows,
-    })
+    }
 
 
 def _add_misfit_plots_to_html(config, replacements):
@@ -1016,10 +1016,10 @@ def _add_misfit_plots_to_html(config, replacements):
     else:
         misfit_plot_comment_begin = '<!--'
         misfit_plot_comment_end = '-->'
-    replacements.update({
+    replacements |= {
         '{MISFIT_PLOT_COMMENT_BEGIN}': misfit_plot_comment_begin,
         '{MISFIT_PLOT_COMMENT_END}': misfit_plot_comment_end
-    })
+    }
 
 
 def _add_downloadable_files_to_html(config, templates, replacements):
@@ -1033,13 +1033,13 @@ def _add_downloadable_files_to_html(config, templates, replacements):
     yaml_file = f'{evid}.ssp.yaml'
     log_file = f'{evid}.ssp.log'
 
-    replacements.update({
+    replacements |= {
         '{INPUT_FILES}': input_files,
         '{INPUT_FILES_TEXT}': input_files_text,
         '{CONF_FILE}': config_file,
         '{YAML_FILE}': yaml_file,
         '{LOG_FILE}': log_file,
-    })
+    }
 
     # QuakeML file (if produced)
     if config.qml_file_out is not None:
@@ -1050,9 +1050,9 @@ def _add_downloadable_files_to_html(config, templates, replacements):
             .replace('{QUAKEML_FILE}', quakeml_file)
     else:
         quakeml_file_link = ''
-    replacements.update({
+    replacements |= {
         '{QUAKEML_FILE_LINK}': quakeml_file_link
-    })
+    }
 
     suppl_file_list = [
         os.path.basename(fig) for fig in config.figures['traces_raw']
@@ -1073,9 +1073,9 @@ def _add_downloadable_files_to_html(config, templates, replacements):
             .replace('{SUPPLEMENTARY_FILES}', supplementary_files)
     else:
         supplementary_file_links = ''
-    replacements.update({
+    replacements |= {
         '{SUPPLEMENTARY_FILE_LINKS}': supplementary_file_links
-    })
+    }
 
 
 class HTMLtemplates:

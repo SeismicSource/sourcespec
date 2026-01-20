@@ -264,11 +264,11 @@ def _read_config(config_file, configspec=None):
         'default_encoding': 'utf8'
     }
     if configspec is None:
-        kwargs.update({
+        kwargs |= {
             'interpolation': False,
             'list_values': False,
-            '_inspec': True
-        })
+            '_inspec': True,
+        }
     try:
         config_obj = ConfigObj(config_file, **kwargs)
     except IOError as err:
