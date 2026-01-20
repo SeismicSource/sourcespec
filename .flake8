@@ -1,0 +1,16 @@
+[flake8]
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    build,
+    dist,
+    *.egg-info,
+    sourcespec/adjustText,
+    sourcespec/configobj,
+    sourcespec/_version.py,
+    versioneer.py
+
+max-line-length = 79
+ignore = E203, W503
