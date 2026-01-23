@@ -25,6 +25,7 @@ import uuid
 import json
 import contextlib
 import warnings
+from io import BytesIO
 from copy import copy
 from datetime import datetime
 from collections import defaultdict
@@ -286,6 +287,26 @@ def _parse_configspec():
     return _read_config(configspec_file)
 
 
+def _write_config_to_file(config_obj, filepath):
+    """
+    Write config object to file, removing trailing commas from
+    force_list entries.
+
+    :param config_obj: ConfigObj instance to write
+    :param str filepath: Path to the file to write
+    """
+    buffer = BytesIO()
+    config_obj.write(buffer)
+    with open(filepath, 'w', encoding='utf8') as fp:
+        for line in buffer.getvalue().decode('utf8').splitlines(keepends=True):
+            # Remove trailing comma before newline if present,
+            # but only if line is not a comment
+            line = line.rstrip('\n\r')
+            if line.endswith(',') and not line.lstrip().startswith('#'):
+                line = line.rstrip(',')
+            fp.write(line + '\n')
+
+
 def _write_sample_config(configspec, progname):
     c = ConfigObj(configspec=configspec, default_encoding='utf8')
     val = Validator()
@@ -302,8 +323,7 @@ def _write_sample_config(configspec, progname):
         )
         write_file = ans in ['y', 'Y']
     if write_file:
-        with open(configfile, 'wb') as fp:
-            c.write(fp)
+        _write_config_to_file(c, configfile)
         print(f'Sample config file written to: {configfile}')
         note = """
 Note that the default config parameters are suited for a M<5 earthquake
@@ -408,11 +428,11 @@ def _update_config_file(config_file, configspec):
         config_new['rho'] = 'None'
     shutil.copyfile(config_file, config_file_old)
     with open(config_file, 'wb') as fp:
-        config_new.write(fp)
+        _write_config_to_file(config_new, config_file)
         print(f'{config_file}: updated')
 
 
-def _write_config(config_obj, progname, outdir):
+def _save_config_to_outdir(config_obj, progname, outdir):
     if progname != 'source_spec':
         return
     configfile = f'{progname}.conf'
@@ -693,6 +713,35 @@ def _float_list(input_list, max_length=None, accepted_values=None):
         raise ValueError('Cannot parse all values in list') from e
 
 
+def _parse_free_surface_amplification(values):
+    """
+    Parse free_surface_amplification config parameter.
+    """
+    if len(values) == 1:
+        # If values list has only one element, it must be a float:
+        try:
+            fsa_dict = {'*': float(values[0])}
+        except ValueError as e:
+            raise ValueError(f'Invalid value: {values[0]}') from e
+    else:
+        # Values must be in the form: STATID1: FLOAT, STATID2: FLOAT, ...
+        try:
+            fsa_dict = {
+                key: float(val) for key, val in
+                (item.split(':') for item in values)
+            }
+        except ValueError as e:
+            raise ValueError(
+                'Invalid format. '
+                'Expected: STATID1: FLOAT, STATID2: FLOAT, ...'
+            ) from e
+    # Check that all values are positive
+    for val in fsa_dict.values():
+        if val <= 0:
+            raise ValueError('All values must be positive.')
+    return fsa_dict
+
+
 def _none_lenght(input_list):
     """
     Return the length of input list, or 1 if input list is None
@@ -784,7 +833,7 @@ def configure(options, progname, config_overrides=None):
     # It will be then renamed once an evid is available
     hexstr = uuid.uuid4().hex
     options.outdir = os.path.join(options.outdir, f'no_evid_{hexstr}')
-    _write_config(config_obj, progname, options.outdir)
+    _save_config_to_outdir(config_obj, progname, options.outdir)
 
     # Create a Config object
     config = Config(config_obj.dict().copy())
@@ -870,6 +919,15 @@ def configure(options, progname, config_overrides=None):
             accepted_values=[None, 'noise'])
     except ValueError as msg:
         sys.exit(f'Error parsing parameter "Er_freq_range": {msg}')
+
+    # Parse free_surface_amplification parameter
+    try:
+        config.free_surface_amplification = _parse_free_surface_amplification(
+            config.free_surface_amplification)
+    except ValueError as msg:
+        sys.exit(
+            f'Error parsing parameter "free_surface_amplification": {msg}'
+        )
 
     # A list of warnings to be issued when logger is set up
     config.warnings = []

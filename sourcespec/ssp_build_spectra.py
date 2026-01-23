@@ -17,6 +17,9 @@ Build spectral objects.
 """
 import logging
 import math
+import fnmatch
+import numbers
+from collections.abc import Mapping
 import numpy as np
 # cumtrapz was deprecated in scipy 1.12.0 and removed in 1.14.0
 try:
@@ -365,6 +368,58 @@ def _geometrical_spreading_coefficient(config, spec):
         f'Unknown geometrical spreading model: {config.geom_spread_model}')
 
 
+def _get_free_surface_amplification(stats, config):
+    """
+    Return the free-surface amplification factor for the given station.
+    """
+    traceid = '.'.join((
+        stats.network, stats.station, stats.location, stats.channel))
+    fsa = config.free_surface_amplification
+    # Allow scalar (including numpy) by converting it to a wildcard dict.
+    if (
+        isinstance(fsa, (np.generic, numbers.Real))
+        and not isinstance(fsa, bool)
+    ):
+        fsa_dict = {'*': float(fsa)}
+    elif isinstance(fsa, Mapping):
+        fsa_dict = dict(fsa)
+    else:
+        raise ValueError(
+            'free_surface_amplification must be numeric or dict-like')
+
+    # Sort keys by specificity (most specific first):
+    # - More literal characters -> more specific
+    # - Fewer '*' (greedy wildcards) -> more specific
+    # - Fewer '?' (single-char wildcards) -> more specific
+    # - Longer patterns -> more specific (tie-breaker)
+    def _specificity_key(k):
+        # Ensure '*' alone is always last
+        if k == '*':
+            return (1, 0, 0, 0, 0)
+        num_literals = sum(c not in ('*', '?') for c in k)
+        num_star = k.count('*')
+        num_qmark = k.count('?')
+        # Most specific first: more literals, fewer wildcards, longer length
+        return (0, -num_literals, num_star, num_qmark, -len(k))
+
+    sorted_keys = sorted(fsa_dict.keys(), key=_specificity_key)
+    # Find the first matching pattern
+    fsa = next(
+        (
+            fsa_dict[key]
+            for key in sorted_keys
+            if fnmatch.fnmatch(traceid, key)
+        ),
+        None,
+    )
+    if fsa is None:
+        raise ValueError(
+            f'No free-surface amplification factor found for station {traceid}'
+        )
+    # Normalize to plain float
+    return float(fsa)
+
+
 # store log messages to avoid duplicates
 PROPERTY_LOG_MESSAGES = []
 
@@ -415,7 +470,12 @@ def _displacement_to_moment(stats, config):
     v_station *= 1000.
     v3 = v_source**(5. / 2) * v_station**(1. / 2)
     rho = rho_source**0.5 * rho_station**0.5
-    fsa = config.free_surface_amplification
+    fsa = _get_free_surface_amplification(stats, config)
+    stats.fsa = fsa
+    msg = f'{specid}: free-surface amplification factor: {fsa:.2f}'
+    if msg not in PROPERTY_LOG_MESSAGES:
+        logger.info(msg)
+        PROPERTY_LOG_MESSAGES.append(msg)
     return 4 * math.pi * v3 * rho / (fsa * stats.radiation_pattern)
 
 
@@ -480,11 +540,17 @@ def _build_spectrum(config, trace):
     spec.stats.radiation_pattern =\
         get_radiation_pattern_coefficient(spec.stats, config)
     # convert to seismic moment
-    coeff = _displacement_to_moment(spec.stats, config)
-    spec.data *= coeff
-    # store coeff to correct back data in displacement units
-    # for radiated_energy()
-    spec.stats.coeff = coeff
+    try:
+        coeff = _displacement_to_moment(spec.stats, config)
+        spec.data *= coeff
+        # store coeff to correct back data in displacement units
+        # for radiated_energy()
+        spec.stats.coeff = coeff
+    except ValueError as e:
+        raise RuntimeError(
+            f'{spec.id}: Error converting to seismic moment: '
+            f'skipping spectrum\n{str(e)}'
+        ) from e
     # smooth spectrum. This also creates log-spaced frequencies and data
     try:
         _smooth_spectrum(spec, config.spectral_smooth_width_decades)
