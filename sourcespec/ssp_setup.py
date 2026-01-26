@@ -427,9 +427,8 @@ def _update_config_file(config_file, configspec):
                     config_new['layer_top_depths'] = 'None'
         config_new['rho'] = 'None'
     shutil.copyfile(config_file, config_file_old)
-    with open(config_file, 'wb') as fp:
-        _write_config_to_file(config_new, config_file)
-        print(f'{config_file}: updated')
+    _write_config_to_file(config_new, config_file)
+    print(f'{config_file}: updated')
 
 
 def _save_config_to_outdir(config_obj, progname, outdir):
