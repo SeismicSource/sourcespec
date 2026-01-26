@@ -61,6 +61,15 @@ jobs:
       run: |
         git clone https://github.com/SeismicSource/sourcespec_testruns.git
 
+    # TODO: Remove this step when v2 is retired
+    - name: Patch check_versions.py for v2 branches
+      if: github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/v2-rebase-main'
+      shell: bash
+      run: |
+        set -euo pipefail
+        sed -i.bak 's/sourcespec/sourcespec2/g' sourcespec_testruns/check_version.py
+        rm sourcespec_testruns/check_version.py.bak
+
     - name: Do test runs
       run: |
         bash scripts/do_testruns.sh
