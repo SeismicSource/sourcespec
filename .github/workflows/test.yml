@@ -41,6 +41,22 @@ jobs:
         python -m pip install --upgrade pip
         pip install . cartopy nllgrid
 
+    # TODO: Remove this step when v2 is retired
+    - name: Create source_spec alias for v2 branches
+      if: github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/v2-rebase-main'
+      shell: bash
+      run: |
+        set -euo pipefail
+        SPEC2_PATH="$(command -v source_spec2 || true)"
+        if [ -n "$SPEC2_PATH" ]; then
+          TARGET="$(dirname "$SPEC2_PATH")/source_spec"
+          # Remove existing target if present
+          if [ -e "$TARGET" ] || [ -L "$TARGET" ]; then
+            rm -f "$TARGET"
+          fi
+          ln -s "$SPEC2_PATH" "$TARGET"
+        fi
+
     - name: Clone sourcespec_testruns
       run: |
         git clone https://github.com/SeismicSource/sourcespec_testruns.git
