@@ -746,7 +746,7 @@ def _parse_free_surface_amplification(values):
     return fsa_items
 
 
-def _none_lenght(input_list):
+def _none_length(input_list):
     """
     Return the length of input list, or 1 if input list is None
 
@@ -887,10 +887,10 @@ def configure(options, progname, config_overrides=None):
     except ValueError as msg:
         sys.exit(f'Error parsing parameter "{param}": {msg}')
     # Check that the tt velocity models have the same length
-    n_vp = _none_lenght(config.vp)
-    n_vs = _none_lenght(config.vs)
-    n_rho = _none_lenght(config.rho)
-    n_layer_top_depths = _none_lenght(config.layer_top_depths)
+    n_vp = _none_length(config.vp)
+    n_vs = _none_length(config.vs)
+    n_rho = _none_length(config.rho)
+    n_layer_top_depths = _none_length(config.layer_top_depths)
     try:
         assert n_vp == n_vs == n_rho == n_layer_top_depths
     except AssertionError:
@@ -899,10 +899,10 @@ def configure(options, progname, config_overrides=None):
             'must have the same length.'
         )
     # Check that the velocity and density models have the same length
-    n_vp_source = _none_lenght(config.vp_source)
-    n_vs_source = _none_lenght(config.vs_source)
-    n_rho_source = _none_lenght(config.rho_source)
-    n_layer_top_depths_source = _none_lenght(config.layer_top_depths_source)
+    n_vp_source = _none_length(config.vp_source)
+    n_vs_source = _none_length(config.vs_source)
+    n_rho_source = _none_length(config.rho_source)
+    n_layer_top_depths_source = _none_length(config.layer_top_depths_source)
     try:
         assert (
             n_vp_source == n_vs_source == n_rho_source ==
