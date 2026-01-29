@@ -375,49 +375,42 @@ def _get_free_surface_amplification(stats, config):
     traceid = '.'.join((
         stats.network, stats.station, stats.location, stats.channel))
     fsa = config.free_surface_amplification
-    # Allow scalar (including numpy) by converting it to a wildcard dict.
+    # If scalar, just use it for all
     if (
         isinstance(fsa, (np.generic, numbers.Real))
         and not isinstance(fsa, bool)
     ):
-        fsa_dict = {'*': float(fsa)}
-    elif isinstance(fsa, Mapping):
-        fsa_dict = dict(fsa)
+        return float(fsa)
+    # If tuple of tuples, convert to list for matching
+    if isinstance(fsa, tuple):
+        fsa_items = list(fsa)
     else:
         raise ValueError(
-            'free_surface_amplification must be numeric or dict-like')
+            'free_surface_amplification must be numeric or tuple of tuples')
 
-    # Sort keys by specificity (most specific first):
+    # Sort patterns by specificity (most specific first):
     # - More literal characters -> more specific
     # - Fewer '*' (greedy wildcards) -> more specific
     # - Fewer '?' (single-char wildcards) -> more specific
     # - Longer patterns -> more specific (tie-breaker)
-    def _specificity_key(k):
+    def _get_specificity(pattern):
         # Ensure '*' alone is always last
-        if k == '*':
+        if pattern == '*':
             return (1, 0, 0, 0, 0)
-        num_literals = sum(c not in ('*', '?') for c in k)
-        num_star = k.count('*')
-        num_qmark = k.count('?')
-        # Most specific first: more literals, fewer wildcards, longer length
-        return (0, -num_literals, num_star, num_qmark, -len(k))
+        num_literals = sum(c not in ('*', '?') for c in pattern)
+        num_star = pattern.count('*')
+        num_qmark = pattern.count('?')
+        return (0, -num_literals, num_star, num_qmark, -len(pattern))
 
-    sorted_keys = sorted(fsa_dict.keys(), key=_specificity_key)
+    sorted_items = sorted(
+        fsa_items, key=lambda item: _get_specificity(item[0]))
     # Find the first matching pattern
-    fsa = next(
-        (
-            fsa_dict[key]
-            for key in sorted_keys
-            if fnmatch.fnmatch(traceid, key)
-        ),
-        None,
+    for pattern, value in sorted_items:
+        if fnmatch.fnmatch(traceid, pattern):
+            return float(value)
+    raise ValueError(
+        f'No free-surface amplification factor found for station {traceid}'
     )
-    if fsa is None:
-        raise ValueError(
-            f'No free-surface amplification factor found for station {traceid}'
-        )
-    # Normalize to plain float
-    return float(fsa)
 
 
 # store log messages to avoid duplicates

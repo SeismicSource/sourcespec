@@ -715,30 +715,35 @@ def _float_list(input_list, max_length=None, accepted_values=None):
 def _parse_free_surface_amplification(values):
     """
     Parse free_surface_amplification config parameter.
+
+    :param list values: List of strings from config file
+    :return: A tuple of (STATID, FLOAT) pairs
+    :rtype: tuple
     """
+    fsa_items = ()
     if len(values) == 1:
-        # If values list has only one element, it must be a float:
-        try:
-            fsa_dict = {'*': float(values[0])}
-        except ValueError as e:
-            raise ValueError(f'Invalid value: {values[0]}') from e
-    else:
+        # If values list has only one element, try to parse it as a float
+        with contextlib.suppress(ValueError):
+            fsa_items = (('*', float(values[0])),)
+    # If the above failed, or if there are multiple elements,
+    # try to parse as STATID: FLOAT pairs
+    if not fsa_items:
         # Values must be in the form: STATID1: FLOAT, STATID2: FLOAT, ...
         try:
-            fsa_dict = {
-                key: float(val) for key, val in
+            fsa_items = tuple(
+                (key.strip(), float(val)) for key, val in
                 (item.split(':') for item in values)
-            }
+            )
         except ValueError as e:
             raise ValueError(
                 'Invalid format. '
                 'Expected: STATID1: FLOAT, STATID2: FLOAT, ...'
             ) from e
     # Check that all values are positive
-    for val in fsa_dict.values():
+    for _, val in fsa_items:
         if val <= 0:
             raise ValueError('All values must be positive.')
-    return fsa_dict
+    return fsa_items
 
 
 def _none_lenght(input_list):
