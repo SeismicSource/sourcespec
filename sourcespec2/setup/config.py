@@ -339,6 +339,11 @@ class _Config(dict):
         # Reupdate the config object with the validated values, which include
         # type conversion from string to numeric values
         self.update(config_obj.dict())
+        # Make sure that self.options is still an _Options object
+        if not isinstance(self['options'], _Options):
+            _options = self['options']
+            self['options'] = _Options()
+            self['options'].update(_options)
         # Check deprecated and mandatory parameters
         self._check_deprecated_config_params()
         self._check_mandatory_config_params()
