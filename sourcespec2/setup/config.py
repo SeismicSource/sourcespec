@@ -65,6 +65,105 @@ def _none_length(input_list):
     :rtype: int
     """
     return 1 if input_list is None else len(input_list)
+
+
+def _format_value_list(value):
+    """
+    Format a list or tuple value for display.
+
+    :param value: List or tuple to format
+    :return: Formatted string representation
+    """
+    if len(value) == 0:
+        return '[]'
+    formatted_items = [str(item) for item in value[:3]]
+    result = '[' + ', '.join(formatted_items)
+    if len(value) > 3:
+        result += f', ... ({len(value)} total)'
+    result += ']'
+    return result
+
+
+def _format_value(value, max_length=100):
+    """
+    Format a configuration value for display.
+
+    :param value: The value to format
+    :param max_length: Maximum length before truncating
+    :return: Formatted string representation
+    """
+    if value is None:
+        return '<None>'
+    if isinstance(value, str):
+        return (
+            f'{value[:max_length]}...'
+            if len(value) > max_length
+            else value
+        )
+    if isinstance(value, (list, tuple)):
+        return _format_value_list(value)
+    if isinstance(value, dict):
+        return f'<dict with {len(value)} items>'
+    return str(value)
+
+
+def _generate_html_repr(obj, title='Configuration'):
+    """
+    Generate HTML representation for a dict-like object.
+
+    :param obj: Dictionary-like object to display
+    :param title: Title for the HTML display
+    :return: HTML string
+    """
+    style_div = (
+        'font-family: monospace; border: 1px solid #ddd; '
+        'padding: 10px; border-radius: 5px; '
+        'background-color: #f9f9f9; color: #000;'
+    )
+    html = f'<div style="{style_div}">'
+    html += (
+        f'<h4 style="margin-top: 0; color: #000;">'
+        f'{title}</h4>'
+    )
+    # Scrollable table container
+    style_scroll = (
+        'max-height: 400px; overflow-y: auto; '
+        'border: 1px solid #ddd; border-radius: 3px;'
+    )
+    html += f'<div style="{style_scroll}">'
+    html += '<table style="border-collapse: collapse; width: auto;">'
+
+    for key in sorted(obj.keys()):
+        value = obj[key]
+        formatted = _format_value(value, max_length=200)
+
+        # Escape HTML special characters
+        key_html = (
+            key.replace('&', '&amp;')
+            .replace('<', '&lt;')
+            .replace('>', '&gt;')
+        )
+        value_html = (
+            formatted.replace('&', '&amp;')
+            .replace('<', '&lt;')
+            .replace('>', '&gt;')
+        )
+
+        html += '<tr style="border-bottom: 1px solid #eee;">'
+        style_key = (
+            'padding: 8px; font-weight: bold; width: 30%; '
+            'vertical-align: top; color: #000;'
+        )
+        html += f'<td style="{style_key}">{key_html}</td>'
+        style_val = 'padding: 8px; color: #000; text-align: left;'
+        html += f'<td style="{style_val}">{value_html}</td>'
+        html += '</tr>'
+
+    html += '</table>'
+    html += '</div>'
+    html += '</div>'
+    return html
+
 # ---- End Helper functions ----
 
 
@@ -151,6 +250,29 @@ class _Options(dict):
             print(f'Unknown option "{option}"')
         valid_options_str = '\n'.join(valid_options)
         print(f'Valid options:\n{valid_options_str}', end='')
+
+    def __repr__(self):
+        """Return a detailed string representation of options."""
+        lines = ['_Options(']
+        for key in sorted(self.keys()):
+            value = self[key]
+            formatted = _format_value(value)
+            lines.append(f'  {key}: {formatted}')
+        lines.append(')')
+        return '\n'.join(lines)
+
+    def __str__(self):
+        """Return a readable string representation of options."""
+        return self.__repr__()
+
+    def _repr_html_(self):
+        """
+        Return HTML representation for Jupyter notebooks.
+
+        This method is automatically called by Jupyter when displaying
+        the options object in a notebook cell.
+        """
+        return _generate_html_repr(self, title='SourceSpec Options')
 
 
 class _Config(dict):
@@ -536,6 +658,45 @@ class _Config(dict):
                     '"plot_save_format" is not "png" or "svg". '
                     'HTML report will have no plots.'
                 )
+
+    def _format_value(self, value, max_length=100):
+        """
+        Format a configuration value for display.
+
+        :param value: The value to format
+        :param max_length: Maximum length before truncating
+        :return: Formatted string representation
+        """
+        return _format_value(value, max_length)
+
+    def _format_value_list(self, value):
+        """Format a list or tuple value for display."""
+        return _format_value_list(value)
+
+    def __repr__(self):
+        """Return a detailed string representation of the config."""
+        lines = ['_Config(']
+        for key in sorted(self.keys()):
+            value = self[key]
+            formatted = _format_value(value)
+            lines.append(f'  {key}: {formatted}')
+        lines.append(')')
+        return '\n'.join(lines)
+
+    def __str__(self):
+        """Return a readable string representation of the config."""
+        return self.__repr__()
+
+    def _repr_html_(self):
+        """
+        Return HTML representation for Jupyter notebooks.
+
+        This method is automatically called by Jupyter when displaying
+        the config object in a notebook cell.
+        """
+        return _generate_html_repr(
+            self, title='SourceSpec Configuration'
+        )
 
 
 # Global config object, initialized with default values
