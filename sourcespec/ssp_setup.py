@@ -723,7 +723,7 @@ def _parse_free_surface_amplification(values):
     fsa_items = ()
     if len(values) == 1:
         # If values list has only one element, try to parse it as a float
-        with contextlib.suppress(ValueError):
+        with contextlib.suppress(ValueError, TypeError):
             fsa_items = (('*', float(values[0])),)
     # If the above failed, or if there are multiple elements,
     # try to parse as STATID: FLOAT pairs
