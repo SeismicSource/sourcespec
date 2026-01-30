@@ -468,8 +468,22 @@ class _Config(dict):
         """
         fsa = self['free_surface_amplification']
         fsa_items = ()
-        if len(fsa) == 1:
-            # If values list has only one element, try to parse it as a float
+        # First, check if values are in the form:
+        # ((STATID1, FLOAT), (STATID2, FLOAT), ...)
+        if (
+            isinstance(fsa, (list, tuple))
+            and all(
+                isinstance(item, (list, tuple)) and len(item) == 2
+                for item in fsa
+            )
+        ):
+            with contextlib.suppress(ValueError, TypeError):
+                fsa_items = tuple(
+                    (fsa_item[0], float(fsa_item[1]))
+                    for fsa_item in fsa
+                )
+        # If the above failed, check if single FLOAT value is given
+        if not fsa_items and len(fsa) == 1:
             with contextlib.suppress(ValueError, TypeError):
                 fsa_items = (('*', float(fsa[0])),)
         # If the above failed, or if there are multiple elements,
@@ -489,6 +503,12 @@ class _Config(dict):
                     'Invalid format. '
                     'Expected: STATID1: FLOAT, STATID2: FLOAT, ...'
                 ) from e
+        # sanity check
+        if not fsa_items:
+            raise ValueError(
+                'Invalid format. '
+                'Expected: STATID1: FLOAT, STATID2: FLOAT, ...'
+            )
         # Check that all values are positive
         for _, val in fsa_items:
             if val <= 0:
