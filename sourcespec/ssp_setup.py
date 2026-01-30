@@ -730,11 +730,14 @@ def _parse_free_surface_amplification(values):
     if not fsa_items:
         # Values must be in the form: STATID1: FLOAT, STATID2: FLOAT, ...
         try:
+            if any(':' not in item for item in values):
+                # empty ValueError to jump to except clause
+                raise ValueError()
             fsa_items = tuple(
                 (key.strip(), float(val)) for key, val in
                 (item.split(':') for item in values)
             )
-        except ValueError as e:
+        except (ValueError, TypeError) as e:
             raise ValueError(
                 'Invalid format. '
                 'Expected: STATID1: FLOAT, STATID2: FLOAT, ...'
