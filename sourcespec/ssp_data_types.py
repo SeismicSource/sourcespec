@@ -29,14 +29,14 @@ class InitialValues():
         """String representation."""
         s = (
             f'Mw_0: {round(self.Mw_0, 4)}; '
-            f'fc_0: {round(self.fc_0, 4)}; '
+            f'fc_0: {round(self.fc_0, 4)}'
         )
         if self.invert_t_star:
             t_star_0 = (
                 'None' if self.t_star_0 is None
                 else round(self.t_star_0, 4)
             )
-            s += f't_star_0: {t_star_0}; '
+            s += f'; t_star_0: {t_star_0}'
         return s
 
     def get_params0(self):
