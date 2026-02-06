@@ -233,6 +233,7 @@ def _generate_html_repr(
             formatted.replace('&', '&amp;')
             .replace('<', '&lt;')
             .replace('>', '&gt;')
+            .replace('$', '<span>$</span>')  # avoid math rendering
         )
 
         # Use slightly different styling for internal vs config keys
@@ -271,6 +272,7 @@ def _generate_html_repr(
                 .replace('>', '&gt;')
                 .replace('\n', '<br>')
                 .replace('  ', '&nbsp;&nbsp;')
+                .replace('$', '<span>$</span>')  # avoid math rendering
             )
             help_style = (
                 'display: block; margin-top: 4px; '
