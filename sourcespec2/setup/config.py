@@ -108,7 +108,8 @@ def _format_value(value, max_length=100):
 
 
 def _generate_html_repr(
-    obj, title='Configuration', key_order=None, internal_keys=None
+    obj, title='Configuration', key_order=None, internal_keys=None,
+    help_texts=None
 ):
     """
     Generate HTML representation for a dict-like object.
@@ -117,10 +118,20 @@ def _generate_html_repr(
     :param title: Title for the HTML display
     :param key_order: Optional list of keys in desired order
     :param internal_keys: Optional list of internal keys to separate
+    :param help_texts: Optional dict mapping keys to help text strings
     :return: HTML string
     """
+    if help_texts is None:
+        help_texts = {}
     if internal_keys is None:
         internal_keys = []
+
+    # Generate unique ID for this instance
+    import random  # pylint: disable=import-outside-toplevel
+    import string  # pylint: disable=import-outside-toplevel
+    unique_id = ''.join(
+        random.choices(string.ascii_lowercase, k=8)
+    )
 
     style_div = (
         'font-family: monospace; border: 1px solid #ddd; '
@@ -132,13 +143,29 @@ def _generate_html_repr(
         f'<h4 style="margin-top: 0; color: #000;">'
         f'{title}</h4>'
     )
+
+    # Add search input
+    search_style = (
+        'width: 100%; padding: 8px; margin-bottom: 10px; '
+        'border: 1px solid #ccc; border-radius: 4px; '
+        'box-sizing: border-box; font-size: 14px;'
+    )
+    html += (
+        f'<input type="text" id="search_{unique_id}" '
+        f'placeholder="Search parameters..." '
+        f'style="{search_style}">'
+    )
+
     # Scrollable table container
     style_scroll = (
         'max-height: 400px; overflow-y: auto; '
         'border: 1px solid #ddd; border-radius: 3px;'
     )
     html += f'<div style="{style_scroll}">'
-    html += '<table style="border-collapse: collapse; width: auto;">'
+    html += (
+        f'<table id="table_{unique_id}" '
+        f'style="border-collapse: collapse; width: auto;">'
+    )
 
     # Use provided key_order, or fall back to sorted keys
     keys_to_display = (
@@ -220,7 +247,7 @@ def _generate_html_repr(
             f'border-bottom: 1px solid #eee; '
             f'background-color: {bg_color};'
         )
-        html += f'<tr style="{tr_style}">'
+        html += f'<tr class="data-row" style="{tr_style}">'
         style_key = (
             'padding: 8px; font-weight: bold; width: 30%; '
             f'vertical-align: top; color: {key_color};'
@@ -229,11 +256,62 @@ def _generate_html_repr(
         style_val = (
             f'padding: 8px; color: {key_color}; text-align: left;'
         )
-        html += f'<td style="{style_val}">{value_html}</td>'
+        html += f'<td style="{style_val}">{value_html}'
+
+        if help_text := help_texts.get(key):
+            # Replace lines containing only "#" with empty lines
+            help_lines = [
+                '' if line.strip() == '#' else line
+                for line in help_text.split('\n')
+            ]
+            processed_help = '\n'.join(help_lines)
+            help_html = (
+                processed_help.replace('&', '&amp;')
+                .replace('<', '&lt;')
+                .replace('>', '&gt;')
+                .replace('\n', '<br>')
+                .replace('  ', '&nbsp;&nbsp;')
+            )
+            help_style = (
+                'display: block; margin-top: 4px; '
+                'font-size: 0.85em; color: #666; '
+                'font-style: italic; white-space: pre-wrap;'
+            )
+            html += (
+                f'<div style="{help_style}">{help_html}</div>'
+            )
+
+        html += '</td>'
         html += '</tr>'
 
     html += '</table>'
     html += '</div>'
+
+    # Add JavaScript for search functionality
+    html += f'''
+<script>
+(function() {{
+    const searchInput = document.getElementById('search_{unique_id}');
+    const table = document.getElementById('table_{unique_id}');
+    const rows = table.getElementsByClassName('data-row');
+    if (searchInput) {{
+        searchInput.addEventListener('input', function() {{
+            const searchText = this.value.toLowerCase();
+            for (let i = 0; i < rows.length; i++) {{
+                const row = rows[i];
+                const text = row.textContent.toLowerCase();
+                if (searchText === '' || text.includes(searchText)) {{
+                    row.style.display = '';
+                }} else {{
+                    row.style.display = 'none';
+                }}
+            }}
+        }});
+    }}
+}})();
+</script>
+'''
+
     html += '</div>'
     return html
 
@@ -447,6 +525,31 @@ class _Config(dict):
         self['options'].clear()
         super().clear()
 
+    def _get_help_text(self, parameter):
+        """
+        Get help text for a configuration parameter.
+
+        :param parameter: name of parameter
+        :type parameter: str
+        :return: Help text string or empty string if not found
+        :rtype: str
+        """
+        configspec = parse_configspec()
+        config_obj = get_default_config_obj(configspec)
+        if parameter not in config_obj:
+            return ''
+        comment = config_obj.comments.get(parameter)
+        if len(comment) == 0 or comment == ['']:
+            comment = config_obj.inline_comments.get(parameter) or []
+        # Clean up comment lines by removing leading '# ', empty lines,
+        # and lines containing '----'. Join the remaining lines into a
+        # single string.
+        comment = '\n'.join(
+            line.replace('# ', '') for line in comment
+            if '----' not in line and line.strip()
+        )
+        return comment
+
     def get_help(self, parameter=None):
         """
         Print information about given configuration parameter
@@ -468,16 +571,7 @@ class _Config(dict):
                 end=''
             )
             return
-        comment = config_obj.comments.get(parameter)
-        if len(comment) == 0 or comment == ['']:
-            comment = config_obj.inline_comments.get(parameter) or []
-        # Clean up comment lines by removing leading '# ', empty lines,
-        # and lines containing '----'. Join the remaining lines into a
-        # single string.
-        comment = '\n'.join(
-            line.replace('# ', '') for line in comment
-            if '----' not in line and line.strip()
-        )
+        comment = self._get_help_text(parameter)
         print(comment)
 
     def update(self, other):
@@ -807,9 +901,16 @@ class _Config(dict):
             key_order = [k for k in key_order if k in self]
         # Get internal keys for visual separation
         internal_keys = getattr(self, '_internal_keys', [])
+        # Gather help texts for all config parameters
+        help_texts = {}
+        for key in self.keys():
+            if key not in internal_keys:
+                if help_text := self._get_help_text(key):
+                    help_texts[key] = help_text
         return _generate_html_repr(
             self, title='SourceSpec Configuration',
-            key_order=key_order, internal_keys=internal_keys
+            key_order=key_order, internal_keys=internal_keys,
+            help_texts=help_texts
         )
 
 
