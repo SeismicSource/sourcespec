@@ -335,8 +335,8 @@ class _Options(dict):
         Perform specific checks for some parameters.
         """
         if (
-            key in ['trace_path', 'asdf_path'] and
-            (value is not None and not isinstance(value, (list, tuple)))
+            key in ['trace_path', 'asdf_path']
+            and (value is not None and not isinstance(value, (list, tuple)))
         ):
             warnings.warn(
                 f'"{key}" must be a list. Converting to a list with one '
@@ -759,8 +759,8 @@ class _Config(dict):
             config.layer_top_depths_source)
         try:
             assert (
-                n_vp_source == n_vs_source == n_rho_source ==
-                n_layer_top_depths_source
+                n_vp_source == n_vs_source == n_rho_source
+                == n_layer_top_depths_source
             )
         except AssertionError as err:
             raise ValueError(
