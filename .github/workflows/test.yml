@@ -8,11 +8,13 @@ on:
       - v2-rebase-main
     paths:
       - 'sourcespec/**'
+      - 'sourcespec2/**'
       - 'setup.py'
       - 'pyproject.toml'
   pull_request:
     paths:
       - 'sourcespec/**'
+      - 'sourcespec2/**'
       - 'setup.py'
       - 'pyproject.toml'
 
