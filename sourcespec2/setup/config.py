@@ -107,14 +107,21 @@ def _format_value(value, max_length=100):
     return str(value)
 
 
-def _generate_html_repr(obj, title='Configuration'):
+def _generate_html_repr(
+    obj, title='Configuration', key_order=None, internal_keys=None
+):
     """
     Generate HTML representation for a dict-like object.
 
     :param obj: Dictionary-like object to display
     :param title: Title for the HTML display
+    :param key_order: Optional list of keys in desired order
+    :param internal_keys: Optional list of internal keys to separate
     :return: HTML string
     """
+    if internal_keys is None:
+        internal_keys = []
+
     style_div = (
         'font-family: monospace; border: 1px solid #ddd; '
         'padding: 10px; border-radius: 5px; '
@@ -133,7 +140,59 @@ def _generate_html_repr(obj, title='Configuration'):
     html += f'<div style="{style_scroll}">'
     html += '<table style="border-collapse: collapse; width: auto;">'
 
-    for key in sorted(obj.keys()):
+    # Use provided key_order, or fall back to sorted keys
+    keys_to_display = (
+        key_order
+        if key_order is not None
+        else sorted(obj.keys())
+    )
+    # Track whether we've added the section headers
+    internal_section_added = False
+    config_section_added = False
+
+    for key in keys_to_display:
+        # Add section header before transitioning from internal to config keys
+        if internal_keys:
+            is_internal = key in internal_keys
+            if is_internal and not internal_section_added:
+                # Add "Internal Configuration" header
+                style = (
+                    'background-color: #f0f0f0; '
+                    'border-bottom: 2px solid #999;'
+                )
+                cell_style = (
+                    'padding: 8px; font-weight: bold; '
+                    'color: #333; background-color: #f0f0f0;'
+                )
+                html += (
+                    f'<tr style="{style}">'
+                    f'<td colspan="2" style="{cell_style}">'
+                    'Internal Configuration</td></tr>'
+                )
+                internal_section_added = True
+            elif (
+                not is_internal and not config_section_added
+                and internal_section_added
+            ):
+                # Add "Configuration Parameters" header
+                style = (
+                    'background-color: #f0f0f0; '
+                    'border-bottom: 2px solid #999;'
+                )
+                cell_style = (
+                    'padding: 8px; font-weight: bold; '
+                    'color: #333; background-color: #f0f0f0;'
+                )
+                html += (
+                    f'<tr style="{style}">'
+                    f'<td colspan="2" style="{cell_style}">'
+                    'Configuration Parameters</td></tr>'
+                )
+                config_section_added = True
+
+        if key not in obj:
+            continue
+
         value = obj[key]
         formatted = _format_value(value, max_length=200)
 
@@ -149,13 +208,27 @@ def _generate_html_repr(obj, title='Configuration'):
             .replace('>', '&gt;')
         )
 
-        html += '<tr style="border-bottom: 1px solid #eee;">'
+        # Use slightly different styling for internal vs config keys
+        if key in internal_keys:
+            bg_color = '#fafafa'
+            key_color = '#555'
+        else:
+            bg_color = '#fff'
+            key_color = '#000'
+
+        tr_style = (
+            f'border-bottom: 1px solid #eee; '
+            f'background-color: {bg_color};'
+        )
+        html += f'<tr style="{tr_style}">'
         style_key = (
             'padding: 8px; font-weight: bold; width: 30%; '
-            'vertical-align: top; color: #000;'
+            f'vertical-align: top; color: {key_color};'
         )
         html += f'<td style="{style_key}">{key_html}</td>'
-        style_val = 'padding: 8px; color: #000; text-align: left;'
+        style_val = (
+            f'padding: 8px; color: {key_color}; text-align: left;'
+        )
         html += f'<td style="{style_val}">{value_html}</td>'
         html += '</tr>'
 
@@ -254,7 +327,17 @@ class _Options(dict):
     def __repr__(self):
         """Return a detailed string representation of options."""
         lines = ['_Options(']
-        for key in sorted(self.keys()):
+        # Get keys in the order they appear in argparse actions
+        actions = self._get_parser_actions()
+        action_dests = [action.dest for action in actions]
+        # Use action order, then sort any remaining keys
+        keys_to_display = [
+            key for key in action_dests if key in self
+        ] + [
+            key for key in sorted(self.keys())
+            if key not in action_dests
+        ]
+        for key in keys_to_display:
             value = self[key]
             formatted = _format_value(value)
             lines.append(f'  {key}: {formatted}')
@@ -272,7 +355,18 @@ class _Options(dict):
         This method is automatically called by Jupyter when displaying
         the options object in a notebook cell.
         """
-        return _generate_html_repr(self, title='SourceSpec Options')
+        # Get keys in the order they appear in argparse actions
+        actions = self._get_parser_actions()
+        action_dests = [action.dest for action in actions]
+        key_order = [
+            key for key in action_dests if key in self
+        ] + [
+            key for key in sorted(self.keys())
+            if key not in action_dests
+        ]
+        return _generate_html_repr(
+            self, title='SourceSpec Options', key_order=key_order
+        )
 
 
 class _Config(dict):
@@ -319,6 +413,15 @@ class _Config(dict):
         configspec = parse_configspec()
         config_obj = get_default_config_obj(configspec)
         self.update(config_obj.dict())
+        # Store the key order from configspec for use in repr methods
+        # Internal keys go first, then configspec keys in order
+        self._internal_keys = [
+            'running_from_command_line', 'vertical_channel_codes',
+            'horizontal_channel_codes_1', 'horizontal_channel_codes_2',
+            'TRACEID_MAP', 'options', 'warnings', 'figures', 'workdir',
+            'INSTR_CODES_VEL', 'INSTR_CODES_ACC'
+        ]
+        self._key_order = self._internal_keys + list(config_obj.keys())
 
     def reset(self):
         """Reset the config object to the default values."""
@@ -676,10 +779,13 @@ class _Config(dict):
     def __repr__(self):
         """Return a detailed string representation of the config."""
         lines = ['_Config(']
-        for key in sorted(self.keys()):
-            value = self[key]
-            formatted = _format_value(value)
-            lines.append(f'  {key}: {formatted}')
+        # Use stored key order, or fall back to sorted keys
+        key_order = getattr(self, '_key_order', sorted(self.keys()))
+        for key in key_order:
+            if key in self:
+                value = self[key]
+                formatted = _format_value(value)
+                lines.append(f'  {key}: {formatted}')
         lines.append(')')
         return '\n'.join(lines)
 
@@ -694,8 +800,16 @@ class _Config(dict):
         This method is automatically called by Jupyter when displaying
         the config object in a notebook cell.
         """
+        # Use stored key order for consistent display
+        key_order = getattr(self, '_key_order', None)
+        if key_order:
+            # Filter to only include keys that exist in the config
+            key_order = [k for k in key_order if k in self]
+        # Get internal keys for visual separation
+        internal_keys = getattr(self, '_internal_keys', [])
         return _generate_html_repr(
-            self, title='SourceSpec Configuration'
+            self, title='SourceSpec Configuration',
+            key_order=key_order, internal_keys=internal_keys
         )
 
 
