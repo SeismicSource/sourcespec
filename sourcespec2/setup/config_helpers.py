@@ -283,6 +283,21 @@ def generate_html_repr(
     const table = document.getElementById('table_{unique_id}');
     const rows = table.getElementsByClassName('data-row');
     if (searchInput) {{
+        // Prevent notebook keyboard shortcuts from interfering
+        // with search input
+        searchInput.addEventListener('keydown', function(event) {{
+            // Don't stop propagation for Ctrl/Cmd combinations
+            // (e.g., Ctrl+A, Ctrl+C)
+            // These should work normally in the input field
+            if (event.ctrlKey || event.metaKey) {{
+                return;
+            }}
+            // Stop all other keys from reaching the notebook
+            event.stopPropagation();
+        }});
+        searchInput.addEventListener('keyup', function(event) {{
+            event.stopPropagation();
+        }});
         searchInput.addEventListener('input', function() {{
             const searchText = this.value.toLowerCase();
             for (let i = 0; i < rows.length; i++) {{
