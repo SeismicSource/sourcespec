@@ -623,6 +623,56 @@ class _Config(dict):
             help_texts=help_texts
         )
 
+    def write(self, config_file):
+        """
+        Write configuration to file
+
+        :param config_file: full path to configuration file
+        :type config_file: str
+        """
+        import numpy as np
+
+        configspec = parse_configspec()
+        config_obj = get_default_config_obj(configspec)
+
+        ## Override defaults with configured parameters
+        config = {}
+        for key in config_obj.keys():
+            value = self.get(key)
+            ## Hack: convert float lists to strings
+            if isinstance(value, (list, np.ndarray)):
+                config[key] = ', '.join([str(val) for val in value])
+                if len(value) == 1:
+                    config[key] += ','
+            if value is not None:
+                config[key] = value
+        ## Station-specific fequency ranges
+        ## Is there a way to group them with the general bp_freq_* specs?
+        for key, value in self.items():
+            if (key[:6] in ('freq1_', 'freq2_')
+                    or key[:11] in ('bp_freqmin_', 'bp_freqmax_')):
+                if not key.split('_')[-1] in ('acc', 'shortp', 'broadb', 'disp'):
+                    if value is not None:
+                        config[key] = value
+        config_obj.update(config)
+
+        ## Copy comments
+        config_obj.initial_comment = configspec.initial_comment
+        config_obj.final_comment = configspec.final_comment
+        config_obj.comments = configspec.comments
+        config_obj.inline_comments = configspec.inline_comments
+        ## Station-specific fequency ranges
+        ## Is there a way to group them with the general bp_freq_* specs?
+        for key in config.keys():
+            if (key[:6] in ('freq1_', 'freq2_')
+                    or key[:11] in ('bp_freqmin_', 'bp_freqmax_')):
+                if not key.split('_')[-1] in ('acc', 'shortp', 'broadb', 'disp'):
+                    config_obj.comments[key] = ''
+                    config_obj.inline_comments[key] = ''
+
+        with open(config_file, 'wb') as fp:
+            config_obj.write(fp)
+
 
 # Global config object, initialized with default values
 # API users should use this object to access configuration parameters
