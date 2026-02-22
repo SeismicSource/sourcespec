@@ -623,6 +623,18 @@ class _Config(dict):
             help_texts=help_texts
         )
 
+    def read(self, config_file):
+        """
+        Read from configuration file
+
+        :param config_file: full path to configuration file
+        :type config_file: str
+        """
+        from .configobj_helpers import read_config_file
+
+        config_obj = read_config_file(config_file)
+        self.update(config_obj.dict())
+
     def write(self, config_file):
         """
         Write configuration to file
@@ -630,7 +642,9 @@ class _Config(dict):
         :param config_file: full path to configuration file
         :type config_file: str
         """
+        # TODO: maybe add option to write options as well?
         import numpy as np
+        from .configure_cli import _write_config_to_file
 
         configspec = parse_configspec()
         config_obj = get_default_config_obj(configspec)
@@ -656,22 +670,7 @@ class _Config(dict):
                         config[key] = value
         config_obj.update(config)
 
-        ## Copy comments
-        config_obj.initial_comment = configspec.initial_comment
-        config_obj.final_comment = configspec.final_comment
-        config_obj.comments = configspec.comments
-        config_obj.inline_comments = configspec.inline_comments
-        ## Station-specific fequency ranges
-        ## Is there a way to group them with the general bp_freq_* specs?
-        for key in config.keys():
-            if (key[:6] in ('freq1_', 'freq2_')
-                    or key[:11] in ('bp_freqmin_', 'bp_freqmax_')):
-                if not key.split('_')[-1] in ('acc', 'shortp', 'broadb', 'disp'):
-                    config_obj.comments[key] = ''
-                    config_obj.inline_comments[key] = ''
-
-        with open(config_file, 'wb') as fp:
-            config_obj.write(fp)
+        _write_config_to_file(config_obj, config_file)
 
 
 # Global config object, initialized with default values
