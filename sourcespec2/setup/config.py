@@ -634,6 +634,7 @@ class _Config(dict):
 
         config_obj = read_config_file(config_file)
         self.update(config_obj.dict())
+        self.validate()
 
     def write(self, config_file):
         """
