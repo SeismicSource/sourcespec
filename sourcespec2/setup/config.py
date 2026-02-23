@@ -634,6 +634,11 @@ class _Config(dict):
 
         config_obj = read_config_file(config_file)
         self.update(config_obj.dict())
+        ## Force splitting into string lists
+        for key, val in self.items():
+            if isinstance(val, type('')):
+                if ',' in val:
+                    self.__setitem__(key, [s.strip() for s in val.split(',')])
         self.validate()
 
     def write(self, config_file):
@@ -648,8 +653,10 @@ class _Config(dict):
         from .configure_cli import _write_config_to_file
 
         configspec = parse_configspec()
-        config_obj = get_default_config_obj(configspec)
 
+        #config_obj = ConfigObj(self, configspec=configspec, encoding='utf8')
+
+        config_obj = get_default_config_obj(configspec)
         ## Override defaults with configured parameters
         config = {}
         for key in config_obj.keys():
