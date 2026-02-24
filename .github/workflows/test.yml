@@ -43,7 +43,18 @@ jobs:
 
     # TODO: Remove this step when v2 is retired
     - name: Create source_spec alias for v2 branches
-      if: github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/v2-rebase-main'
+      if: >-
+        (
+          github.ref == 'refs/heads/v2' ||
+          github.ref == 'refs/heads/v2-rebase-main'
+        ) ||
+        (
+          github.event_name == 'pull_request' &&
+          (
+            github.base_ref == 'v2' ||
+            github.base_ref == 'v2-rebase-main'
+          )
+        )
       shell: bash
       run: |
         set -euo pipefail
@@ -63,7 +74,18 @@ jobs:
 
     # TODO: Remove this step when v2 is retired
     - name: Patch check_versions.py for v2 branches
-      if: github.ref == 'refs/heads/v2' || github.ref == 'refs/heads/v2-rebase-main'
+      if: >-
+        (
+          github.ref == 'refs/heads/v2' ||
+          github.ref == 'refs/heads/v2-rebase-main'
+        ) ||
+        (
+          github.event_name == 'pull_request' &&
+          (
+            github.base_ref == 'v2' ||
+            github.base_ref == 'v2-rebase-main'
+          )
+        )
       shell: bash
       run: |
         set -euo pipefail
