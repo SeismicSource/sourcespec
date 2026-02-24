@@ -5,6 +5,8 @@ include CONTRIBUTORS.txt
 # include only files in docs, not subdirs like _build
 include docs/*
 include imgs/*
+# Explicitly include all Python modules so new files are picked up
+recursive-include sourcespec *.py
 # exclude configuration_file.rst, which is generated when
 # building docs
 exclude docs/configuration_file.rst
