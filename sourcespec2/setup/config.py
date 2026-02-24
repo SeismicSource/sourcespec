@@ -623,6 +623,63 @@ class _Config(dict):
             help_texts=help_texts
         )
 
+    def read(self, config_file):
+        """
+        Read from configuration file
+
+        :param config_file: full path to configuration file
+        :type config_file: str
+        """
+        from .configobj_helpers import read_config_file
+
+        config_obj = read_config_file(config_file)
+        self.update(config_obj.dict())
+        ## Force splitting into string lists
+        for key, val in self.items():
+            if isinstance(val, type('')):
+                if ',' in val:
+                    self.__setitem__(key, [s.strip() for s in val.split(',')])
+        self.validate()
+
+    def write(self, config_file):
+        """
+        Write configuration to file
+
+        :param config_file: full path to configuration file
+        :type config_file: str
+        """
+        # TODO: maybe add option to write options as well?
+        import numpy as np
+        from .configure_cli import _write_config_to_file
+
+        configspec = parse_configspec()
+
+        #config_obj = ConfigObj(self, configspec=configspec, encoding='utf8')
+
+        config_obj = get_default_config_obj(configspec)
+        ## Override defaults with configured parameters
+        config = {}
+        for key in config_obj.keys():
+            value = self.get(key)
+            ## Hack: convert float lists to strings
+            if isinstance(value, (list, np.ndarray)):
+                config[key] = ', '.join([str(val) for val in value])
+                if len(value) == 1:
+                    config[key] += ','
+            if value is not None:
+                config[key] = value
+        ## Station-specific fequency ranges
+        ## Is there a way to group them with the general bp_freq_* specs?
+        for key, value in self.items():
+            if (key[:6] in ('freq1_', 'freq2_')
+                    or key[:11] in ('bp_freqmin_', 'bp_freqmax_')):
+                if not key.split('_')[-1] in ('acc', 'shortp', 'broadb', 'disp'):
+                    if value is not None:
+                        config[key] = value
+        config_obj.update(config)
+
+        _write_config_to_file(config_obj, config_file)
+
 
 # Global config object, initialized with default values
 # API users should use this object to access configuration parameters
