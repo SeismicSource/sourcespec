@@ -201,8 +201,8 @@ class _Config(dict):
         self['INSTR_CODES_VEL'] = ['H', 'L', 'P']
         self['INSTR_CODES_ACC'] = ['N', ]
         # Initialize config object to the default values
-        configspec = parse_configspec()
-        config_obj = get_default_config_obj(configspec)
+        self._configspec = parse_configspec()
+        config_obj = get_default_config_obj(self._configspec)
         self.update(config_obj.dict())
         # Store the key order from configspec for use in repr methods
         # Internal keys go first, then configspec keys in order
@@ -297,7 +297,9 @@ class _Config(dict):
         :raises ValueError: If an error occurs while parsing the parameters
         """
         for key, value in other.items():
-            self[key] = value
+            # Skip internal attributes (those starting with '_')
+            if not key.startswith('_'):
+                self[key] = value
         # Set to None all the 'None' strings
         for key, value in self.items():
             if value == 'None':
@@ -633,14 +635,8 @@ class _Config(dict):
         :param config_file: full path to configuration file
         :type config_file: str
         """
-
-        config_obj = read_config_file(config_file)
-        self.update(config_obj.dict())
-        ## Force splitting into string lists
-        for key, val in self.items():
-            if isinstance(val, type('')):
-                if ',' in val:
-                    self.__setitem__(key, [s.strip() for s in val.split(',')])
+        _config_obj = read_config_file(config_file, self._configspec)
+        self.update(_config_obj.dict())
         self.validate()
 
     def write(self, config_file):
@@ -651,35 +647,34 @@ class _Config(dict):
         :type config_file: str
         """
         # TODO: maybe add option to write options as well?
-        import numpy as np
-        from .configure_cli import _write_config_to_file
-
-        configspec = parse_configspec()
-
-        #config_obj = ConfigObj(self, configspec=configspec, encoding='utf8')
-
-        config_obj = get_default_config_obj(configspec)
-        ## Override defaults with configured parameters
-        config = {}
-        for key in config_obj.keys():
+        # pylint: disable=import-outside-toplevel
+        from collections.abc import Iterable
+        _config_obj = get_default_config_obj(self._configspec)
+        for key in _config_obj.keys():
             value = self.get(key)
-            ## Hack: convert float lists to strings
-            if isinstance(value, (list, np.ndarray)):
-                config[key] = ', '.join([str(val) for val in value])
-                if len(value) == 1:
-                    config[key] += ','
-            if value is not None:
-                config[key] = value
-        ## Station-specific fequency ranges
-        ## Is there a way to group them with the general bp_freq_* specs?
+            if (
+                key == 'free_surface_amplification'
+                and isinstance(value, Iterable)
+                and not isinstance(value, (str, dict))
+            ):
+                # Special formatting for free_surface_amplification
+                _str_list = ', '.join(
+                    f'{statid}: {val}' for statid, val in value
+                ).strip()
+                _config_obj[key] = _str_list
+            elif value is not None:
+                _config_obj[key] = value
+        # Station-specific fequency ranges
+        # TODO: Is there a way to group them with the general bp_freq_* specs?
         for key, value in self.items():
-            if (key[:6] in ('freq1_', 'freq2_')
-                    or key[:11] in ('bp_freqmin_', 'bp_freqmax_')):
-                if not key.split('_')[-1] in ('acc', 'shortp', 'broadb', 'disp'):
-                    if value is not None:
-                        config[key] = value
-        config_obj.update(config)
-
+            if (
+                key.startswith(
+                    ('freq1_', 'freq2_', 'bp_freqmin_', 'bp_freqmax_'))
+                and not
+                key.endswith(('_acc', '_shortp', '_broadb', '_disp'))
+                and value is not None
+            ):
+                _config_obj[key] = value
         write_config_to_file(_config_obj, config_file)
 
 
