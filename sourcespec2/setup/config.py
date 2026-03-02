@@ -13,7 +13,10 @@ import os
 import contextlib
 import warnings
 from collections import defaultdict
-from .configobj_helpers import parse_configspec, get_default_config_obj
+from .configobj_helpers import (
+    read_config_file, parse_configspec, get_default_config_obj,
+    write_config_to_file
+)
 from .mandatory_deprecated import (
     mandatory_config_params, check_deprecated_config_params
 )
@@ -630,7 +633,6 @@ class _Config(dict):
         :param config_file: full path to configuration file
         :type config_file: str
         """
-        from .configobj_helpers import read_config_file
 
         config_obj = read_config_file(config_file)
         self.update(config_obj.dict())
@@ -678,7 +680,7 @@ class _Config(dict):
                         config[key] = value
         config_obj.update(config)
 
-        _write_config_to_file(config_obj, config_file)
+        write_config_to_file(_config_obj, config_file)
 
 
 # Global config object, initialized with default values

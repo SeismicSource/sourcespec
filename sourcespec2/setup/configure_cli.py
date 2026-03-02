@@ -15,12 +15,12 @@ import types
 import shutil
 import uuid
 import json
-from io import BytesIO
 from copy import copy
 from datetime import datetime
 from .config import config
 from .configobj_helpers import (
-    read_config_file, parse_configspec, get_default_config_obj
+    read_config_file, parse_configspec, get_default_config_obj,
+    write_config_to_file
 )
 from .library_versions import library_versions
 from .configobj import ConfigObj
@@ -49,26 +49,6 @@ else:
     IPSHELL = None
 
 
-def _write_config_to_file(config_obj, filepath):
-    """
-    Write config object to file, removing trailing commas from
-    force_list entries.
-
-    :param config_obj: ConfigObj instance to write
-    :param str filepath: Path to the file to write
-    """
-    buffer = BytesIO()
-    config_obj.write(buffer)
-    with open(filepath, 'w', encoding='utf8') as fp:
-        for line in buffer.getvalue().decode('utf8').splitlines(keepends=True):
-            # Remove trailing comma before newline if present,
-            # but only if line is not a comment
-            line = line.rstrip('\n\r')
-            if line.endswith(',') and not line.lstrip().startswith('#'):
-                line = line.rstrip(',')
-            fp.write(line + '\n')
-
-
 def _write_sample_config(configspec, progname):
     """
     Write a sample configuration file.
@@ -87,7 +67,7 @@ def _write_sample_config(configspec, progname):
         )
         write_file = ans in ['y', 'Y']
     if write_file:
-        _write_config_to_file(config_obj, configfile)
+        write_config_to_file(config_obj, configfile)
         print(f'Sample config file written to: {configfile}')
         note = """
 Note that the default config parameters are suited for a M<5 earthquake
@@ -202,7 +182,7 @@ def _update_config_file(config_file, configspec):
                     config_new['layer_top_depths'] = 'None'
         config_new['rho'] = 'None'
     shutil.copyfile(config_file, config_file_old)
-    _write_config_to_file(config_new, config_file)
+    write_config_to_file(config_new, config_file)
     print(f'{config_file}: updated')
 
 

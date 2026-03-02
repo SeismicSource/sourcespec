@@ -10,6 +10,7 @@ Helper functions for using ConfigObj in SourceSpec.
     (http://www.cecill.info/licences.en.html)
 """
 import os
+from io import BytesIO
 from .configobj import ConfigObj
 from .configobj.validate import Validator
 
@@ -78,3 +79,24 @@ def get_default_config_obj(configspec):
     config_obj.comments = configspec.comments
     config_obj.final_comment = configspec.final_comment
     return config_obj
+
+
+def write_config_to_file(config_obj, filepath):
+    """
+    Write config object to file, removing trailing commas from
+    force_list entries.
+
+    :param config_obj: ConfigObj instance to write
+    :param str filepath: Path to the file to write
+    """
+    buffer = BytesIO()
+    config_obj.write(buffer)
+    with open(filepath, 'w', encoding='utf8') as fp:
+        for line in buffer.getvalue().decode('utf8').splitlines(keepends=True):
+            # Remove trailing comma before newline if present,
+            # but only if line is not a comment
+            line = line.rstrip('\n\r')
+            if line.endswith(',') and not line.lstrip().startswith('#'):
+                line = line.rstrip(',')
+            fp.write(line + '\n')
+
