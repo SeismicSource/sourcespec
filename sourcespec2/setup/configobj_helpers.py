@@ -10,7 +10,6 @@ Helper functions for using ConfigObj in SourceSpec.
     (http://www.cecill.info/licences.en.html)
 """
 import os
-import sys
 from .configobj import ConfigObj
 from .configobj.validate import Validator
 
@@ -26,6 +25,8 @@ def read_config_file(config_file, configspec=None):
 
     :return: ConfigObj object
     :rtype: ConfigObj
+
+    :raises IOError: if ConfigObj is unable to read the file
     """
     kwargs = {
         'configspec': configspec,
@@ -41,11 +42,9 @@ def read_config_file(config_file, configspec=None):
     try:
         config_obj = ConfigObj(config_file, **kwargs)
     except IOError as err:
-        sys.stderr.write(f'{err}\n')
-        sys.exit(1)
+        raise IOError(f'{err}') from err
     except Exception as err:
-        sys.stderr.write(f'Unable to read "{config_file}": {err}\n')
-        sys.exit(1)
+        raise IOError(f'Unable to read "{config_file}": {err}') from err
     return config_obj
 
 

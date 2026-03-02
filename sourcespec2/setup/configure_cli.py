@@ -106,7 +106,11 @@ def _update_config_file(config_file, configspec):
     :param configspec: The configuration specification
     :type configspec: ConfigObj
     """
-    config_obj = read_config_file(config_file, configspec)
+    try:
+        config_obj = read_config_file(config_file, configspec)
+    except IOError as err:
+        sys.stderr.write(f'{err}\n')
+        sys.exit(1)
     val = Validator()
     config_obj.validate(val)
     mod_time = datetime.fromtimestamp(os.path.getmtime(config_file))
@@ -119,7 +123,6 @@ def _update_config_file(config_file, configspec):
     if ans not in ['y', 'Y']:
         sys.exit(0)
     config_new = ConfigObj(configspec=configspec, default_encoding='utf8')
-    config_new = read_config_file(None, configspec)
     config_new.validate(val)
     config_new.defaults = []
     config_new.comments = configspec.comments
@@ -325,7 +328,11 @@ def configure_cli(options=None, progname='source_spec', config_overrides=None):
 
     if getattr(options, 'config_file', None):
         options.config_file = _fix_and_expand_path(options.config_file)
-        config_obj = read_config_file(options.config_file, configspec)
+        try:
+            config_obj = read_config_file(options.config_file, configspec)
+        except IOError as err:
+            sys.stderr.write(f'{err}\n')
+            sys.exit(1)
         # Apply overrides
         if config_overrides is not None:
             try:
