@@ -13,7 +13,10 @@ import os
 import contextlib
 import warnings
 from collections import defaultdict
-from .configobj_helpers import parse_configspec, get_default_config_obj
+from .configobj_helpers import (
+    read_config_file, parse_configspec, get_default_config_obj,
+    write_config_to_file
+)
 from .mandatory_deprecated import (
     mandatory_config_params, check_deprecated_config_params
 )
@@ -198,8 +201,8 @@ class _Config(dict):
         self['INSTR_CODES_VEL'] = ['H', 'L', 'P']
         self['INSTR_CODES_ACC'] = ['N', ]
         # Initialize config object to the default values
-        configspec = parse_configspec()
-        config_obj = get_default_config_obj(configspec)
+        self._configspec = parse_configspec()
+        config_obj = get_default_config_obj(self._configspec)
         self.update(config_obj.dict())
         # Store the key order from configspec for use in repr methods
         # Internal keys go first, then configspec keys in order
@@ -294,7 +297,9 @@ class _Config(dict):
         :raises ValueError: If an error occurs while parsing the parameters
         """
         for key, value in other.items():
-            self[key] = value
+            # Skip internal attributes (those starting with '_')
+            if not key.startswith('_'):
+                self[key] = value
         # Set to None all the 'None' strings
         for key, value in self.items():
             if value == 'None':
@@ -622,6 +627,55 @@ class _Config(dict):
             key_order=key_order, internal_keys=internal_keys,
             help_texts=help_texts
         )
+
+    def read(self, config_file):
+        """
+        Read from configuration file
+
+        :param config_file: full path to configuration file
+        :type config_file: str
+        """
+        _config_obj = read_config_file(config_file, self._configspec)
+        self.update(_config_obj.dict())
+        self.validate()
+
+    def write(self, config_file):
+        """
+        Write configuration to file
+
+        :param config_file: full path to configuration file
+        :type config_file: str
+        """
+        # TODO: maybe add option to write options as well?
+        # pylint: disable=import-outside-toplevel
+        from collections.abc import Iterable
+        _config_obj = get_default_config_obj(self._configspec)
+        for key in _config_obj.keys():
+            value = self.get(key)
+            if (
+                key == 'free_surface_amplification'
+                and isinstance(value, Iterable)
+                and not isinstance(value, (str, dict))
+            ):
+                # Special formatting for free_surface_amplification
+                _str_list = ', '.join(
+                    f'{statid}: {val}' for statid, val in value
+                ).strip()
+                _config_obj[key] = _str_list
+            elif value is not None:
+                _config_obj[key] = value
+        # Station-specific fequency ranges
+        # TODO: Is there a way to group them with the general bp_freq_* specs?
+        for key, value in self.items():
+            if (
+                key.startswith(
+                    ('freq1_', 'freq2_', 'bp_freqmin_', 'bp_freqmax_'))
+                and not
+                key.endswith(('_acc', '_shortp', '_broadb', '_disp'))
+                and value is not None
+            ):
+                _config_obj[key] = value
+        write_config_to_file(_config_obj, config_file)
 
 
 # Global config object, initialized with default values

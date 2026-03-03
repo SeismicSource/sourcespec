@@ -10,7 +10,7 @@ Helper functions for using ConfigObj in SourceSpec.
     (http://www.cecill.info/licences.en.html)
 """
 import os
-import sys
+from io import BytesIO
 from .configobj import ConfigObj
 from .configobj.validate import Validator
 
@@ -26,6 +26,8 @@ def read_config_file(config_file, configspec=None):
 
     :return: ConfigObj object
     :rtype: ConfigObj
+
+    :raises IOError: if ConfigObj is unable to read the file
     """
     kwargs = {
         'configspec': configspec,
@@ -41,11 +43,9 @@ def read_config_file(config_file, configspec=None):
     try:
         config_obj = ConfigObj(config_file, **kwargs)
     except IOError as err:
-        sys.stderr.write(f'{err}\n')
-        sys.exit(1)
+        raise IOError(f'{err}') from err
     except Exception as err:
-        sys.stderr.write(f'Unable to read "{config_file}": {err}\n')
-        sys.exit(1)
+        raise IOError(f'Unable to read "{config_file}": {err}') from err
     return config_obj
 
 
@@ -79,3 +79,24 @@ def get_default_config_obj(configspec):
     config_obj.comments = configspec.comments
     config_obj.final_comment = configspec.final_comment
     return config_obj
+
+
+def write_config_to_file(config_obj, filepath):
+    """
+    Write config object to file, removing trailing commas from
+    force_list entries.
+
+    :param config_obj: ConfigObj instance to write
+    :param str filepath: Path to the file to write
+    """
+    buffer = BytesIO()
+    config_obj.write(buffer)
+    with open(filepath, 'w', encoding='utf8') as fp:
+        for line in buffer.getvalue().decode('utf8').splitlines(keepends=True):
+            # Remove trailing comma before newline if present,
+            # but only if line is not a comment
+            line = line.rstrip('\n\r')
+            if line.endswith(',') and not line.lstrip().startswith('#'):
+                line = line.rstrip(',')
+            fp.write(line + '\n')
+
