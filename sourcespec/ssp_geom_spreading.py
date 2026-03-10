@@ -239,42 +239,47 @@ LINEWIDTH = 2.5
 ZORDER = 0
 
 
-def _plot_r_power_n(ax, x_data, hypo_dists, model_params):
+def _append_label_suffix(label, label_suffix):
+    return f'{label} ({label_suffix})' if label_suffix else label
+
+
+def _plot_r_power_n(ax, x_data, hypo_dists, model_params, label_suffix=''):
     default_params = {'exponent': 1}
-    params = model_params or default_params
+    params = dict(model_params) if model_params is not None else default_params
     coeff = geom_spread_r_power_n(hypo_dists, **params)
-    label = f'r^{params["exponent"]}'
+    label = _append_label_suffix(f'r^{params["exponent"]}', label_suffix)
     ax.plot(
         x_data, coeff,
         label=label, linewidth=LINEWIDTH, zorder=ZORDER)
     print(f'Done with r_power_n, params: {params}')
 
 
-def _plot_r_power_n_segmented(ax, x_data, hypo_dists, model_params):
+def _plot_r_power_n_segmented(ax, x_data, hypo_dists, model_params,
+                              label_suffix=''):
     default_params = {
         'exponents': np.array((1, 0, 0.5)),
         'hinge_distances': np.array((1, 70, 130)),
     }
-    params = model_params or default_params
+    params = dict(model_params) if model_params is not None else default_params
     coeff = geom_spread_r_power_n_segmented(hypo_dists, **params)
     exponents_str = ', '.join(map(str, params['exponents']))
     hinges_str = ', '.join(map(str, params['hinge_distances']))
-    label = (
+    label = _append_label_suffix((
         f'Segmented r^n (exponents: {exponents_str}, '
         f'hinges: {hinges_str} km)'
-    )
+    ), label_suffix)
     ax.plot(
         x_data, coeff,
         label=label, linewidth=LINEWIDTH, zorder=ZORDER)
     print(f'Done with r_power_n_segmented, params: {params}')
 
 
-def _plot_boatwright(ax, x_data, hypo_dists, model_params):
+def _plot_boatwright(ax, x_data, hypo_dists, model_params, label_suffix=''):
     default_params = {
         'cutoff_dist_in_km': 200,
         'freqs': np.array((0.))
     }
-    params = model_params or default_params
+    params = dict(model_params) if model_params is not None else default_params
     # set params['freqs'] to 0, if not provided
     params['freqs'] = params.get('freqs', 0.)
     freqs = np.atleast_1d(params['freqs'])
@@ -287,28 +292,29 @@ def _plot_boatwright(ax, x_data, hypo_dists, model_params):
         geom_spread_boatwright(d, **params)
         for d in hypo_dists
     ]
-    label = (
+    label = _append_label_suffix((
         f'Boatwright (cutoff: {params["cutoff_dist_in_km"]} km, '
         f'freqs: {params["freqs"]} Hz)'
-    )
+    ), label_suffix)
     ax.plot(
         x_data, coeff,
         label=label, linewidth=LINEWIDTH, zorder=ZORDER)
     print(f'Done with boatwright, params: {params}')
 
 
-def _plot_teleseismic(ax, x_data, angular_dist, source_depth, model_params):
+def _plot_teleseismic(ax, x_data, angular_dist, source_depth, model_params,
+                      label_suffix=''):
     default_params = {'phase': 'P', 'station_depth_in_km': 0}
-    params = model_params or default_params
+    params = dict(model_params) if model_params is not None else default_params
     # set params['station_depth_in_km'] to 0, if not provided
     params['station_depth_in_km'] = (
         params.get('station_depth_in_km', 0))
     gst = np.vectorize(geom_spread_teleseismic)
     coeff = gst(angular_dist, source_depth, **params)
-    label = (
+    label = _append_label_suffix((
         f'Teleseismic {params["phase"]} '
         f'(station depth: {params["station_depth_in_km"]} km)'
-    )
+    ), label_suffix)
     ax.plot(
         x_data, coeff,
         label=label, linewidth=LINEWIDTH, zorder=ZORDER)
@@ -321,10 +327,12 @@ def plot_geom_spread_models(source_depth, epi_dists, models=None,
     """
     Plot geometrical spreading coefficients for different models.
 
-    :param source_depth: Source depth (km).
-    :type source_depth: float
-    :param epi_dists: Epicentral distances (km).
-    :type epi_dists: numpy.ndarray
+    :param source_depth: Source depth(s) (km). Can be a scalar, list, or
+        numpy array.
+    :type source_depth: float or list[float] or numpy.ndarray
+    :param epi_dists: Epicentral distances (km). Can be a scalar, list, or
+        numpy array.
+    :type epi_dists: float or list[float] or numpy.ndarray
 
     :param models: List of tuples where each tuple contains:
 
@@ -366,7 +374,7 @@ def plot_geom_spread_models(source_depth, epi_dists, models=None,
     :examples:
 
     >>> import numpy as np
-    >>> source_depth = 10
+    >>> source_depth = [10, 20]
     >>> epi_dists = np.arange(10, 1000, 10)
     >>> models = [
     >>>     ('r_power_n', {'exponent': 1}),
@@ -395,20 +403,19 @@ def plot_geom_spread_models(source_depth, epi_dists, models=None,
     # pylint: disable=import-outside-toplevel
     import matplotlib.pyplot as plt
 
-    # source depth must be a float
-    source_depth = float(source_depth)
+    # source_depth can be a scalar or an array-like
+    source_depths = np.atleast_1d(source_depth).astype(float)
+    if len(source_depths) == 0:
+        raise ValueError('source_depth cannot be empty')
     # epi_dists must be a numpy array
     epi_dists = np.atleast_1d(epi_dists)
-    hypo_dists = np.sqrt(epi_dists**2 + source_depth**2)
     angular_dist = epi_dists / 111.111
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
     if xaxis == 'epi_dist':
-        x_data = epi_dists
         x_label = 'Epicentral distance (km)'
     elif xaxis == 'hypo_dist':
-        x_data = hypo_dists
         x_label = 'Hypocentral distance (km)'
     else:
         raise ValueError(f'Invalid xaxis: {xaxis}')
@@ -432,21 +439,33 @@ def plot_geom_spread_models(source_depth, epi_dists, models=None,
         models = [('r_power_n', {'exponent': 1})]
 
     print('Computing and plotting geometrical spreading coefficients...')
+    multiple_depths = len(source_depths) > 1
     # pylint: disable=global-statement, invalid-name
     global ZORDER
-    for model_name, model_params in models:
-        ZORDER += 10
-        if model_name == 'r_power_n':
-            _plot_r_power_n(ax, x_data, hypo_dists, model_params)
-        elif model_name == 'r_power_n_segmented':
-            _plot_r_power_n_segmented(ax, x_data, hypo_dists, model_params)
-        elif model_name == 'boatwright':
-            _plot_boatwright(ax, x_data, hypo_dists, model_params)
-        elif model_name == 'teleseismic':
-            _plot_teleseismic(ax, x_data, angular_dist, source_depth,
-                              model_params)
-        else:
-            raise ValueError(f'Invalid model name: {model_name}')
+    for depth in source_depths:
+        hypo_dists = np.sqrt(epi_dists**2 + depth**2)
+        x_data = epi_dists if xaxis == 'epi_dist' else hypo_dists
+        label_suffix = f'source depth: {depth:g} km' if multiple_depths else ''
+        for model_name, model_params in models:
+            ZORDER += 10
+            if model_name == 'r_power_n':
+                _plot_r_power_n(
+                    ax, x_data, hypo_dists, model_params,
+                    label_suffix=label_suffix)
+            elif model_name == 'r_power_n_segmented':
+                _plot_r_power_n_segmented(
+                    ax, x_data, hypo_dists, model_params,
+                    label_suffix=label_suffix)
+            elif model_name == 'boatwright':
+                _plot_boatwright(
+                    ax, x_data, hypo_dists, model_params,
+                    label_suffix=label_suffix)
+            elif model_name == 'teleseismic':
+                _plot_teleseismic(
+                    ax, x_data, angular_dist, depth, model_params,
+                    label_suffix=label_suffix)
+            else:
+                raise ValueError(f'Invalid model name: {model_name}')
 
     ax.minorticks_on()
     ax.grid(True, which='major', linestyle='-', linewidth=0.75)
@@ -454,7 +473,12 @@ def plot_geom_spread_models(source_depth, epi_dists, models=None,
     ax.legend()
     ax.set_xlabel(x_label)
     ax.set_ylabel('Geometrical spreading coefficient')
-    ax.set_title(f'Source depth: {source_depth} km')
+    if multiple_depths:
+        min_depth = np.min(source_depths)
+        max_depth = np.max(source_depths)
+        ax.set_title(f'Source depths: {min_depth:g}-{max_depth:g} km')
+    else:
+        ax.set_title(f'Source depth: {source_depths[0]:g} km')
 
     if return_fig:
         return fig
