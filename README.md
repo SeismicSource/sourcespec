@@ -8,6 +8,7 @@ Earthquake source parameters from P- or S-wave displacement spectra
 [![PyPI-badge]][PyPI-link]
 [![license-badge]][license-link]
 [![docs-badge]][docs-link]
+[![DeepWiki-badge]][DeepWiki-link]
 [![DOI-badge]][DOI-link]
 
 Copyright (c) 2011-2026 Claudio Satriano <satriano@ipgp.fr>
@@ -476,6 +477,8 @@ please let me know.
 [Issues]: https://github.com/SeismicSource/sourcespec/issues
 [Anaconda]: https://www.anaconda.com/products/individual
 [citing_literature]: https://sourcespec.readthedocs.io/en/latest/citing_literature.html
+[DeepWiki-badge]: https://deepwiki.com/badge.svg
+[DeepWiki-link]: https://deepwiki.com/SeismicSource/sourcespec
 
 <!-- File formats -->
 [obspy_trace_formats]: https://docs.obspy.org/packages/autogen/obspy.core.stream.read.html
