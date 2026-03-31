@@ -27,7 +27,7 @@ jobs:
 
     steps:
     - name: Checkout sourcespec
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0  # full history to ensure tags are available for version resolution
 
