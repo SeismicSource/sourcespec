@@ -101,7 +101,7 @@ jobs:
         bash scripts/collect_testrun_artifacts.sh sourcespec_testruns artifacts
 
     - name: Upload test artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: testruns-${{ matrix.os }}-py${{ matrix.python-version }}
         path: artifacts
