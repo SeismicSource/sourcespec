@@ -31,6 +31,7 @@ from sourcespec.spectrum import Spectrum, SpectrumStream
 from sourcespec.ssp_setup import ssp_exit
 from sourcespec.ssp_util import (
     smooth, cosine_taper, moment_to_mag, MediumProperties)
+# NOTE: 'smooth' is a time-domain window convolution; it assumes finite values.
 from sourcespec.ssp_geom_spreading import (
     geom_spread_r_power_n, geom_spread_r_power_n_segmented,
     geom_spread_boatwright, geom_spread_teleseismic)
@@ -472,6 +473,262 @@ def _displacement_to_moment(stats, config):
     return 4 * math.pi * v3 * rho / (fsa * stats.radiation_pattern)
 
 
+def _pre_smoothing_snr_mask(config, spec, specnoise):
+    """
+    Suppress low-frequency bins dominated by noise *before* log-frequency smoothing.
+    This prevents the smoothing kernel from bleeding high noise amplitudes
+    into the usable band.
+    Policy:
+      - Compute per-bin SNR on linear spectra (moment units) after
+        geometrical spreading & conversion (same stage as in _build_spectrum,
+        just before smoothing).
+      - If 'spectral_snr_mask_threshold' <= 0 or missing -> no-op.
+      - mode 'left_of_first' (default): find the first frequency f_cross where
+        SNR >= threshold and clamp all lower-frequency amplitudes to at most the
+        amplitude at f_cross. Optionally apply a gentle ramp (half-cosine) over
+        'spectral_snr_mask_ramp_decades' to avoid a hard step.
+      - mode 'binary': clamp every bin with SNR < threshold to at most the
+        minimum unmasked amplitude (conservative).
+    Notes:
+      - We *do not* insert NaNs: the smoother needs finite values (ssp_util.smooth).
+      - This runs before _smooth_spectrum(), i.e., before 'make_freq_logspaced()'.
+    """
+    th = getattr(config, 'spectral_snr_mask_threshold', None)
+    if not th or th <= 0:
+        return
+    mode = getattr(config, 'spectral_snr_mask_mode', 'left_of_first')
+    ramp_dec = float(getattr(config, 'spectral_snr_mask_ramp_decades', 0.0) or 0.0)
+
+    # spec and specnoise share the same linear frequency grid at this stage
+    freq = spec.freq
+    s = spec.data
+    n = specnoise.data
+    if s.size == 0 or n.size == 0 or freq.size == 0:
+        return
+    eps = np.finfo(float).eps
+    sn = s / np.maximum(n, eps)
+
+    mask_info = {
+        'threshold': float(th),
+        'mode': mode,
+        'ramp_decades': float(ramp_dec),
+        'applied': False
+    }
+
+    freq_range_cfg = getattr(config, 'spectral_snr_mask_freq_range', None)
+    freq_range = None
+    range_idx = None
+    if freq_range_cfg:
+        try:
+            if isinstance(freq_range_cfg, (list, tuple)):
+                values = list(freq_range_cfg)
+            else:
+                cleaned = str(freq_range_cfg).replace('[', '').replace(']', '')
+                values = [
+                    float(val.strip()) for val in cleaned.split(',') if val.strip()
+                ]
+            if not values:
+                raise ValueError
+            if len(values) == 1:
+                f_range_min = float(values[0])
+                f_range_max = 1.0
+            else:
+                f_range_min = float(values[0])
+                f_range_max = float(values[1])
+        except (TypeError, ValueError):
+            logger.warning(
+                'Invalid spectral SNR mask frequency range %r: ignoring',
+                freq_range_cfg)
+        else:
+            if f_range_max < f_range_min:
+                f_range_min, f_range_max = f_range_max, f_range_min
+            f_range_min = max(f_range_min, freq[0])
+            f_range_max = min(max(f_range_min, f_range_max), 1.0)
+            if f_range_min < f_range_max:
+                # reduce to available frequency support
+                idx = np.where((freq >= f_range_min) & (freq <= f_range_max))[0]
+                if idx.size:
+                    range_idx = idx
+                    # store effective range for logging/plots
+                    freq_range = (float(freq[idx[0]]), float(freq[idx[-1]]))
+                    mask_info.update({
+                        'freq_range_min': freq_range[0],
+                        'freq_range_max': freq_range[1]
+                    })
+                else:
+                    logger.info(
+                        '%s: spectral SNR mask frequency range [%g, %g] Hz '
+                        'does not intersect spectrum: ignoring',
+                        spec.get_id(), f_range_min, f_range_max)
+            else:
+                logger.warning(
+                    'Invalid spectral SNR mask frequency range %r: ignoring',
+                    freq_range_cfg)
+
+    if mode == 'left_of_first':
+        range_forced = range_idx is not None and np.any(sn[range_idx] < th)
+        if range_forced:
+            idx = range_idx[-1]
+        else:
+            # Index of first crossing where SNR >= th; if none, do nothing.
+            idx = np.argmax(sn >= th)
+            if sn[idx] < th:
+                # never crosses threshold
+                spec.stats.snr_mask_info = mask_info
+                spec_id = spec.get_id()
+                logger.info(
+                    f'{spec_id}: pre-smoothing SNR mask enabled '
+                    f'(threshold={th:g}), but no crossing found: skipped')
+                return
+        A0 = s[idx]
+        f0 = freq[idx]
+        # Clamp everything left of f0 to at most A0
+        left = np.where(freq < f0)[0]
+        if left.size:
+            s[left] = np.minimum(s[left], A0)
+        # Optional soft ramp (half-cosine) across a band of width 'ramp_dec' decades
+        if ramp_dec > 0.0:
+            f1 = f0 / (10.0 ** ramp_dec)
+            if freq_range is not None:
+                f1 = max(f1, freq_range[0])
+            band = np.where((freq >= f1) & (freq < f0))[0]
+            if band.size:
+                # w goes 0->1 across [f1, f0]; blend clamped (A0) with original
+                x = (freq[band] - f1) / max(f0 - f1, eps)
+                w = 0.5 * (1.0 - np.cos(np.pi * x))
+                s[band] = np.minimum(s[band], A0 * w + s[band] * (1.0 - w))
+        spec.data = s
+        mask_info.update({
+            'applied': True,
+            'f_cross': float(f0),
+        })
+        if range_forced:
+            mask_info['range_forced'] = True
+        if ramp_dec > 0.0:
+            mask_info['f_ramp_start'] = float(f1)
+        spec.stats.snr_mask_info = mask_info
+        spec_id = spec.get_id()
+        logger.info(f'{spec_id}: pre-smoothing SNR mask applied '
+                    f'(threshold={th:g}, mode={mode}, f_cross={f0:.4f} Hz, '
+                    f'ramp_decades={ramp_dec:.3f})')
+        if range_forced and freq_range is not None:
+            logger.info(
+                '%s: pre-smoothing SNR mask forced by RSS range %.4f-%.4f Hz',
+                spec_id, freq_range[0], freq_range[1])
+    else:
+        # 'binary' fallback: clamp any low-SNR bin.
+        mask = sn < th
+        if np.any(mask):
+            # Use the minimum amplitude among unmasked bins as a conservative cap.
+            unmasked = np.where(~mask)[0]
+            A0 = np.min(s[unmasked]) if unmasked.size else np.min(s)
+            s[mask] = np.minimum(s[mask], A0)
+            spec.data = s
+            mask_info.update({
+                'applied': True,
+                'freq_min': float(np.min(freq[mask])),
+                'freq_max': float(np.max(freq[mask])),
+                'masked_bins': int(np.count_nonzero(mask)),
+            })
+        spec.stats.snr_mask_info = mask_info
+
+
+def _apply_mask_info_to_component(spec, mask_info):
+    """Apply RSS-derived mask information to a single component spectrum."""
+    if not mask_info:
+        return
+    # Store a copy of the mask info so later consumers (plots) can reuse it.
+    spec.stats.snr_mask_info = dict(mask_info)
+    if not mask_info.get('applied'):
+        return
+    mode = mask_info.get('mode', 'left_of_first')
+    freq = spec.freq
+    data = spec.data
+    if mode == 'left_of_first':
+        f_cross = mask_info.get('f_cross')
+        if not f_cross:
+            return
+        ramp_dec = float(mask_info.get('ramp_decades', 0.0) or 0.0)
+        eps = np.finfo(float).eps
+        idx_candidates = np.where(freq >= f_cross)[0]
+        if not idx_candidates.size:
+            return
+        idx = idx_candidates[0]
+        A0 = data[idx]
+        left = np.where(freq < f_cross)[0]
+        if left.size:
+            data[left] = np.minimum(data[left], A0)
+        if ramp_dec > 0.0:
+            f_ramp_start = mask_info.get('f_ramp_start')
+            if f_ramp_start is None:
+                f_ramp_start = f_cross / (10.0 ** ramp_dec)
+            if f_ramp_start < f_cross:
+                band = np.where((freq >= f_ramp_start) & (freq < f_cross))[0]
+                if band.size:
+                    x = (freq[band] - f_ramp_start) / max(f_cross - f_ramp_start, eps)
+                    w = 0.5 * (1.0 - np.cos(np.pi * x))
+                    data[band] = np.minimum(data[band], A0 * w + data[band] * (1.0 - w))
+        spec.data = data
+    else:
+        freq_min = mask_info.get('freq_min')
+        freq_max = mask_info.get('freq_max')
+        if freq_min is None or freq_max is None:
+            return
+        mask = (freq >= freq_min) & (freq <= freq_max)
+        if np.any(mask):
+            unmasked = np.where(~mask)[0]
+            A0 = np.min(data[unmasked]) if unmasked.size else np.min(data)
+            data[mask] = np.minimum(data[mask], A0)
+            spec.data = data
+
+
+def _apply_rss_snr_mask(config, spec_st, specnoise_st):
+    """Apply the spectral SNR mask using the root sum of squares spectrum."""
+    if not spec_st:
+        return
+    spec_ids = {sp.id[:-1] for sp in spec_st}
+    vertical_codes = config.vertical_channel_codes
+    wave_type = config.wave_type
+    for specid in spec_ids:
+        spec_sel = _select_spectra(spec_st, specid)
+        if specnoise_st:
+            specnoise_sel = _select_spectra(specnoise_st, specid)
+        else:
+            specnoise_sel = SpectrumStream()
+        codes = {sp.stats.channel[:-1] for sp in spec_sel}
+        for code in codes:
+            components = SpectrumStream(
+                sp for sp in spec_sel
+                if sp.stats.channel[:-1] == code and
+                sp.stats.channel[-1] not in ['H', 'h', 'S', 's', 't']
+            )
+            if not components:
+                continue
+            noises = SpectrumStream(
+                sp for sp in specnoise_sel
+                if sp.stats.channel[:-1] == code and
+                sp.stats.channel[-1] not in ['H', 'h', 'S', 's', 't']
+            )
+            spec_h = _compute_spec_h(
+                components, code, vertical_codes, wave_type)
+            if spec_h is None or getattr(spec_h.stats, 'ignore', False):
+                continue
+            specnoise_h = _compute_spec_h(
+                noises, code, vertical_codes, wave_type)
+            if specnoise_h is None:
+                continue
+            _pre_smoothing_snr_mask(config, spec_h, specnoise_h)
+            mask_info = getattr(spec_h.stats, 'snr_mask_info', None)
+            if not mask_info:
+                continue
+            mask_info = dict(mask_info)
+            mask_info['source_channel'] = spec_h.stats.channel
+            for component in components:
+                if getattr(component.stats, 'ignore', False):
+                    continue
+                _apply_mask_info_to_component(component, mask_info)
+
+
 def _smooth_spectrum(spec, smooth_width_decades=0.2):
     """
     Smooth spectrum in a log10-freq space.
@@ -497,7 +754,7 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
     spec.make_freq_logspaced(log_df)
 
 
-def _build_spectrum(config, trace):
+def _build_spectrum(config, trace, do_smooth=True):
     try:
         spec = Spectrum(obspy_trace=trace)
     except ValueError as e:
@@ -545,13 +802,14 @@ def _build_spectrum(config, trace):
             f'skipping spectrum\n{str(e)}'
         ) from e
     # smooth spectrum. This also creates log-spaced frequencies and data
-    try:
-        _smooth_spectrum(spec, config.spectral_smooth_width_decades)
-    except ValueError as e:
-        raise RuntimeError(
-            f'{spec.id}: Error smoothing spectrum: '
-            f'skipping spectrum\n{str(e)}'
-        ) from e
+    if do_smooth:
+        try:
+            _smooth_spectrum(spec, config.spectral_smooth_width_decades)
+        except ValueError as e:
+            raise RuntimeError(
+                f'{spec.id}: Error smoothing spectrum: '
+                f'skipping spectrum\n{str(e)}'
+            ) from e
     return spec
 
 
@@ -866,25 +1124,57 @@ def _build_signal_and_noise_spectral_streams(
     """
     spec_st = SpectrumStream()
     specnoise_st = SpectrumStream()
+    spec_items = []
+
+    th = getattr(config, 'spectral_snr_mask_threshold', None)
+    if isinstance(th, str):
+        try:
+            th = float(th)
+        except ValueError:
+            logger.warning(
+                'Invalid spectral SNR mask threshold %r: disabling mask',
+                th)
+            th = None
+        else:
+            setattr(config, 'spectral_snr_mask_threshold', th)
+    use_mask = th is not None and th > 0
+
     for trace_signal in sorted(signal_st, key=lambda tr: tr.id):
         trace_noise = noise_st.select(id=trace_signal.id)[0]
         try:
-            spec = _build_spectrum(config, trace_signal)
-            specnoise = _build_spectrum(config, trace_noise)
-            _check_spectral_sn_ratio(config, spec, specnoise)
+            spec = _build_spectrum(
+                config, trace_signal, do_smooth=not use_mask)
+            specnoise = _build_spectrum(
+                config, trace_noise, do_smooth=not use_mask)
         except RuntimeError as msg:
-            # RuntimeError is for skipped spectra
             logger.warning(msg)
             continue
+        spec_items.append((spec, specnoise, trace_signal))
+        spec_st.append(spec)
+        specnoise_st.append(specnoise)
+
+    if not spec_st:
+        logger.error('No spectra left! Exiting.')
+        ssp_exit()
+
+    if use_mask:
+        # Apply the mask on root-sum-of-squares spectra before smoothing.
+        _apply_rss_snr_mask(config, spec_st, specnoise_st)
+        for spec in spec_st:
+            _smooth_spectrum(spec, config.spectral_smooth_width_decades)
+        for specnoise in specnoise_st:
+            _smooth_spectrum(specnoise, config.spectral_smooth_width_decades)
+
+    for spec, specnoise, trace_signal in spec_items:
+        try:
+            _check_spectral_sn_ratio(config, spec, specnoise)
         except SpectrumIgnored as msg:
             _ignore_spectrum(msg, spec, specnoise)
             trace_original = original_st.select(id=trace_signal.id)[0]
             _ignore_trace(msg, trace_original)
-        spec_st.append(spec)
-        specnoise_st.append(specnoise)
-    if not spec_st:
-        logger.error('No spectra left! Exiting.')
-        ssp_exit()
+        except RuntimeError as msg:
+            logger.warning(msg)
+
     # build H component
     _build_H(
         spec_st, specnoise_st, config.vertical_channel_codes, config.wave_type)
