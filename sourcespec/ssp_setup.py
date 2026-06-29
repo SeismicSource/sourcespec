@@ -97,12 +97,22 @@ def _cartopy_download_gshhs():
     from cartopy.io.shapereader import GSHHSShpDownloader as Downloader
     from cartopy import config as cartopy_config
     from pathlib import Path
+    # Patch the url_template of the GSHHS downloader instance.
+    # This fix is needed because the previous GSHHS downloader URL from NOAA
+    # is no longer valid. The fix can be removed when bumping cartopy version
+    # to >= 0.26
+    gshhs_version = '2.3.7'
     gshhs_downloader = Downloader.from_config(('shapefiles', 'gshhs'))
+    gshhs_downloader.url_template = (
+        'https://github.com/GenericMappingTools/gshhg-gmt/releases/download/'
+        f'{gshhs_version}/gshhg-shp-{gshhs_version}.zip'
+    )
     format_dict = {'config': cartopy_config, 'scale': 'f', 'level': 1}
     target_path = gshhs_downloader.target_path(format_dict)
     if not os.path.exists(target_path):
         sys.stdout.write(
             'Downloading GSHHS data for cartopy.\n'
+            f'Source: {gshhs_downloader.url(format_dict)}\n'
             'This is needed only the first time you use cartopy and may take '
             'a while...\n')
         sys.stdout.flush()

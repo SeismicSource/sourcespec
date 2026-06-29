@@ -178,6 +178,7 @@ previous versions. You will need to upgrade your old database manually or using
 - Fix for config parameter `noise_pre_time` not being able to be set to `None`
 - Fix a bug causing severe slowdown when saving many plots to disk
 - Fix for geophone instrument codes (`P`) not being recognized
+- Fix GSHHS data download URL that was no longer valid (see [#94])
 
 ### Requirements
 
@@ -925,3 +926,4 @@ Initial Python port.
 [#79]: https://github.com/SeismicSource/sourcespec/issues/79
 [#81]: https://github.com/SeismicSource/sourcespec/issues/81
 [#82]: https://github.com/SeismicSource/sourcespec/issues/82
+[#94]: https://github.com/SeismicSource/sourcespec/issues/94
