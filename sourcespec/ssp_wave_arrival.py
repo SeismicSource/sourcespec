@@ -16,7 +16,7 @@ import logging
 import warnings
 from math import asin, degrees
 from obspy.taup import TauPyModel
-from .ssp_velocity_model import CrustalVelocityModel
+from sourcespec.ssp_velocity_model import CrustalVelocityModel
 model = TauPyModel(model='iasp91')
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
