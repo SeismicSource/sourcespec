@@ -340,6 +340,9 @@ class Spectrum():
         """Set the frequency axis of the spectrum."""
         if not isinstance(value, np.ndarray):
             value = np.array(value)
+        # sanity check: all frequences must be different
+        if len(np.unique(value)) != len(value):
+            raise ValueError('Frequency axis must have unique values')
         if len(value) > 0:
             delta = np.diff(value)
             if not np.isclose(delta, delta[0], rtol=0.01).all():
@@ -359,6 +362,9 @@ class Spectrum():
         """Set the logspaced frequency axis of the spectrum."""
         if not isinstance(value, np.ndarray):
             value = np.array(value)
+        # sanity check: all frequences must be different
+        if len(np.unique(value)) != len(value):
+            raise ValueError('Frequency axis must have unique values')
         if len(value) > 0:
             delta_logspaced = np.diff(np.log10(value))
             if not np.isclose(
