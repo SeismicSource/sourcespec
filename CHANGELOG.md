@@ -179,6 +179,7 @@ previous versions. You will need to upgrade your old database manually or using
 - Fix a bug causing severe slowdown when saving many plots to disk
 - Fix for geophone instrument codes (`P`) not being recognized
 - Fix GSHHS data download URL that was no longer valid (see [#94])
+- `source_residuals`: avoid crash if a residual HDF5 file is corrupted
 
 ### Requirements
 

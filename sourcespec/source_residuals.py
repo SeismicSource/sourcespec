@@ -183,7 +183,11 @@ def _read_residuals_from_dir(
         print(f'No residual file found in directory: {resfiles_dir}')
     for resfile in sorted(resfiles):
         print(f'Found residual file: {resfile}')
-        residual_st = read_spectra(resfile)
+        try:
+            residual_st = read_spectra(resfile)
+        except Exception as e:
+            print(f'Error reading residual file: {resfile}: {e}. Skipping.')
+            continue
         for spec in residual_st:
             residual_dict[spec.id].append(spec)
 
