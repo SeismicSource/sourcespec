@@ -267,10 +267,6 @@ def compute_mean_residuals(residual_dict, min_spectra=20):
         for spec in res:
             spec_interp = spec.copy()
             # interpolate to the new frequency array
-            spec_interp.freq = freq_array
-            # spec_slice.data must exist, so we create it as zeros
-            spec_interp.data = np.zeros_like(freq_array)
-            # interpolate data and data_mag to the new frequency array
             spec_interp.interp_data_to_new_freq(freq_array)
             # norm is 1 where interpolated data_mag is not nan, 0 otherwise
             norm = (~np.isnan(spec_interp.data_mag)).astype(float)
