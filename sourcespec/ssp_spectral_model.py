@@ -19,7 +19,7 @@ import math
 import numpy as np
 
 
-def spectral_model(freq, Mw, fc, t_star, alpha=1.):
+def spectral_model(freq, Mw, fc, t_star, n=2, alpha=1.):
     r"""
     Spectral model for seismic source spectrum.
 
@@ -29,7 +29,7 @@ def spectral_model(freq, Mw, fc, t_star, alpha=1.):
     .. math::
 
         Y_{data} = M_w + \frac{2}{3} \left[ - \log_{10} \left(
-                              1+\left(\frac{f}{f_c}\right)^2 \right) -
+                              1+\left(\frac{f}{f_c}\right)^n \right) -
                               \pi \, f^\alpha t^*(f) \log_{10} e \right]
 
     See :ref:`Theoretical Background <theoretical_background>`
@@ -47,6 +47,9 @@ def spectral_model(freq, Mw, fc, t_star, alpha=1.):
          Attenuation parameter t* (in seconds), equal to travel time divided
          by quality factor (tt/Q). Can be a constant value or a function of
          frequency.
+    n : float
+        Falloff power of source spectrum
+        (default: 2 = Brune source spectrum)
     alpha : float, optional
          Frequency exponent for the attenuation term. Default is 1.0 for
          standard attenuation model.
@@ -65,7 +68,7 @@ def spectral_model(freq, Mw, fc, t_star, alpha=1.):
     t_star_val = t_star(freq) if callable(t_star) else t_star
     return (
         Mw -
-        (2. / 3.) * np.log10(1. + np.power((freq / fc), 2)) -
+        (2. / 3.) * np.log10(1. + np.power((freq / fc), n)) -
         (2. / 3.) * loge * (math.pi * np.power(freq, alpha) * t_star_val)
     )
 
