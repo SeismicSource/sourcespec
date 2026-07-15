@@ -58,11 +58,13 @@ def make_synth(config, spec_st, trace_spec=None):
         # spec.data and spec.data_logspaced have to be set before
         # spec.data_mag and spec.data_mag_logspaced, so that the Spectrum
         # object can check for consistency
-        data_mag = spectral_model(freq, mag, fc, t_star, alpha)
+        data_mag = spectral_model(freq, mag, fc, t_star, alpha,
+                                  n=config.source_falloff_power)
         spec.data = mag_to_moment(data_mag)
         spec.data_mag = data_mag
         data_mag_logspaced = spectral_model(
-            freq_logspaced, mag, fc, t_star, alpha)
+            freq_logspaced, mag, fc, t_star, alpha,
+            n=config.source_falloff_power)
         spec.data_logspaced = mag_to_moment(data_mag_logspaced)
         spec.data_mag_logspaced = data_mag_logspaced
         spec_st.append(spec)
