@@ -394,7 +394,7 @@ def compute_summary_statistics(config, sspec_output, spec_st, weight_st):
     logger.info(f'params_percentiles: {sourcepar_percentiles}')
 
     # Add synthetic spectra for summary statistics
-    _add_summary_spectra(sspec_output, spec_st)
+    _add_summary_spectra(sspec_output, spec_st, config)
     # Compute dispersion around the summary synthetic spectrum
     logger.info(
         'Computing dispersion around the summary synthetic spectrum...')
