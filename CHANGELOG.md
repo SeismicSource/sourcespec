@@ -80,6 +80,10 @@ previous versions. You will need to upgrade your old database manually or using
 - Possibility of specifying station-specific free-surface amplification factors
   (see [#81] and [#82])
 
+### Inversion
+
+- Configurable source spectral falloff power
+
 ### Post-Inversion
 
 - New config parameter `pi_fc_weight_min`, which defines the minimum acceptable
@@ -114,6 +118,7 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Config file
 
+- New config parameter: `source_falloff_power`
 - Consolidated seismic wave velocity and rock density parameters under the
   "EARTH MODEL PARAMETERS" section of the config file
 - `vp_tt` and `vs_tt` renamed to `vp` and `vs`; they can be lists to define a
