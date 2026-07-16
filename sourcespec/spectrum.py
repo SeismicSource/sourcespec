@@ -127,7 +127,7 @@ def _interpolate_data_to_new_freq(
         minimum value of the original data.
     :return: The interpolated data.
     """
-    if np.all(freq == new_freq):
+    if len(freq) == len(new_freq) and np.all(freq == new_freq):
         return data
     f = interp1d(freq, data, fill_value=fill_value, bounds_error=False)
     new_data = f(new_freq)
