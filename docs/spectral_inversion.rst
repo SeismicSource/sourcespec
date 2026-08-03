@@ -56,7 +56,7 @@ Available weighting schemes:
   for :math:`f > f_\text{weight}`, a weight of 1 is applied.
   Controlled by the parameters ``f_weight`` and ``weight``.
 - **'inv_frequency'**: Computes weights as :math:`1/(f-f_0+0.25)^{0.25}`
-  for :math:`f \leq f_1`.  
+  for :math:`f \leq f_1`.
   Weights are set to 0 for :math:`f < f_0` or :math:`f > f_1`.
   Here, ``f_0`` and ``f_1`` are the first and last frequencies where the
   signal-to-noise ratio exceeds 3 (or the spectrum bounds if no noise window
