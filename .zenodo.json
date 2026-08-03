@@ -1,0 +1,32 @@
+{
+  "title": "SourceSpec – Earthquake source parameters from P- or S-wave displacement spectra",
+  "version": "1.8",
+  "description": "SourceSpec is a collection of command line tools to compute earthquake source parameters (seismic moment, corner frequency, radiated energy, source size, stress drop) from the inversion of P-wave and S-wave displacement spectra recorded at one or more seismic stations. SourceSpec also computes attenuation parameters (t-star, quality factor) and, as a bonus, local magnitude.",
+  "upload_type": "software",
+  "license": "CECILL-2.1",
+  "creators": [
+    {
+      "name": "Satriano, Claudio",
+      "affiliation": "Université Paris Cité, Institut de physique du globe de Paris, CNRS, F-75005 Paris, France",
+      "orcid": "0000-0002-3039-2530"
+    }
+  ],
+  "keywords": [
+    "earthquake-source-characterization",
+    "seismic-inversion",
+    "earthquake-source",
+    "seismic-data"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/SeismicSource/sourcespec",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://sourcespec.readthedocs.io",
+      "relation": "isDocumentedBy",
+      "scheme": "url"
+    }
+  ]
+}

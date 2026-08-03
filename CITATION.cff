@@ -1,23 +1,24 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-authors:
-- family-names: "Satriano"
-  given-names: "Claudio"
-  orcid: "https://orcid.org/0000-0002-3039-2530"
 title: "SourceSpec – Earthquake source parameters from P- or S-wave displacement spectra"
-doi: 10.5281/ZENODO.3688587
-url: "https://sourcespec.seismicsource.org"
-repository-code: "https://github.com/SeismicSource/sourcespec"
-license: "CECILL-2.1"
-identifiers:
-  - description: "This is the collection of archived snapshots of all versions of SourceSpec"
-    type: doi
-    value: 10.5281/ZENODO.3688587
+version: "1.8"
+date-released: "2024-05-07"
+type: software
 abstract: "SourceSpec is a collection of command line tools to compute earthquake source
   parameters (seismic moment, corner frequency, radiated energy, source size, stress drop)
   from the inversion of P-wave and S-wave displacement spectra recorded at one or more
   seismic stations. SourceSpec also computes attenuation parameters (t-star, quality factor)
   and, as a bonus, local magnitude."
+license: "CECILL-2.1"
+authors:
+  - family-names: "Satriano"
+    given-names: "Claudio"
+    affiliation: "Université Paris Cité, Institut de physique du globe de Paris, CNRS, F-75005 Paris, France"
+    orcid: "https://orcid.org/0000-0002-3039-2530"
+doi: 10.5281/ZENODO.3688587
+url: "https://sourcespec.seismicsource.org"
+repository-code: "https://github.com/SeismicSource/sourcespec"
+documentation: "https://sourcespec.readthedocs.io"
 keywords:
   - earthquake-source-characterization
   - seismic-inversion
