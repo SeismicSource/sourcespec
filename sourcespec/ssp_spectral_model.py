@@ -48,8 +48,8 @@ def spectral_model(freq, Mw, fc, t_star, n=2, alpha=1.):
          by quality factor (tt/Q). Can be a constant value or a function of
          frequency.
     n : float
-        Falloff power of source spectrum
-        (default: 2 = Brune source spectrum)
+         Falloff power of source spectrum. Default is 2, corresponding to the
+         Brune source spectrum.
     alpha : float, optional
          Frequency exponent for the attenuation term. Default is 1.0 for
          standard attenuation model.
@@ -60,9 +60,6 @@ def spectral_model(freq, Mw, fc, t_star, n=2, alpha=1.):
          Logarithmic spectral amplitude(s) at the specified
          frequency/frequencies.
     """
-    # log S(w)= log(coeff*Mo) + log((1/(1+(w/wc)^2)) + \
-    #           log (exp (- w *t_star/2))
-    # attenuation model: exp[-pi t* f] with t*=T /Q
     loge = math.log10(math.e)
     # Check if t_star is callable (function) or a constant
     t_star_val = t_star(freq) if callable(t_star) else t_star
