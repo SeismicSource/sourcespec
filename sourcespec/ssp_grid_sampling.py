@@ -285,13 +285,9 @@ class GridSampling():
                     a = 10**a
                 newargs.append(a)
             return np.exp(-self.misfit_func(newargs))
+
         extent = sum(self.truebounds, ())
-        if len(extent) == 4:
-            # if extent has 4 values, we are in 2D
-            maxdiv = (20, 2000)
-        else:
-            # else, we are in 3D
-            maxdiv = (20, 2000, 200)
+        maxdiv = (20, 2000) if len(extent) == 4 else (20, 2000, 200)
         kdt = KDTree(extent, 2, mf, maxdiv=maxdiv)
         while kdt.ncells <= np.prod(maxdiv):
             oldn = kdt.ncells
@@ -379,28 +375,27 @@ class GridSampling():
             # convention: when plot_par_idx[0] < plot_par_idx[1] the
             # original code transposes the slice (`.T`). Mirror that
             # behaviour here.
-            if plot_par_idx[0] < plot_par_idx[1]:
-                mm = self.misfit.T
-            else:
-                mm = self.misfit.copy()
+            mm = (
+                self.misfit.T if plot_par_idx[0] < plot_par_idx[1]
+                else self.misfit.copy()
+            )
             # If there are remaining indices (idx) they should be empty
             # for a 2-D misfit, but applying mm[idx] is harmless when
             # idx == (). Keep behaviour consistent.
             if idx:
                 mm = mm[idx]
+        elif plot_par_idx[0] < plot_par_idx[1]:
+            # Move axes to keep at the end
+            end_idx = (-2, -1)
+            mm = np.moveaxis(self.misfit, plot_par_idx, end_idx)
+            # extract a 2D misfit map
+            mm = mm[idx].T
         else:
-            if plot_par_idx[0] < plot_par_idx[1]:
-                # Move axes to keep at the end
-                end_idx = (-2, -1)
-                mm = np.moveaxis(self.misfit, plot_par_idx, end_idx)
-                # extract a 2D misfit map
-                mm = mm[idx].T
-            else:
-                # Move axes to keep at the end
-                end_idx = (-1, -2)
-                mm = np.moveaxis(self.misfit, plot_par_idx, end_idx)
-                # extract a 2D misfit map
-                mm = mm[idx]
+            # Move axes to keep at the end
+            end_idx = (-1, -2)
+            mm = np.moveaxis(self.misfit, plot_par_idx, end_idx)
+            # extract a 2D misfit map
+            mm = mm[idx]
         # set extent for imshow
         bds = np.take(np.array(self.truebounds), plot_par_idx, axis=0)
         extent = bds.flatten()

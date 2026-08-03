@@ -126,8 +126,7 @@ def _parse_qml_event(
                 'QuakeML file does not contain an event description.')
     if ssp_event.name and event_description_regex:
         pattern = re.compile(event_description_regex)
-        match = pattern.search(ssp_event.name)
-        if match:
+        if match := pattern.search(ssp_event.name):
             name = match.group()
             # capitalize first letter
             name = name[0].upper() + name[1:]
@@ -198,9 +197,9 @@ def _parse_picks_from_qml_event(ev, origin):
         else:
             # try to get the phase from the arrival object that uses this pick
             pick_id = pck.resource_id.id
-            arrivals = [
-                arr for arr in origin.arrivals if arr.pick_id.id == pick_id]
-            if arrivals:
+            if arrivals := [
+                arr for arr in origin.arrivals if arr.pick_id.id == pick_id
+            ]:
                 pick.phase = arrivals[0].phase[:1]
         if pick.phase is None:
             # ignore picks with no phase hint

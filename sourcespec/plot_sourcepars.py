@@ -692,10 +692,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
                 fc_max = fc_test.max()
             ax.plot(mw_test, fc_test, color='#555555')
             label = str(delta_sigma)
-            # Get rid of ".0" in label
-            if label.endswith('.0'):
-                label = label[:-2]
-            label += ' MPa'
+            label = label.removesuffix('.0') + ' MPa'
             outline = patheffects.withStroke(linewidth=2, foreground='white')
             ax.text(mw_test[-1], fc_test[-1], label, path_effects=[outline])
         ax.set_ylim((fc_min * 0.9, fc_max * 1.1))
@@ -715,10 +712,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
                 Er_max = Er_test.max()
             ax.plot(mw_test, Er_test, color='#555555')
             label = str(delta_sigma)
-            # Get rid of ".0" in label
-            if label.endswith('.0'):
-                label = label[:-2]
-            label += ' MPa'
+            label = label.removesuffix('.0') + ' MPa'
             outline = patheffects.withStroke(linewidth=2, foreground='white')
             ax.text(mw_test[-1], Er_test[-1], label, path_effects=[outline])
         ax.set_ylim((Er_min * 0.5, Er_max * 2))
@@ -738,10 +732,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
                 Er_max = Er_test.max()
             ax.plot(mw_test, Er_test, color='#555555')
             label = str(sigma_a)
-            # Get rid of ".0" in label
-            if label.endswith('.0'):
-                label = label[:-2]
-            label += ' MPa'
+            label = label.removesuffix('.0') + ' MPa'
             outline = patheffects.withStroke(linewidth=2, foreground='white')
             ax.text(mw_test[-1], Er_test[-1], label, path_effects=[outline])
         ax.set_ylim((Er_min * 0.5, Er_max * 2))

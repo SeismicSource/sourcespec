@@ -148,8 +148,7 @@ def _insert_station_row(cursor, db_file, statId, par, evid, runid):
     :param runid: Run ID
     :type runid: str
     """
-    station_row = dict(STATIONS_TABLE)
-    station_row |= {
+    station_row = dict(STATIONS_TABLE) | {
         'stid': statId,
         'evid': evid,
         'runid': runid,
@@ -322,9 +321,7 @@ def _write_events_table(cursor, db_file, sspec_output, config):
     ev_rho = event.hypocenter.rho
     kp = config.kp
     ks = config.ks
-    event_row = dict(EVENTS_TABLE)
-    # Update event_row dictionary with event and run information
-    event_row |= {
+    event_row = dict(EVENTS_TABLE) | {
         # Event info
         'evid': evid,
         'runid': runid,
@@ -491,7 +488,7 @@ def _write_events_table(cursor, db_file, sspec_output, config):
         'author_email': config.author_email,
         'agency_full_name': config.agency_full_name,
         'agency_short_name': config.agency_short_name,
-        'agency_url': config.agency_url
+        'agency_url': config.agency_url,
     }
     # Explicitly specify column names to avoid order issues
     columns = list(event_row.keys())

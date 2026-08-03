@@ -310,11 +310,7 @@ def _misfit_page(config):
     misfit_plot_files = config.figures['misfit_fc-Mw']
     two_d_misfit_table_rows_fc_mw = _misfit_table_rows(misfit_plot_files)
 
-    # Plots with t-star might be missing if Q model is fixed
-
-    # 2d conditional misfit plots: fc-tstar
-    misfit_plot_files = config.figures['misfit_fc-t_star']
-    if misfit_plot_files:
+    if misfit_plot_files := config.figures['misfit_fc-t_star']:
         two_d_misfit_table_rows_fc_tstar =\
             _misfit_table_rows(misfit_plot_files)
         two_d_misfit_fc_tstar_comment_begin = ''
@@ -324,9 +320,7 @@ def _misfit_page(config):
         two_d_misfit_fc_tstar_comment_begin = '<!--'
         two_d_misfit_fc_tstar_comment_end = '-->'
 
-    # 2d conditional misfit plots: tstar-Mw
-    misfit_plot_files = config.figures['misfit_t_star-Mw']
-    if misfit_plot_files:
+    if misfit_plot_files := config.figures['misfit_t_star-Mw']:
         two_d_misfit_table_rows_tstar_mw =\
             _misfit_table_rows(misfit_plot_files)
         two_d_misfit_tstar_mw_comment_begin = ''
@@ -1060,11 +1054,10 @@ def _add_downloadable_files_to_html(config, templates, replacements):
     suppl_file_list += [
         os.path.basename(fig) for fig in config.figures['spectra_weight']
     ]
-    supplementary_files = ''.join(
+    if supplementary_files := ''.join(
         f'<a href="{suppl_file}">{suppl_file}</a></br>\n'
         for suppl_file in suppl_file_list
-    )
-    if supplementary_files:
+    ):
         with open(
             templates.supplementary_file_links_html, encoding='utf-8'
         ) as fp:

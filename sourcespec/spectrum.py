@@ -707,15 +707,13 @@ class Spectrum():
         else:
             fp = h5py.File(filename, 'w')
             main_group = _init_hdf5_file(fp)
-        all_spec_group_names = [
-            key for key in main_group.keys()
-            if key.startswith('spectrum_')
-        ]
-        if not all_spec_group_names:
-            last_group_number = -1
-        else:
+        if all_spec_group_names := [
+            key for key in main_group.keys() if key.startswith('spectrum_')
+        ]:
             last_group = sorted(all_spec_group_names)[-1]
             last_group_number = int(last_group.split('_')[1])
+        else:
+            last_group_number = -1
         nn = last_group_number + 1
         spec_group_name = _make_spectrum_group_name(nn, self.id)
         self._write_to_hdf5_group(main_group.create_group(spec_group_name))
