@@ -94,11 +94,11 @@ jobs:
 
     - name: Do test runs
       run: |
-        bash scripts/do_testruns.sh
+        bash tests/do_testruns.sh
 
     - name: Collect test artifacts
       run: |
-        bash scripts/collect_testrun_artifacts.sh sourcespec_testruns artifacts
+        bash tests/collect_testrun_artifacts.sh sourcespec_testruns artifacts
 
     - name: Upload test artifacts
       uses: actions/upload-artifact@v7
