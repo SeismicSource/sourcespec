@@ -82,7 +82,7 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Inversion
 
-- Configurable source spectral falloff power
+- Configurable source spectral falloff power (see [#95] and [#96])
 
 ### Post-Inversion
 
@@ -933,3 +933,5 @@ Initial Python port.
 [#81]: https://github.com/SeismicSource/sourcespec/issues/81
 [#82]: https://github.com/SeismicSource/sourcespec/issues/82
 [#94]: https://github.com/SeismicSource/sourcespec/issues/94
+[#95]: https://github.com/SeismicSource/sourcespec/issues/95
+[#96]: https://github.com/SeismicSource/sourcespec/issues/96
