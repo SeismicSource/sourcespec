@@ -179,8 +179,8 @@ def _make_summary_spec(station, channel, freq_logspaced, Mw, fc, t_star,
     sp.stats.station = station
     sp.stats.channel = channel
     sp.freq_logspaced = freq_logspaced
-    data_mag_logspaced = spectral_model(freq_logspaced, Mw, fc, t_star,
-                                        n=config.source_falloff_power)
+    data_mag_logspaced = spectral_model(
+        freq_logspaced, Mw, fc, t_star, n=config.source_falloff_power)
     # data_logspaced must be provided before data_mag_logspaced
     sp.data_logspaced = mag_to_moment(data_mag_logspaced)
     sp.data_mag_logspaced = data_mag_logspaced
@@ -206,15 +206,15 @@ def _add_summary_spectra(sspec_output, spec_st, config):
             t_star = t_star_model
             break
     spec_st.append(
-        _make_summary_spec('SUMMARY', 'SSS', freq_logspaced, Mw, fc, t_star,
-                           config)
+        _make_summary_spec(
+            'SUMMARY', 'SSS', freq_logspaced, Mw, fc, t_star, config)
     )
     spec_st.append(
         _make_summary_spec('SUMMARY', 'SSs', freq_logspaced, Mw, fc, 0, config)
     )
     spec_st.append(
-        _make_summary_spec('SUMMARY', 'SSt', freq_logspaced, Mw, 1e999, t_star,
-                           config)
+        _make_summary_spec(
+            'SUMMARY', 'SSt', freq_logspaced, Mw, 1e999, t_star, config)
     )
 
 

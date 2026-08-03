@@ -649,11 +649,11 @@ def _synth_spec(config, spec, station_pars):
     spec_synth.stats.channel = f'{chan_no_orientation}S'
     spec_synth.stats.par = par
     spec_synth.stats.par_err = par_err
-    spec_synth.data_mag = spectral_model(freq, *params_opt,
-                                         n=config.source_falloff_power)
+    spec_synth.data_mag = spectral_model(
+        freq, *params_opt, n=config.source_falloff_power)
     spec_synth.data = mag_to_moment(spec_synth.data_mag)
-    spec_synth.data_mag_logspaced = spectral_model(freq_logspaced, *params_opt,
-                                                n=config.source_falloff_power)
+    spec_synth.data_mag_logspaced = spectral_model(
+        freq_logspaced, *params_opt, n=config.source_falloff_power)
     spec_synth.data_logspaced = mag_to_moment(spec_synth.data_mag_logspaced)
     spec_st.append(spec_synth)
 
@@ -663,14 +663,13 @@ def _synth_spec(config, spec, station_pars):
         spec_synth.stats.channel = f'{chan_no_orientation}s'
         _params = list(params_opt)
         _params[-1] = 0
-        spec_synth.data_mag = spectral_model(freq, *_params,
-                                            n=config.source_falloff_power)
+        spec_synth.data_mag = spectral_model(
+            freq, *_params, n=config.source_falloff_power)
         spec_synth.data = mag_to_moment(spec_synth.data_mag)
-        spec_synth.data_mag_logspaced =\
-            spectral_model(freq_logspaced, *_params,
-                           n=config.source_falloff_power)
-        spec_synth.data_logspaced =\
-            mag_to_moment(spec_synth.data_mag_logspaced)
+        spec_synth.data_mag_logspaced = spectral_model(
+            freq_logspaced, *_params, n=config.source_falloff_power)
+        spec_synth.data_logspaced = mag_to_moment(
+            spec_synth.data_mag_logspaced)
         spec_st.append(spec_synth)
 
     # Add an extra spectrum with no corner frequency
@@ -679,14 +678,14 @@ def _synth_spec(config, spec, station_pars):
         spec_synth.stats.channel = f'{chan_no_orientation}t'
         _params = list(params_opt)
         _params[1] = 1e999
-        spec_synth.data_mag = spectral_model(freq, *_params,
-                                             n=config.source_falloff_power)
+        spec_synth.data_mag = spectral_model(
+            freq, *_params, n=config.source_falloff_power)
         spec_synth.data = mag_to_moment(spec_synth.data_mag)
         spec_synth.data_mag_logspaced =\
-            spectral_model(freq_logspaced, *_params,
-                           n=config.source_falloff_power)
-        spec_synth.data_logspaced =\
-            mag_to_moment(spec_synth.data_mag_logspaced)
+            spectral_model(
+                freq_logspaced, *_params, n=config.source_falloff_power)
+        spec_synth.data_logspaced = mag_to_moment(
+            spec_synth.data_mag_logspaced)
         spec_st.append(spec_synth)
     return spec_st
 
