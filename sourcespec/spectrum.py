@@ -54,6 +54,7 @@ def signal_fft(signal, delta):
 
 class AttributeDict(dict):
     """A dictionary that allows attribute-style access."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -142,6 +143,7 @@ class Spectrum():
 
     :param obspy_trace: An ObsPy Trace object to compute the spectrum from.
     """
+
     def __init__(self, obspy_trace=None):
         """
         Initialize the Spectrum object.
@@ -401,7 +403,7 @@ class Spectrum():
         # Make sure frequency range matches exactly
         n = np.ceil((log_freq[-1] - log_freq[0]) / log_df)
         freq_logspaced =\
-            np.logspace(log_freq[0], log_freq[-1], int(n)+1)
+            np.logspace(log_freq[0], log_freq[-1], int(n) + 1)
         # Make sure first and last frequencies match exactly between
         # logspaced and linear frequency axes (since the code above might have
         # numerical errors)
@@ -793,6 +795,7 @@ class SpectrumStream(list):
     """
     A class to handle a collection of amplitude spectra.
     """
+
     def __str__(self):
         return (
             f'SpectrumStream with {len(self)} Spectrum objects:\n'
