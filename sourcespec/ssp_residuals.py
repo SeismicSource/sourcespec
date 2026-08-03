@@ -49,7 +49,8 @@ def spectral_residuals(config, spec_st, sspec_output):
             if spec.stats.ignore:
                 continue
             xdata = spec.freq
-            synth_mean_mag = spectral_model(xdata, **sourcepar_summary)
+            synth_mean_mag = spectral_model(xdata, **sourcepar_summary,
+                                            n=config.source_falloff_power)
             res = spec.copy()
             # remove existing data
             del res.data

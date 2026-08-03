@@ -108,7 +108,7 @@ def _radiated_energy_coefficient(rho, vel, free_surf_ampl, rp, average_rp):
     return 8 * np.pi * c_coeff**2 * rho * vel
 
 
-def _finite_bandwidth_correction(spec, fc, fmax):
+def _finite_bandwidth_correction(spec, fc, fmax, n=2):
     """
     Compute finite bandwidth correction.
 
@@ -119,12 +119,16 @@ def _finite_bandwidth_correction(spec, fc, fmax):
     - Di Bona & Rovelli (1988), eq. 13
     - Ide & Beroza (2001), eq. 5
     - Lancieri et al. (2012), eq. 4 (note, missing parenthesis in the paper)
+
+    Note:
+    Here we add a new parameter n, which is the falloff power of the source
+    spectrum. Default is n=2, corresponding to the Brune source spectrum.
     """
     if fmax is None:
         fmax = spec.freq[-1]
     return (
         2. / np.pi *
-        (np.arctan2(fmax, fc) - (fmax / fc) / (1 + (fmax / fc)**2.))
+        (np.arctan2(fmax, fc) - (fmax / fc) / (1 + (fmax / fc)**n))
     )
 
 
@@ -238,7 +242,8 @@ def radiated_energy_and_apparent_stress(
                 'than signal energy: skipping spectrum.')
             continue
 
-        R = _finite_bandwidth_correction(spec, fc, fmax)
+        R = _finite_bandwidth_correction(
+            spec, fc, fmax, n=config.source_falloff_power)
         Er /= R
         # Store the Er value into the StationParameter() object
         param_Er.value = Er

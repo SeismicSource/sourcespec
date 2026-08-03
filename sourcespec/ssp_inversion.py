@@ -19,6 +19,7 @@ import logging
 import contextlib
 import math
 import numpy as np
+from functools import partial
 from scipy.optimize import curve_fit, minimize, basinhopping
 from scipy.signal import argrelmax
 from obspy.geodetics import gps2dist_azimuth
@@ -144,6 +145,8 @@ def _curve_fit(
     freq_logspaced = spec.freq_logspaced
     ydata = spec.data_mag_logspaced
 
+    spectral_model_n = partial(spectral_model, n=config.source_falloff_power)
+
     # Define t_star function if Q_model is provided
     if Q_model is not None:
         # compute t_star from Q_model and travel time
@@ -154,10 +157,10 @@ def _curve_fit(
             return travel_time / _Q_model
 
         def _spectral_model(freq, Mw, fc):
-            return spectral_model(freq, Mw, fc, t_star)
+            return spectral_model_n(freq, Mw, fc, t_star)
     else:
         t_star = None
-        _spectral_model = spectral_model
+        _spectral_model = spectral_model_n
 
     # Add t_star_model to spec stats for later use
     spec.stats.t_star_model = t_star
@@ -400,7 +403,8 @@ def _spec_inversion(config, spec, spec_weight, station_pars, Q_model=None):
         # fit t_star_0 and Mw on the initial part of the spectrum,
         # corrected for the effect of fc
         ydata_corr =\
-            ydata - spectral_model(freq_logspaced, Mw=0, fc=fc_0, t_star=0)
+            ydata - spectral_model(freq_logspaced, Mw=0, fc=fc_0, t_star=0,
+                                   n=config.source_falloff_power)
         ydata_corr = smooth(ydata_corr, window_len=18)
         slope, Mw_0 = np.polyfit(
             freq_logspaced[idx0: idx1], ydata_corr[idx0: idx1], deg=1)
@@ -645,9 +649,11 @@ def _synth_spec(config, spec, station_pars):
     spec_synth.stats.channel = f'{chan_no_orientation}S'
     spec_synth.stats.par = par
     spec_synth.stats.par_err = par_err
-    spec_synth.data_mag = spectral_model(freq, *params_opt)
+    spec_synth.data_mag = spectral_model(
+        freq, *params_opt, n=config.source_falloff_power)
     spec_synth.data = mag_to_moment(spec_synth.data_mag)
-    spec_synth.data_mag_logspaced = spectral_model(freq_logspaced, *params_opt)
+    spec_synth.data_mag_logspaced = spectral_model(
+        freq_logspaced, *params_opt, n=config.source_falloff_power)
     spec_synth.data_logspaced = mag_to_moment(spec_synth.data_mag_logspaced)
     spec_st.append(spec_synth)
 
@@ -657,12 +663,13 @@ def _synth_spec(config, spec, station_pars):
         spec_synth.stats.channel = f'{chan_no_orientation}s'
         _params = list(params_opt)
         _params[-1] = 0
-        spec_synth.data_mag = spectral_model(freq, *_params)
+        spec_synth.data_mag = spectral_model(
+            freq, *_params, n=config.source_falloff_power)
         spec_synth.data = mag_to_moment(spec_synth.data_mag)
-        spec_synth.data_mag_logspaced =\
-            spectral_model(freq_logspaced, *_params)
-        spec_synth.data_logspaced =\
-            mag_to_moment(spec_synth.data_mag_logspaced)
+        spec_synth.data_mag_logspaced = spectral_model(
+            freq_logspaced, *_params, n=config.source_falloff_power)
+        spec_synth.data_logspaced = mag_to_moment(
+            spec_synth.data_mag_logspaced)
         spec_st.append(spec_synth)
 
     # Add an extra spectrum with no corner frequency
@@ -671,12 +678,14 @@ def _synth_spec(config, spec, station_pars):
         spec_synth.stats.channel = f'{chan_no_orientation}t'
         _params = list(params_opt)
         _params[1] = 1e999
-        spec_synth.data_mag = spectral_model(freq, *_params)
+        spec_synth.data_mag = spectral_model(
+            freq, *_params, n=config.source_falloff_power)
         spec_synth.data = mag_to_moment(spec_synth.data_mag)
         spec_synth.data_mag_logspaced =\
-            spectral_model(freq_logspaced, *_params)
-        spec_synth.data_logspaced =\
-            mag_to_moment(spec_synth.data_mag_logspaced)
+            spectral_model(
+                freq_logspaced, *_params, n=config.source_falloff_power)
+        spec_synth.data_logspaced = mag_to_moment(
+            spec_synth.data_mag_logspaced)
         spec_st.append(spec_synth)
     return spec_st
 
