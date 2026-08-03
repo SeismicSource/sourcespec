@@ -77,7 +77,7 @@ propagation term (geometric and anelastic attenuation of body waves):
           \times
           M_O
           \times
-          \frac{1}{1+\left(\frac{f}{f^{p|s}_c}\right)^2}
+          \frac{1}{1+\left(\frac{f}{f^{p|s}_c}\right)^n}
           \times
           e^{- \pi f t^*}
 
@@ -96,6 +96,8 @@ where:
 - :math:`M_O` is the seismic moment;
 - :math:`f` is the frequency;
 - :math:`f^{p|s}_c` is the corner frequency for P- or S-waves;
+- :math:`n` is the falloff power of the source spectrum (default is 2, for
+  Brune's source spectrum);
 - :math:`t^*` is an attenuation parameter which includes anelastic path
   attenuation (quality factor) and station-specific effects.
 
@@ -224,7 +226,7 @@ attenuation. This model is also converted in magnitude units:
           \frac{2}{3}
           \left[ \log_{10} \left(
                     M_O \times
-                    \frac{1}{1+\left(\frac{f}{f^{p|s}_c}\right)^2}
+                    \frac{1}{1+\left(\frac{f}{f^{p|s}_c}\right)^n}
                     \times
                     e^{- \pi f t^*}
                     \right) - 9.1 \right] =
@@ -232,7 +234,7 @@ attenuation. This model is also converted in magnitude units:
           =
           \frac{2}{3} \left( \log_{10} M_0 - 9.1 \right) +
           \frac{2}{3} \left[ \log_{10} \left(
-                    \frac{1}{1+\left(\frac{f}{f^{p|s}_c}\right)^2} \right) +
+                    \frac{1}{1+\left(\frac{f}{f^{p|s}_c}\right)^n} \right) +
                     \log_{10} \left( e^{- \pi f t^*} \right)
                     \right]
 
@@ -244,7 +246,7 @@ Finally coming to the following model used for the inversion:
    Y^{p|s}(f) =
           M_w +
           \frac{2}{3} \left[ - \log_{10} \left(
-                    1+\left(\frac{f}{f^{p|s}_c}\right)^2 \right) -
+                    1+\left(\frac{f}{f^{p|s}_c}\right)^n \right) -
                     \pi \, f t^* \log_{10} e
                     \right]
 
@@ -475,11 +477,13 @@ between the estimated radiated energy and the true radiated energy, defined as:
   R = \frac{2}{\pi}
     \left[
       \arctan(f_{max}/f^{p|s}_c) -
-      \frac{f_{max}/f^{p|s}_c}{1+(f_{max}/f^{p|s}_c)^2}
+      \frac{f_{max}/f^{p|s}_c}{1+(f_{max}/f^{p|s}_c)^n}
     \right]
 
 where :math:`f_{max}` is the maximum frequency used to compute the energy
-integral and :math:`f^{p|s}_c` is the P- or S-wave corner frequency.
+integral, :math:`f^{p|s}_c` is the P- or S-wave corner frequency and
+:math:`n` is the falloff power of the source spectrum (default is 2, for
+Brune's source spectrum).
 
 The values of R range between 0 (for :math:`f_{max}/f^{p|s}_c \to 0`) and 1
 (for :math:`f_{max}/f^{p|s}_c \to \infty`).
