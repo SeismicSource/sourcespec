@@ -512,9 +512,9 @@ def _is_hypo71_picks(pick_file):
             # Check if it is a pick line
             # 6th character should be alpha (phase name: P or S)
             # other character should be digits (date/time)
-            if not (line[5].isalpha() and
-                    line[9].isdigit() and
-                    line[20].isdigit()):
+            if not (line[5].isalpha()
+                    and line[9].isdigit()
+                    and line[20].isdigit()):
                 raise TypeError(f'{pick_file}: Not a hypo71 phase file')
 
 
@@ -567,9 +567,9 @@ def parse_hypo71_picks(config):
             # Check if it is a pick line
             # 6th character should be alpha (phase name: P or S)
             # other character should be digits (date/time)
-            if not (line[5].isalpha() and
-                    line[9].isdigit() and
-                    line[20].isdigit()):
+            if not (line[5].isalpha()
+                    and line[9].isdigit()
+                    and line[20].isdigit()):
                 continue
             pick = SSPPick()
             pick.station = line[:4].strip()

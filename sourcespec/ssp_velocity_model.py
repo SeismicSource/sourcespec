@@ -28,7 +28,11 @@ class CrustalVelocityModel:
     :param name:
         str, model name
     """
+
     def __init__(self, depths, VP, VS, name=''):
+        """
+        Initialize a 1D layered velocity model
+        """
         assert len(depths) == len(VP) == len(VS)
         self.depths = np.asarray(depths, dtype='f')
         self.VP = np.asarray(VP, dtype='f')
@@ -265,8 +269,8 @@ class CrustalVelocityModel:
                     cumul_travel_times = np.cumsum(travel_times[::-1])[::-1]
                     hdistances = self.calc_horizontal_distances(layer_angles)
                     cumul_hdistances = np.cumsum(hdistances[::-1])[::-1]
-                    self.RXTT[W, :BL+1, BL] = cumul_travel_times
-                    self.RXHD[W, :BL+1, BL] = cumul_hdistances
+                    self.RXTT[W, :BL + 1, BL] = cumul_travel_times
+                    self.RXHD[W, :BL + 1, BL] = cumul_hdistances
         return (self.RXTT, self.RXHD)
 
     def calc_downgoing_ray_tt_and_hd(self, Z, wave='P'):
@@ -310,11 +314,11 @@ class CrustalVelocityModel:
             # Note: take copy, otherwise original RXTT and RXHD arrays
             # are modified!
             rxtt, rxhd = RXTT[TL].copy(), RXHD[TL].copy()
-            if TL < NL-1:
+            if TL < NL - 1:
                 # Time / distance in layer in which Z is situated
                 # (for different bottom layers)
-                ttl = RXTT[TL] - RXTT[TL+1]
-                hdl = RXHD[TL] - RXHD[TL+1]
+                ttl = RXTT[TL] - RXTT[TL + 1]
+                hdl = RXHD[TL] - RXHD[TL + 1]
             elif TL == NL - 1:
                 ttl, hdl = RXTT[TL], RXHD[TL]
             else:
@@ -323,8 +327,8 @@ class CrustalVelocityModel:
                     f'Z={Z} exceeds model depth range [0, {self.max_depth}].'
                 )
             idxs = rxtt > 0
-            rxtt[idxs] -= (ttl[idxs] * vdl/thkl)
-            rxhd[idxs] -= (hdl[idxs] * vdl/thkl)
+            rxtt[idxs] -= (ttl[idxs] * vdl / thkl)
+            rxhd[idxs] -= (hdl[idxs] * vdl / thkl)
         return (rxtt, rxhd)
 
     def calc_refwav_tt(self, Zf, Zs, Repi, wave='P'):
@@ -376,7 +380,7 @@ class CrustalVelocityModel:
                 # Distance traveled horizontally along top of layer below
                 HD = Repi - (rxhdf[BL] + rxhds[BL])
                 if HD >= 0:
-                    HTT = HD / V[BL+1]
+                    HTT = HD / V[BL + 1]
                     refwav_tt[BL] = VTT + HTT
 
         return refwav_tt
@@ -437,11 +441,11 @@ class CrustalVelocityModel:
             VS = np.hstack([self.VS, [self.VS[-1]]])
         else:
             depths, VP, VS = self.depths, self.VP, self.VS
-        depths2 = depths[Lh:Ll+2] - depths[Lh]
+        depths2 = depths[Lh:Ll + 2] - depths[Lh]
         depths2[1:] -= (Zh - depths[Lh])
         depths2[-1] = Zl - Zh
-        VP2 = VP[Lh:Ll+2]
-        VS2 = VS[Lh:Ll+2]
+        VP2 = VP[Lh:Ll + 2]
+        VS2 = VS[Lh:Ll + 2]
         return self.__class__(depths2, VP2, VS2)
 
     def find_reflection_ray_angles_and_tts(self, Zf, Zs, Repi, wave='P'):
@@ -499,7 +503,7 @@ class CrustalVelocityModel:
 
         for BL in range(-1, Ll - NL - 1, -1):
             result = minimize_scalar(
-                minimize_func, bounds=(0, np.pi/2.), method='bounded')
+                minimize_func, bounds=(0, np.pi / 2.), method='bounded')
             if result.success:
                 theta = result.x
             else:
@@ -593,19 +597,19 @@ class CrustalVelocityModel:
 
             def minimize_func(theta):
                 layer_angles = vmodel2.calc_layer_angles_above(
-                    vmodel2.num_layers-1, theta, wave=wave)
+                    vmodel2.num_layers - 1, theta, wave=wave)
                 hdistances = vmodel2.calc_horizontal_distances(layer_angles)
                 tot_hdistance = np.sum(hdistances)
                 # print(tot_hdistance)
                 return np.abs(Repi - tot_hdistance)
 
             result = minimize_scalar(
-                minimize_func, bounds=(0, np.pi/2.), method='bounded')
+                minimize_func, bounds=(0, np.pi / 2.), method='bounded')
             if not result.success:
                 raise RuntimeError(result.message)
             theta = result.x
             layer_angles = vmodel2.calc_layer_angles_above(
-                vmodel2.num_layers-1, theta, wave=wave)
+                vmodel2.num_layers - 1, theta, wave=wave)
             travel_times = vmodel2.calc_travel_times(
                 layer_angles, wave=wave)
             tt = np.sum(travel_times)
@@ -952,7 +956,7 @@ class CrustalVelocityModel:
                 hdistances = vmodel2.calc_horizontal_distances(layer_angles)
                 for layer, hdist in enumerate(hdistances):
                     X.append(X[-1] - hdist)
-                    Y.append(vmodel2.depths[layer+1] + Zs)
+                    Y.append(vmodel2.depths[layer + 1] + Zs)
             else:
                 X.append(0)
                 Y.append(Zf)
@@ -964,7 +968,7 @@ class CrustalVelocityModel:
             BL, _tmin = self.calc_min_refwav_tt(Zf, Zs, Repi, wave=wave)
             if BL is not None:
                 bottom_angle = self.calc_critical_angles(wave=wave)[BL]
-                vmodel1 = self.constrain_depth_range(Zf, self.depths[BL+1])
+                vmodel1 = self.constrain_depth_range(Zf, self.depths[BL + 1])
                 layer_angles = vmodel1.calc_layer_angles_above(
                     vmodel1.num_layers - 1, bottom_angle, wave=wave)
                 hdistances = vmodel1.calc_horizontal_distances(layer_angles)
@@ -972,8 +976,8 @@ class CrustalVelocityModel:
                 Y.append(Zf)
                 for layer, hdist in enumerate(hdistances):
                     X.append(X[-1] + hdist)
-                    Y.append(vmodel1.depths[layer+1] + Zf)
-                vmodel2 = self.constrain_depth_range(Zs, self.depths[BL+1])
+                    Y.append(vmodel1.depths[layer + 1] + Zf)
+                vmodel2 = self.constrain_depth_range(Zs, self.depths[BL + 1])
                 layer_angles = vmodel2.calc_layer_angles_above(
                     vmodel2.num_layers - 1, bottom_angle, wave=wave)
                 hdistances = vmodel2.calc_horizontal_distances(layer_angles)
@@ -991,7 +995,7 @@ class CrustalVelocityModel:
                 refl_angles, _ = self.find_reflection_ray_angles_and_tts(
                     Zf, Zs, Repi, wave=wave)
                 bottom_angle = refl_angles[BL]
-                vmodel1 = self.constrain_depth_range(Zf, self.depths[BL+1])
+                vmodel1 = self.constrain_depth_range(Zf, self.depths[BL + 1])
                 layer_angles = vmodel1.calc_layer_angles_above(
                     vmodel1.num_layers - 1, bottom_angle, wave=wave)
                 hdistances = vmodel1.calc_horizontal_distances(layer_angles)
@@ -999,8 +1003,8 @@ class CrustalVelocityModel:
                 Y.append(Zf)
                 for layer, hdist in enumerate(hdistances):
                     X.append(X[-1] + hdist)
-                    Y.append(vmodel1.depths[layer+1] + Zf)
-                vmodel2 = self.constrain_depth_range(Zs, self.depths[BL+1])
+                    Y.append(vmodel1.depths[layer + 1] + Zf)
+                vmodel2 = self.constrain_depth_range(Zs, self.depths[BL + 1])
                 layer_angles = vmodel2.calc_layer_angles_above(
                     vmodel2.num_layers - 1, bottom_angle, wave=wave)
                 hdistances = vmodel2.calc_horizontal_distances(layer_angles)

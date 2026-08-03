@@ -43,6 +43,6 @@ if __name__ == '__main__':
             MOD_NAME = 'pillow'
         sys.stderr.write(
             f"Error: module '{MOD_NAME}' is required by source_spec. "
-            "Please install it.\n"
+            'Please install it.\n'
         )
         sys.exit(1)

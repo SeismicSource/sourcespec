@@ -18,10 +18,21 @@ class StamenTerrain(GoogleWTS):
     """
     Retrieves Stamen Terrain tiles from stadiamaps.com.
     """
+
     def __init__(self,
                  apikey,
                  cache=False):
-        super().__init__(cache=cache, desired_tile_form="RGBA")
+        """
+        Initialize the StamenTerrain object.
+
+        Parameters
+        ----------
+        apikey : str
+            The API key for accessing the Stamen Terrain service.
+        cache : bool, optional
+            Whether to cache the retrieved tiles. Default is False.
+        """
+        super().__init__(cache=cache, desired_tile_form='RGBA')
         self.apikey = apikey
 
     def _image_url(self, tile):
@@ -36,10 +47,22 @@ class EsriHillshade(GoogleWTS):
     """
     Retrieves Esri Hillshade tiles from argisonline.com.
     """
+
     def __init__(self,
                  apikey=None,
                  cache=False):
-        super().__init__(cache=cache, desired_tile_form="RGBA")
+        """
+        Initialize the EsriHillshade object.
+
+        Parameters
+        ----------
+        apikey : str, optional
+            The API key for accessing the Esri Hillshade service.
+            Default is None.
+        cache : bool, optional
+            Whether to cache the retrieved tiles. Default is False.
+        """
+        super().__init__(cache=cache, desired_tile_form='RGBA')
         self.apikey = apikey
 
     def _image_url(self, tile):
@@ -60,10 +83,22 @@ class EsriHillshadeDark(GoogleWTS):
     """
     Retrieves Esri Hillshade Dark tiles from argisonline.com.
     """
+
     def __init__(self,
                  apikey=None,
                  cache=False):
-        super().__init__(cache=cache, desired_tile_form="RGBA")
+        """
+        Initialize the EsriHillshadeDark object.
+
+        Parameters
+        ----------
+        apikey : str, optional
+            The API key for accessing the Esri Hillshade Dark service.
+            Default is None.
+        cache : bool, optional
+            Whether to cache the retrieved tiles. Default is False.
+        """
+        super().__init__(cache=cache, desired_tile_form='RGBA')
         self.apikey = apikey
 
     def _image_url(self, tile):
@@ -84,10 +119,21 @@ class EsriOcean(GoogleWTS):
     """
     Retrieves Esri Ocean tiles from argisonline.com.
     """
+
     def __init__(self,
                  apikey=None,
                  cache=False):
-        super().__init__(cache=cache, desired_tile_form="RGBA")
+        """
+        Initialize the EsriOcean object.
+
+        Parameters
+        ----------
+        apikey : str, optional
+            The API key for accessing the Esri Ocean service. Default is None.
+        cache : bool, optional
+            Whether to cache the retrieved tiles. Default is False.
+        """
+        super().__init__(cache=cache, desired_tile_form='RGBA')
         self.apikey = apikey
 
     def _image_url(self, tile):
@@ -108,10 +154,22 @@ class EsriImagery(GoogleWTS):
     """
     Retrieves Esri Imagery tiles from argisonline.com.
     """
+
     def __init__(self,
                  apikey=None,
                  cache=False):
-        super().__init__(cache=cache, desired_tile_form="RGBA")
+        """
+        Initialize the EsriImagery object.
+
+        Parameters
+        ----------
+        apikey : str, optional
+            The API key for accessing the Esri Imagery service.
+            Default is None.
+        cache : bool, optional
+            Whether to cache the retrieved tiles. Default is False.
+        """
+        super().__init__(cache=cache, desired_tile_form='RGBA')
         self.apikey = apikey
 
     def _image_url(self, tile):

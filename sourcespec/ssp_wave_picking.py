@@ -31,10 +31,10 @@ def _refine_theo_pick_time(
     tr_envelope.data = np.abs(tr_envelope.data)
     if phase == 'P':
         # Less smoothing for P phases
-        npts = int(0.02*s_minus_p/tr.stats.delta)
+        npts = int(0.02 * s_minus_p / tr.stats.delta)
     else:
         # More smoothing for S phases
-        npts = int(0.05*s_minus_p/tr.stats.delta)
+        npts = int(0.05 * s_minus_p / tr.stats.delta)
     for _ in range(10):
         tr_envelope.data = smooth(tr_envelope.data, npts)
     # Increase the contrast by rising to a certain power
@@ -44,11 +44,11 @@ def _refine_theo_pick_time(
     # Cut the trace around the theoretical pick time
     tr_cut = tr_envelope.copy()
     if phase == 'P':
-        cut_t0 = theo_pick_time - 0.7*s_minus_p
-        cut_t1 = theo_pick_time + 0.3*s_minus_p
+        cut_t0 = theo_pick_time - 0.7 * s_minus_p
+        cut_t1 = theo_pick_time + 0.3 * s_minus_p
     else:
-        cut_t0 = theo_pick_time - 0.5*s_minus_p
-        cut_t1 = theo_pick_time + 0.5*s_minus_p
+        cut_t0 = theo_pick_time - 0.5 * s_minus_p
+        cut_t1 = theo_pick_time + 0.5 * s_minus_p
     tr_cut.trim(cut_t0, cut_t1)
     # Threshold the cut trace, then cut it again up to its maximum
     rms = np.sqrt(np.mean(tr_cut.data**2))
@@ -99,9 +99,10 @@ def _refine_theo_pick_time(
         ax.plot(tr.times(), tr.data, 'k', lw=0.5)
         ax.plot(tr.times(), tr_envelope.data, 'r')
         cut_shift = tr_envelope.stats.starttime - tr_cut.stats.starttime
-        ax.plot(tr_cut.times()-cut_shift, tr_cut.data, 'b', lw=2)
         ax.plot(
-            tr_cut_detrend.times()-cut_shift, tr_cut_detrend.data, 'g', lw=4)
+            tr_cut.times() - cut_shift, tr_cut.data, 'b', lw=2)
+        ax.plot(
+            tr_cut_detrend.times() - cut_shift, tr_cut_detrend.data, 'g', lw=4)
         pick_secs = theo_pick_time - trace.stats.starttime
         refined_pick_secs = refined_theo_pick_time - trace.stats.starttime
         ax.axvline(pick_secs, color='r', linestyle='--')

@@ -127,8 +127,8 @@ def _finite_bandwidth_correction(spec, fc, fmax, n=2):
     if fmax is None:
         fmax = spec.freq[-1]
     return (
-        2. / np.pi *
-        (np.arctan2(fmax, fc) - (fmax / fc) / (1 + (fmax / fc)**n))
+        2. / np.pi
+        * (np.arctan2(fmax, fc) - (fmax / fc) / (1 + (fmax / fc)**n))
     )
 
 

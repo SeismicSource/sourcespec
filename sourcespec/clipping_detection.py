@@ -328,7 +328,7 @@ def check_min_amplitude(trace, min_amplitude_ratio):
             f'{trace.id}: cannot get response from inventory: {e}'
         ) from e
     overall_sensitivity = resp.instrument_sensitivity.value
-    min_threshold = overall_sensitivity/min_amplitude_ratio
+    min_threshold = overall_sensitivity / min_amplitude_ratio
     amplitude_test = trace_max > min_threshold
     return amplitude_test, trace_max, min_threshold
 
@@ -351,6 +351,7 @@ def _get_plotting_axes():
 
     class ScalarFormatterForceFormat(ScalarFormatter):
         """ScalarFormatter with forced format"""
+
         def _set_format(self, *_args):
             self.format = '%1.1f'
 
@@ -501,14 +502,14 @@ Two methods are implemented:
             'Error: at least one positional argument is required.\n')
         sys.exit(2)
     if (
-        args.min_amplitude_ratio is not None and
-        args.station_metadata is None
+        args.min_amplitude_ratio is not None
+        and args.station_metadata is None
     ):
         parser.error(
             '--min-amplitude-ratio requires --station-metadata option')
     if (
-        args.min_amplitude_ratio is not None and
-        args.min_amplitude_ratio <= 0
+        args.min_amplitude_ratio is not None
+        and args.min_amplitude_ratio <= 0
     ):
         parser.error(
             '--min-amplitude-ratio must be a strictly positive value')
@@ -521,7 +522,7 @@ def _add_inventory(trace, inventory):
         return
     net, sta, loc, chan = trace.id.split('.')
     inv = inventory.select(
-            network=net, station=sta, location=loc, channel=chan)
+        network=net, station=sta, location=loc, channel=chan)
     if inv is None:
         raise RuntimeError(
             f'{trace.id}: cannot get instrtype from inventory: '
@@ -545,10 +546,10 @@ def _run_amplitude_check(trace, args):
 
 
 # ainsi codes for fancy output
-RESET = "\u001b[0m"
-RED = "\u001b[31m"
-GREEN = "\u001b[32m"
-YELLOW = "\u001b[33m"
+RESET = '\u001b[0m'
+RED = '\u001b[31m'
+GREEN = '\u001b[32m'
+YELLOW = '\u001b[33m'
 
 
 def _run_clipping_peaks(trace, args):

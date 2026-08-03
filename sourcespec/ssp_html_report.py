@@ -66,7 +66,7 @@ def _multireplace(string, replacements, ignore_case=False):
     rep_escaped = map(re.escape, rep_sorted)
 
     # Create a big OR regex that matches any of the substrings to replace
-    pattern = re.compile("|".join(rep_escaped), re_mode)
+    pattern = re.compile('|'.join(rep_escaped), re_mode)
 
     # For each match, look up the new string in the replacements, being the key
     # the normalized old string
@@ -207,7 +207,7 @@ def _format_exponent(value, reference):
     xp = np.int(np.floor(np.log10(np.abs(reference))))
     # format value to print it with the same exponent of reference value
     base = 10**xp
-    return f'{value/base:5.3f}e{xp:+03d}'
+    return f'{value / base:5.3f}e{xp:+03d}'
 
 
 def _summary_value_and_err_text(value, error, fmt):
@@ -517,7 +517,7 @@ def _add_traces_plots_to_html(config, templates, replacements):
     for n, traces_plot_file in enumerate(sorted(traces_plot_files)):
         if n_traces_plot_files > 1:
             traces_plot_counter = (
-                f'<span class="print_inline">&nbsp;({n+1} of '
+                f'<span class="print_inline">&nbsp;({n + 1} of '
                 f'{n_traces_plot_files})</span>'
             )
         else:
@@ -553,7 +553,7 @@ def _add_spectra_plots_to_html(config, templates, replacements):
     for n, spectra_plot_file in enumerate(sorted(spectra_plot_files)):
         if n_spectra_plot_files > 1:
             spectra_plot_counter = (
-                f'<span class="print_inline">&nbsp;({n+1} of '
+                f'<span class="print_inline">&nbsp;({n + 1} of '
                 f'{n_spectra_plot_files})</span>'
             )
         else:
@@ -1080,7 +1080,9 @@ def _add_downloadable_files_to_html(config, templates, replacements):
 
 class HTMLtemplates:
     """Class to hold paths to HTML templates."""
+
     def __init__(self):
+        """Initialize HTMLtemplates class."""
         template_dir = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             'html_report_template'

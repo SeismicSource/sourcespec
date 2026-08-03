@@ -49,6 +49,7 @@ class SSPContainerTag(AttribDict):
     """Container for nested custom tags."""
 
     def __init__(self):
+        """Initialize container for nested custom tags."""
         super().__init__()
         self.namespace = 'https://sourcespec.seismicsource.org'
         self.value = SSPExtra()
@@ -58,6 +59,7 @@ class SSPTag(AttribDict):
     """Custom tag object."""
 
     def __init__(self, value=None):
+        """Initialize custom tag object."""
         super().__init__()
         self.namespace = 'https://sourcespec.seismicsource.org'
         self.value = value

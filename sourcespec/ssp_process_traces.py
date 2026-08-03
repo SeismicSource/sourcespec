@@ -283,7 +283,7 @@ def _check_epicentral_distance(config, trace):
     if len(edr) % 2 == 1:
         edr.append(999999)
     # reshape edr to a list of pairs
-    edr = [[edr[i], edr[i+1]] for i in range(0, len(edr), 2)]
+    edr = [[edr[i], edr[i + 1]] for i in range(0, len(edr), 2)]
     # string representation of edr
     edr_str = ', '.join(f'{ed[0]}-{ed[1]} km' for ed in edr)
     epi_dist = trace.stats.epi_dist
@@ -506,8 +506,8 @@ def _skip_ignored(config, st):
         return any(re.match(regex, s) for s in strings)
 
     if (
-        config.use_traceids is not None and
-        not _matches(config.use_traceids, ss)
+        config.use_traceids is not None
+        and not _matches(config.use_traceids, ss)
     ):
         _skip_stream_and_raise(
             st,
@@ -516,8 +516,8 @@ def _skip_ignored(config, st):
         )
 
     if (
-        config.ignore_traceids is not None and
-        _matches(config.ignore_traceids, ss)
+        config.ignore_traceids is not None
+        and _matches(config.ignore_traceids, ss)
     ):
         _skip_stream_and_raise(
             st,

@@ -30,6 +30,7 @@ logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 class ScalarFormatter(sf):
     """A ScalarFormatter with a custom format."""
+
     def _set_format(self, vmin=None, vmax=None):
         # pylint: disable=unused-argument
         self.format = '%1.1f'
@@ -467,9 +468,9 @@ def plot_traces(config, st, ncols=None, block=True, suffix=None):
             _set_ylim(axes)
             _add_labels(axes, plotn - 1, ncols)
             if (
-                config.plot_save_asap and
-                config.plot_save and not config.plot_show and
-                config.plot_save_format != 'pdf_multipage'
+                config.plot_save_asap
+                and config.plot_save and not config.plot_show
+                and config.plot_save_format != 'pdf_multipage'
             ):
                 # save figure here to free up memory
                 _savefig(config, figures, suffix, force_numbering=True)

@@ -15,6 +15,7 @@ class SSPPick():
     """A pick object."""
 
     def __init__(self):
+        """Initialize the pick object."""
         self.station = None
         self.flag = None
         self.phase = None

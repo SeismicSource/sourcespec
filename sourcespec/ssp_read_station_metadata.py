@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 class PAZ():
     """Instrument response defined through poles and zeros."""
+
     zeros = []
     poles = []
     sensitivity = 1.

@@ -66,7 +66,24 @@ class Annot():
     """
     Annotate the plot with the evid, Mw and the value of the parameter.
     """
+
     def __init__(self, xdata, ydata, labels, yformat, xformat=None):
+        """
+        Initialize the annotation object.
+
+        Parameters
+        ----------
+        xdata : array-like
+            X-axis data.
+        ydata : array-like
+            Y-axis data.
+        labels : array-like
+            Labels for each data point.
+        yformat : str
+            Format string for Y-axis values.
+        xformat : str, optional
+            Format string for X-axis values. Default is None.
+        """
         self.xdata = xdata
         self.ydata = ydata
         self.labels = labels
@@ -74,6 +91,9 @@ class Annot():
         self.xformat = xformat
 
     def __call__(self, event):
+        """
+        Callback function for the annotation.
+        """
         ind = event.ind
         x = np.take(self.xdata, ind)
         y = np.take(self.ydata, ind)
@@ -153,7 +173,7 @@ def stress_drop_curve_fc_mw(delta_sigma, vel, mw, k=0.3724, b=-0.5):
     # the b parameter
     moment = mag_to_moment(mw, -b)
     # return fc in Hz
-    return k*vel*(16/7 * delta_sigma / moment)**(1/3)
+    return k * vel * (16 / 7 * delta_sigma / moment)**(1 / 3)
 
 
 def stress_drop_curve_Er_mw(delta_sigma, mu, mw):
@@ -301,7 +321,7 @@ def parse_args():
     parser.description =\
         '1D or 2D plot of source parameters from a sqlite parameter file'
     parser.add_argument('sqlite_file')
-    valid_plot_types_str = str(valid_plot_types)[1:-1].replace("'", "\"")
+    valid_plot_types_str = str(valid_plot_types)[1:-1].replace("'", '"')
     parser.add_argument(
         '-p', '--plot_type', default='fc_mw',
         help=f'Plot type. One of: {valid_plot_types_str}. '
@@ -311,7 +331,7 @@ def parse_args():
              'Default is "fc_mw"'
     )
     valid_parameters_str = str(list(
-        valid_parameters.keys()))[1:-1].replace("'", "\"")
+        valid_parameters.keys()))[1:-1].replace("'", '"')
     parser.add_argument(
         '-c', '--colorby', default=None,
         help='Color the data points by this parameter. '
@@ -406,6 +426,7 @@ class Params():
     """
     Class to handle the parameters from a sqlite file.
     """
+
     def __init__(self, args):
         """
         Initialize the class from a sqlite file.
@@ -1136,7 +1157,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         depth_min = np.min(self.depth)
         depth_max = np.max(self.depth)
         padding = 0.15 * (depth_max - depth_min)
-        ax.set_xlim(depth_min-padding, depth_max+padding)
+        ax.set_xlim(depth_min - padding, depth_max + padding)
         ax.set_xlabel(get_param_label('depth'))
         ax.set_ylabel(get_param_label('ssd'))
         ax.set_yscale('log')
@@ -1176,8 +1197,8 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
         mpl_time = np.array([t.matplotlib_date for t in self.time])
         padding_x = 0.05 * (np.max(mpl_time) - np.min(mpl_time))
         padding_y = 0.05 * (
-            np.max(self.Mw + self.Mw_err_plus) -
-            np.min(self.Mw - self.Mw_err_minus)
+            np.max(self.Mw + self.Mw_err_plus)
+            - np.min(self.Mw - self.Mw_err_minus)
         )
         ax.set_xlim(np.min(mpl_time) - padding_x, np.max(mpl_time) + padding_x)
         ax.set_ylim(
@@ -1349,7 +1370,7 @@ ON e.evid = max_runids.evid AND e.runid = max_runids.max_runid
             # add a label with the G-R law parameters
             gr_text_x = 0.805
             gr_text_x_data = xmin + gr_text_x * (xmax - xmin)
-            gr_text_y_data = 10**(a - b * gr_text_x_data)*1.2
+            gr_text_y_data = 10**(a - b * gr_text_x_data) * 1.2
             gr_text = f'G-R params:\na={a:.2f}, b={b:.2f}'
             ax1.text(
                 gr_text_x, gr_text_y_data, gr_text, color='#FCBA25',

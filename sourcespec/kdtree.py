@@ -16,8 +16,30 @@ from scipy.interpolate import griddata
 
 class KDTCell():
     """A cell of a k-d tree."""
+
     def __init__(self, extent, calc_pdf, min_cell_prob=0,
                  ndiv=None, maxdiv=None):
+        """
+        Initialize the KDTCell object.
+
+        Parameters
+        ----------
+        extent : array-like
+            The extent of the cell, defined as a list of [min, max] pairs
+            for each dimension.
+        calc_pdf : callable
+            A function that calculates the probability density function (PDF)
+            at a given coordinate.
+        min_cell_prob : float, optional
+            The minimum probability for a cell to be considered divisible.
+            Default is 0.
+        ndiv : array-like, optional
+            The number of divisions already performed along each dimension.
+            Default is None, which means no divisions have been performed.
+        maxdiv : int, optional
+            The maximum number of divisions allowed for each dimension.
+            Default is None, which means no limit on divisions.
+        """
         self.extent = extent
         self.coords = np.mean(extent, axis=1)
         self.delta = np.diff(extent)
@@ -82,8 +104,29 @@ class KDTCell():
 
 class KDTree():
     """A k-d tree."""
+
     def __init__(self, extent, init_parts, calc_pdf, min_cell_prob=0.,
                  maxdiv=None):
+        """
+        Initialize the KDTree object.
+
+        Parameters
+        ----------
+        extent : array-like
+            The extent of the search hypervolume, defined as a list of
+            [min, max] pairs for each dimension.
+        init_parts : int
+            The number of initial parts to divide the first cell into.
+        calc_pdf : callable
+            A function that calculates the probability density function (PDF)
+            at a given coordinate.
+        min_cell_prob : float, optional
+            The minimum probability for a cell to be considered divisible.
+            Default is 0.
+        maxdiv : int, optional
+            The maximum number of divisions allowed for each dimension.
+            Default is None, which means no limit on divisions.
+        """
         # extent defines the size of search hypervolume
         # reshape extent to (dim, 2), where dim is the
         # arbitrary dimension of the parameter space

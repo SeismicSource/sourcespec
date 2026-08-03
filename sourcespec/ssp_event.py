@@ -50,6 +50,7 @@ class _SSPEventBaseClass():
     """
     SourceSpec event base class.
     """
+
     # make the class subscriptable
     def __getitem__(self, key):
         return getattr(self, key)
@@ -80,7 +81,9 @@ class SSPCoordinate(_SSPEventBaseClass):
     Stores a longitude or latitude value.
     Currently only degrees are supported.
     """
+
     def __init__(self, value=None, units=None, **kwargs):
+        """Initialize the coordinate object."""
         for key in kwargs:
             warnings.warn(f'Ignoring unknown coordinate field "{key}"')
         if units == 'deg':
@@ -101,7 +104,9 @@ class SSPDepth(_SSPEventBaseClass):
     """
     SourceSpec depth class.
     """
+
     def __init__(self, value=None, units=None, **kwargs):
+        """Initialize the depth object."""
         for key in kwargs:
             warnings.warn(f'Ignoring unknown depth field "{key}"')
         self.value = _float(value)
@@ -140,8 +145,10 @@ class SSPHypocenter(_SSPEventBaseClass):
     """
     SourceSpec hypocenter class.
     """
+
     def __init__(self, longitude=None, latitude=None, depth=None,
                  origin_time=None, **kwargs):
+        """Initialize the hypocenter object."""
         for key in kwargs:
             warnings.warn(f'Ignoring unknown hypocenter field "{key}"')
         longitude = {} if longitude is None else longitude
@@ -174,7 +181,9 @@ class SSPMagnitude(_SSPEventBaseClass):
     """
     SourceSpec magnitude class.
     """
+
     def __init__(self, value=None, mag_type=None, **kwargs):
+        """Initialize the magnitude object."""
         for key in kwargs:
             warnings.warn(f'Ignoring unknown magnitude field "{key}"')
         self.value = _float(value)
@@ -213,7 +222,9 @@ class SSPScalarMoment(_SSPEventBaseClass):
     """
     SourceSpec scalar moment class.
     """
+
     def __init__(self, value=None, units=None, **kwargs):
+        """Initialize the scalar moment object."""
         for key in kwargs:
             warnings.warn(f'Ignoring unknown scalar moment field "{key}"')
         self.value = _float(value)
@@ -260,7 +271,9 @@ class SSPFocalMechanism(_SSPEventBaseClass):
 
     Angles are in degrees.
     """
+
     def __init__(self, strike=None, dip=None, rake=None, units=None, **kwargs):
+        """Initialize the focal mechanism object."""
         for key in kwargs:
             warnings.warn(f'Ignoring unknown focal mechanism field "{key}"')
         self.strike = _float(strike)
@@ -297,8 +310,10 @@ class SSPMomentTensor(_SSPEventBaseClass):
     """
     SourceSpec moment tensor class.
     """
+
     def __init__(self, units=None, m_rr=None, m_tt=None, m_pp=None, m_rt=None,
                  m_rp=None, m_tp=None, **kwargs):
+        """Initialize the moment tensor object."""
         for key in kwargs:
             warnings.warn(f'Ignoring unknown moment tensor field "{key}"')
         self.units = units
@@ -341,6 +356,7 @@ class SSPEvent(_SSPEventBaseClass):
     """
     SourceSpec event class.
     """
+
     def __init__(self, event_dict=None):
         """
         Initialize the event object.

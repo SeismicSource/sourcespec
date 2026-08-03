@@ -173,9 +173,9 @@ html_logo = '../imgs/SourceSpec_logo_white.svg'
 # Favicon, using sphinx-favicon extension
 favicons = [
     {
-        "rel": "icon",
-        "static-file": "SourceSpec_icon.svg",
-        "type": "image/svg+xml",
+        'rel': 'icon',
+        'static-file': 'SourceSpec_icon.svg',
+        'type': 'image/svg+xml',
     },
 ]
 
@@ -319,7 +319,7 @@ def write_configfile(app):
     """Write configuration file documentation page."""
     # pylint: disable=unused-argument
     with open('configuration_file.rst', 'w', encoding='utf-8') as fp:
-        fp.write('''.. _configuration_file:
+        fp.write(""".. _configuration_file:
 
 ##################
 Configuration File
@@ -331,7 +331,7 @@ Comment lines start with ``#``.
 
 Here is the default config file, generated through ``source_spec -S``::
 
-''')
+""")
         configspec = os.path.join(
             '..', 'sourcespec', 'config_files', 'configspec.conf')
         for line in open(configspec, encoding='utf-8'):

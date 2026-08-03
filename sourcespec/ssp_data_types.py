@@ -20,6 +20,7 @@ class InitialValues():
 
     def __init__(
             self, Mw_0=None, fc_0=None, t_star_0=None, invert_t_star=True):
+        """Initialize the initial values object."""
         self.Mw_0 = Mw_0
         self.fc_0 = fc_0
         self.t_star_0 = t_star_0
@@ -50,6 +51,7 @@ class Bounds():
     """Bounds for bounded spectral inversion."""
 
     def __init__(self, config, spec, initial_values):
+        """Initialize the bounds object."""
         self.config = config
         self.spec = spec
         self.hd = spec.stats.hypo_dist
@@ -190,14 +192,17 @@ class SpectralParameter(OrderedAttribDict):
                  uncertainty=None,
                  lower_uncertainty=None, upper_uncertainty=None,
                  confidence_level=None, format_spec=None):
+        """Initialize the spectral parameter object."""
         self.param_id = param_id
         self._format_spec = format_spec
         self.name = name
         self.units = units
         self.value = value
         self.uncertainty = uncertainty
-        if (lower_uncertainty is not None and
-                lower_uncertainty == upper_uncertainty):
+        if (
+            lower_uncertainty is not None
+            and lower_uncertainty == upper_uncertainty
+        ):
             self.uncertainty = lower_uncertainty
             self.lower_uncertainty = self.upper_uncertainty = None
         else:
@@ -230,6 +235,7 @@ class StationParameters(OrderedAttribDict):
                  spectral_snratio_mean=None, spectral_snratio_max=None,
                  rmsn=None, quality_of_fit=None,
                  ignored=False, ignored_reason=None):
+        """Initialize the station parameters object."""
         self.station_id = station_id
         self.instrument_type = instrument_type
         self.latitude = latitude
@@ -276,12 +282,15 @@ class SummaryStatistics(OrderedAttribDict):
                  mid_percentage=None, upper_percentage=None,
                  nobs=None, message=None,
                  format_spec=None):
+        """Initialize the summary statistics object."""
         # type of statistics: e.g., mean, median
         self._stat_type = stat_type
         self.value = value
         self.uncertainty = uncertainty
-        if (lower_uncertainty is not None and
-                lower_uncertainty == upper_uncertainty):
+        if (
+            lower_uncertainty is not None
+            and lower_uncertainty == upper_uncertainty
+        ):
             self.uncertainty = lower_uncertainty
             self.lower_uncertainty = self.upper_uncertainty = None
         else:
@@ -310,6 +319,7 @@ class SummarySpectralParameter(OrderedAttribDict):
     """
 
     def __init__(self, param_id, name=None, units=None, format_spec=None):
+        """Initialize the summary spectral parameter object."""
         self.param_id = param_id
         self.name = name
         self.units = units
@@ -326,6 +336,7 @@ class SourceSpecOutput(OrderedAttribDict):
     """The output of SourceSpec."""
 
     def __init__(self):
+        """Initialize the SourceSpec output object."""
         self.run_info = OrderedAttribDict()
         self.event_info = OrderedAttribDict()
         self.inversion_info = OrderedAttribDict()
@@ -407,10 +418,10 @@ class SourceSpecOutput(OrderedAttribDict):
         _values = values[~naninf]
         # cases for which outliers cannot be computed
         if (
-            n is None or
-            len(_values) == 0 or
+            n is None
+            or len(_values) == 0
             # _values are all the same within 0.01 %
-            np.ptp(_values) < 0.0001 * np.mean(_values)
+            or np.ptp(_values) < 0.0001 * np.mean(_values)
         ):
             outliers = naninf
         else:

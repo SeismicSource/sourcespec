@@ -94,7 +94,7 @@ def _round_to_base(x, base):
     while round_x == 0:
         round_x = int(base * np.ceil(float(x) / base))
         base = base / 2.
-    return round_x*sign_x
+    return round_x * sign_x
 
 
 # Source: https://stackoverflow.com/a/20528097
@@ -283,7 +283,7 @@ def _add_tiles(config, ax, tiler, alpha=1):
         except ValueError:
             logger.warning(
                 f'No map tiles found for zoom level {tile_zoom_level}. '
-                f'Trying zoom level {tile_zoom_level-1}')
+                f'Trying zoom level {tile_zoom_level - 1}')
             ax.img_factories = []
             tile_zoom_level -= 1
 
@@ -456,7 +456,7 @@ def _get_ax_projection(maxdiagonal, max_map_diagonal=100, tiler=None):
     if tiler is not None:
         tiler_projection = tiler.crs
         projection_name = str(type(tiler_projection)).replace(
-            '<class \'cartopy.crs.', '').replace('\'>', '')
+            "<class 'cartopy.crs.", '').replace("'>", '')
         logger.info(
             f'Map diagonal above {max_map_diagonal} km '
             f'({maxdiagonal:.3f} km): '
@@ -509,7 +509,7 @@ def _make_geoaxes_planar(config, fig, bounding_box, maxdiagonal):
     if map_style not in ['no_basemap', 'geotiff']:
         if map_style in ['hillshade', 'hillshade_dark']:
             # add a sea mask to the hillshade map
-            ax.add_feature(ocean_10m, zorder=ZORDER_TILES+1)
+            ax.add_feature(ocean_10m, zorder=ZORDER_TILES + 1)
         _add_tiles(config, ax, tiler)
     if map_style in ['hillshade', 'hillshade_dark', 'ocean', 'satellite']:
         ax.attribution_text = 'Map powered by Esri and Natural Earth'

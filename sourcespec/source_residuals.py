@@ -58,7 +58,7 @@ def parse_args():
         help='output directory (default="sspec_residuals")'
     )
     parser.add_argument(
-        '-e', '--exclude', dest='exclude_subdirs', action="append",
+        '-e', '--exclude', dest='exclude_subdirs', action='append',
         default=None,
         help='subfolder to exclude (repeat for multiple subfolders)'
     )

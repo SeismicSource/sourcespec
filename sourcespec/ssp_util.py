@@ -99,6 +99,9 @@ class MediumProperties():
     _logged_messages = set()  # Class variable shared across all instances
 
     def __init__(self, lon, lat, depth_in_km, config):
+        """
+        Initialize the MediumProperties object.
+        """
         self.lon = lon
         self.lat = lat
         self.depth_in_km = depth_in_km
@@ -303,8 +306,8 @@ class MediumProperties():
         else:
             raise ValueError(f'Invalid location: {where}')
         if (
-            self.config.NLL_model_dir is not None and
-            mproperty in ['vp', 'vs']
+            self.config.NLL_model_dir is not None
+            and mproperty in ['vp', 'vs']
         ):
             wave = 'P' if mproperty == 'vp' else 'S'
             try:

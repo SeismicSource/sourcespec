@@ -49,6 +49,7 @@ class PlotParams():
     """Parameters for plotting spectra."""
 
     def __init__(self):
+        """Initialize the plot parameters."""
         self.plot_type = None
         self.stack_plots = False
         self.nlines = 0
@@ -662,9 +663,9 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
         _add_labels(plot_params)
         _add_legend(config, plot_params, spec_st, specnoise_st)
         if (
-            config.plot_save_asap and
-            config.plot_save and not config.plot_show and
-            config.plot_save_format != 'pdf_multipage'
+            config.plot_save_asap
+            and config.plot_save and not config.plot_show
+            and config.plot_save_format != 'pdf_multipage'
         ):
             # save figure here to free up memory
             _savefig(

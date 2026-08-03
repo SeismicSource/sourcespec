@@ -197,15 +197,17 @@ def _add_coords(trace):
         # Inventory.get_coordinates() raises a generic Exception
         # if coordinates are not found
         coords = trace.stats.inventory.get_coordinates(
-                    trace.id, trace.stats.starttime)
+            trace.id, trace.stats.starttime)
     if coords is not None:
         # Build an AttribDict and make sure that coordinates are floats
         coords = AttribDict({
             key: float(value) for key, value in coords.items()})
         coords = (
             None if (
-                coords.longitude == 0 and coords.latitude == 0 and
-                coords.local_depth == 123456 and coords.elevation == 123456)
+                coords.longitude == 0
+                and coords.latitude == 0
+                and coords.local_depth == 123456
+                and coords.elevation == 123456)
             else coords)
     if coords is None and is_SAC_trace(trace):
         # If we still don't have trace coordinates,
@@ -389,8 +391,10 @@ def _read_trace_files(
                 continue
             # only use the station specified by the command line option
             # "--station", if any
-            if (config.options.station is not None and
-                    trace.stats.station != config.options.station):
+            if (
+                config.options.station is not None
+                and trace.stats.station != config.options.station
+            ):
                 continue
             _correct_traceid(trace)
             try:

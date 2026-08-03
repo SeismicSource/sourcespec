@@ -51,9 +51,9 @@ def process_bibtex_entry(entry):
                 brace_level -= 1
             # Only split on ' and ' at brace_level 0
             if (
-                c == ' ' and
-                authors_field[i:i+5] == ' and ' and
-                brace_level == 0
+                c == ' '
+                and authors_field[i:i + 5] == ' and '
+                and brace_level == 0
             ):
                 authors.append(current.strip())
                 current = ''

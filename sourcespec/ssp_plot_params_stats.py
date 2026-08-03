@@ -26,7 +26,9 @@ logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 class PlotParam():
     """A plot parameter."""
+
     def __init__(self, name, unit, color):
+        """Initialize a plot parameter."""
         self.name = name
         self.unit = unit
         self.color = color

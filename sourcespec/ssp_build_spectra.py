@@ -19,7 +19,6 @@ import logging
 import math
 import fnmatch
 import numbers
-from collections.abc import Mapping
 import numpy as np
 # cumtrapz was deprecated in scipy 1.12.0 and removed in 1.14.0
 try:
@@ -47,6 +46,7 @@ class _IgnoredException(Exception):
     Not meant to be used directly, but only as a base class for
     other ignored exceptions.
     """
+
     def __init__(self, message, reason):
         # Call the base class constructor with the parameters it needs
         super().__init__(message)
@@ -290,8 +290,10 @@ def _cut_signal_noise(config, trace):
 
 
 def _recompute_time_window(trace, wave_type, npts, keep='start'):
-    """Recompute start or end time of signal or noise window,
-    based on new number of points"""
+    """
+    Recompute start or end time of signal or noise window,
+    based on new number of points
+    """
     length = npts * trace.stats.delta
     if keep == 'end':
         label, _ = trace.stats.arrivals[f'{wave_type}1']
@@ -316,8 +318,8 @@ def _check_noise_level(trace_signal, trace_noise, config):
         scale_factor = 1
     trace_noise_rms = ((trace_noise.data**2 * scale_factor).sum())**0.5
     if (
-        trace_noise_rms / trace_signal_rms < 1e-6 and
-        config.weighting == 'noise'
+        trace_noise_rms / trace_signal_rms < 1e-6
+        and config.weighting == 'noise'
     ):
         # Skip trace if noise level is too low and if noise weighting is used
         msg = (
@@ -685,8 +687,10 @@ def _build_weight_from_noise(config, spec, specnoise):
 
 
 def _build_weight_spectral_stream(config, spec_st, specnoise_st):
-    """Build a stream of weights from a stream of spectra and a stream of
-    noise spectra."""
+    """
+    Build a stream of weights from a stream of spectra and a stream of
+    noise spectra.
+    """
     weight_st = SpectrumStream()
     spec_ids = {sp.id[:-1] for sp in spec_st}
     for specid in spec_ids:

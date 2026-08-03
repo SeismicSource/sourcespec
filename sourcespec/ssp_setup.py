@@ -918,8 +918,8 @@ def configure(options, progname, config_overrides=None):
     n_layer_top_depths_source = _none_length(config.layer_top_depths_source)
     try:
         assert (
-            n_vp_source == n_vs_source == n_rho_source ==
-            n_layer_top_depths_source
+            n_vp_source == n_vs_source == n_rho_source
+            == n_layer_top_depths_source
         )
     except AssertionError:
         sys.exit(

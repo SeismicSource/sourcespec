@@ -259,10 +259,10 @@ def plot_stacked_spectra(config, spec_st, weight_st, sspec_output):
     ax.set_xlim(fmin, fmax)
     specmin = min(specmins)
     specmax = max(specmaxs)
-    padding = 0.05*(np.log10(specmax) - np.log10(specmin))
+    padding = 0.05 * (np.log10(specmax) - np.log10(specmin))
     ax.set_ylim(
-        10**(np.log10(specmin)-padding),
-        10**(np.log10(specmax)+padding)
+        10**(np.log10(specmin) - padding),
+        10**(np.log10(specmax) + padding)
     )
     spec_sum = spec_st.select(station='SUMMARY', channel='SSS')[0]
     color = 'black'

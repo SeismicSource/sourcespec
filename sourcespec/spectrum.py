@@ -56,6 +56,7 @@ class AttributeDict(dict):
     """A dictionary that allows attribute-style access."""
 
     def __init__(self, *args, **kwargs):
+        """Initialize the AttributeDict."""
         super().__init__(*args, **kwargs)
 
     def __getattr__(self, name):

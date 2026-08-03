@@ -64,9 +64,9 @@ def spectral_model(freq, Mw, fc, t_star, n=2, alpha=1.):
     # Check if t_star is callable (function) or a constant
     t_star_val = t_star(freq) if callable(t_star) else t_star
     return (
-        Mw -
-        (2. / 3.) * np.log10(1. + np.power((freq / fc), n)) -
-        (2. / 3.) * loge * (math.pi * np.power(freq, alpha) * t_star_val)
+        Mw
+        - (2. / 3.) * np.log10(1. + np.power((freq / fc), n))
+        - (2. / 3.) * loge * (math.pi * np.power(freq, alpha) * t_star_val)
     )
 
 

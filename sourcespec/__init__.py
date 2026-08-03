@@ -11,8 +11,8 @@ Init file for sourcespec.
 from . import _version
 __version__ = _version.get_versions()['version']
 
-__banner__ = '''
+__banner__ = """
   | ||   (`           (`         |||
 -||||||  _)()L||`(_(/__)|)(/_(_  |||||
   | ||                  |        ||||||
-'''
+"""

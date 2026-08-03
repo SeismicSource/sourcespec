@@ -313,7 +313,7 @@ def _dict2yaml(dict_like, level=0):
     if set(target_dict.keys()).intersection(set(value_uncertainty_keys)):
         # make sure all values are represented as strings
         target_dict = {key: str(value) for key, value in target_dict.items()}
-        oneliner = str(target_dict).replace("'", "")
+        oneliner = str(target_dict).replace("'", '')
         return f'{indent}{oneliner}\n'
     lines = ''
     for key, value in target_dict.items():
