@@ -533,6 +533,12 @@ def _spec_inversion(config, spec, spec_weight, station_pars, Q_model=None):
             )
     # Check post-inversion bounds for fc
     pi_fc_min, pi_fc_max = config.pi_fc_min_max or (-np.inf, np.inf)
+    pi_fc_min_fraction, pi_fc_max_fraction =\
+        config.pi_fc_min_max_fraction or (None, None)
+    if pi_fc_min_fraction is not None:
+        pi_fc_min = max(pi_fc_min, pi_fc_min_fraction * freq_logspaced[0])
+    if pi_fc_max_fraction is not None:
+        pi_fc_max = min(pi_fc_max, pi_fc_max_fraction * freq_logspaced[-1])
     if not (pi_fc_min <= fc <= pi_fc_max):
         spec.stats.ignore = True
         spec.stats.ignore_reason = 'fc out of bounds'

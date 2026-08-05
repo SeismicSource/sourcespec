@@ -89,6 +89,8 @@ previous versions. You will need to upgrade your old database manually or using
 - New config parameter `pi_fc_weight_min`, which defines the minimum acceptable
   weight near the inverted fc. This helps flag cases where fc values may be
   poorly constrained
+- New config parameter `pi_fc_min_max_fraction` to define corner frequency
+  post-inversion bounds as fraction of spectrum fmin and fmax
 - New options for `source_residuals`:
   - `--runid` to select a specific run when multiple runs exist for the same
      event
@@ -142,6 +144,7 @@ previous versions. You will need to upgrade your old database manually or using
 - New option `rp_lower_bound` to avoid overcorrection for stations close to a
   nodal plane when radiation coefficient is computed from focal mechanism
 - New config parameter `pi_fc_weight_min`
+- New config parameter `pi_fc_min_max_fraction`
 - Config parameter `pi_misfit_max` renamed to `pi_quality_of_fit_min`:
   it now defines the minimum acceptable quality of fit in percent (0-100).
 - Config parameter `noise_pre_time` now defaults to `None`, which means
