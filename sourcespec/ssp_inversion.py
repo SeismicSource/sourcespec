@@ -533,12 +533,19 @@ def _spec_inversion(config, spec, spec_weight, station_pars, Q_model=None):
             )
     # Check post-inversion bounds for fc
     pi_fc_min, pi_fc_max = config.pi_fc_min_max or (-np.inf, np.inf)
-    pi_fc_min_fraction, pi_fc_max_fraction =\
-        config.pi_fc_min_max_fraction or (None, None)
-    if pi_fc_min_fraction is not None:
-        pi_fc_min = max(pi_fc_min, pi_fc_min_fraction * freq_logspaced[0])
-    if pi_fc_max_fraction is not None:
-        pi_fc_max = min(pi_fc_max, pi_fc_max_fraction * freq_logspaced[-1])
+    pi_fc_bandwidth = config.pi_fc_bandwidth
+    if pi_fc_bandwidth is not None:
+        fmin = freq_logspaced[0]
+        fmax = freq_logspaced[-1]
+        # total spectrum bandwidth in log10 decades
+        log_range = np.log10(fmax / fmin)
+        # margin is the multiplicative factor to trim from each end of
+        # the spectrum, so that the remaining central portion spans
+        # pi_fc_bandwidth * log_range decades in log space.
+        # The allowed fc range is then [fmin * margin, fmax / margin].
+        margin = 10 ** (log_range * (1 - pi_fc_bandwidth) / 2)
+        pi_fc_min = max(pi_fc_min, fmin * margin)
+        pi_fc_max = min(pi_fc_max, fmax / margin)
     if not (pi_fc_min <= fc <= pi_fc_max):
         spec.stats.ignore = True
         spec.stats.ignore_reason = 'fc out of bounds'

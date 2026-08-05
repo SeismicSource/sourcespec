@@ -1010,10 +1010,6 @@ def configure(options, progname, config_overrides=None):
     _check_min_max_pair(config, 'fc_min_max')
     _check_min_max_pair(config, 'pi_fc_min_max')
     _check_min_max_pair(config, 'pi_ssd_min_max')
-    #
-    # Min/max pair with bounds [0, 1]:
-    _check_min_max_pair(
-        config, 'pi_fc_min_max_fraction', min_val=0., max_val=1.)
 
     # A list of warnings to be issued when logger is set up
     config.warnings = []
