@@ -158,6 +158,7 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Bugfixes
 
+- Proper value validation for float lists in config file (e.g., `fc_min_max`)
 - Fix `np.float64` being printed in logs and YAML output when using NumPy>=2
 - Fix for rejected spectra still being plotted in the stacked spectra plot
 - Fix for corner case where all the inversion errors are zero

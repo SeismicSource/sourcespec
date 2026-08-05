@@ -455,6 +455,57 @@ def _save_config_to_outdir(config_obj, progname, outdir):
         _tmp_config_obj.write(fp)
 
 
+def _check_non_negative_list(config, param):
+    """Check that all values in a float list parameter are non-negative."""
+    values = config[param]
+    if values is None:
+        return
+    for v in values:
+        if v < 0:
+            sys.stderr.write(
+                f'Error: "{param}" must contain non-negative values. '
+                f'Found negative value: {v}\n')
+            ssp_exit(1)
+
+
+def _check_min_max_pair(config, param, min_val=None, max_val=None):
+    """
+    Check that a float list parameter is a valid min/max pair.
+
+    The list must have exactly 2 elements, the first must be less than
+    the second, and all values must be within [min_val, max_val] if given.
+    """
+    values = config[param]
+    if values is None:
+        return
+    if len(values) != 2:
+        sys.stderr.write(
+            f'Error: "{param}" must contain exactly 2 values '
+            f'(min, max). Found {len(values)} values.\n')
+        ssp_exit(1)
+    vmin, vmax = values
+    if min_val is not None and vmin < min_val:
+        sys.stderr.write(
+            f'Error: "{param}" minimum value must be >= {min_val}. '
+            f'Found: {vmin}\n')
+        ssp_exit(1)
+    if max_val is not None and vmax > max_val:
+        sys.stderr.write(
+            f'Error: "{param}" maximum value must be <= {max_val}. '
+            f'Found: {vmax}\n')
+        ssp_exit(1)
+    if vmin < 0:
+        sys.stderr.write(
+            f'Error: "{param}" must contain non-negative values. '
+            f'Found negative value: {vmin}\n')
+        ssp_exit(1)
+    if vmin >= vmax:
+        sys.stderr.write(
+            f'Error: "{param}" min value ({vmin}) must be less than '
+            f'max value ({vmax}).\n')
+        ssp_exit(1)
+
+
 def _check_deprecated_config_options(config_obj):
     deprecation_msgs = []
     if 's_win_length' in config_obj or 'noise_win_length' in config_obj:
@@ -945,6 +996,24 @@ def configure(options, progname, config_overrides=None):
         sys.exit(
             f'Error parsing parameter "free_surface_amplification": {msg}'
         )
+
+    # Check that float_list parameters contain valid values.
+    # (The min=0 in configspec float_list() constrains list length,
+    # not element values, so we enforce value constraints here.)
+    #
+    # Non-negative lists (any number of elements):
+    _check_non_negative_list(config, 'geom_spread_n_exponents')
+    _check_non_negative_list(config, 'geom_spread_n_distances')
+    #
+    # Min/max pairs: exactly 2 elements, first < second, non-negative:
+    _check_min_max_pair(config, 'spectral_sn_freq_range')
+    _check_min_max_pair(config, 'fc_min_max')
+    _check_min_max_pair(config, 'pi_fc_min_max')
+    _check_min_max_pair(config, 'pi_ssd_min_max')
+    #
+    # Min/max pair with bounds [0, 1]:
+    _check_min_max_pair(
+        config, 'pi_fc_min_max_fraction', min_val=0., max_val=1.)
 
     # A list of warnings to be issued when logger is set up
     config.warnings = []
