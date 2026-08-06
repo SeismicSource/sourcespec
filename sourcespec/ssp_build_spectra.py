@@ -767,7 +767,10 @@ def _check_spectral_sn_ratio(config, spec, specnoise):
         raise SpectrumIgnored(msg, reason)
     spectral_snratio = valid_snratio.mean()
     spec.stats.spectral_snratio = spectral_snratio
-    # Save frequency range where SNR > 3 so it can be used for building weights
+    # Save frequency range where SNR > 3
+    # It's used for building weights from inverse frequency
+    # (see _build_weight_from_inv_frequency())
+    # and it is stored as spectrum quality information in the output files
     # Note: not sure if we could use config.spectral_sn_min here instead of 3
     snr_valid_freqs = freqs[weight.snratio >= 3]
     try:

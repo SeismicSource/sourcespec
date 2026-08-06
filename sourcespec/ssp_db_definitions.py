@@ -63,6 +63,8 @@ STATIONS_TABLE = OrderedDict([
     ('azimuth', 'REAL'),
     ('spectral_snratio_mean', 'REAL'),
     ('spectral_snratio_max', 'REAL'),
+    ('spectral_snratio_fmin', 'REAL'),
+    ('spectral_snratio_fmax', 'REAL'),
     ('rmsn', 'REAL'),
     ('quality_of_fit', 'REAL'),
     ('ignored', 'INT'),

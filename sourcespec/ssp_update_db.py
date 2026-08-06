@@ -222,6 +222,8 @@ def _version_2_to_3(cursor):
         'instr_type': 'TEXT',
         'spectral_snratio_mean': 'REAL',
         'spectral_snratio_max': 'REAL',
+        'spectral_snratio_fmin': 'REAL',
+        'spectral_snratio_fmax': 'REAL',
         'rmsn': 'REAL',
         'quality_of_fit': 'REAL',
         'ignored': 'INTEGER',

@@ -233,6 +233,7 @@ class StationParameters(OrderedAttribDict):
                  latitude=None, longitude=None,
                  hypo_dist_in_km=None, epi_dist_in_km=None, azimuth=None,
                  spectral_snratio_mean=None, spectral_snratio_max=None,
+                 spectral_snratio_fmin=None, spectral_snratio_fmax=None,
                  rmsn=None, quality_of_fit=None,
                  ignored=False, ignored_reason=None):
         """Initialize the station parameters object."""
@@ -245,6 +246,8 @@ class StationParameters(OrderedAttribDict):
         self.azimuth = azimuth
         self.spectral_snratio_mean = spectral_snratio_mean
         self.spectral_snratio_max = spectral_snratio_max
+        self.spectral_snratio_fmin = spectral_snratio_fmin
+        self.spectral_snratio_fmax = spectral_snratio_fmax
         self.rmsn = rmsn
         self.quality_of_fit = quality_of_fit
         self.ignored = ignored

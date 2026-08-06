@@ -54,13 +54,14 @@ Available weighting schemes:
 - **'noise'**: Applies weights based on spectral signal-to-noise ratio.
 - **'frequency'**: Applies a constant weight for :math:`f \leq f_\text{weight}`;
   for :math:`f > f_\text{weight}`, a weight of 1 is applied.
-  Controlled by the parameters ``f_weight`` and ``weight``.
+  Controlled by the parameters ``f_weight`` and ``weight`` in
+  :ref:`configuration_file:Configuration File`.
 - **'inv_frequency'**: Computes weights as :math:`1/(f-f_0+0.25)^{0.25}`
   for :math:`f \leq f_1`.
   Weights are set to 0 for :math:`f < f_0` or :math:`f > f_1`.
-  Here, ``f_0`` and ``f_1`` are the first and last frequencies where the
-  signal-to-noise ratio exceeds 3 (or the spectrum bounds if no noise window
-  is available).
+  Here, :math:`f_0` and :math:`f_1` are the first and last frequencies where
+  the signal-to-noise ratio exceeds 3 (or the spectrum bounds if no noise
+  window is available).
 - **'no_weight'**: No weighting (all weights = 1).
 
 
@@ -85,10 +86,12 @@ A minimum threshold for :math:`SSNR_x` can be set with
 ``spectral_sn_min`` (see :ref:`configuration_file:Configuration File`).
 Component spectra below this threshold are excluded from the inversion.
 
-From :math:`SSNR_x`, two quality parameters are derived:
+From :math:`SSNR_x`, the following quality parameters are derived:
 
 1. **SSNR mean**: Mean of :math:`SSNR_x` across the station components.
 2. **SSNR max**: Maximum of :math:`SSNR_x` across the station components.
+3. **SSNR fmin** and **SSNR fmax**: The minimum and maximum frequencies,
+   across the station components, where the signal-to-noise ratio exceeds 3.
 
 These values are reported in the output YAML file and in the SQLite database
 (if enabled).

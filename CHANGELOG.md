@@ -30,12 +30,15 @@ previous versions. You will need to upgrade your old database manually or using
 - Station quality parameters in YAML and SQLite output:
   - Mean spectral S/N ratio, across the station components
   - Max spectral S/N ratio, across the station components
+  - Minimum frequency where S/N ratio exceeds 3, across components
+  - Maximum frequency where S/N ratio exceeds 3, across components
   - Normalized RMS (RMSN)
   - Quality of fit (in percent)
 - The field `dist` in the `Stations` table of the SQLite database has been
   renamed to `hypo_dist`
 - New fields in the `Stations` table of the SQLite database: `epi_dist`,
   `lon`, `lat`, `instr_type`, `spectral_snratio_mean`, `spectral_snratio_max`,
+  `spectral_snratio_fmin`, `spectral_snratio_fmax`,
   `rmsn`, `quality_of_fit`, `ignored`, `ignored_reason`
 - New fields in the `Events` table of the SQLite database:
   `n_input_stations`, `n_input_spectra` (renamed from `nobs`),

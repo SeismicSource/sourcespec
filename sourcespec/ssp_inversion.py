@@ -817,6 +817,10 @@ def spectral_inversion(config, spec_st, weight_st):
             azimuth=az,
             spectral_snratio_mean=spec.stats.spectral_snratio_mean,
             spectral_snratio_max=spec.stats.spectral_snratio_max,
+            spectral_snratio_fmin=getattr(
+                spec.stats, 'spectral_snratio_fmin', None),
+            spectral_snratio_fmax=getattr(
+                spec.stats, 'spectral_snratio_fmax', None),
             ignored=spec.stats.ignore,
             ignored_reason=getattr(spec.stats, 'ignore_reason', None)
         )

@@ -212,6 +212,8 @@ def _insert_station_row(cursor, db_file, statId, par, evid, runid):
         'azimuth': par.azimuth,
         'spectral_snratio_mean': par.spectral_snratio_mean,
         'spectral_snratio_max': par.spectral_snratio_max,
+        'spectral_snratio_fmin': par.spectral_snratio_fmin,
+        'spectral_snratio_fmax': par.spectral_snratio_fmax,
         'rmsn': getattr(par, 'rmsn', None),
         'quality_of_fit': getattr(par, 'quality_of_fit', None),
         'ignored': par.ignored,
