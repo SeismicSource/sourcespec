@@ -25,6 +25,7 @@ import numpy as np
 from sourcespec.ssp_qml_output import write_qml
 from sourcespec.ssp_sqlite_output import write_sqlite
 from sourcespec._version import get_versions
+from sourcespec.ssp_util import set_spectrum_processing_info
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 # reduce logging level for tzlocal
 logging.getLogger('tzlocal').setLevel(logging.WARNING)
@@ -450,12 +451,8 @@ def save_spectra(config, spec_st):
     )
     spec_st.sort()
     logger.info('Saving spectra to HDF5 file...')
-    _software = 'SourceSpec'
-    _software_version = get_versions()['version']
     for spec in spec_st:
-        spec.stats.software = _software
-        spec.stats.software_version = _software_version
-        spec.stats.runid = config.options.run_id
+        set_spectrum_processing_info(spec, config)
         # remove t_star_model from stats before saving,
         # as it might be a function, which is unsupported by HDF5
         with contextlib.suppress(KeyError):

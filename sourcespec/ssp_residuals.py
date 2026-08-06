@@ -15,22 +15,25 @@ Spectral residual routine for sourcespec.
 import os
 import contextlib
 import logging
-from sourcespec._version import get_versions
 from sourcespec.spectrum import SpectrumStream
 from sourcespec.ssp_spectral_model import spectral_model
-from sourcespec.ssp_util import mag_to_moment
+from sourcespec.ssp_util import (
+    mag_to_moment, select_trace, set_spectrum_processing_info
+)
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
 
 
-def spectral_residuals(config, spec_st, sspec_output):
+def spectral_residuals(config, spec_st, weight_st, sspec_output):
     """
     Compute spectral residuals with respect to an average spectral model.
-    Saves a stream of residuals to disk in HDF5 format.
+    Saves a stream of residuals and weights to disk in HDF5 format.
 
     :param config: Configuration object
     :type config: :class:`~sourcespec.config.Config`
     :param spec_st: Stream of spectra
     :type spec_st: :class:`~sourcespec.spectrum.SpectrumStream`
+    :param weight_st: Stream of spectral weights
+    :type weight_st: :class:`~sourcespec.spectrum.SpectrumStream`
     :param sspec_output: Output of the source spectral parameter estimation
     :type sspec_output: :class:`~sourcespec.ssp_data_types.SourceSpecOutput`
     """
@@ -39,8 +42,6 @@ def spectral_residuals(config, spec_st, sspec_output):
     params_name = ('Mw', 'fc', 't_star')
     sourcepar_summary = {p: summary_values[p] for p in params_name}
     residuals = SpectrumStream()
-    _software = 'SourceSpec'
-    _software_version = get_versions()['version']
     for station in {x.stats.station for x in spec_st}:
         spec_st_sel = spec_st.select(station=station)
         for spec in spec_st_sel:
@@ -62,10 +63,15 @@ def spectral_residuals(config, spec_st, sspec_output):
             _res_mag = spec.data_mag - synth_mean_mag
             res.data = mag_to_moment(_res_mag)
             res.data_mag = _res_mag
-            res.stats.software = _software
-            res.stats.software_version = _software_version
-            res.stats.runid = config.options.run_id
+            set_spectrum_processing_info(res, config)
             res.stats.data_type = 'residual'
+            # Store spectral weight as a separate spectrum object
+            weight_spec = select_trace(
+                weight_st, spec.id, spec.stats.instrtype)
+            if weight_spec is not None:
+                weight_copy = weight_spec.copy()
+                set_spectrum_processing_info(weight_copy, config)
+                residuals.append(weight_copy)
             # remove t_star_model from stats before saving,
             # as it might be a function, which is unsupported by HDF5
             with contextlib.suppress(KeyError):

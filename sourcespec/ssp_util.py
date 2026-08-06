@@ -17,6 +17,7 @@ import numpy as np
 from obspy.signal.invsim import cosine_taper as _cos_taper
 from obspy.geodetics import gps2dist_azimuth, kilometers2degrees
 from obspy.taup import TauPyModel
+from sourcespec._version import get_versions
 model = TauPyModel(model='iasp91')
 v_model = model.model.s_mod.v_mod
 logger = logging.getLogger(__name__.rsplit('.', maxsplit=1)[-1])
@@ -78,6 +79,13 @@ def select_trace(stream, traceid, instrtype):
     """Select trace from stream using traceid and instrument type."""
     return [tr for tr in stream.select(id=traceid)
             if tr.stats.instrtype == instrtype][0]
+
+
+def set_spectrum_processing_info(spec, config):
+    """Set software and run metadata on a spectrum's stats."""
+    spec.stats.software = 'SourceSpec'
+    spec.stats.software_version = get_versions()['version']
+    spec.stats.runid = config.options.run_id
 # -----------------------------------------------------------------------------
 
 
