@@ -189,6 +189,8 @@ previous versions. You will need to upgrade your old database manually or using
 - Fix for geophone instrument codes (`P`) not being recognized
 - Fix GSHHS data download URL that was no longer valid (see [#94])
 - `source_residuals`: avoid crash if a residual HDF5 file is corrupted
+- Compute spectral weights also for ignored spectra (useful for a-posteriori
+  analysis of results)
 
 ### Requirements
 

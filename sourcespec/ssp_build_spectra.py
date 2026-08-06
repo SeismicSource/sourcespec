@@ -155,17 +155,16 @@ def _compute_spec_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
             spec_h.data_logspaced = np.zeros_like(spec.data_logspaced)
         ignore_list.append(spec.stats.ignore)
         ignore_reason_list.append(getattr(spec.stats, 'ignore_reason', None))
-        if not spec.stats.ignore:
-            spec_h.data += np.power(spec.data, 2)
-            spec_h.data_logspaced += np.power(spec.data_logspaced, 2)
-            spec_h.stats.spectral_snratio_fmin = min(
-                getattr(spec.stats, 'spectral_snratio_fmin', np.nan),
-                getattr(spec_h.stats, 'spectral_snratio_fmin', np.nan)
-            )
-            spec_h.stats.spectral_snratio_fmax = max(
-                getattr(spec.stats, 'spectral_snratio_fmax', np.nan),
-                getattr(spec_h.stats, 'spectral_snratio_fmax', np.nan)
-            )
+        spec_h.data += np.power(spec.data, 2)
+        spec_h.data_logspaced += np.power(spec.data_logspaced, 2)
+        spec_h.stats.spectral_snratio_fmin = min(
+            getattr(spec.stats, 'spectral_snratio_fmin', np.nan),
+            getattr(spec_h.stats, 'spectral_snratio_fmin', np.nan)
+        )
+        spec_h.stats.spectral_snratio_fmax = max(
+            getattr(spec.stats, 'spectral_snratio_fmax', np.nan),
+            getattr(spec_h.stats, 'spectral_snratio_fmax', np.nan)
+        )
         spectral_snratio = getattr(
             spec.stats, 'spectral_snratio', 0)
         spectral_snratio_mean += spectral_snratio
@@ -178,10 +177,9 @@ def _compute_spec_h(spec_st, code, vertical_channel_codes=None, wave_type='S'):
     spec_h.data_logspaced = np.sqrt(spec_h.data_logspaced)
     spec_h.stats.spectral_snratio_mean = spectral_snratio_mean
     spec_h.stats.spectral_snratio_max = spectral_snratio_max
+    # ignore spec_h if all components are ignored
     spec_h.stats.ignore = all(ignore_list)
     if spec_h.stats.ignore:
-        spec_h.data = np.ones_like(spec_h.data) * np.nan
-        spec_h.data_logspaced = np.ones_like(spec_h.data_logspaced) * np.nan
         ignore_reason_list = {
             ir for ir in ignore_reason_list if ir is not None}
         spec_h.stats.ignore_reason = ', '.join(ignore_reason_list)
