@@ -103,6 +103,9 @@ previous versions. You will need to upgrade your old database manually or using
   - `--exclude` to exclude 1 or more subfolders when parsing residuals files
     (see [#68])
   - `--yrange` to specify a fixed range for the Y axis in the plots (see [#68])
+  - `--weighting` (`-w`) to compute weighted mean residuals using spectral
+     weights stored in the HDF5 file. Falls back to unweighted mean when
+     weights are missing
 
 ### Plotting
 

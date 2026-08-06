@@ -67,6 +67,13 @@ def parse_args():
         default=False, help='save residuals plots to file'
     )
     parser.add_argument(
+        '-w', '--weighting', dest='weighting', action='store_true',
+        default=False,
+        help='use spectral weights from the HDF5 file when computing '
+             'mean residuals. Falls back to unweighted mean if weights '
+             'are missing for a given station or spectrum'
+    )
+    parser.add_argument(
         '-y', '--yrange', dest='yrange', nargs=2, type=float,
         action='store', default=[-2.5, 2.5],
         help='min/max range for Y axis (default: -2.5, 2.5)'
@@ -230,7 +237,40 @@ def read_residuals(resfiles_dir, runid=None, exclude_subdirs=None):
     return _filter_by_runid(residual_dict, runid)
 
 
-def compute_mean_residuals(residual_dict, min_spectra=20):
+def _compute_station_mean(res_list, weight_by_key, freq_array, use_weights):
+    """Compute the weighted or unweighted mean for a single station."""
+    spec_mean = None
+    weights_used = False
+    for spec in res_list:
+        spec_interp = spec.copy()
+        spec_interp.interp_data_to_new_freq(freq_array)
+        # norm is 1 where interpolated data_mag is not nan, 0 otherwise
+        norm = (~np.isnan(spec_interp.data_mag)).astype(float)
+        if use_weights:
+            key = (spec.id, spec.stats.instrtype)
+            weight_spec = weight_by_key.get(key)
+            if weight_spec is not None:
+                weight_interp = np.interp(
+                    freq_array, weight_spec.freq, weight_spec.data)
+                norm *= weight_interp
+                weights_used = True
+        # Replace nan data_mag with zeros and apply weights
+        spec_interp.data_mag[np.isnan(spec_interp.data_mag)] = 0
+        spec_interp.data_mag *= norm
+        if spec_mean is None:
+            spec_mean = spec_interp
+            norm_mean = norm
+        else:
+            spec_mean.data_mag += spec_interp.data_mag
+            norm_mean += norm
+    norm_mean[norm_mean == 0] = np.nan
+    spec_mean.data_mag /= norm_mean
+    spec_mean.data = mag_to_moment(spec_mean.data_mag)
+    return spec_mean, weights_used
+
+
+def compute_mean_residuals(residual_dict, min_spectra=20,
+                           use_weights=False):
     """
     Compute mean residuals for each station.
 
@@ -240,6 +280,10 @@ def compute_mean_residuals(residual_dict, min_spectra=20):
         Dictionary containing residuals for each station.
     min_spectra : int
         Minimum number of spectra to compute residuals (default=20).
+    use_weights : bool
+        If True, use spectral weights (data_type='weight') when
+        available. Falls back to unweighted mean for spectra or
+        stations without weights (default=False).
 
     Returns
     -------
@@ -248,40 +292,46 @@ def compute_mean_residuals(residual_dict, min_spectra=20):
     """
     residual_mean = SpectrumStream()
     for stat_id in sorted(residual_dict.keys()):
-        if len(residual_dict[stat_id]) < min_spectra:
+        res = residual_dict[stat_id]
+
+        # Separate weights from residuals
+        weight_list = [
+            s for s in res
+            if getattr(s.stats, 'data_type', '') == 'weight'
+        ]
+        res_list = [
+            s for s in res
+            if getattr(s.stats, 'data_type', '') != 'weight'
+        ]
+
+        if len(res_list) < min_spectra:
             continue
         print(f'Processing station: {stat_id}')
 
-        res = residual_dict[stat_id]
+        # Build a lookup for weights by (id, instrtype)
+        weight_by_key = {}
+        for w in weight_list:
+            key = (w.id, w.stats.instrtype)
+            weight_by_key[key] = w
 
-        freqs_min = [spec.freq.min() for spec in res]
-        freqs_max = [spec.freq.max() for spec in res]
-        delta_f_min = min(spec.stats.delta for spec in res)
+        freqs_min = [spec.freq.min() for spec in res_list]
+        freqs_max = [spec.freq.max() for spec in res_list]
+        delta_f_min = min(spec.stats.delta for spec in res_list)
         freq_min = min(freqs_min)
         freq_max = max(freqs_max)
         # stop two steps before the maximum frequency,
         # to avoid border effects
         freq_array = np.arange(freq_min, freq_max - delta_f_min, delta_f_min)
 
-        spec_mean = None
-        for spec in res:
-            spec_interp = spec.copy()
-            # interpolate to the new frequency array
-            spec_interp.interp_data_to_new_freq(freq_array)
-            # norm is 1 where interpolated data_mag is not nan, 0 otherwise
-            norm = (~np.isnan(spec_interp.data_mag)).astype(float)
-            # Replace nan data_mag values with zeros for summation
-            spec_interp.data_mag[np.isnan(spec_interp.data_mag)] = 0
-            if spec_mean is None:
-                spec_mean = spec_interp
-                norm_mean = norm
+        spec_mean, weights_used = _compute_station_mean(
+            res_list, weight_by_key, freq_array, use_weights)
+
+        if use_weights:
+            if weights_used:
+                print(f'{stat_id}: using spectral weights')
             else:
-                spec_mean.data_mag += spec_interp.data_mag
-                norm_mean += norm
-        # Make sure to avoid division by zero
-        norm_mean[norm_mean == 0] = np.nan
-        spec_mean.data_mag /= norm_mean
-        spec_mean.data = mag_to_moment(spec_mean.data_mag)
+                print(f'{stat_id}: no spectral weights found, '
+                      'using unweighted mean')
         spec_mean.stats.software = 'SourceSpec'
         spec_mean.stats.software_version = get_versions()['version']
         residual_mean.append(spec_mean)
@@ -317,6 +367,10 @@ def plot_residuals(residual_dict, residual_mean, outdir,
         figurefile = os.path.join(outdir, f'{stat_id}.res.png')
         fig, ax = plt.subplots(dpi=160)
         for spec in res:
+            if getattr(spec.stats, 'data_type', '') == 'weight':
+                continue
+            if not spec.data_mag.size:
+                continue
             ax.semilogx(spec.freq, spec.data_mag, 'b-', alpha=0.5)
         ax.semilogx(spec_mean.freq, spec_mean.data_mag, 'r-', linewidth=2)
         ax.set_ylim([ymin, ymax])
@@ -324,10 +378,14 @@ def plot_residuals(residual_dict, residual_mean, outdir,
             True, which='both', linestyle='solid', color='#DDDDDD', zorder=0)
         ax.set_xlabel('frequency (Hz)')
         ax.set_ylabel('residual amplitude (obs - synth) in magnitude units')
+        n_res = len(
+            [s for s in res
+             if getattr(s.stats, 'data_type', '') != 'weight']
+        )
         if runid:
-            title = f'{stat_id} – runid: {runid} - {len(res)} records'
+            title = f'{stat_id} – runid: {runid} - {n_res} records'
         else:
-            title = f'{stat_id} – {len(res)} records'
+            title = f'{stat_id} – {n_res} records'
         ax.set_title(title)
         fig.savefig(figurefile, bbox_inches='tight')
         plt.close(fig)
@@ -358,7 +416,8 @@ def main():
         os.makedirs(outdir)
 
     min_spectra = int(args.min_spectra)
-    residual_mean = compute_mean_residuals(residual_dict, min_spectra)
+    residual_mean = compute_mean_residuals(
+        residual_dict, min_spectra, use_weights=args.weighting)
 
     if args.plot:
         ymin, ymax = args.yrange
