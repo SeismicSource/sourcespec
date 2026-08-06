@@ -454,6 +454,8 @@ def _spec_inversion(config, spec, spec_weight, station_pars, Q_model=None):
     isnan = np.isnan(spec.data_mag_logspaced)
     if np.sum(isnan) > 0:
         spec.freq_logspaced = spec.freq_logspaced[~isnan]
+        # also update the freq_logspaced commodity variable
+        freq_logspaced = spec.freq_logspaced
         spec.data_logspaced = spec.data_logspaced[~isnan]
         spec.data_mag_logspaced = spec.data_mag_logspaced[~isnan]
         weight = weight[~isnan]
