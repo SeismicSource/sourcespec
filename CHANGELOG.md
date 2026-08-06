@@ -18,6 +18,8 @@ previous versions. You will need to upgrade your old database manually or using
 
 ### Input/output
 
+- New `data_type` attribute in HDF5 and TEXT spectrum files to identify
+  the type of spectrum: `signal`, `noise`, `weight`, `synthetic`, `residual`.
 - Global inversion quality parameters in YAML, SQLite and HTML output:
   - Number of input stations
   - Number of input spectra

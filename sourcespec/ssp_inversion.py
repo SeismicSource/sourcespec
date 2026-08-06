@@ -661,6 +661,7 @@ def _synth_spec(config, spec, station_pars):
     freq = spec.freq
     freq_logspaced = spec.freq_logspaced
     spec_synth = spec.copy()
+    spec_synth.stats.data_type = 'synthetic'
     spec_synth.stats.channel = f'{chan_no_orientation}S'
     spec_synth.stats.par = par
     spec_synth.stats.par_err = par_err
@@ -675,6 +676,7 @@ def _synth_spec(config, spec, station_pars):
     # Add an extra spectrum with no attenuation
     if config.plot_spectra_no_attenuation:
         spec_synth = spec.copy()
+        spec_synth.stats.data_type = 'synthetic'
         spec_synth.stats.channel = f'{chan_no_orientation}s'
         _params = list(params_opt)
         _params[-1] = 0
@@ -690,6 +692,7 @@ def _synth_spec(config, spec, station_pars):
     # Add an extra spectrum with no corner frequency
     if config.plot_spectra_no_fc:
         spec_synth = spec.copy()
+        spec_synth.stats.data_type = 'synthetic'
         spec_synth.stats.channel = f'{chan_no_orientation}t'
         _params = list(params_opt)
         _params[1] = 1e999

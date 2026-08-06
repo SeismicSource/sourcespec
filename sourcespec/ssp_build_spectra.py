@@ -497,13 +497,14 @@ def _smooth_spectrum(spec, smooth_width_decades=0.2):
     spec.make_freq_logspaced(log_df)
 
 
-def _build_spectrum(config, trace):
+def _build_spectrum(config, trace, data_type='signal'):
     try:
         spec = Spectrum(obspy_trace=trace)
     except ValueError as e:
         raise RuntimeError(
             f'{trace.id}: Error building spectrum: skipping spectrum\n{str(e)}'
         ) from e
+    spec.stats.data_type = data_type
     spec.stats.instrtype = trace.stats.instrtype
     spec.stats.coords = trace.stats.coords
     spec.stats.event = trace.stats.event
@@ -557,6 +558,7 @@ def _build_spectrum(config, trace):
 
 def _build_uniform_weight(spec):
     weight = spec.copy()
+    weight.stats.data_type = 'weight'
     # Clear data_mag and data_mag_logspaced,
     # since magnitude values are not relevant for weights
     weight.data_mag = []
@@ -569,6 +571,7 @@ def _build_uniform_weight(spec):
 
 def _build_weight_from_frequency(config, spec):
     weight = spec.copy()
+    weight.stats.data_type = 'weight'
     # Clear data_mag and data_mag_logspaced,
     # since magnitude values are not relevant for weights
     weight.data_mag = []
@@ -593,6 +596,7 @@ def _build_weight_from_inv_frequency(spec, power=0.25):
     # Note: weight.data is used for plotting,
     #       weight.data_logspaced for actual weighting
     weight = spec.copy()
+    weight.stats.data_type = 'weight'
     # Clear data_mag and data_mag_logspaced,
     # since magnitude values are not relevant for weights
     weight.data_mag = []
@@ -629,6 +633,7 @@ def _build_weight_from_inv_frequency(spec, power=0.25):
 
 def _build_weight_from_ratio(spec, specnoise, smooth_width_decades):
     weight = spec.copy()
+    weight.stats.data_type = 'weight'
     # Clear data_mag and data_mag_logspaced,
     # since magnitude values are not relevant for weights
     weight.data_mag = []
@@ -875,7 +880,7 @@ def _build_signal_and_noise_spectral_streams(
         trace_noise = noise_st.select(id=trace_signal.id)[0]
         try:
             spec = _build_spectrum(config, trace_signal)
-            specnoise = _build_spectrum(config, trace_noise)
+            specnoise = _build_spectrum(config, trace_noise, data_type='noise')
             _check_spectral_sn_ratio(config, spec, specnoise)
         except RuntimeError as msg:
             # RuntimeError is for skipped spectra

@@ -176,6 +176,7 @@ def _make_summary_spec(station, channel, freq_logspaced, Mw, fc, t_star,
                        config):
     """Create a synthetic spectrum for summary statistics."""
     sp = Spectrum()
+    sp.stats.data_type = 'synthetic'
     sp.stats.station = station
     sp.stats.channel = channel
     sp.freq_logspaced = freq_logspaced

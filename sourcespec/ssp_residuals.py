@@ -65,6 +65,7 @@ def spectral_residuals(config, spec_st, sspec_output):
             res.stats.software = _software
             res.stats.software_version = _software_version
             res.stats.runid = config.options.run_id
+            res.stats.data_type = 'residual'
             # remove t_star_model from stats before saving,
             # as it might be a function, which is unsupported by HDF5
             with contextlib.suppress(KeyError):

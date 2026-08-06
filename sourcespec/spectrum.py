@@ -166,6 +166,7 @@ class Spectrum():
         self.stats.network = ''
         self.stats.location = ''
         self.stats.channel = ''
+        self.stats.data_type = ''
         if obspy_trace is not None:
             self.from_obspy_trace(obspy_trace)
 
