@@ -508,6 +508,7 @@ def _add_traces_plots_to_html(config, templates, replacements):
     traces_plots = ''
     traces_plot_class = ''
     n_traces_plot_files = len(traces_plot_files)
+    fig_stations = config.get('figures_stations', {})
     for n, traces_plot_file in enumerate(sorted(traces_plot_files)):
         if n_traces_plot_files > 1:
             traces_plot_counter = (
@@ -517,10 +518,14 @@ def _add_traces_plots_to_html(config, templates, replacements):
         else:
             traces_plot_counter = ''
         traces_plot_file = os.path.basename(traces_plot_file)
+        # Build hidden but searchable station list for this figure
+        stations = fig_stations.get(traces_plot_file, [])
+        stations_text = ', '.join(stations) if stations else ''
         traces_plots += traces_plot.\
             replace('{TRACES_PLOT_CLASS}', traces_plot_class).\
             replace('{TRACES_PLOT_COUNTER}', traces_plot_counter).\
-            replace('{TRACES_PLOT_FILE}', traces_plot_file)
+            replace('{TRACES_PLOT_FILE}', traces_plot_file).\
+            replace('{TRACES_PLOT_STATIONS}', stations_text)
         traces_plot_class = ' class="print"'
     if traces_plots:
         traces_plots_comment_begin = traces_plots_comment_end = ''
@@ -544,6 +549,7 @@ def _add_spectra_plots_to_html(config, templates, replacements):
     spectra_plots = ''
     spectra_plot_class = ''
     n_spectra_plot_files = len(spectra_plot_files)
+    fig_stations = config.get('figures_stations', {})
     for n, spectra_plot_file in enumerate(sorted(spectra_plot_files)):
         if n_spectra_plot_files > 1:
             spectra_plot_counter = (
@@ -553,10 +559,14 @@ def _add_spectra_plots_to_html(config, templates, replacements):
         else:
             spectra_plot_counter = ''
         spectra_plot_file = os.path.basename(spectra_plot_file)
+        # Build hidden but searchable station list for this figure
+        stations = fig_stations.get(spectra_plot_file, [])
+        stations_text = ', '.join(stations) if stations else ''
         spectra_plots += spectra_plot.\
             replace('{SPECTRA_PLOT_CLASS}', spectra_plot_class).\
             replace('{SPECTRA_PLOT_COUNTER}', spectra_plot_counter).\
-            replace('{SPECTRA_PLOT_FILE}', spectra_plot_file)
+            replace('{SPECTRA_PLOT_FILE}', spectra_plot_file).\
+            replace('{SPECTRA_PLOT_STATIONS}', stations_text)
         spectra_plot_class = ' class="print"'
     if spectra_plots:
         spectra_plots_comment_begin = spectra_plots_comment_end = ''

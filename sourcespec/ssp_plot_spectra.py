@@ -59,6 +59,7 @@ class PlotParams():
         self.mag_minmax = None
         self.plotn = 0
         self.figures = []
+        self.fig_stations = []
         self.axes = []
         self.ax0 = None
 
@@ -187,6 +188,7 @@ def _make_fig(config, plot_params):
         axes.append((ax, ax2))
     fig.subplots_adjust(hspace=.025, wspace=.03)
     plot_params.figures.append(fig)
+    plot_params.fig_stations.append([])
     plot_params.axes = axes
     plot_params.ax0 = ax0
     plot_params.plotn = 0
@@ -198,7 +200,8 @@ SAVED_FIGURE_CODES = []
 BBOX = None
 
 
-def _savefig(config, plottype, figures, force_numbering=False):
+def _savefig(config, plottype, figures, fig_stations=None,
+             force_numbering=False):
     global BBOX  # pylint: disable=global-statement
     evid = config.event.event_id
     if plottype == 'regular':
@@ -240,6 +243,15 @@ def _savefig(config, plottype, figures, force_numbering=False):
             figures[n] = None
         SAVED_FIGURE_CODES.append(figcode)
         config.figures[f'spectra_{plottype}'].append(figfiles[n])
+        # Record which stations are in this figure (for HTML search)
+        basename = os.path.basename(figfiles[n])
+        if 'figures_stations' not in config:
+            config.figures_stations = {}
+        stations = (
+            fig_stations[n] if fig_stations and n < len(fig_stations)
+            else []
+        )
+        config.figures_stations[basename] = stations
         logger.info(f'{message} plots saved to: {figfiles[n]}')
     if fmt == 'pdf_multipage':
         pdf.close()
@@ -670,10 +682,15 @@ def _plot_specid(config, plot_params, specid, spec_st, specnoise_st):
             # save figure here to free up memory
             _savefig(
                 config, plot_params.plot_type, plot_params.figures,
+                fig_stations=plot_params.fig_stations,
                 force_numbering=True)
         _make_fig(config, plot_params)
         plotn = 1
     plot_params.plotn = plotn
+    # Record station ID for the current figure (used for HTML search)
+    station_id = '.'.join(specid.split('.')[:3])  # network.station.location
+    if station_id not in plot_params.fig_stations[-1]:
+        plot_params.fig_stations[-1].append(station_id)
     special_orientations = ['S', 's', 't', 'H', 'h']
     orientations = [sp.stats.channel[-1] for sp in spec_st_sel]
     # compute the number of instrument components (N, Z, E, 1, 2, ...)
@@ -766,4 +783,6 @@ def plot_spectra(config, spec_st, specnoise_st=None, ncols=None,
     if config.plot_show:
         plt.show()
     if config.plot_save:
-        _savefig(config, plot_type, plot_params.figures)
+        _savefig(
+            config, plot_type, plot_params.figures,
+            fig_stations=plot_params.fig_stations)

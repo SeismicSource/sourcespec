@@ -497,3 +497,15 @@ a.article:hover {
     width: 100px;
   }
 }
+
+/* ---------------------------------------------------
+    FIGURE STATION LABELS (searchable via CTRL+F)
+----------------------------------------------------- */
+
+.fig-stations {
+  font-size: 0.7em;
+  color: #bbb;
+  margin-bottom: 4px;
+  text-align: left;
+  line-height: 1.4;
+}

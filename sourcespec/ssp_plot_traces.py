@@ -127,7 +127,8 @@ SAVED_FIGURE_CODES = []
 BBOX = None
 
 
-def _savefig(config, figures, suffix, force_numbering=False):
+def _savefig(config, figures, suffix, fig_stations=None,
+             force_numbering=False):
     global BBOX  # pylint: disable=global-statement
     evid = config.event.event_id
     figfile_base = os.path.join(config.options.outdir, f'{evid}.traces.')
@@ -166,6 +167,15 @@ def _savefig(config, figures, suffix, force_numbering=False):
         SAVED_FIGURE_CODES.append(figcode)
         figkey = f'traces_{suffix}' if suffix is not None else 'traces'
         config.figures[figkey].append(figfiles[n])
+        # Record which stations are in this figure (for HTML search)
+        basename = os.path.basename(figfiles[n])
+        if 'figures_stations' not in config:
+            config.figures_stations = {}
+        stations = (
+            fig_stations[n] if fig_stations and n < len(fig_stations)
+            else []
+        )
+        config.figures_stations[basename] = stations
         logger.info(f'Trace plots saved to: {figfiles[n]}')
     if fmt == 'pdf_multipage':
         pdf.close()
@@ -431,6 +441,7 @@ def plot_traces(config, st, ncols=None, block=True, suffix=None):
     nlines, ncols = _nplots(config, st, config.plot_traces_maxrows, ncols)
     fig, axes = _make_fig(config, nlines, ncols)
     figures = [fig]
+    fig_stations = [[]]
     # Path effect to contour text in white
     path_effects = [PathEffects.withStroke(linewidth=3, foreground='white')]
 
@@ -473,10 +484,18 @@ def plot_traces(config, st, ncols=None, block=True, suffix=None):
                 and config.plot_save_format != 'pdf_multipage'
             ):
                 # save figure here to free up memory
-                _savefig(config, figures, suffix, force_numbering=True)
+                _savefig(
+                    config, figures, suffix,
+                    fig_stations=fig_stations,
+                    force_numbering=True)
             fig, axes = _make_fig(config, nlines, ncols)
             figures.append(fig)
+            fig_stations.append([])
             plotn = 1
+        # Record station ID for the current figure (used for HTML search)
+        station_id = '.'.join(traceid.split('.')[:3])  # network.station.loc
+        if station_id not in fig_stations[-1]:
+            fig_stations[-1].append(station_id)
         ax = axes[plotn - 1]
         ylabel = _get_ylabel(config, st_sel, processed)
         ax.set_ylabel(ylabel, fontsize=8, labelpad=0)
@@ -510,4 +529,4 @@ def plot_traces(config, st, ncols=None, block=True, suffix=None):
     if config.plot_show:
         plt.show(block=block)
     if config.plot_save:
-        _savefig(config, figures, suffix)
+        _savefig(config, figures, suffix, fig_stations=fig_stations)
