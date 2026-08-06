@@ -61,6 +61,8 @@ STATIONS_TABLE = OrderedDict([
     ('hypo_dist', 'REAL'),
     ('epi_dist', 'REAL'),
     ('azimuth', 'REAL'),
+    ('fmin', 'REAL'),
+    ('fmax', 'REAL'),
     ('spectral_snratio_mean', 'REAL'),
     ('spectral_snratio_max', 'REAL'),
     ('spectral_snratio_fmin', 'REAL'),

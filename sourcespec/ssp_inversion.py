@@ -824,6 +824,8 @@ def spectral_inversion(config, spec_st, weight_st):
                 spec.stats, 'spectral_snratio_fmin', None),
             spectral_snratio_fmax=getattr(
                 spec.stats, 'spectral_snratio_fmax', None),
+            fmin=spec.freq_logspaced[0],
+            fmax=spec.freq_logspaced[-1],
             ignored=spec.stats.ignore,
             ignored_reason=getattr(spec.stats, 'ignore_reason', None)
         )

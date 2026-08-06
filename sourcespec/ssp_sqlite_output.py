@@ -214,6 +214,8 @@ def _insert_station_row(cursor, db_file, statId, par, evid, runid):
         'spectral_snratio_max': par.spectral_snratio_max,
         'spectral_snratio_fmin': par.spectral_snratio_fmin,
         'spectral_snratio_fmax': par.spectral_snratio_fmax,
+        'fmin': getattr(par, 'fmin', None),
+        'fmax': getattr(par, 'fmax', None),
         'rmsn': getattr(par, 'rmsn', None),
         'quality_of_fit': getattr(par, 'quality_of_fit', None),
         'ignored': par.ignored,

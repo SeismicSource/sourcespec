@@ -232,6 +232,7 @@ class StationParameters(OrderedAttribDict):
     def __init__(self, station_id, instrument_type=None,
                  latitude=None, longitude=None,
                  hypo_dist_in_km=None, epi_dist_in_km=None, azimuth=None,
+                 fmin=None, fmax=None,
                  spectral_snratio_mean=None, spectral_snratio_max=None,
                  spectral_snratio_fmin=None, spectral_snratio_fmax=None,
                  rmsn=None, quality_of_fit=None,
@@ -244,6 +245,8 @@ class StationParameters(OrderedAttribDict):
         self.hypo_dist_in_km = hypo_dist_in_km
         self.epi_dist_in_km = epi_dist_in_km
         self.azimuth = azimuth
+        self.fmin = fmin
+        self.fmax = fmax
         self.spectral_snratio_mean = spectral_snratio_mean
         self.spectral_snratio_max = spectral_snratio_max
         self.spectral_snratio_fmin = spectral_snratio_fmin

@@ -73,11 +73,12 @@ is evaluated from the average spectral signal-to-noise ratio (:math:`SSNR_x`):
 
 .. math::
 
-   SSNR_x = \frac{1}{f_{max} - f_{min}} \int_{f_{min}}^{f_{max}}\frac{S_x(f)}{N_x(f)} \, df
+   SSNR_x = \frac{1}{f_{max}^{SSNR} - f_{min}^{SSNR}}
+    \int_{f_{min}^{SSNR}}^{f_{max}^{SSNR}}\frac{S_x(f)}{N_x(f)} \, df
 
 where :math:`S_x(f)` and :math:`N_x(f)` are the signal and noise amplitude
-spectra for component :math:`x`, respectively, and :math:`f_{min}` and
-:math:`f_{max}` define the frequency range over which the SSNR is computed
+spectra for component :math:`x`, respectively, and :math:`f_{min}^{SSNR}` and
+:math:`f_{max}^{SSNR}` define the frequency range over which the SSNR is computed
 (either the full frequency band or a user-defined range,
 see ``spectral_sn_freq_range`` in
 :ref:`configuration_file:Configuration File`).
@@ -93,8 +94,17 @@ From :math:`SSNR_x`, the following quality parameters are derived:
 3. **SSNR fmin** and **SSNR fmax**: The minimum and maximum frequencies,
    across the station components, where the signal-to-noise ratio exceeds 3.
 
-These values are reported in the output YAML file and in the SQLite database
-(if enabled).
+Moreover, the minimum and maximum (Nyquist) frequencies of each processed
+spectrum are also reported:
+
+* **fmin** and **fmax**: The minimum and maximum (Nyquist) frequencies of each
+  processed spectrum. They are reported for all spectra, including those
+  excluded from the inversion. Note that these values may differ from the
+  SSNR fmin and SSNR fmax values.
+
+All the above values are reported in the output YAML file and in the SQLite
+database (if enabled).
+
 See :ref:`output_file_formats:Output File Formats` for details.
 
 

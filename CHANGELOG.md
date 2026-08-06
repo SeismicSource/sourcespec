@@ -31,6 +31,8 @@ previous versions. You will need to upgrade your old database manually or using
   - Spectral dispersion (RMSN)
   - Spectral dispersion score (in percent)
 - Station quality parameters in YAML and SQLite output:
+  - Minimum frequency of the processed spectrum (`fmin`)
+  - Maximum frequency (Nyquist) of the processed spectrum (`fmax`)
   - Mean spectral S/N ratio, across the station components
   - Max spectral S/N ratio, across the station components
   - Minimum frequency where S/N ratio exceeds 3, across components
