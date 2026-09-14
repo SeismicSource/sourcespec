@@ -145,6 +145,35 @@ def _get_spectral_rolloff(config, spec):
     return freq[i0] if len(idx) == 0 else freq[i0 + idx[-1]]
 
 
+def  _get_lf_dropoff(config, spec):
+    """
+    Get the frequency of the low-frequency drop-off
+
+    The detection first compares the ratio between the maximum amplitude
+    and the amplitude at the lowest frequency. If that ratio exceeds
+    ``lf_dropoff_ratio``, the slope over three consecutive points of the
+    spectrum in log space is evaluated, stepping from the lowest frequency,
+    up to the frequency corresponding to the maximum amplitude.
+    The frequency where the slope drops for the first time below
+    ``lf_dropoff_min_slope``, is regarded as the dropoff frequency.
+
+    Returns ``None`` if no drop-off is detected.
+    """
+    if not config.cut_after_lf_dropoff:
+        return None
+    freq = spec.freq_logspaced
+    amp = spec.data_logspaced
+
+    m = amp.argmax()
+    if amp[m] / amp[0] > config.lf_dropoff_min_ratio:
+        for i in range(m):
+            b, a = np.polyfit(np.log10(freq[i:i+3]),
+                              np.log10(amp[i:i+3]), deg=1)
+            if b < config.lf_dropoff_min_slope:
+                dropoff_freq = freq[i]
+                return dropoff_freq
+
+
 def _slice_spectrum(spec, fmin, fmax):
     """
     Slice a spectrum in place, between fmin and fmax.
@@ -859,6 +888,33 @@ def _cut_H_at_rolloff(config, spec_st, specnoise_st):
         _slice_spectrum(specnoise_h, freq1, rolloff)
 
 
+def _cut_H_at_lf_dropoff(config, spec_st, specnoise_st):
+    """
+    Cut the H spectra above the detected low-frequency drop-off, if any.
+
+    Both the signal and the noise H spectra are cut to the same frequency
+    range, so that they stay consistent for weighting and inversion.
+    """
+    spec_ids = {sp.id[:-1] for sp in spec_st}
+    for specid in spec_ids:
+        try:
+            spec_h = _select_spectra(spec_st, f'{specid}H')[0]
+            specnoise_h = _select_spectra(specnoise_st, f'{specid}H')[0]
+        except Exception:
+            continue
+        if getattr(spec_h.stats, 'ignore', False):
+            continue
+        dropoff_freq = _get_lf_dropoff(config, spec_h)
+        if dropoff_freq is None:
+            continue
+        freq2 = spec_h.freq_logspaced[-1]
+        logger.info(
+            f'{spec_h.id}: low-frequency drop-off at {dropoff_freq:.2f} Hz: '
+            'cutting spectrum above it')
+        _slice_spectrum(spec_h, dropoff_freq, freq2)
+        _slice_spectrum(specnoise_h, dropoff_freq, freq2)
+
+
 def _check_spectral_sn_ratio(config, spec, specnoise):
     spec_id = spec.get_id()
     weight = _build_weight_from_noise(config, spec, specnoise)
@@ -1017,6 +1073,8 @@ def _build_signal_and_noise_spectral_streams(
         specnoise.data_mag = moment_to_mag(specnoise.data)
     # cut the H spectra below the detected spectral roll-off
     _cut_H_at_rolloff(config, spec_st, specnoise_st)
+    # cut the H spectra above the detected low-frequency drop-off
+    _cut_H_at_lf_dropoff(config, spec_st, specnoise_st)
     # apply station correction if a residual file is specified in config
     station_correction(spec_st, config)
     return spec_st, specnoise_st
