@@ -105,7 +105,10 @@ previous versions. You will need to upgrade your old database manually or using
 - Possibility of detecting a high-frequency spectral roll-off on the H spectra
   (e.g., due to the anti-aliasing filter) and cutting the spectra below it
   (see config parameters `cut_before_hf_rolloff` and `hf_rolloff_mag`)
-
+- Possibility of detecting a low-frequency spectral drop-off on the H spectra
+  (e.g., due to insufficient instrument bandwidth) and cutting the spectra above
+  it (see config parameters `cut_after_lf_dropoff`, `lf_dropoff_min_ratio` and
+  `lf_dropoff_min_slope`)
 ### Inversion
 
 - Configurable source spectral falloff power (see [#95] and [#96])
@@ -191,6 +194,8 @@ previous versions. You will need to upgrade your old database manually or using
   station code patterns with corresponding amplification factors
   (see [#81] and [#82])
 - New config parameters: `cut_before_hf_rolloff`, `hf_rolloff_mag`
+- New config parameters: `cut_after_lf_dropoff`, `lf_dropoff_min_ratio` and
+  `lf_dropoff_min_slope`
 
 ### Bugfixes
 
