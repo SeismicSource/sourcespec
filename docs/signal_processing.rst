@@ -133,12 +133,7 @@ Spectral Processing
    ``time_domain_int`` is ``False``.
 
 7. Amplitude spectra are windowed (see config parameters ``freq1_broadb``,
-   ``freq2_broadb`` and similar). If ``cut_before_hf_rolloff`` is ``True``,
-   the H spectra are additionally cut below a high-frequency spectral roll-off
-   detected near their maximum frequency (possibly due to the anti-aliasing
-   filter). A roll-off is detected where the spectrum drops ``hf_rolloff_mag``
-   magnitude units below the local decay trend, and the spectrum is cut
-   before it drops ``0.1 * hf_rolloff_mag``.
+   ``freq2_broadb`` and similar).
 
 8. Geometrical spreading is corrected (see
    :ref:`theoretical_background:Geometrical Spreading`).
@@ -180,10 +175,32 @@ Spectral Processing
 14. All the amplitude spectra are converted to moment magnitude units (see
     :ref:`theoretical_background:Building Spectra`).
 
-15. Station corrections are applied, if requested (see
+15. The H spectra are cut at their ends, to remove the parts of the spectrum
+    which are affected by the instrument response and by the acquisition
+    chain:
+
+    - if ``cut_before_hf_rolloff`` is ``True``, the H spectra are cut below a
+      high-frequency spectral roll-off (possibly due to the instrument
+      limited bandwidth or to the anti-aliasing filter). The roll-off is
+      detected where the spectrum drops ``hf_rolloff_mag`` magnitude units
+      below the local decay trend, and the spectrum is cut before it drops
+      ``0.1 * hf_rolloff_mag``;
+    - if ``cut_after_lf_rolloff`` is ``True``, the H spectra are cut above a
+      low-frequency spectral roll-off (possibly due to the instrument
+      limited bandwidth). The roll-off is detected where the ratio between
+      the maximum spectral amplitude and the amplitude at the lowest
+      frequency exceeds ``lf_rolloff_min_ratio``, and the slope over three
+      consecutive points of the spectrum, in log-log space, drops below
+      ``lf_rolloff_min_slope``. The spectrum is cut at the frequency where
+      the slope drops below the threshold.
+
+    Both the signal and the noise H spectra are cut to the same frequency
+    range, so that they stay consistent for weighting and inversion.
+
+16. Station corrections are applied, if requested (see
     :ref:`theoretical_background:Station Residuals`).
 
-16. The weight spectrum is built, depending on the config option ``weighting``.
+17. The weight spectrum is built, depending on the config option ``weighting``.
 
 
 See the source code of :meth:`ssp_build_spectra.build_spectra` for
