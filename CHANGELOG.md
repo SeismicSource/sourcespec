@@ -109,7 +109,7 @@ previous versions. You will need to upgrade your old database manually or using
 - Possibility of detecting a low-frequency spectral roll-off on the H spectra
   (e.g., due to the instrument limited bandwidth) and cutting the spectra above
   it (see config parameters `cut_after_lf_rolloff`, `lf_rolloff_min_ratio` and
-  `lf_rolloff_min_slope`)
+  `lf_rolloff_min_slope`, and [#98])
 
 ### Inversion
 
@@ -197,7 +197,7 @@ previous versions. You will need to upgrade your old database manually or using
   (see [#81] and [#82])
 - New config parameters: `cut_before_hf_rolloff`, `hf_rolloff_mag`
 - New config parameters: `cut_after_lf_rolloff`, `lf_rolloff_min_ratio` and
-  `lf_rolloff_min_slope`
+  `lf_rolloff_min_slope` (see [#98])
 
 ### Bugfixes
 
@@ -984,3 +984,4 @@ Initial Python port.
 [#94]: https://github.com/SeismicSource/sourcespec/issues/94
 [#95]: https://github.com/SeismicSource/sourcespec/issues/95
 [#96]: https://github.com/SeismicSource/sourcespec/issues/96
+[#98]: https://github.com/SeismicSource/sourcespec/issues/98
