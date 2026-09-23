@@ -96,9 +96,9 @@ def _frequency_integrate(config, spec):
         spec.data /= (2 * math.pi * spec.freq)
 
 
-def _get_spectral_rolloff(config, spec):
+def _get_hf_rolloff(config, spec):
     """
-    Get the frequency of the spectral roll-off near the band maximum.
+    Get the frequency of the high-frequency roll-off near the band maximum.
 
     The detection looks at the last 20% of the log-spaced frequencies.
     A straight line is fitted to the first half of this window and
@@ -116,7 +116,8 @@ def _get_spectral_rolloff(config, spec):
     n = freq.size
     if mag.size != n:
         logger.info(
-            f'{spec.id}: not enough points to detect the spectral roll-off')
+            f'{spec.id}: not enough points to detect the high-frequency '
+            'roll-off')
         return None
     x = np.log10(freq)
     # look at the last 20% of the log-spaced frequencies
@@ -124,7 +125,8 @@ def _get_spectral_rolloff(config, spec):
     m = n - i0
     if m < 4:
         logger.info(
-            f'{spec.id}: not enough points to detect the spectral roll-off')
+            f'{spec.id}: not enough points to detect the high-frequency '
+            'roll-off')
         return None
     x_win = x[i0:]
     y_win = mag[i0:]
@@ -136,13 +138,44 @@ def _get_spectral_rolloff(config, spec):
     # no roll-off if the drop is smaller than the threshold
     if mag_drop < config.hf_rolloff_mag:
         logger.info(
-            f'{spec.id}: no spectral roll-off detected: keeping the '
+            f'{spec.id}: no high-frequency roll-off detected: keeping the '
             'configured frequency range')
         return None
     # cut before the spectrum drops by 0.1 * hf_rolloff_mag
     cut_threshold = 0.1 * config.hf_rolloff_mag
     idx = np.where(residual > -cut_threshold)[0]
     return freq[i0] if len(idx) == 0 else freq[i0 + idx[-1]]
+
+
+def _get_lf_rolloff(config, spec):
+    """
+    Get the frequency of the low-frequency roll-off.
+
+    The detection first compares the ratio between the maximum amplitude
+    and the amplitude at the lowest frequency. If that ratio exceeds
+    ``lf_rolloff_min_ratio``, the slope over three consecutive points of the
+    spectrum in log space is evaluated, stepping from the lowest frequency,
+    up to the frequency corresponding to the maximum amplitude.
+    The frequency where the slope drops for the first time below
+    ``lf_rolloff_min_slope``, is regarded as the roll-off frequency.
+
+    Returns ``None`` if no roll-off is detected.
+    """
+    if not config.cut_after_lf_rolloff:
+        return None
+    freq = spec.freq_logspaced
+    amp = spec.data_logspaced
+    if amp[0] <= 0:
+        return None
+    m = amp.argmax()
+    if amp[m] / amp[0] <= config.lf_rolloff_min_ratio:
+        return None
+    for i in range(m):
+        slope, _ = np.polyfit(np.log10(freq[i:i + 3]),
+                              np.log10(amp[i:i + 3]), deg=1)
+        if slope < config.lf_rolloff_min_slope:
+            return freq[i]
+    return None
 
 
 def _slice_spectrum(spec, fmin, fmax):
@@ -825,9 +858,9 @@ def _build_H(spec_st, specnoise_st=None, vertical_channel_codes=None,
                 specnoise_st.append(specnoise_h)
 
 
-def _cut_H_at_rolloff(config, spec_st, specnoise_st):
+def _cut_H_at_hf_rolloff(config, spec_st, specnoise_st):
     """
-    Cut the H spectra below the detected spectral roll-off, if any.
+    Cut the H spectra below the detected high-frequency roll-off, if any.
 
     Both the signal and the noise H spectra are cut to the same frequency
     range, so that they stay consistent for weighting and inversion.
@@ -841,22 +874,58 @@ def _cut_H_at_rolloff(config, spec_st, specnoise_st):
             continue
         if getattr(spec_h.stats, 'ignore', False):
             continue
-        rolloff = _get_spectral_rolloff(config, spec_h)
-        if rolloff is None:
+        rolloff_freq = _get_hf_rolloff(config, spec_h)
+        if rolloff_freq is None:
             continue
         freq1 = spec_h.freq_logspaced[0]
         freq2 = spec_h.freq_logspaced[-1]
-        if not freq1 < rolloff < freq2:
+        if not freq1 < rolloff_freq < freq2:
             logger.info(
-                f'{spec_h.id}: spectral roll-off at {rolloff:.2f} Hz '
-                f'is outside the [{freq1:.2f}, {freq2:.2f}] Hz range: '
+                f'{spec_h.id}: high-frequency roll-off at '
+                f'{rolloff_freq:.2f} Hz is outside the '
+                f'[{freq1:.2f}, {freq2:.2f}] Hz range: '
                 'keeping the configured frequency range')
             continue
         logger.info(
-            f'{spec_h.id}: spectral roll-off at {rolloff:.2f} Hz: '
+            f'{spec_h.id}: high-frequency roll-off at {rolloff_freq:.2f} Hz: '
             'cutting spectrum below it')
-        _slice_spectrum(spec_h, freq1, rolloff)
-        _slice_spectrum(specnoise_h, freq1, rolloff)
+        _slice_spectrum(spec_h, freq1, rolloff_freq)
+        _slice_spectrum(specnoise_h, freq1, rolloff_freq)
+
+
+def _cut_H_at_lf_rolloff(config, spec_st, specnoise_st):
+    """
+    Cut the H spectra above the detected low-frequency roll-off, if any.
+
+    Both the signal and the noise H spectra are cut to the same frequency
+    range, so that they stay consistent for weighting and inversion.
+    """
+    spec_ids = {sp.id[:-1] for sp in spec_st}
+    for specid in spec_ids:
+        try:
+            spec_h = _select_spectra(spec_st, f'{specid}H')[0]
+            specnoise_h = _select_spectra(specnoise_st, f'{specid}H')[0]
+        except Exception:
+            continue
+        if getattr(spec_h.stats, 'ignore', False):
+            continue
+        rolloff_freq = _get_lf_rolloff(config, spec_h)
+        if rolloff_freq is None:
+            continue
+        freq1 = spec_h.freq_logspaced[0]
+        freq2 = spec_h.freq_logspaced[-1]
+        if not freq1 < rolloff_freq < freq2:
+            logger.info(
+                f'{spec_h.id}: low-frequency roll-off at '
+                f'{rolloff_freq:.2f} Hz is outside the '
+                f'[{freq1:.2f}, {freq2:.2f}] Hz range: '
+                'keeping the configured frequency range')
+            continue
+        logger.info(
+            f'{spec_h.id}: low-frequency roll-off at {rolloff_freq:.2f} Hz: '
+            'cutting spectrum above it')
+        _slice_spectrum(spec_h, rolloff_freq, freq2)
+        _slice_spectrum(specnoise_h, rolloff_freq, freq2)
 
 
 def _check_spectral_sn_ratio(config, spec, specnoise):
@@ -1015,8 +1084,10 @@ def _build_signal_and_noise_spectral_streams(
         spec.data_mag_logspaced = moment_to_mag(spec.data_logspaced)
     for specnoise in specnoise_st:
         specnoise.data_mag = moment_to_mag(specnoise.data)
-    # cut the H spectra below the detected spectral roll-off
-    _cut_H_at_rolloff(config, spec_st, specnoise_st)
+    # cut the H spectra below the detected high-frequency roll-off
+    _cut_H_at_hf_rolloff(config, spec_st, specnoise_st)
+    # cut the H spectra above the detected low-frequency roll-off
+    _cut_H_at_lf_rolloff(config, spec_st, specnoise_st)
     # apply station correction if a residual file is specified in config
     station_correction(spec_st, config)
     return spec_st, specnoise_st
